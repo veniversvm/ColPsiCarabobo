@@ -1,0 +1,58 @@
+services:
+  # Base de Datos PostgreSQL
+  db:
+    image: postgres:17-alpine
+    container_name: colpsi_db
+    restart: always
+    environment:
+      - POSTGRES_USER=${DB_USER:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+      - POSTGRES_DB=${DB_NAME:-colpsi_db}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Admin de base de datos
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: colpsi_pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL:-admin@admin.com}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD:-admin}
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+
+  # Simulador de AWS S3 (MinIO)
+  s3:
+    image: minio/minio
+    container_name: colpsi_s3
+    restart: always
+    ports:
+      - "9000:9000" # API S3
+      - "9001:9001" # Consola Web
+    environment:
+      - MINIO_ROOT_USER=${AWS_ACCESS_KEY_ID:-minioadmin}
+      - MINIO_ROOT_PASSWORD=${AWS_SECRET_ACCESS_KEY:-minioadmin}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+
+  # Contenedor para crear el bucket automáticamente
+  createbuckets:
+    image: minio/mc
+    depends_on:
+      - s3
+    entrypoint: >
+      /bin/sh -c "
+      until (/usr/bin/mc alias set myminio http://s3:9000 ${AWS_ACCESS_KEY_ID:-minioadmin} ${AWS_SECRET_ACCESS_KEY:-minioadmin}) do echo 'Esperando a MinIO...' && sleep 1; done;
+      /usr/bin/mc mb --ignore-existing myminio/${AWS_S3_BUCKET:-colpsi-bucket};
+      /usr/bin/mc anonymous set public myminio/${AWS_S3_BUCKET:-colpsi-bucket};
+      exit 0;
+      "
+
+volumes:
+  postgres_data:
+  minio_data:

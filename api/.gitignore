@@ -1,0 +1,62 @@
+# --- Binarios y Ejecutables ---
+bin/
+tmp/
+out/
+dist/
+# Ignorar el binario generado por el build de Go
+main
+main.exe
+api_executable
+
+# --- Air (Hot Reload) ---
+# Air genera una carpeta tmp para sus builds temporales
+tmp/
+# Logs de Air
+air.log
+
+# --- Variables de Entorno y Secretos (CRUCIAL) ---
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# --- Dependencias de Go ---
+# Normalmente no se sube la carpeta vendor si usas Go Modules (go.sum es suficiente)
+# vendor/
+
+# --- Testing y Cobertura ---
+*.test
+*.out
+coverage.txt
+
+# --- Atlas & Migraciones ---
+# Atlas genera a veces archivos de esquema temporales o logs
+# NO ignores atlas.sum ni los archivos .sql en migrations/
+.atlas/
+
+# --- Herramientas de Sistema y Editores ---
+# JetBrains (GoLand, IntelliJ)
+.idea/
+*.iws
+*.iml
+
+# VS Code
+.vscode/
+!.vscode/extensions.json
+*.code-workspace
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# --- Docker ---
+# Ignorar los datos locales de las bases de datos para que no se suban al repo
+postgres_data/
+minio_data/
+
+# --- Otros ---
+*.log

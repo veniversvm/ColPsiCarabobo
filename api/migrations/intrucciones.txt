@@ -1,0 +1,115 @@
+==========================================================
+GUÍA RÁPIDA DE MIGRACIONES - COLPSICARABOBO (ATLAS + GORM)
+==========================================================
+
+Este proyecto utiliza Atlas para gestionar migraciones SQL versionadas
+basadas en los modelos de GORM definidos en Go.
+
+--- PRE-REQUISITOS ---
+1. Tener Atlas CLI instalado: curl -sSf https://atlasgo.sh | sh
+2. Tener el provider de GORM: go install ariga.io/atlas-provider-gorm@latest
+3. Base de Datos corriendo (Docker): docker-compose up -d db
+
+--- 1. GENERAR UNA NUEVA MIGRACIÓN (DIFF) ---
+Cada vez que modifiques un struct en 'internal/domain/models.go', ejecuta:
+
+$ atlas migrate diff nombre_de_la_migracion --env gorm
+
+Efecto: 
+- Atlas compara tus structs con el estado actual de /migrations.
+- Crea un archivo .sql nuevo en api/migrations/ con los cambios detectados.
+- Crea/actualiza el archivo atlas.sum (control de integridad).
+
+--- 2. APLICAR MIGRACIONES A LA BASE DE DATOS (APPLY) ---
+Para ejecutar los archivos SQL pendientes en tu Postgres local:
+
+$ atlas migrate apply --env gorm \
+  --url "postgres://postgres:postgres@localhost:5432/colpsi_db?sslmode=disable"
+
+Efecto:
+- Ejecuta los SQL pendientes.
+- Actualiza la tabla 'atlas_schema_revisions' en la DB para saber qué se aplicó.
+
+--- 3. VER ESTADO DE LAS MIGRACIONES ---
+Para ver qué se ha aplicado y qué falta:
+
+$ atlas migrate status --env gorm \
+  --url "postgres://postgres:postgres@localhost:5432/colpsi_db?sslmode=disable"
+
+--- NOTAS DE ARQUITECTO ---
+- No modifiques manualmente los archivos .sql generados a menos que sea necesario 
+  (ej. añadir una vista o trigger). Si los modificas, debes recalcular el 
+  hash con: 'atlas migrate hash --env gorm'.
+- NUNCA borres el archivo atlas.sum.
+- Las migraciones se basan en el archivo 'api/atlas.hcl' y el bridge 
+  'api/cmd/exp/migrate/main.go'.
+==========================================================
+
+
+
+======================================================================
+GUÍA DE INSTALACIÓN: ATLAS CLI + GORM PROVIDER (LINUX)
+======================================================================
+
+Este documento detalla los pasos para instalar las herramientas de 
+migración declarativa para el proyecto ColPsiCarabobo.
+
+----------------------------------------------------------------------
+1. INSTALAR ATLAS CLI (Binario principal)
+----------------------------------------------------------------------
+Ejecuta el script oficial de instalación:
+
+$ curl -sSf https://atlasgo.sh | sh
+
+----------------------------------------------------------------------
+2. INSTALAR ATLAS GORM PROVIDER (Traductor de modelos Go)
+----------------------------------------------------------------------
+Atlas necesita este plugin para entender tus structs de Go:
+
+$ go install ariga.io/atlas-provider-gorm@latest
+
+----------------------------------------------------------------------
+3. CONFIGURAR EL PATH (CRUCIAL)
+----------------------------------------------------------------------
+Para que Linux reconozca el comando 'atlas-provider-gorm', debes 
+agregar la carpeta de binarios de Go a tu configuración.
+
+SI USAS ZSH (Fedora/Ubuntu con OhMyZsh):
+$ echo 'export PATH=$PATH:$(go env GOPATH)/bin' >> ~/.zshrc
+$ source ~/.zshrc
+
+SI USAS BASH (Ubuntu estándar):
+$ echo 'export PATH=$PATH:$(go env GOPATH)/bin' >> ~/.bashrc
+$ source ~/.bashrc
+
+----------------------------------------------------------------------
+4. VERIFICACIÓN
+----------------------------------------------------------------------
+Asegúrate de que ambos comandos respondan correctamente:
+
+$ atlas version
+$ atlas-provider-gorm --version
+
+----------------------------------------------------------------------
+5. COMANDOS DE USO DIARIO (Desde la carpeta /api)
+----------------------------------------------------------------------
+
+A) Generar nueva migración (Diff):
+   $ atlas migrate diff nombre_migracion --env gorm
+
+B) Aplicar migraciones a la DB local:
+   $ atlas migrate apply --env gorm --url "postgres://postgres:postgres@localhost:5432/colpsi_db?sslmode=disable"
+
+----------------------------------------------------------------------
+6. SOLUCIÓN DE PROBLEMAS COMUNES
+----------------------------------------------------------------------
+- Error "Permission Denied" con Docker:
+  Atlas levanta un contenedor temporal para generar el diff. 
+  Tu usuario debe tener permisos:
+  $ sudo usermod -aG docker $USER
+  (Luego cierra y abre sesión).
+
+- Error "command not found":
+  Repite el paso 3 (Configurar el PATH) y asegúrate de reiniciar 
+  la terminal.
+======================================================================
