@@ -9,6 +9,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/config"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/router"
 	"github.com/veniversvm/ColPsiCarabobo/api/pkg/database"
 	"github.com/veniversvm/ColPsiCarabobo/api/pkg/s3"
 )
@@ -39,7 +40,7 @@ func main() {
 	// 2. PERSISTENCIA (PostgreSQL)
 	// =========================================================================
 	// Inicializa el pool de conexiones con GORM
-	_, err := database.ConnectDB()
+	db, err := database.ConnectDB()
 	if err != nil {
 		log.Fatalf("❌ Error crítico: Falló la conexión a PostgreSQL: %v", err)
 	}
@@ -65,6 +66,8 @@ func main() {
 
 	// Nota: RunMigrations(db) está comentado para favorecer migraciones versionadas vía CLI
 	// if err := database.RunMigrations(db); err != nil { ... }
+	// SEEDING: Crear admin inicial si no existe
+	database.SeedAdmin(db)
 
 	// =========================================================================
 	// 4. ALMACENAMIENTO DE OBJETOS (S3 / MinIO)
@@ -85,7 +88,7 @@ func main() {
 	app := fiber.New(fiber.Config{
 		AppName:           "ColPsiCarabobo API v1.0",
 		DisableKeepalive:  false,
-		EnablePrintRoutes: false, // Activar solo para depuración pesada
+		EnablePrintRoutes: true, // Activar solo para depuración pesada
 	})
 
 	// =========================================================================
@@ -99,6 +102,8 @@ func main() {
 	// @Produce      json
 	// @Success      200  {object}  map[string]interface{}
 	// @Router       /health [get]
+	router.SetupRouter(app, db, s3Client)
+
 	app.Get("/health", func(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
 			"status":  "online",

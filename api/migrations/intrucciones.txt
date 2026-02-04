@@ -47,30 +47,30 @@ $ atlas migrate status --env gorm \
 
 
 
-======================================================================
+====================================================================
 GUÍA DE INSTALACIÓN: ATLAS CLI + GORM PROVIDER (LINUX)
-======================================================================
+====================================================================
 
 Este documento detalla los pasos para instalar las herramientas de 
 migración declarativa para el proyecto ColPsiCarabobo.
 
-----------------------------------------------------------------------
+--------------------------------------------------------------------
 1. INSTALAR ATLAS CLI (Binario principal)
-----------------------------------------------------------------------
+--------------------------------------------------------------------
 Ejecuta el script oficial de instalación:
 
 $ curl -sSf https://atlasgo.sh | sh
 
-----------------------------------------------------------------------
+--------------------------------------------------------------------
 2. INSTALAR ATLAS GORM PROVIDER (Traductor de modelos Go)
-----------------------------------------------------------------------
+--------------------------------------------------------------------
 Atlas necesita este plugin para entender tus structs de Go:
 
 $ go install ariga.io/atlas-provider-gorm@latest
 
-----------------------------------------------------------------------
+--------------------------------------------------------------------
 3. CONFIGURAR EL PATH (CRUCIAL)
-----------------------------------------------------------------------
+--------------------------------------------------------------------
 Para que Linux reconozca el comando 'atlas-provider-gorm', debes 
 agregar la carpeta de binarios de Go a tu configuración.
 
@@ -82,17 +82,17 @@ SI USAS BASH (Ubuntu estándar):
 $ echo 'export PATH=$PATH:$(go env GOPATH)/bin' >> ~/.bashrc
 $ source ~/.bashrc
 
-----------------------------------------------------------------------
+--------------------------------------------------------------------
 4. VERIFICACIÓN
-----------------------------------------------------------------------
+--------------------------------------------------------------------
 Asegúrate de que ambos comandos respondan correctamente:
 
 $ atlas version
 $ atlas-provider-gorm --version
 
-----------------------------------------------------------------------
+--------------------------------------------------------------------
 5. COMANDOS DE USO DIARIO (Desde la carpeta /api)
-----------------------------------------------------------------------
+--------------------------------------------------------------------
 
 A) Generar nueva migración (Diff):
    $ atlas migrate diff nombre_migracion --env gorm
