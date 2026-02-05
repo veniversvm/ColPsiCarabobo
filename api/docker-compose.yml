@@ -12,6 +12,8 @@ services:
       - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - colpsi_network
 
   # Admin de base de datos
   pgadmin:
@@ -24,6 +26,8 @@ services:
       - "5050:80"
     depends_on:
       - db
+    networks:
+      - colpsi_network
 
   # Simulador de AWS S3 (MinIO)
   s3:
@@ -39,6 +43,8 @@ services:
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"
+    networks:
+      - colpsi_network
 
   # Contenedor para crear el bucket automáticamente
   createbuckets:
@@ -56,3 +62,7 @@ services:
 volumes:
   postgres_data:
   minio_data:
+  
+networks:
+  colpsi_network:
+    driver: bridge

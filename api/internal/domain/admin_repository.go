@@ -1,3 +1,4 @@
+// api/internal/domain/admin_repository.go
 package domain
 
 import (
@@ -12,6 +13,8 @@ type UserAdminRepository interface {
 	// GetByID recupera un administrador por su identificador único (UUID).
 	// Es fundamental para la validación de tokens JWT en el middleware.
 	GetByID(ctx context.Context, id uuid.UUID) (*UserAdmin, error)
+
+	List(ctx context.Context, active *bool, search string, page, limit int) ([]UserAdmin, int64, error)
 
 	// GetByIdentifier busca un administrador por su nombre de usuario O correo electrónico.
 	// Se utiliza principalmente en el proceso de inicio de sesión (Login).

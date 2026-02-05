@@ -62,5 +62,33 @@ func (r *adminRepo) Update(ctx context.Context, user *domain.UserAdmin) error {
 
 // Delete realiza un borrado lógico (Soft Delete) gracias a GORM y AuditModel
 func (r *adminRepo) Delete(ctx context.Context, id uuid.UUID) error {
+	// GORM ejecutará: UPDATE user_admins SET deleted_at = NOW() WHERE id = ?
 	return r.db.WithContext(ctx).Delete(&domain.UserAdmin{}, "id = ?", id).Error
+}
+
+func (r *adminRepo) List(ctx context.Context, active *bool, search string, page, limit int) ([]domain.UserAdmin, int64, error) {
+	var admins []domain.UserAdmin
+	var total int64
+
+	query := r.db.WithContext(ctx).Model(&domain.UserAdmin{})
+
+	// Filtro por estado activo (puntero para permitir false)
+	if active != nil {
+		query = query.Where("is_active = ?", *active)
+	}
+
+	// Filtro por búsqueda parcial (Email o Username)
+	if search != "" {
+		s := "%" + search + "%"
+		query = query.Where("email ILIKE ? OR username ILIKE ?", s, s)
+	}
+
+	// Contar total para paginación
+	query.Count(&total)
+
+	// Aplicar paginación
+	offset := (page - 1) * limit
+	err := query.Offset(offset).Limit(limit).Order("created_at DESC").Find(&admins).Error
+
+	return admins, total, err
 }
