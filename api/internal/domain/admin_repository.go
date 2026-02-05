@@ -1,9 +1,29 @@
 package domain
 
-import "context"
+import (
+	"context"
 
-// internal/domain/user_admin_repository.go
+	"github.com/google/uuid"
+)
+
+// UserAdminRepository define la interfaz de abstracción para el acceso a datos
+// de los administradores. Sigue el principio de Inversión de Dependencias (DIP).
 type UserAdminRepository interface {
-	// ... otros métodos ...
+	// GetByID recupera un administrador por su identificador único (UUID).
+	// Es fundamental para la validación de tokens JWT en el middleware.
+	GetByID(ctx context.Context, id uuid.UUID) (*UserAdmin, error)
+
+	// GetByIdentifier busca un administrador por su nombre de usuario O correo electrónico.
+	// Se utiliza principalmente en el proceso de inicio de sesión (Login).
 	GetByIdentifier(ctx context.Context, identifier string) (*UserAdmin, error)
+
+	// Create inserta un nuevo registro de administrador en la base de datos.
+	Create(ctx context.Context, user *UserAdmin) error
+
+	// Update guarda los cambios realizados en un administrador existente.
+	// Incluye la rotación de la clave (Key) para el manejo de sesiones únicas.
+	Update(ctx context.Context, user *UserAdmin) error
+
+	// Delete realiza un borrado lógico del administrador.
+	Delete(ctx context.Context, id uuid.UUID) error
 }

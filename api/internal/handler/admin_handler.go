@@ -1,4 +1,3 @@
-// api/internal/handler/admin_handler.go
 package handler
 
 import (
@@ -10,35 +9,51 @@ type AdminHandler struct {
 	service *service.AdminService
 }
 
+// NewAdminHandler inicializa el controlador de administración
 func NewAdminHandler(svc *service.AdminService) *AdminHandler {
 	return &AdminHandler{service: svc}
 }
 
+// LoginRequest define la estructura esperada para el inicio de sesión
 type LoginRequest struct {
-	Identifier string `json:"identifier"` // Username o Email
-	Password   string `json:"password"`
+	Identifier string `json:"identifier" example:"admin@example.com"`
+	Password   string `json:"password" example:"admin123"`
 }
 
+// Login godoc
+// @Summary      Iniciar sesión como administrador
+// @Description  Valida credenciales y genera un JWT con clave dinámica.
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        request  body      LoginRequest  true  "Credenciales de administrador"
+// @Success      200      {object}  map[string]interface{}
+// @Failure      400      {object}  map[string]string
+// @Failure      401      {object}  map[string]string
+// @Router       /auth/login [post]
 func (h *AdminHandler) Login(c *fiber.Ctx) error {
 	var req LoginRequest
+
+	// 1. Parsear cuerpo de la petición
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "formato de datos inválido"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "El formato del JSON es inválido",
+		})
 	}
 
-	admin, err := h.service.Login(c.UserContext(), req.Identifier, req.Password)
+	// 2. Llamar al servicio (Ahora devuelve el token string)
+	token, err := h.service.Login(c.UserContext(), req.Identifier, req.Password)
 	if err != nil {
-		return c.Status(401).JSON(fiber.Map{"error": err.Error()})
+		// Retornamos 401 Unauthorized para errores de credenciales
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": err.Error(),
+		})
 	}
 
-	// Por ahora devolvemos el admin.
-	// El siguiente paso sería generar un JWT aquí.
+	// 3. Respuesta exitosa
+	// Senior tip: Enviamos el token para Authorization y datos básicos para la UI
 	return c.JSON(fiber.Map{
-		"message": "Login exitoso",
-		"user": fiber.Map{
-			"id":       admin.ID,
-			"username": admin.Username,
-			"email":    admin.Email,
-			"sudo":     admin.Sudo,
-		},
+		"message": "Bienvenido al sistema",
+		"token":   token, // El cliente debe guardar esto en localStorage/cookies
 	})
 }

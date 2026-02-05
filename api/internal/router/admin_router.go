@@ -8,11 +8,12 @@ import (
 	"gorm.io/gorm"
 )
 
+// CAMBIA EL NOMBRE AQUÍ A SetupAdminRoutes
 func SetupAdminRoutes(router fiber.Router, db *gorm.DB) {
 	repo := postgres.NewAdminRepository(db)
 	svc := service.NewAdminService(repo)
 	h := handler.NewAdminHandler(svc)
 
-	adminGroup := router.Group("/admin-routes")
-	adminGroup.Post("/login", h.Login)
+	auth := router.Group("/admin-routes")
+	auth.Post("/login", h.Login)
 }

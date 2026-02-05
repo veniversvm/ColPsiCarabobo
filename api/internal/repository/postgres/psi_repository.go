@@ -22,19 +22,21 @@ func NewPsiRepository(db *gorm.DB) domain.PsiUserRepository {
 // CreateWithColData realiza una inserción atómica de usuario y sus datos colegiales
 func (r *psiRepo) CreateWithColData(ctx context.Context, psi *domain.PsiUserModel, colData *domain.PsiUserColData) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// 1. Crear el modelo principal del Psicólogo
+		// 1. Crear el Psicólogo (Genera el ID)
 		if err := tx.Create(psi).Error; err != nil {
 			return fmt.Errorf("error creating psi user: %w", err)
 		}
 
-		// 2. Vincular el ID del usuario recién creado a los datos colegiales
-		colData.PsiUserModelID = psi.ID
+		// 2. Vincular los datos colegiales al ID del psicólogo
+		colData.PsiUserModelID = psi.ID // Esta es la llave foránea real
 		if err := tx.Create(colData).Error; err != nil {
 			return fmt.Errorf("error creating col data: %w", err)
 		}
 
-		// 3. Actualizar la referencia circular en el modelo principal
-		return tx.Model(psi).Update("psi_user_col_data_id", colData.ID).Error
+		// ELIMINAMOS LA TERCERA PARTE (El Update circular)
+		// No es necesario que PsiUserModel guarde el ID de ColData si ColData ya guarda el ID del Usuario.
+
+		return nil
 	})
 }
 
