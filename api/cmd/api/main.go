@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -8,7 +9,14 @@ import (
 
 	"ariga.io/atlas-provider-gorm/gormschema"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/compress"
+	"github.com/gofiber/fiber/v2/middleware/cors" // CORREGIDO: Usar el de Fiber, no el de Gin
+	"github.com/gofiber/fiber/v2/middleware/healthcheck"
+	"github.com/gofiber/fiber/v2/middleware/helmet"
+	"github.com/gofiber/fiber/v2/middleware/idempotency"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
+	fiberRecover "github.com/gofiber/fiber/v2/middleware/recover" // CORREGIDO: Alias para evitar conflicto con built-in recover
+	"github.com/gofiber/fiber/v2/middleware/requestid"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/config"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/router"
@@ -18,125 +26,115 @@ import (
 
 // @title           ColPsiCarabobo API
 // @version         1.0
-// @description     Servicios backend para la gestión administrativa y pública del Colegio de Psicólogos del Estado Carabobo.
-// @termsOfService  https://colpsicarabobo.com/terms/
-
-// @contact.name   Soporte Técnico
-// @contact.email  admin@colpsicarabobo.com
-
-// @license.name  Apache 2.0
-// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
-
-// @host      localhost:8080
-// @BasePath  /api/v1
-// @schemes   http https
-
+// @description     Backend de alto rendimiento para la gestión del Colegio de Psicólogos de Carabobo.
+// @contact.name    Soporte Técnico
+// @contact.email   admin@colpsicarabobo.com
+// @license.name    Apache 2.0
+// @host            localhost:8080
+// @BasePath        /api/v1
+// @schemes         http https
 func main() {
-	// =========================================================================
-	// 1. CONFIGURACIÓN INICIAL
-	// =========================================================================
-	// Carga variables de entorno desde .env y las mapea al struct config.Envs
+	// 1. CONFIGURACIÓN
 	config.InitConfig()
 
-	// =========================================================================
-	// 2. PERSISTENCIA (PostgreSQL)
-	// =========================================================================
-	// Inicializa el pool de conexiones con GORM
+	// 2. PERSISTENCIA
 	db, err := database.ConnectDB()
 	if err != nil {
 		log.Fatalf("❌ Error crítico: Falló la conexión a PostgreSQL: %v", err)
 	}
 
-	// =========================================================================
-	// 3. GENERACIÓN DE ESQUEMA (Atlas Integration)
-	// =========================================================================
-	// Este bloque traduce los Structs de Go a sentencias SQL DDL.
-	// Útil para alimentar a Atlas y generar migraciones versionadas.
+	// 3. GENERACIÓN DE ESQUEMA (Atlas)
 	stmts, err := gormschema.New("postgres").Load(
-		&domain.TextModel{},
-		&domain.UserAdmin{},
-		&domain.PsiUserModel{},
-		&domain.PsiUserColData{},
-		&domain.PsiUserPostGrade{},
-		&domain.Post{},
+		&domain.TextModel{}, &domain.UserAdmin{}, &domain.PsiUserModel{},
+		&domain.PsiUserColData{}, &domain.PsiUserPostGrade{}, &domain.Post{},
 	)
 	if err != nil {
 		log.Fatalf("❌ Error: No se pudo cargar el esquema de GORM: %v", err)
 	}
-	// Imprime el esquema en consola (Útil en desarrollo para atlas migrate diff)
 	io.WriteString(os.Stdout, stmts)
 
-	// Nota: RunMigrations(db) está comentado para favorecer migraciones versionadas vía CLI
-	// if err := database.RunMigrations(db); err != nil { ... }
-	// SEEDING: Crear admin inicial si no existe
+	// SEEDING
 	database.SeedAdmin(db)
 
-	// =========================================================================
-	// 4. ALMACENAMIENTO DE OBJETOS (S3 / MinIO)
-	// =========================================================================
-	// Configura el cliente AWS SDK v2 para gestión de archivos (imágenes/PDFs)
+	// 4. S3
 	s3Client, err := s3.ConnectS3()
 	if err != nil {
-		// No detenemos el servidor si S3 falla, permitiendo degradación elegante
 		log.Printf("⚠️  Advertencia: S3 no disponible: %v", err)
 	} else {
-		// Verifica disponibilidad del bucket al arranque
 		s3Client.VerifyConnection()
 	}
 
-	// =========================================================================
-	// 5. INICIALIZACIÓN DE FIBER (HTTP Server)
-	// =========================================================================
+	// 5. INICIALIZACIÓN DE FIBER
 	app := fiber.New(fiber.Config{
 		AppName:           "ColPsiCarabobo API v1.0",
-		DisableKeepalive:  false,
-		EnablePrintRoutes: true, // Activar solo para depuración pesada
+		EnablePrintRoutes: true,
+		// ErrorHandler global para asegurar que todos los errores salgan como JSON
+		ErrorHandler: func(ctx *fiber.Ctx, err error) error {
+			code := fiber.StatusInternalServerError
+			if e, ok := err.(*fiber.Error); ok {
+				code = e.Code
+			}
+			return ctx.Status(code).JSON(fiber.Map{"error": err.Error()})
+		},
 	})
 
-	app.Use(limiter.New(limiter.Config{
-		Max:          60,              // Máximo 60 peticiones...
-		Expiration:   1 * time.Minute, // ...por minuto por IP.
-		KeyGenerator: func(c *fiber.Ctx) string { return c.IP() },
-		LimitReached: func(c *fiber.Ctx) error {
-			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
-				"error": "Demasiadas peticiones. Por favor, espera un minuto.",
-			})
+	// =========================================================================
+	// 6. STACK DE MIDDLEWARES (Orden de Precedencia Senior)
+	// =========================================================================
+
+	// A. RECUPERACIÓN (Debe envolver a todos los demás para evitar que la app muera)
+	app.Use(fiberRecover.New())
+
+	// B. IDENTIFICACIÓN Y CORS
+	app.Use(requestid.New())
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: "http://localhost:3000, http://127.0.0.1:3000",
+		AllowHeaders: "Origin, Content-Type, Accept, Authorization, X-Idempotency-Key",
+		AllowMethods: "GET, POST, PATCH, DELETE, OPTIONS",
+	}))
+
+	// C. MONITOREO DE INFRAESTRUCTURA
+	app.Use(healthcheck.New(healthcheck.Config{
+		LivenessEndpoint:  "/live",
+		ReadinessEndpoint: "/ready",
+		ReadinessProbe: func(c *fiber.Ctx) bool {
+			sqlDB, err := db.DB()
+			return err == nil && sqlDB.Ping() == nil
 		},
-		// No limitamos IPs locales si fuera necesario (opcional)
-		// Next: func(c *fiber.Ctx) bool { return c.IP() == "127.0.0.1" },
+	}))
+
+	// D. SEGURIDAD DE RED
+	app.Use(helmet.New())
+	app.Use(idempotency.New(idempotency.Config{
+		Lifetime:  30 * time.Minute,
+		KeyHeader: "X-Idempotency-Key",
+	}))
+
+	// E. RENDIMIENTO Y TRÁFICO
+	app.Use(compress.New(compress.Config{
+		Level: compress.LevelDefault,
+	}))
+	app.Use(limiter.New(limiter.Config{
+		Max:          60,
+		Expiration:   1 * time.Minute,
+		KeyGenerator: func(c *fiber.Ctx) string { return c.IP() },
 	}))
 
 	// =========================================================================
-	// 6. RUTAS DEL SISTEMA
+	// 7. RUTAS Y MANEJADOR CATCH-ALL
 	// =========================================================================
 
-	// HealthCheck godoc
-	// @Summary      Estado de salud de la API
-	// @Description  Verifica si la API y sus dependencias (DB, S3) están operativas.
-	// @Tags         System
-	// @Produce      json
-	// @Success      200  {object}  map[string]interface{}
-	// @Router       /health [get]
 	router.SetupRouter(app, db, s3Client)
 
-	app.Get("/health", func(c *fiber.Ctx) error {
-		return c.Status(fiber.StatusOK).JSON(fiber.Map{
-			"status":  "online",
-			"version": "1.0",
-			"services": fiber.Map{
-				"database": "connected",
-				"s3":       "initialized",
-			},
+	// Manejador 404 estandarizado
+	app.Use(func(c *fiber.Ctx) error {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": fmt.Sprintf("Cannot %s %s", c.Method(), c.Path()),
 		})
 	})
 
-	// =========================================================================
-	// 7. ARRANQUE DEL SERVIDOR
-	// =========================================================================
+	// 8. ARRANQUE
 	port := config.Envs.Port
-	log.Printf("🚀 ColPsiCarabobo backend iniciado exitosamente")
-	log.Printf("📡 Escuchando en el puerto: %s", port)
-
-	// Bloquea el hilo principal y escucha peticiones
+	log.Printf("🚀 ColPsiCarabobo Backend listo en puerto: %s", port)
 	log.Fatal(app.Listen(":" + port))
 }
