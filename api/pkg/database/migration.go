@@ -1,5 +1,4 @@
-// Package database centraliza las operaciones de bajo nivel con el motor de base de datos,
-// incluyendo la conexión, configuración del pool y sincronización de esquemas.
+// Package database centraliza las operaciones de bajo nivel con el motor de base de datos.
 package database
 
 import (
@@ -9,35 +8,27 @@ import (
 	"gorm.io/gorm"
 )
 
-// RunMigrations sincroniza los modelos definidos en el dominio con el esquema de PostgreSQL.
-// Utiliza la funcionalidad AutoMigrate de GORM para realizar cambios no destructivos
-// (creación de tablas, nuevas columnas e índices).
-//
-// Nota de Arquitectura: Aunque usamos Atlas para migraciones versionadas en producción,
-// esta función garantiza que el entorno de desarrollo local sea "auto-congelable" y
-// que las extensiones críticas del motor estén habilitadas.
+// RunMigrations sincroniza los modelos de dominio con PostgreSQL e inyecta reglas de integridad.
+// Esta función garantiza que la base de datos sea "self-healing" al arrancar.
 func RunMigrations(db *gorm.DB) error {
 	log.Println("⏳ Iniciando proceso de sincronización de esquema...")
 
 	// 1. EXTENSIONES DE POSTGRES
-	// Habilitamos 'pgcrypto' para permitir que Postgres genere UUIDs v4 de forma nativa
-	// mediante la función gen_random_uuid(), que es la que definimos en AuditModel.
+	// Habilitamos 'pgcrypto' para generación nativa de UUIDs (gen_random_uuid).
 	if err := db.Exec("CREATE EXTENSION IF NOT EXISTS \"pgcrypto\";").Error; err != nil {
 		log.Printf("❌ Error crítico: No se pudo habilitar la extensión pgcrypto: %v", err)
 		return err
 	}
 
 	// 2. AUTOMIGRATE (GORM)
-	// Sincroniza los structs de Go con las tablas físicas.
-	// El orden de los parámetros es importante para que GORM pueda resolver las
-	// llaves foráneas y relaciones complejas en una sola pasada.
+	// Sincroniza los structs con las tablas físicas. El orden previene conflictos de FK.
 	err := db.AutoMigrate(
-		&domain.TextModel{},        // Tabla independiente (almacena textos largos)
-		&domain.UserAdmin{},        // Tabla de administración (sin dependencias directas)
-		&domain.PsiUserModel{},     // Entidad principal de psicólogos
-		&domain.PsiUserColData{},   // Dependencia 1:1 de PsiUserModel
-		&domain.PsiUserPostGrade{}, // Dependencia 1:N de PsiUserModel
-		&domain.Post{},             // Dependencia de TextModel (post -> contenido)
+		&domain.TextModel{},        // Contenido extenso
+		&domain.UserAdmin{},        // Personal administrativo
+		&domain.PsiUserModel{},     // Miembros (Psicólogos)
+		&domain.PsiUserColData{},   // Datos gremiales (1:1 con PsiUserModel)
+		&domain.PsiUserPostGrade{}, // Postgrados (1:N con PsiUserModel)
+		&domain.Post{},             // Noticias y publicaciones
 	)
 
 	if err != nil {
@@ -45,6 +36,22 @@ func RunMigrations(db *gorm.DB) error {
 		return err
 	}
 
-	log.Println("✅ Esquema de base de datos sincronizado exitosamente")
+	// 3. REGLA DE NEGOCIO: SUDO ÚNICO (Restricción de Integridad)
+	// Creamos un índice parcial único.
+	// Lógica:
+	// - Permite infinitas filas con 'sudo = false'.
+	// - Permite solo UNA fila con 'sudo = true'.
+	// - Ignora filas borradas (Soft Delete) para permitir nombrar un nuevo SUDO si el anterior fue eliminado.
+	const sudoIndexSQL = `
+		CREATE UNIQUE INDEX IF NOT EXISTS "idx_user_admins_unique_sudo" 
+		ON "user_admins" ("sudo") 
+		WHERE (sudo IS TRUE AND deleted_at IS NULL);
+	`
+	if err := db.Exec(sudoIndexSQL).Error; err != nil {
+		log.Printf("❌ Error al crear restricción de SUDO único: %v", err)
+		return err
+	}
+
+	log.Println("✅ Esquema y reglas de integridad sincronizados exitosamente")
 	return nil
 }

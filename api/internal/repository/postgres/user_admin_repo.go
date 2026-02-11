@@ -92,3 +92,14 @@ func (r *adminRepo) List(ctx context.Context, active *bool, search string, page,
 
 	return admins, total, err
 }
+
+func (r *adminRepo) CountSudos(ctx context.Context) (int64, error) {
+	var count int64
+	// Solo contamos los que NO están borrados (Soft delete) y son SUDO
+	err := r.db.WithContext(ctx).
+		Model(&domain.UserAdmin{}).
+		Where("sudo = ? AND deleted_at IS NULL", true).
+		Count(&count).Error
+
+	return count, err
+}

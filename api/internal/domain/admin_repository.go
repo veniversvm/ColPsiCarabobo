@@ -29,4 +29,6 @@ type UserAdminRepository interface {
 
 	// Delete realiza un borrado lógico del administrador.
 	Delete(ctx context.Context, id uuid.UUID) error
+
+	CountSudos(ctx context.Context) (int64, error)
 }

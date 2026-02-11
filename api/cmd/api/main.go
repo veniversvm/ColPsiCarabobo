@@ -4,9 +4,11 @@ import (
 	"io"
 	"log"
 	"os"
+	"time"
 
 	"ariga.io/atlas-provider-gorm/gormschema"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/config"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/router"
@@ -90,6 +92,19 @@ func main() {
 		DisableKeepalive:  false,
 		EnablePrintRoutes: true, // Activar solo para depuración pesada
 	})
+
+	app.Use(limiter.New(limiter.Config{
+		Max:          60,              // Máximo 60 peticiones...
+		Expiration:   1 * time.Minute, // ...por minuto por IP.
+		KeyGenerator: func(c *fiber.Ctx) string { return c.IP() },
+		LimitReached: func(c *fiber.Ctx) error {
+			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
+				"error": "Demasiadas peticiones. Por favor, espera un minuto.",
+			})
+		},
+		// No limitamos IPs locales si fuera necesario (opcional)
+		// Next: func(c *fiber.Ctx) bool { return c.IP() == "127.0.0.1" },
+	}))
 
 	// =========================================================================
 	// 6. RUTAS DEL SISTEMA

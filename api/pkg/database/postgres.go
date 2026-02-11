@@ -11,15 +11,14 @@ import (
 )
 
 // ConnectDB inicializa una nueva sesión de GORM utilizando el driver de PostgreSQL.
-// Utiliza la configuración global cargada en config.Envs para establecer la conexión.
+// Se conecta a través de PgBouncer (puerto 6432 por defecto) para optimizar el pooling.
 //
 // Retorna:
 //   - *gorm.DB: El objeto de conexión que permite realizar operaciones ORM.
 //   - error: Cualquier fallo durante el proceso de apertura de la conexión.
 func ConnectDB() (*gorm.DB, error) {
-	// DSN (Data Source Name): Cadena de conexión estandarizada para PostgreSQL.
-	// sslmode=disable se utiliza para facilitar el desarrollo local con Docker.
-	// Para producción, se recomienda cambiar a sslmode=require o verify-full.
+	// DSN (Data Source Name): Cadena de conexión estandarizada.
+	// Nota: config.Envs.DBPort debe ser 6432 para pasar por PgBouncer.
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
 		config.Envs.DBHost,
 		config.Envs.DBUser,
@@ -28,12 +27,18 @@ func ConnectDB() (*gorm.DB, error) {
 		config.Envs.DBPort,
 	)
 
-	// gorm.Open inicializa el pool de conexiones.
-	// Aunque el primer argumento es postgres.Open, GORM maneja internamente
-	// la apertura y el mantenimiento de las conexiones inactivas (idle connections).
+	// Inicialización de GORM con configuración optimizada para PgBouncer
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		// Aquí se podrían añadir configuraciones globales de GORM,
-		// como el Logger o estrategias de nombres de tablas.
+		// REQUERIDO PARA PGBOUNCER (Transaction Mode):
+		// PgBouncer en modo transacción no garantiza que la siguiente consulta
+		// use la misma conexión de backend, por lo tanto, las consultas preparadas
+		// (prepared statements) deben desactivarse a nivel de ORM.
+		PrepareStmt: false,
+
+		// Opcional: Se puede habilitar SkipDefaultTransaction si se busca
+		// un rendimiento extremo y se manejan las transacciones manualmente,
+		// pero para este proyecto lo dejaremos en false para mayor seguridad.
+		SkipDefaultTransaction: false,
 	})
 
 	if err != nil {
