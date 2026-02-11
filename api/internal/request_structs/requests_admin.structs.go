@@ -3,24 +3,9 @@ package request_structs
 
 import (
 	"github.com/google/uuid"
-	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 )
 
-type CreateAdminRequest struct {
-	Username string `json:"username" validate:"required"`
-	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required,min=8"`
-	// Permisos que se le quieren asignar
-	Permissions domain.UserAdmin `json:"permissions"`
-}
-
-type UpdateAdminRequest struct {
-	ID       uuid.UUID `json:"id" validate:"required"`
-	Username *string   `json:"username"`
-	Email    *string   `json:"email"`
-	Password *string   `json:"password"`
-	IsActive *bool     `json:"is_active"`
-	// Permisos
+type AdminPermissionsDTO struct {
 	CanCreatePsi           *bool `json:"can_create_psi"`
 	CanUpdatePsi           *bool `json:"can_update_psi"`
 	CanDeletePsi           *bool `json:"can_delete_psi"`
@@ -36,4 +21,22 @@ type UpdateAdminRequest struct {
 	CanCreateTags          *bool `json:"can_create_tags"`
 	CanEditTags            *bool `json:"can_edit_tags"`
 	CanDeleteTags          *bool `json:"can_delete_tags"`
+}
+
+type CreateAdminRequest struct {
+	Username string `json:"username" validate:"required"`
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,min=8"`
+	// Permisos que se le quieren asignar
+	Permissions AdminPermissionsDTO `json:"permissions"`
+}
+
+type UpdateAdminRequest struct {
+	ID       uuid.UUID `json:"id" validate:"required"`
+	Username *string   `json:"username"`
+	Email    *string   `json:"email"`
+	Password *string   `json:"password"`
+	IsActive *bool     `json:"is_active"`
+	// Permisos
+	Permissions AdminPermissionsDTO `json:"permissions"`
 }

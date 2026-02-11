@@ -1,0 +1,1 @@
+/home/fran/go/bin/linux_amd64/swag init -g cmd/api/main.go

@@ -3,6 +3,7 @@ package middleware
 import (
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -11,7 +12,6 @@ import (
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 )
 
-// AuthMiddleware centraliza la validación de tokens dinámicos para diferentes roles
 type AuthMiddleware struct {
 	adminRepo domain.UserAdminRepository
 	psiRepo   domain.PsiUserRepository
@@ -24,7 +24,6 @@ func NewAuthMiddleware(a domain.UserAdminRepository, p domain.PsiUserRepository)
 	}
 }
 
-// jwtError estandariza las respuestas de error
 func jwtError(c *fiber.Ctx, status int, message string) error {
 	return c.Status(status).JSON(fiber.Map{
 		"status":  "error",
@@ -32,104 +31,84 @@ func jwtError(c *fiber.Ctx, status int, message string) error {
 	})
 }
 
-// validateToken es una función interna genérica para evitar repetir la lógica de parseo
 func (m *AuthMiddleware) validateToken(c *fiber.Ctx, getKeyFunc func(string) (string, error)) (*jwt.Token, error) {
 	authHeader := c.Get("Authorization")
-	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-		return nil, errors.New("missing or malformed JWT")
+	if authHeader == "" {
+		log.Println("[DEBUG AUTH] Error: Cabecera Authorization vacía")
+		return nil, errors.New("missing JWT")
+	}
+
+	if !strings.HasPrefix(authHeader, "Bearer ") {
+		log.Println("[DEBUG AUTH] Error: Formato de cabecera inválido (falta Bearer)")
+		return nil, errors.New("malformed JWT")
 	}
 
 	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
 	return jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		// Validar algoritmo
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			log.Printf("[DEBUG AUTH] Error: Algoritmo inesperado: %v", token.Header["alg"])
+			return nil, fmt.Errorf("unexpected signing method")
 		}
 
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
-			return nil, errors.New("invalid token claims")
+			log.Println("[DEBUG AUTH] Error: No se pudieron parsear los claims")
+			return nil, errors.New("invalid claims")
 		}
 
+		// IMPORTANTE: Verifica que en el LoginService uses "user_id"
 		userID, ok := claims["user_id"].(string)
 		if !ok {
-			return nil, errors.New("user_id not found in token")
+			log.Println("[DEBUG AUTH] Error: claim 'user_id' no encontrado en el token")
+			return nil, errors.New("user_id not found")
 		}
 
-		// Buscamos la clave dinámica usando la función proveída
+		log.Printf("[DEBUG AUTH] Buscando Key para user_id: %s", userID)
 		key, err := getKeyFunc(userID)
 		if err != nil {
+			log.Printf("[DEBUG AUTH] Error: No se encontró la Key en la DB para el usuario: %v", err)
 			return nil, err
 		}
 
+		log.Println("[DEBUG AUTH] Key recuperada exitosamente. Verificando firma...")
 		return []byte(key), nil
 	})
 }
 
-// ProtectedAdmin protege rutas que solo el staff administrativo puede usar
-func (m *AuthMiddleware) ProtectedAdmin() fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		token, err := m.validateToken(c, func(userID string) (string, error) {
-			uid, _ := uuid.Parse(userID)
-			admin, err := m.adminRepo.GetByIdentifier(c.UserContext(), uid.String())
-			if err != nil {
-				return "", err
-			}
-			// Inyectamos el admin en el contexto para ahorrar consultas en el handler
-			c.Locals("admin", admin)
-			return admin.Key, nil
-		})
-
-		if err != nil || !token.Valid {
-			return jwtError(c, fiber.StatusUnauthorized, "Invalid or expired Admin Session")
-		}
-		return c.Next()
-	}
-}
-
-// ProtectedPsiUser protege rutas exclusivas para psicólogos colegiados
-func (m *AuthMiddleware) ProtectedPsiUser() fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		token, err := m.validateToken(c, func(userID string) (string, error) {
-			uid, _ := uuid.Parse(userID)
-			psi, err := m.psiRepo.GetByID(c.UserContext(), uid)
-			if err != nil {
-				return "", err
-			}
-			// Inyectamos el psicólogo en el contexto
-			c.Locals("psi_user", psi)
-			return psi.Key, nil
-		})
-
-		if err != nil || !token.Valid {
-			return jwtError(c, fiber.StatusUnauthorized, "Invalid or expired Psychologist Session")
-		}
-		return c.Next()
-	}
-}
-
-// ProtectedAdmin404 protege la ruta pero devuelve 404 si falla para ocultar el endpoint
 func (m *AuthMiddleware) ProtectedAdmin404() fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		log.Printf("[DEBUG AUTH] --- Nueva petición a ruta protegida: %s ---", c.Path())
+
 		token, err := m.validateToken(c, func(userID string) (string, error) {
-			uid, _ := uuid.Parse(userID)
+			uid, err := uuid.Parse(userID)
+			if err != nil {
+				return "", err
+			}
 			admin, err := m.adminRepo.GetByID(c.UserContext(), uid)
 			if err != nil {
 				return "", err
 			}
-			// Importante: Guardamos el admin en Locals para el Handler
 			c.Locals("admin", admin)
 			return admin.Key, nil
 		})
 
-		// Si hay error en el token o el admin no existe
-		if err != nil || !token.Valid {
-			// Devolvemos el mismo formato de error que un 404 estándar de Fiber
+		if err != nil {
+			log.Printf("[DEBUG AUTH] Error de validación JWT: %v", err)
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 				"message": fmt.Sprintf("Cannot %s %s", c.Method(), c.Path()),
 			})
 		}
 
+		if !token.Valid {
+			log.Println("[DEBUG AUTH] El token es inválido (expirado o firma incorrecta)")
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"message": fmt.Sprintf("Cannot %s %s", c.Method(), c.Path()),
+			})
+		}
+
+		log.Println("[DEBUG AUTH] Acceso concedido.")
 		return c.Next()
 	}
 }

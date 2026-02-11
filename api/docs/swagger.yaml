@@ -1,0 +1,314 @@
+basePath: /api/v1
+definitions:
+  handler.LoginRequest:
+    properties:
+      identifier:
+        example: admin
+        type: string
+      password:
+        example: admin123
+        type: string
+    required:
+    - identifier
+    - password
+    type: object
+  request_structs.AdminPermissionsDTO:
+    properties:
+      can_create_admin:
+        type: boolean
+      can_create_psi:
+        type: boolean
+      can_create_tags:
+        type: boolean
+      can_delete_admin:
+        type: boolean
+      can_delete_psi:
+        type: boolean
+      can_delete_publish:
+        type: boolean
+      can_delete_tags:
+        type: boolean
+      can_edit_tags:
+        type: boolean
+      can_manage_notifications:
+        type: boolean
+      can_publish:
+        type: boolean
+      can_read_notifications:
+        type: boolean
+      can_send_notifications:
+        type: boolean
+      can_update_admin:
+        type: boolean
+      can_update_psi:
+        type: boolean
+      can_update_publish:
+        type: boolean
+    type: object
+  request_structs.CreateAdminRequest:
+    properties:
+      email:
+        type: string
+      password:
+        minLength: 8
+        type: string
+      permissions:
+        allOf:
+        - $ref: '#/definitions/request_structs.AdminPermissionsDTO'
+        description: Permisos que se le quieren asignar
+      username:
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
+  request_structs.UpdateAdminRequest:
+    properties:
+      email:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      password:
+        type: string
+      permissions:
+        allOf:
+        - $ref: '#/definitions/request_structs.AdminPermissionsDTO'
+        description: Permisos
+      username:
+        type: string
+    required:
+    - id
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: admin@colpsicarabobo.com
+    name: Soporte Técnico
+  description: Pega solo tu token JWT. Swagger añadirá "Bearer " automáticamente.
+  license:
+    name: Apache 2.0
+  title: ColPsiCarabobo API
+  version: "1.0"
+paths:
+  /admin/create:
+    post:
+      consumes:
+      - application/json
+      description: Registra un nuevo miembro del staff administrativo verificando
+        la jerarquía de permisos.
+      parameters:
+      - description: Datos del nuevo administrador y permisos
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.CreateAdminRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 'message: creado correctamente'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: 'error: datos inválidos'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: 'error: violación de jerarquía'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Crear un nuevo administrador
+      tags:
+      - Administración - Gestión
+  /admin/delete/{id}:
+    delete:
+      description: Realiza un borrado lógico del administrador. No permite auto-eliminación
+        ni borrar SUDO.
+      parameters:
+      - description: UUID del administrador
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'message: eliminado correctamente'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: 'error: ID inválido'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: 'error: permisos insuficientes'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Eliminar administrador (Soft-delete)
+      tags:
+      - Administración - Gestión
+  /admin/list:
+    get:
+      description: Retorna una lista paginada de administradores con soporte para
+        búsqueda y caché.
+      parameters:
+      - description: 'Número de página (def: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Registros por página (def: 10)'
+        in: query
+        name: limit
+        type: integer
+      - description: Búsqueda por username o email
+        in: query
+        name: search
+        type: string
+      - description: Filtrar por estado activo (true/false)
+        in: query
+        name: active
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: data, total, page, limit
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 'error: fallo interno'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Listar administradores
+      tags:
+      - Administración - Gestión
+  /admin/update:
+    patch:
+      consumes:
+      - application/json
+      description: Modifica los datos y permisos de un administrador. Actualiza automáticamente
+        la auditoría.
+      parameters:
+      - description: Campos parciales a actualizar
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.UpdateAdminRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'message: actualizado correctamente'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: 'error: permiso denegado'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Actualizar administrador
+      tags:
+      - Administración - Gestión
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Valida las credenciales del administrador (email o username) y
+        retorna un JWT dinámico.
+      parameters:
+      - description: Credenciales de acceso
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: message, token
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 'error: formato inválido'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: 'error: credenciales inválidas'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Iniciar sesión administrativo
+      tags:
+      - Administración - Auth
+  /psi/upload-csv:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Procesa un archivo CSV y crea registros. Solo accesible para administradores
+        autorizados.
+      parameters:
+      - description: Archivo CSV a procesar
+        in: formData
+        name: csv
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Retornado si el usuario no tiene permisos (Security by Obscurity)
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Importar psicólogos masivamente
+      tags:
+      - Psychologists
+schemes:
+- http
+- https
+swagger: "2.0"

@@ -24,15 +24,21 @@ import (
 	"github.com/veniversvm/ColPsiCarabobo/api/pkg/s3"
 )
 
-// @title           ColPsiCarabobo API
-// @version         1.0
-// @description     Backend de alto rendimiento para la gestión del Colegio de Psicólogos de Carabobo.
-// @contact.name    Soporte Técnico
-// @contact.email   admin@colpsicarabobo.com
-// @license.name    Apache 2.0
-// @host            localhost:8080
-// @BasePath        /api/v1
-// @schemes         http https
+// @title                       ColPsiCarabobo API
+// @version                     1.0
+// @description                 Backend de alto rendimiento para la gestión del Colegio de Psicólogos de Carabobo.
+// @contact.name                Soporte Técnico
+// @contact.email               admin@colpsicarabobo.com
+// @license.name                Apache 2.0
+// @host                        localhost:8080
+// @BasePath                    /api/v1
+// @schemes                     http https
+
+// @securityDefinitions.authentication.http bearer
+// @in                          header
+// @bearerFormat                JWT
+// @name                        Authorization
+// @description                 Pega solo tu token JWT. Swagger añadirá "Bearer " automáticamente.
 func main() {
 	// 1. CONFIGURACIÓN
 	config.InitConfig()

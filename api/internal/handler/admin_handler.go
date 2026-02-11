@@ -10,81 +10,98 @@ import (
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/service"
 )
 
+// AdminHandler gestiona las peticiones HTTP relacionadas con la administración
+// del sistema, incluyendo autenticación y gestión de personal administrativo.
 type AdminHandler struct {
 	service *service.AdminService
 }
 
-// NewAdminHandler inicializa el controlador de administración
+// NewAdminHandler inicializa un nuevo controlador de administración con su servicio.
 func NewAdminHandler(svc *service.AdminService) *AdminHandler {
 	return &AdminHandler{service: svc}
 }
 
-// LoginRequest define la estructura esperada para el inicio de sesión
+// LoginRequest define las credenciales necesarias para el acceso al sistema.
 type LoginRequest struct {
-	Identifier string `json:"identifier" example:"admin@example.com"`
-	Password   string `json:"password" example:"admin123"`
+	Identifier string `json:"identifier" example:"admin" validate:"required"`
+	Password   string `json:"password" example:"admin123" validate:"required"`
 }
 
 // Login godoc
-// @Summary      Iniciar sesión como administrador
-// @Description  Valida credenciales y genera un JWT con clave dinámica.
-// @Tags         Auth
+// @Summary      Iniciar sesión administrativo
+// @Description  Valida las credenciales del administrador (email o username) y retorna un JWT dinámico.
+// @Tags         Administración - Auth
 // @Accept       json
 // @Produce      json
-// @Param        request  body      LoginRequest  true  "Credenciales de administrador"
-// @Success      200      {object}  map[string]interface{}
-// @Failure      400      {object}  map[string]string
-// @Failure      401      {object}  map[string]string
+// @Param        request  body      LoginRequest  true  "Credenciales de acceso"
+// @Success      200      {object}  map[string]interface{} "message, token"
+// @Failure      400      {object}  map[string]string      "error: formato inválido"
+// @Failure      401      {object}  map[string]string      "error: credenciales inválidas"
 // @Router       /auth/login [post]
 func (h *AdminHandler) Login(c *fiber.Ctx) error {
 	var req LoginRequest
 
-	// 1. Parsear cuerpo de la petición
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "El formato del JSON es inválido",
 		})
 	}
 
-	// 2. Llamar al servicio (Ahora devuelve el token string)
 	token, err := h.service.Login(c.UserContext(), req.Identifier, req.Password)
 	if err != nil {
-		// Retornamos 401 Unauthorized para errores de credenciales
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": err.Error(),
 		})
 	}
 
-	// 3. Respuesta exitosa
-	// Senior tip: Enviamos el token para Authorization y datos básicos para la UI
 	return c.JSON(fiber.Map{
 		"message": "Bienvenido al sistema",
-		"token":   token, // El cliente debe guardar esto en localStorage/cookies
+		"token":   token,
 	})
 }
 
+// CreateAdmin godoc
+// @Summary      Crear un nuevo administrador
+// @Description  Registra un nuevo miembro del staff administrativo verificando la jerarquía de permisos.
+// @Tags         Administración - Gestión
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        request  body      request_structs.CreateAdminRequest  true  "Datos del nuevo administrador y permisos"
+// @Success      201      {object}  map[string]string      "message: creado correctamente"
+// @Failure      400      {object}  map[string]string      "error: datos inválidos"
+// @Failure      403      {object}  map[string]string      "error: violación de jerarquía"
+// @Router       /admin/create [post]
 func (h *AdminHandler) CreateAdmin(c *fiber.Ctx) error {
-	// 1. Obtener al admin que está operando (inyectado por el middleware)
 	creator := c.Locals("admin").(*domain.UserAdmin)
 
-	// 2. Parsear el request
 	var req request_structs.CreateAdminRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "datos inválidos"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Cuerpo de solicitud inválido"})
 	}
 
-	// 3. Llamar al servicio
-	err := h.service.CreateAdmin(c.UserContext(), creator, req)
+	err := h.service.CreateAdmin(c.UserContext(), *creator, req)
 	if err != nil {
-		// Aquí devolvemos 403 Forbidden porque es una violación de permisos
-		return c.Status(403).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	return c.Status(201).JSON(fiber.Map{"message": "Administrador creado correctamente"})
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "Administrador creado correctamente"})
 }
 
+// GetAdmins godoc
+// @Summary      Listar administradores
+// @Description  Retorna una lista paginada de administradores con soporte para búsqueda y caché.
+// @Tags         Administración - Gestión
+// @Produce      json
+// @Security     BearerAuth
+// @Param        page    query     int     false  "Número de página (def: 1)"
+// @Param        limit   query     int     false  "Registros por página (def: 10)"
+// @Param        search  query     string  false  "Búsqueda por username o email"
+// @Param        active  query     bool    false  "Filtrar por estado activo (true/false)"
+// @Success      200     {object}  map[string]interface{} "data, total, page, limit"
+// @Failure      500     {object}  map[string]string      "error: fallo interno"
+// @Router       /admin/list [get]
 func (h *AdminHandler) GetAdmins(c *fiber.Ctx) error {
-	// Leer query params con valores por defecto
 	page, _ := strconv.Atoi(c.Query("page", "1"))
 	limit, _ := strconv.Atoi(c.Query("limit", "10"))
 	search := c.Query("search", "")
@@ -97,42 +114,60 @@ func (h *AdminHandler) GetAdmins(c *fiber.Ctx) error {
 
 	result, err := h.service.GetAdmins(c.UserContext(), activePtr, search, page, limit)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "error al recuperar administradores"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Error al recuperar administradores"})
 	}
 
 	return c.JSON(result)
 }
 
+// UpdateAdmin godoc
+// @Summary      Actualizar administrador
+// @Description  Modifica los datos y permisos de un administrador. Actualiza automáticamente la auditoría.
+// @Tags         Administración - Gestión
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        request  body      request_structs.UpdateAdminRequest  true  "Campos parciales a actualizar"
+// @Success      200      {object}  map[string]string      "message: actualizado correctamente"
+// @Failure      403      {object}  map[string]string      "error: permiso denegado"
+// @Router       /admin/update [patch]
 func (h *AdminHandler) UpdateAdmin(c *fiber.Ctx) error {
 	updater := c.Locals("admin").(*domain.UserAdmin)
 
 	var req request_structs.UpdateAdminRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "JSON inválido"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "JSON inválido"})
 	}
 
-	// El ID también puede venir del path /:id si prefieres,
-	// aquí lo tomamos del body por consistencia con tu esquema.
-
-	if err := h.service.UpdateAdmin(c.UserContext(), updater, req); err != nil {
-		return c.Status(403).JSON(fiber.Map{"error": err.Error()})
+	if err := h.service.UpdateAdmin(c.UserContext(), *updater, req); err != nil {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	return c.JSON(fiber.Map{"message": "Administrador actualizado correctamente"})
 }
 
+// DeleteAdmin godoc
+// @Summary      Eliminar administrador (Soft-delete)
+// @Description  Realiza un borrado lógico del administrador. No permite auto-eliminación ni borrar SUDO.
+// @Tags         Administración - Gestión
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      string  true  "UUID del administrador"
+// @Success      200  {object}  map[string]string      "message: eliminado correctamente"
+// @Failure      400  {object}  map[string]string      "error: ID inválido"
+// @Failure      403  {object}  map[string]string      "error: permisos insuficientes"
+// @Router       /admin/delete/{id} [delete]
 func (h *AdminHandler) DeleteAdmin(c *fiber.Ctx) error {
 	updater := c.Locals("admin").(*domain.UserAdmin)
 
-	// El ID puede venir por Query o por Params. Usaremos Params por estándar REST.
 	targetID, err := uuid.Parse(c.Params("id"))
 	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "ID de administrador inválido"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ID de administrador inválido"})
 	}
 
 	if err := h.service.DeleteAdmin(c.UserContext(), updater, targetID); err != nil {
-		return c.Status(403).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	return c.JSON(fiber.Map{"message": "Administrador eliminado (soft-delete) correctamente"})
+	return c.JSON(fiber.Map{"message": "Administrador eliminado correctamente"})
 }
