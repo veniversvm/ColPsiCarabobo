@@ -2,9 +2,11 @@ package router
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/swagger"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/config"
 	"github.com/veniversvm/ColPsiCarabobo/api/pkg/s3"
 	"gorm.io/gorm"
 
@@ -19,7 +21,10 @@ func SetupRouter(app *fiber.App, db *gorm.DB, s3Client *s3.S3Client) {
 
 	// OpenAPI: Documentación Swagger (Ahora dentro de /api/v1)
 	// URL: http://localhost:8080/api/v1/swagger/index.html
-	api.Get("/swagger/*", swagger.HandlerDefault)
+	if config.Envs.Environment == "development" {
+		log.Println("=== OPEN API ===")
+		api.Get("/swagger/*", swagger.HandlerDefault)
+	}
 
 	// Rutas de dominio
 	SetupAdminRoutes(api, db)

@@ -28,6 +28,8 @@ type Config struct {
 	S3Endpoint  string // URL personalizada (necesario para MinIO en desarrollo)
 	S3AccessKey string // Credencial de acceso (Access Key ID)
 	S3SecretKey string // Credencial secreta (Secret Access Key)
+
+	Environment string // Entorno de ejecución (development, production, etc.)
 }
 
 // Envs es una instancia global (Singleton) que contiene la configuración cargada.
@@ -64,6 +66,9 @@ func InitConfig() {
 		S3Endpoint:  getEnv("S3_ENDPOINT", "http://localhost:9000"),
 		S3AccessKey: getEnv("AWS_ACCESS_KEY_ID", "minioadmin"),
 		S3SecretKey: getEnv("AWS_SECRET_ACCESS_KEY", "minioadmin"),
+
+		// Configuración de Entorno
+		Environment: getEnv("APP_ENV", "development"),
 	}
 }
 

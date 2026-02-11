@@ -94,7 +94,7 @@ func main() {
 	// B. IDENTIFICACIÓN Y CORS
 	app.Use(requestid.New())
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: "http://localhost:3000, http://127.0.0.1:3000",
+		AllowOrigins: "http://localhost:3000, http://127.0.0.1:3000, http://127.0.0.1",
 		AllowHeaders: "Origin, Content-Type, Accept, Authorization, X-Idempotency-Key",
 		AllowMethods: "GET, POST, PATCH, DELETE, OPTIONS",
 	}))
