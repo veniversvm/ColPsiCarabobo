@@ -29,6 +29,7 @@ func SetupRouter(app *fiber.App, db *gorm.DB, s3Client *s3.S3Client) {
 	// Rutas de dominio
 	SetupAdminRoutes(api, db)
 	SetupPsiRoutes(api, db, s3Client)
+	SetupSpecialtyRoutes(api, db)
 
 	// =========================================================================
 	// 2. DEFAULT 404 HANDLER (CATCH-ALL)

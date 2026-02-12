@@ -158,7 +158,6 @@ func (s *AdminService) CreateAdmin(
 
 	newAdmin := &domain.UserAdmin{
 		AuditModel: domain.AuditModel{
-			ID:         uuid.New(),
 			CreateBy:   creator.Username,
 			CreateById: &creator.ID,
 			UpdateBy:   creator.Username,

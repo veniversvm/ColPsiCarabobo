@@ -13,10 +13,6 @@ import (
 // Proporciona campos estandarizados para la identificación única, trazabilidad de auditoría
 // y soporte para borrado lógico (Soft Delete).
 type AuditModel struct {
-	// ID es el identificador único universal (UUID) de la entidad.
-	// Se utiliza gen_random_uuid() a nivel de base de datos para garantizar
-	// que cada registro tenga una identidad no predecible y segura.
-	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 
 	// CreatedAt registra la fecha y hora exacta en que se creó el registro.
 	// GORM gestiona este campo automáticamente durante la inserción.

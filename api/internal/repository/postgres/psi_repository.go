@@ -59,6 +59,26 @@ func (r *psiRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.PsiUserMod
 	return &psi, nil
 }
 
+func (r *psiRepo) Count(ctx context.Context, active *bool) (int64, error) {
+	var count int64
+
+	// Inicializamos la query sobre el modelo
+	query := r.db.WithContext(ctx).Model(&domain.PsiUserModel{})
+
+	// Si active no es nil, aplicamos el filtro.
+	// Si es nil, GORM simplemente ignorará esta cláusula y contará todo.
+	if active != nil {
+		query = query.Where("active = ?", *active)
+	}
+
+	if err := query.Count(&count).Error; err != nil {
+		// Es buena práctica envolver el error o loguearlo si es necesario
+		return 0, fmt.Errorf("repo.Count: %w", err)
+	}
+
+	return count, nil
+}
+
 // Search implementa búsqueda filtrada y paginación profesional
 func (r *psiRepo) Search(ctx context.Context, filters map[string]interface{}, page, pageSize int) ([]domain.PsiUserModel, int64, error) {
 	var psis []domain.PsiUserModel
@@ -77,6 +97,10 @@ func (r *psiRepo) Search(ctx context.Context, filters map[string]interface{}, pa
 	if name, ok := filters["name"]; ok && name != "" {
 		search := "%" + name.(string) + "%"
 		query = query.Where("first_name ILIKE ? OR last_name ILIKE ?", search, search)
+	}
+
+	if active, ok := filters["active"]; ok && active != nil {
+		query = query.Where("active = ?", active)
 	}
 
 	// 1. Contar el total de registros para la paginación del frontend

@@ -1,3 +1,22 @@
+-- Create "psi_specialty_models" table
+CREATE TABLE "psi_specialty_models" (
+  "id" bigserial NOT NULL,
+  "name" character varying(100) NOT NULL,
+  "description" text NULL,
+  "active" boolean NOT NULL DEFAULT true,
+  "created_at" timestamptz NULL,
+  "updated_at" timestamptz NULL,
+  "deleted_at" timestamptz NULL,
+  "create_by" character varying(255) NULL,
+  "update_by" character varying(255) NULL,
+  "create_by_id" uuid NULL,
+  "update_by_id" uuid NULL,
+  PRIMARY KEY ("id")
+);
+-- Create index "idx_psi_specialty_models_deleted_at" to table: "psi_specialty_models"
+CREATE INDEX "idx_psi_specialty_models_deleted_at" ON "psi_specialty_models" ("deleted_at");
+-- Create index "idx_psi_specialty_models_name" to table: "psi_specialty_models"
+CREATE UNIQUE INDEX "idx_psi_specialty_models_name" ON "psi_specialty_models" ("name");
 -- Create "text_models" table
 CREATE TABLE "text_models" (
   "id" uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -71,8 +90,8 @@ CREATE TABLE "posts" (
 );
 -- Create index "idx_posts_deleted_at" to table: "posts"
 CREATE INDEX "idx_posts_deleted_at" ON "posts" ("deleted_at");
--- Create "psi_user_models" table
-CREATE TABLE "psi_user_models" (
+-- Create "psi_users" table
+CREATE TABLE "psi_users" (
   "id" uuid NOT NULL DEFAULT gen_random_uuid(),
   "created_at" timestamptz NULL,
   "updated_at" timestamptz NULL,
@@ -84,6 +103,7 @@ CREATE TABLE "psi_user_models" (
   "username" character varying(25) NOT NULL,
   "email" character varying(255) NOT NULL,
   "password" character varying(512) NOT NULL,
+  "key" character varying(512) NULL,
   "is_active" boolean NULL DEFAULT true,
   "first_name" character varying(255) NOT NULL,
   "second_name" character varying(255) NULL,
@@ -115,15 +135,15 @@ CREATE TABLE "psi_user_models" (
   "mini_bio" text NULL,
   "bio_text_id" text NULL,
   PRIMARY KEY ("id"),
-  CONSTRAINT "uni_psi_user_models_email" UNIQUE ("email"),
-  CONSTRAINT "uni_psi_user_models_username" UNIQUE ("username")
+  CONSTRAINT "uni_psi_users_email" UNIQUE ("email"),
+  CONSTRAINT "uni_psi_users_username" UNIQUE ("username")
 );
--- Create index "idx_psi_user_models_ci" to table: "psi_user_models"
-CREATE UNIQUE INDEX "idx_psi_user_models_ci" ON "psi_user_models" ("ci");
--- Create index "idx_psi_user_models_deleted_at" to table: "psi_user_models"
-CREATE INDEX "idx_psi_user_models_deleted_at" ON "psi_user_models" ("deleted_at");
--- Create index "idx_psi_user_models_fpv" to table: "psi_user_models"
-CREATE UNIQUE INDEX "idx_psi_user_models_fpv" ON "psi_user_models" ("fpv");
+-- Create index "idx_psi_users_ci" to table: "psi_users"
+CREATE UNIQUE INDEX "idx_psi_users_ci" ON "psi_users" ("ci");
+-- Create index "idx_psi_users_deleted_at" to table: "psi_users"
+CREATE INDEX "idx_psi_users_deleted_at" ON "psi_users" ("deleted_at");
+-- Create index "idx_psi_users_fpv" to table: "psi_users"
+CREATE UNIQUE INDEX "idx_psi_users_fpv" ON "psi_users" ("fpv");
 -- Create "psi_user_col_data" table
 CREATE TABLE "psi_user_col_data" (
   "id" uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -155,7 +175,7 @@ CREATE TABLE "psi_user_col_data" (
   "double_guild" boolean NULL DEFAULT false,
   "cpsm" boolean NULL DEFAULT false,
   PRIMARY KEY ("id"),
-  CONSTRAINT "fk_psi_user_models_col_data" FOREIGN KEY ("psi_user_model_id") REFERENCES "psi_user_models" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION
+  CONSTRAINT "fk_psi_users_col_data" FOREIGN KEY ("psi_user_model_id") REFERENCES "psi_users" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION
 );
 -- Create index "idx_psi_user_col_data_deleted_at" to table: "psi_user_col_data"
 CREATE INDEX "idx_psi_user_col_data_deleted_at" ON "psi_user_col_data" ("deleted_at");
@@ -181,7 +201,7 @@ CREATE TABLE "psi_user_post_grades" (
   "pic_two_s3_key" character varying(512) NULL,
   "pic_three_s3_key" character varying(512) NULL,
   PRIMARY KEY ("id"),
-  CONSTRAINT "fk_psi_user_models_post_grades" FOREIGN KEY ("psi_user_id") REFERENCES "psi_user_models" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION
+  CONSTRAINT "fk_psi_users_post_grades" FOREIGN KEY ("psi_user_id") REFERENCES "psi_users" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION
 );
 -- Create index "idx_psi_user_post_grades_deleted_at" to table: "psi_user_post_grades"
 CREATE INDEX "idx_psi_user_post_grades_deleted_at" ON "psi_user_post_grades" ("deleted_at");

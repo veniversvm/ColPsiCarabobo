@@ -12,6 +12,7 @@ import (
 // Implementa un sistema de permisos granulares para segmentar las capacidades
 // de gestión según el cargo del operador (ej. Secretaría, Tesorería, IT).
 type UserAdmin struct {
+	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	// AuditModel proporciona identidad única y trazabilidad.
 	AuditModel
 
@@ -57,11 +58,16 @@ type UserAdmin struct {
 	CanDeleteTags bool `gorm:"default:false" json:"can_delete_tags"`
 }
 
+func (UserAdmin) TableName() string {
+	return "user_admins"
+}
+
 // --- PSICÓLOGOS (PERFIL CORE) ---
 
 // PsiUserModel es la entidad principal que representa a un Psicólogo colegiado.
 // Contiene datos de identidad, contacto y estado gremial.
 type PsiUserModel struct {
+	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	AuditModel
 	Username string `gorm:"size:25;unique;not null" json:"username"`
 	Email    string `gorm:"size:255;unique;not null" json:"email"`
@@ -121,11 +127,16 @@ type PsiUserModel struct {
 	PostGrades []PsiUserPostGrade `gorm:"foreignKey:PsiUserID" json:"post_grades"`
 }
 
+func (PsiUserModel) TableName() string {
+	return "psi_users"
+}
+
 // --- DATOS COLEGIALES ---
 
 // PsiUserColData almacena información histórica y regulatoria de la carrera
 // académica y gremial del psicólogo.
 type PsiUserColData struct {
+	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	AuditModel
 	PsiUserModelID uuid.UUID `gorm:"type:uuid;uniqueIndex" json:"psi_user_model_id"`
 
@@ -157,11 +168,16 @@ type PsiUserColData struct {
 	CPSM               bool      `gorm:"default:false" json:"cpsm"`
 }
 
+func (PsiUserColData) TableName() string {
+	return "psi_user_col_data"
+}
+
 // --- POSTGRADOS ---
 
 // PsiUserPostGrade representa los títulos académicos adicionales (Especializaciones,
 // Maestrías, Doctorados) obtenidos por el profesional.
 type PsiUserPostGrade struct {
+	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	AuditModel
 	PsiUserID uuid.UUID `gorm:"type:uuid;index" json:"psi_user_id"`
 
@@ -175,4 +191,8 @@ type PsiUserPostGrade struct {
 	PicOneS3Key   string `gorm:"size:512" json:"pic_one_url"`
 	PicTwoS3Key   string `gorm:"size:512" json:"pic_two_url"`
 	PicThreeS3Key string `gorm:"size:512" json:"pic_three_url"`
+}
+
+func (PsiUserPostGrade) TableName() string {
+	return "psi_user_post_grades"
 }

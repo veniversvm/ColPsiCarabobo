@@ -28,8 +28,9 @@ func SeedAdmin(db *gorm.DB) {
 		adminID := uuid.New()
 
 		admin := &domain.UserAdmin{
+			ID: adminID,
 			AuditModel: domain.AuditModel{
-				ID:         adminID,
+
 				CreateBy:   "SYSTEM",
 				CreateById: &adminID, // Se auto-referencia como creador inicial
 			},

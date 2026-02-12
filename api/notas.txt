@@ -1,5 +1,6 @@
 /home/fran/go/bin/linux_amd64/swag init -g cmd/api/main.go
 
+/home/fran/go/bin/linux_amd64/swag init -g cmd/api/main.go --parseDependency --parseInternal
+
 TODO
-El admin no puede traer a los user con soft delte
-No se esta leyendo el .env
+fix conn to pg_bouncer

@@ -23,12 +23,13 @@ func RunMigrations(db *gorm.DB) error {
 	// 2. AUTOMIGRATE (GORM)
 	// Sincroniza los structs con las tablas físicas. El orden previene conflictos de FK.
 	err := db.AutoMigrate(
-		&domain.TextModel{},        // Contenido extenso
-		&domain.UserAdmin{},        // Personal administrativo
-		&domain.PsiUserModel{},     // Miembros (Psicólogos)
-		&domain.PsiUserColData{},   // Datos gremiales (1:1 con PsiUserModel)
-		&domain.PsiUserPostGrade{}, // Postgrados (1:N con PsiUserModel)
-		&domain.Post{},             // Noticias y publicaciones
+		&domain.TextModel{},         // Contenido extenso
+		&domain.UserAdmin{},         // Personal administrativo
+		&domain.PsiUserModel{},      // Miembros (Psicólogos)
+		&domain.PsiUserColData{},    // Datos gremiales (1:1 con PsiUserModel)
+		&domain.PsiUserPostGrade{},  // Postgrados (1:N con PsiUserModel)
+		&domain.Post{},              // Noticias y publicaciones
+		&domain.PsiSpecialtyModel{}, // Especialidades (Nuevo modelo)
 	)
 
 	if err != nil {
