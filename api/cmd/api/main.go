@@ -1,13 +1,11 @@
+// api/cmd/api/main.go
 package main
 
 import (
 	"fmt"
-	"io"
 	"log"
-	"os"
 	"time"
 
-	"ariga.io/atlas-provider-gorm/gormschema"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/cors" // CORREGIDO: Usar el de Fiber, no el de Gin
@@ -15,8 +13,9 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/helmet"
 	"github.com/gofiber/fiber/v2/middleware/idempotency"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
-	fiberRecover "github.com/gofiber/fiber/v2/middleware/recover" // CORREGIDO: Alias para evitar conflicto con built-in recover
+	fiberRecover "github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
+	_ "github.com/veniversvm/ColPsiCarabobo/api/docs"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/config"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/router"
@@ -26,19 +25,15 @@ import (
 
 // @title                       ColPsiCarabobo API
 // @version                     1.0
-// @description                 Backend de alto rendimiento para la gestión del Colegio de Psicólogos de Carabobo.
-// @contact.name                Soporte Técnico
-// @contact.email               admin@colpsicarabobo.com
-// @license.name                Apache 2.0
+// @description                 Backend para la gestión del Colegio de Psicólogos de Carabobo.
 // @host                        localhost:8080
 // @BasePath                    /api/v1
-// @schemes                     http https
-
-// @securityDefinitions.authentication.http bearer
-// @in                          header
+// @securityDefinitions.apikey BearerAuth
+// @in                         header
+// @name                       Authorization
+// @type                        http
+// @scheme                      bearer
 // @bearerFormat                JWT
-// @name                        Authorization
-// @description                 Pega solo tu token JWT. Swagger añadirá "Bearer " automáticamente.
 func main() {
 	// 1. CONFIGURACIÓN
 	config.InitConfig()
@@ -50,16 +45,25 @@ func main() {
 	}
 
 	// 3. GENERACIÓN DE ESQUEMA (Atlas)
-	stmts, err := gormschema.New("postgres").Load(
-		&domain.TextModel{}, &domain.UserAdmin{}, &domain.PsiUserModel{},
-		&domain.PsiUserColData{}, &domain.PsiUserPostGrade{}, &domain.Post{},
+	log.Println("Syncing database schema...")
+	err = db.AutoMigrate(
+		&domain.TextModel{},
+		&domain.UserAdmin{},
+		&domain.PsiUserModel{},
+		&domain.PsiUserColData{},
+		&domain.PsiUserPostGrade{},
+		&domain.Post{},
+		&domain.PsiSpecialtyModel{},
 	)
 	if err != nil {
-		log.Fatalf("❌ Error: No se pudo cargar el esquema de GORM: %v", err)
+		log.Fatalf("❌ Error: Falló la migración de GORM: %v", err)
 	}
-	io.WriteString(os.Stdout, stmts)
 
-	// SEEDING
+	// Opcional: Esto déjalo solo si usas el CLI de Atlas para generar archivos .sql
+	// stmts, _ := gormschema.New("postgres").Load(...)
+	// io.WriteString(os.Stdout, stmts)
+
+	// SEEDING (Ahora sí, con tablas existentes)
 	database.SeedAdmin(db)
 
 	// 4. S3
