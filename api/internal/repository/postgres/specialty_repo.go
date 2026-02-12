@@ -37,7 +37,7 @@ func (r *specialtyRepo) GetAll(ctx context.Context, status string) ([]domain.Psi
 
 func (r *specialtyRepo) GetByID(ctx context.Context, id uint32) (*domain.PsiSpecialtyModel, error) {
 	var s domain.PsiSpecialtyModel
-	err := r.db.WithContext(ctx).First(&s, id).Error
+	err := r.db.WithContext(ctx).First(&s, "id = ? AND active = ?", id, true).Error
 	return &s, err
 }
 
@@ -51,14 +51,23 @@ func (r *specialtyRepo) Delete(ctx context.Context, id uint32) error {
 		Updates(map[string]interface{}{"active": false}).Error
 }
 
-func (r *specialtyRepo) Count(ctx context.Context, actives *bool) (int64, error) {
+func (r *specialtyRepo) Count(ctx context.Context, active *bool) (int64, error) {
 	var count int64
+	query := r.db.WithContext(ctx).Model(&domain.PsiSpecialtyModel{})
 
-	if actives != nil {
-		err := r.db.WithContext(ctx).Model(&domain.PsiSpecialtyModel{}).Where("active = ?", *actives).Count(&count).Error
-		return count, err
+	// Si active no es nil, aplicamos el filtro.
+	// Si es nil, GORM ignorará esta línea y contará TODO.
+	if active != nil {
+		query = query.Where("active = ?", *active)
 	}
 
-	err := r.db.WithContext(ctx).Model(&domain.PsiSpecialtyModel{}).Where("active = ?", true).Count(&count).Error
+	err := query.Count(&count).Error
 	return count, err
+}
+
+func (r *specialtyRepo) GetAllAdmin(ctx context.Context) ([]domain.PsiSpecialtyModel, error) {
+	var list []domain.PsiSpecialtyModel
+	// Simplemente ordenamos por nombre, sin filtrar por el campo 'active'
+	err := r.db.WithContext(ctx).Order("name asc").Find(&list).Error
+	return list, err
 }

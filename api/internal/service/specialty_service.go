@@ -61,15 +61,21 @@ func (s *SpecialtyService) GetSpecialties(ctx context.Context, requestedStatus s
 
 }
 
+// Count retorna el conteo de especialidades aplicando reglas de visibilidad.
 func (s *SpecialtyService) Count(ctx context.Context, active *bool, admin *domain.UserAdmin) (int64, error) {
-	// 1. Si el admin NO es sudo ni tiene permisos especiales
-	if !admin.Sudo && !admin.CanReadNotifications {
-		// Forzamos a que vea SOLO las activas, ignorando lo que haya pedido
+	// 1. REGLA DE VISIBILIDAD PÚBLICA / RESTRICTA
+	// Si no hay admin, o el admin no tiene rango suficiente:
+	// FORZAMOS el conteo solo de registros activos.
+	if admin == nil || (!admin.Sudo && !admin.CanReadNotifications) {
 		onlyActive := true
 		return s.repo.Count(ctx, &onlyActive)
 	}
 
-	// 2. Si es admin con permisos, respetamos lo que pidió (active puede ser true, false o nil)
+	// 2. REGLA DE VISIBILIDAD ADMINISTRATIVA
+	// Si llegamos aquí, es un Admin autorizado. Respetamos su filtro:
+	// - active = true  -> cuenta activas
+	// - active = false -> cuenta inactivas
+	// - active = nil   -> cuenta todas
 	return s.repo.Count(ctx, active)
 }
 
@@ -119,4 +125,7 @@ func (s *SpecialtyService) Delete(ctx context.Context, admin *domain.UserAdmin, 
 	return nil
 }
 
-// ... Implementar Update y Delete siguiendo el mismo patrón de invalidación de caché
+func (s *SpecialtyService) GetAllAdmin(ctx context.Context) ([]domain.PsiSpecialtyModel, error) {
+
+	return s.repo.GetAllAdmin(ctx)
+}

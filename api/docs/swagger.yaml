@@ -1,9 +1,8 @@
 basePath: /api/v1
 definitions:
-  github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiSpecialty:
+  domain.PsiSpecialtyModel:
     properties:
       active:
-        description: 'Correcto: Oculto del JSON'
         type: boolean
       create_by:
         description: CreateBy almacena el nombre o identificador textual del creador.
@@ -21,11 +20,7 @@ definitions:
       description:
         type: string
       id:
-        description: |-
-          ID es el identificador único universal (UUID) de la entidad.
-          Se utiliza gen_random_uuid() a nivel de base de datos para garantizar
-          que cada registro tenga una identidad no predecible y segura.
-        type: string
+        type: integer
       name:
         type: string
       update_by:
@@ -42,7 +37,19 @@ definitions:
           GORM actualiza este valor automáticamente en cada operación de guardado.
         type: string
     type: object
-  github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.AdminPermissionsDTO:
+  handler.LoginRequest:
+    properties:
+      identifier:
+        example: admin
+        type: string
+      password:
+        example: admin123
+        type: string
+    required:
+    - identifier
+    - password
+    type: object
+  request_structs.AdminPermissionsDTO:
     properties:
       can_create_admin:
         type: boolean
@@ -75,7 +82,7 @@ definitions:
       can_update_publish:
         type: boolean
     type: object
-  github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreateAdminRequest:
+  request_structs.CreateAdminRequest:
     properties:
       email:
         type: string
@@ -84,7 +91,7 @@ definitions:
         type: string
       permissions:
         allOf:
-        - $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.AdminPermissionsDTO'
+        - $ref: '#/definitions/request_structs.AdminPermissionsDTO'
         description: Permisos que se le quieren asignar
       username:
         type: string
@@ -93,7 +100,7 @@ definitions:
     - password
     - username
     type: object
-  github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreateSpecialtyRequest:
+  request_structs.CreateSpecialtyRequest:
     properties:
       description:
         example: Especialidad enfocada en...
@@ -104,7 +111,7 @@ definitions:
     required:
     - name
     type: object
-  github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdateAdminRequest:
+  request_structs.UpdateAdminRequest:
     properties:
       email:
         type: string
@@ -116,14 +123,14 @@ definitions:
         type: string
       permissions:
         allOf:
-        - $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.AdminPermissionsDTO'
+        - $ref: '#/definitions/request_structs.AdminPermissionsDTO'
         description: Permisos
       username:
         type: string
     required:
     - id
     type: object
-  github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdateSpecialtyRequest:
+  request_structs.UpdateSpecialtyRequest:
     properties:
       active:
         type: boolean
@@ -131,18 +138,6 @@ definitions:
         type: string
       name:
         type: string
-    type: object
-  internal_handler.LoginRequest:
-    properties:
-      identifier:
-        example: admin
-        type: string
-      password:
-        example: admin123
-        type: string
-    required:
-    - identifier
-    - password
     type: object
 host: localhost:8080
 info:
@@ -163,7 +158,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreateAdminRequest'
+          $ref: '#/definitions/request_structs.CreateAdminRequest'
       produces:
       - application/json
       responses:
@@ -266,6 +261,121 @@ paths:
       summary: Listar administradores
       tags:
       - Administración - Gestión
+  /admin/specialties:
+    post:
+      consumes:
+      - application/json
+      description: Registra una especialidad. Solo accesible para administradores
+        autorizados.
+      parameters:
+      - description: Datos de la nueva especialidad
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.CreateSpecialtyRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 'message: Especialidad creada'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: 'error: permiso denegado'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Crear nueva especialidad
+      tags:
+      - Administración - Especialidades
+  /admin/specialties/{id}:
+    delete:
+      description: Marca una especialidad como inactiva. Solo Admin.
+      parameters:
+      - description: ID de la especialidad
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: 'message: Especialidad desactivada'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Eliminar especialidad (Soft-delete)
+      tags:
+      - Administración - Especialidades
+    patch:
+      consumes:
+      - application/json
+      description: Modifica campos de una especialidad. Actualiza automáticamente
+        la auditoría (UpdateBy).
+      parameters:
+      - description: ID de la especialidad
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Campos parciales a modificar
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.UpdateSpecialtyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'message: Especialidad actualizada'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: 'error: permiso denegado'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Actualizar especialidad
+      tags:
+      - Administración - Especialidades
+  /admin/specialties/all:
+    get:
+      description: Retorna todas las especialidades sin filtros de estado. Uso para
+        paneles de gestión.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.PsiSpecialtyModel'
+            type: array
+        "403":
+          description: 'error: permisos insuficientes'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Listado administrativo total
+      tags:
+      - Administración - Especialidades
   /admin/update:
     patch:
       consumes:
@@ -278,7 +388,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdateAdminRequest'
+          $ref: '#/definitions/request_structs.UpdateAdminRequest'
       produces:
       - application/json
       responses:
@@ -311,7 +421,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_handler.LoginRequest'
+          $ref: '#/definitions/handler.LoginRequest'
       produces:
       - application/json
       responses:
@@ -368,7 +478,7 @@ paths:
       - Psychologists
   /specialties:
     get:
-      description: Retorna especialidades. Los usuarios ven solo las activas. Admins
+      description: Retorna el catálogo. Los usuarios ven solo las activas. Admins
         con permiso pueden filtrar por ?status=active|inactive|all.
       parameters:
       - description: 'Filtro administrativo: active, inactive, all (Default: active)'
@@ -382,10 +492,10 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiSpecialty'
+              $ref: '#/definitions/domain.PsiSpecialtyModel'
             type: array
         "500":
-          description: Internal Server Error
+          description: error al recuperar especialidades
           schema:
             additionalProperties:
               type: string
@@ -393,64 +503,12 @@ paths:
       summary: Listar especialidades (Público/Admin)
       tags:
       - Catálogos - Especialidades
-    post:
-      consumes:
-      - application/json
-      description: Registra una nueva especialidad en el catálogo. Requiere permisos
-        de gestión de etiquetas.
-      parameters:
-      - description: Datos de la especialidad
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreateSpecialtyRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: message
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "403":
-          description: 'error: permiso denegado'
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Crear especialidad
-      tags:
-      - Administración - Especialidades
   /specialties/{id}:
-    delete:
-      description: Realiza una desactivación lógica de la especialidad para mantener
-        integridad referencial.
-      parameters:
-      - description: ID de la especialidad
-        in: path
-        name: id
-        required: true
-        type: integer
-      responses:
-        "200":
-          description: message
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Eliminar especialidad (Desactivar)
-      tags:
-      - Administración - Especialidades
     get:
-      description: Retorna el detalle de una especialidad específica.
+      description: Retorna el detalle completo de una especialidad específica mediante
+        su ID numérico.
       parameters:
-      - description: ID de la especialidad
+      - description: ID único de la especialidad (uint32)
         in: path
         name: id
         required: true
@@ -461,9 +519,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiSpecialty'
+            $ref: '#/definitions/domain.PsiSpecialtyModel'
+        "400":
+          description: ID inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "404":
-          description: Not Found
+          description: especialidad no encontrada
           schema:
             additionalProperties:
               type: string
@@ -471,44 +535,12 @@ paths:
       summary: Obtener especialidad por ID
       tags:
       - Catálogos - Especialidades
-    patch:
-      consumes:
-      - application/json
-      description: Modifica una especialidad existente. Soporta cambios parciales
-        y actualización de estado.
-      parameters:
-      - description: ID de la especialidad
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Campos a modificar
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdateSpecialtyRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: message
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Actualizar especialidad
-      tags:
-      - Administración - Especialidades
   /specialties/count:
     get:
-      description: 'Obtiene el conteo. Público: solo activas. Admin: permite filtrar
-        por estado.'
+      description: 'Obtiene el número total. Público: solo activas. Admin: permite
+        filtrar por ?active=true|false.'
       parameters:
-      - description: Filtrar por activas (true) o inactivas (false). Omitir para ver
-          todas (Solo Admins).
+      - description: Filtrar por estado (Solo Admins)
         in: query
         name: active
         type: boolean

@@ -40,7 +40,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreateAdminRequest"
+                            "$ref": "#/definitions/request_structs.CreateAdminRequest"
                         }
                     }
                 ],
@@ -191,6 +191,184 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/specialties": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Registra una especialidad. Solo accesible para administradores autorizados.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Especialidades"
+                ],
+                "summary": "Crear nueva especialidad",
+                "parameters": [
+                    {
+                        "description": "Datos de la nueva especialidad",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.CreateSpecialtyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "message: Especialidad creada",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "error: permiso denegado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/specialties/all": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna todas las especialidades sin filtros de estado. Uso para paneles de gestión.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Especialidades"
+                ],
+                "summary": "Listado administrativo total",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.PsiSpecialtyModel"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "error: permisos insuficientes",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/specialties/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Marca una especialidad como inactiva. Solo Admin.",
+                "tags": [
+                    "Administración - Especialidades"
+                ],
+                "summary": "Eliminar especialidad (Soft-delete)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID de la especialidad",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "message: Especialidad desactivada",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Modifica campos de una especialidad. Actualiza automáticamente la auditoría (UpdateBy).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Especialidades"
+                ],
+                "summary": "Actualizar especialidad",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID de la especialidad",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Campos parciales a modificar",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.UpdateSpecialtyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "message: Especialidad actualizada",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "error: permiso denegado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/admin/update": {
             "patch": {
                 "security": [
@@ -216,7 +394,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdateAdminRequest"
+                            "$ref": "#/definitions/request_structs.UpdateAdminRequest"
                         }
                     }
                 ],
@@ -262,7 +440,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.LoginRequest"
+                            "$ref": "#/definitions/handler.LoginRequest"
                         }
                     }
                 ],
@@ -344,7 +522,7 @@ const docTemplate = `{
         },
         "/specialties": {
             "get": {
-                "description": "Retorna especialidades. Los usuarios ven solo las activas. Admins con permiso pueden filtrar por ?status=active|inactive|all.",
+                "description": "Retorna el catálogo. Los usuarios ven solo las activas. Admins con permiso pueden filtrar por ?status=active|inactive|all.",
                 "produces": [
                     "application/json"
                 ],
@@ -366,61 +544,12 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiSpecialty"
+                                "$ref": "#/definitions/domain.PsiSpecialtyModel"
                             }
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Registra una nueva especialidad en el catálogo. Requiere permisos de gestión de etiquetas.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Administración - Especialidades"
-                ],
-                "summary": "Crear especialidad",
-                "parameters": [
-                    {
-                        "description": "Datos de la especialidad",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreateSpecialtyRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "message",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "error: permiso denegado",
+                        "description": "error al recuperar especialidades",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -433,7 +562,7 @@ const docTemplate = `{
         },
         "/specialties/count": {
             "get": {
-                "description": "Obtiene el conteo. Público: solo activas. Admin: permite filtrar por estado.",
+                "description": "Obtiene el número total. Público: solo activas. Admin: permite filtrar por ?active=true|false.",
                 "produces": [
                     "application/json"
                 ],
@@ -444,7 +573,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "boolean",
-                        "description": "Filtrar por activas (true) o inactivas (false). Omitir para ver todas (Solo Admins).",
+                        "description": "Filtrar por estado (Solo Admins)",
                         "name": "active",
                         "in": "query"
                     }
@@ -465,7 +594,7 @@ const docTemplate = `{
         },
         "/specialties/{id}": {
             "get": {
-                "description": "Retorna el detalle de una especialidad específica.",
+                "description": "Retorna el detalle completo de una especialidad específica mediante su ID numérico.",
                 "produces": [
                     "application/json"
                 ],
@@ -476,7 +605,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "ID de la especialidad",
+                        "description": "ID único de la especialidad (uint32)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -486,90 +615,20 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiSpecialty"
+                            "$ref": "#/definitions/domain.PsiSpecialtyModel"
+                        }
+                    },
+                    "400": {
+                        "description": "ID inválido",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     },
                     "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Realiza una desactivación lógica de la especialidad para mantener integridad referencial.",
-                "tags": [
-                    "Administración - Especialidades"
-                ],
-                "summary": "Eliminar especialidad (Desactivar)",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "ID de la especialidad",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "message",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            },
-            "patch": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Modifica una especialidad existente. Soporta cambios parciales y actualización de estado.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Administración - Especialidades"
-                ],
-                "summary": "Actualizar especialidad",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "ID de la especialidad",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Campos a modificar",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdateSpecialtyRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "message",
+                        "description": "especialidad no encontrada",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -582,11 +641,10 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiSpecialty": {
+        "domain.PsiSpecialtyModel": {
             "type": "object",
             "properties": {
                 "active": {
-                    "description": "Correcto: Oculto del JSON",
                     "type": "boolean"
                 },
                 "create_by": {
@@ -605,8 +663,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id": {
-                    "description": "ID es el identificador único universal (UUID) de la entidad.\nSe utiliza gen_random_uuid() a nivel de base de datos para garantizar\nque cada registro tenga una identidad no predecible y segura.",
-                    "type": "string"
+                    "type": "integer"
                 },
                 "name": {
                     "type": "string"
@@ -625,7 +682,24 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.AdminPermissionsDTO": {
+        "handler.LoginRequest": {
+            "type": "object",
+            "required": [
+                "identifier",
+                "password"
+            ],
+            "properties": {
+                "identifier": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "admin123"
+                }
+            }
+        },
+        "request_structs.AdminPermissionsDTO": {
             "type": "object",
             "properties": {
                 "can_create_admin": {
@@ -675,7 +749,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreateAdminRequest": {
+        "request_structs.CreateAdminRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -694,7 +768,7 @@ const docTemplate = `{
                     "description": "Permisos que se le quieren asignar",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.AdminPermissionsDTO"
+                            "$ref": "#/definitions/request_structs.AdminPermissionsDTO"
                         }
                     ]
                 },
@@ -703,7 +777,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreateSpecialtyRequest": {
+        "request_structs.CreateSpecialtyRequest": {
             "type": "object",
             "required": [
                 "name"
@@ -719,7 +793,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdateAdminRequest": {
+        "request_structs.UpdateAdminRequest": {
             "type": "object",
             "required": [
                 "id"
@@ -741,7 +815,7 @@ const docTemplate = `{
                     "description": "Permisos",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.AdminPermissionsDTO"
+                            "$ref": "#/definitions/request_structs.AdminPermissionsDTO"
                         }
                     ]
                 },
@@ -750,7 +824,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdateSpecialtyRequest": {
+        "request_structs.UpdateSpecialtyRequest": {
             "type": "object",
             "properties": {
                 "active": {
@@ -761,23 +835,6 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
-                }
-            }
-        },
-        "internal_handler.LoginRequest": {
-            "type": "object",
-            "required": [
-                "identifier",
-                "password"
-            ],
-            "properties": {
-                "identifier": {
-                    "type": "string",
-                    "example": "admin"
-                },
-                "password": {
-                    "type": "string",
-                    "example": "admin123"
                 }
             }
         }

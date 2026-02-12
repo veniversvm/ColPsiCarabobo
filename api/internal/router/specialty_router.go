@@ -16,17 +16,26 @@ func SetupSpecialtyRoutes(router fiber.Router, db *gorm.DB) {
 	svc := service.NewSpecialtyService(specialtyRepo)
 	h := handler.NewSpecialtyHandler(svc)
 
-	specialties := router.Group("/specialties")
-
-	// RUTAS PÚBLICA (Accesible por pacientes/visitantes)
-	specialties.Get("/", h.GetSpecialties)
-	specialties.Get("/:id", h.GetSpecialtyByID)
-	specialties.Get("/count", h.CountSpecialties)
-
-	// RUTAS PROTEGIDAS (Solo Admin)
 	authMid := middleware.NewAuthMiddleware(adminRepo, repo)
-	admin := router.Group("/specialties", authMid.ProtectedAdmin404())
+
+	// --- GRUPO ADMINISTRATIVO (ALTA PRIORIDAD) ---
+	// Usamos un prefijo distinto (/admin/specialties) para evitar colisiones con los IDs
+	// y cumplir con la semántica de tu documentación Swagger.
+	admin := router.Group("/admin/specialties", authMid.ProtectedAdmin404())
+
+	admin.Get("/all", h.GetAllAdmin) // URL: /api/v1/admin/specialties/all
 	admin.Post("/", h.CreateSpecialty)
 	admin.Patch("/:id", h.UpdateSpecialty)
 	admin.Delete("/:id", h.DeleteSpecialty)
+
+	// --- GRUPO PÚBLICO (BAJA PRIORIDAD) ---
+	specialties := router.Group("/specialties")
+
+	// Las rutas estáticas (/count) siempre deben ir ANTES de las dinámicas (/:id)
+	specialties.Get("/count", h.CountSpecialties)
+	specialties.Get("/", h.GetSpecialties)
+
+	// La ruta con parámetro va al final para que no "se coma" a las anteriores
+	// Tip Senior: Puedes añadir <int> para que Fiber solo coincida si el ID es numérico
+	specialties.Get("/:id<int>", h.GetSpecialtyByID)
 }
