@@ -8,6 +8,7 @@ import (
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/config"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 // ConnectDB inicializa una nueva sesión de GORM utilizando el driver de PostgreSQL.
@@ -39,6 +40,9 @@ func ConnectDB() (*gorm.DB, error) {
 		// un rendimiento extremo y se manejan las transacciones manualmente,
 		// pero para este proyecto lo dejaremos en false para mayor seguridad.
 		SkipDefaultTransaction: false,
+
+		// Opcional: Logs para ver qué pasa en desarrollo
+		Logger: logger.Default.LogMode(logger.Info),
 	})
 
 	if err != nil {

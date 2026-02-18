@@ -3,18 +3,15 @@ services:
   db:
     image: postgres:17-alpine
     container_name: colpsi_db
-    restart: always
     environment:
-      - POSTGRES_USER=${DB_USER:-postgres}
-      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
-      - POSTGRES_DB=${DB_NAME:-colpsi_db}
-    # Recomendación: En producción no mapeamos el 5432 al exterior, solo el 6432 de PgBouncer
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
     ports:
-      - "5432:5432" 
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - "${POSTGRES_HOST_PORT:-5432}:5432"
     networks:
       - colpsi_network
+
 
   # 2. PgBouncer: El "embudo" de conexiones para la API
   pgbouncer:
@@ -25,12 +22,22 @@ services:
       - DB_USER=${DB_USER:-postgres}
       - DB_PASSWORD=${DB_PASSWORD:-postgres}
       - DB_HOST=db
+      - DB_PORT=5432
       - DB_NAME=${DB_NAME:-colpsi_db}
-      - POOL_MODE=transaction # El más eficiente para APIs REST
+      - POOL_MODE=transaction
       - MAX_CLIENT_CONN=1000
       - DEFAULT_POOL_SIZE=20
+      
+      # --- CORRECCIÓN CRÍTICA ---
+      # Cambiamos trust por scram-sha-256 para ser compatibles con Postgres 17
+      - AUTH_TYPE=scram-sha-256 
+      # Indicamos quién es el admin del pool
+      - ADMIN_USERS=${DB_USER:-postgres} 
+      
+      # Parámetros ignorados (Vital para Go/GORM)
+      - IGNORE_STARTUP_PARAMETERS=extra_float_digits,search_path
     ports:
-      - "6432:6432" 
+      - "${PGBOUNCER_HOST_PORT:-6432}:5432"
     networks:
       - colpsi_network
     depends_on:
