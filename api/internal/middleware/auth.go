@@ -112,3 +112,76 @@ func (m *AuthMiddleware) ProtectedAdmin404() fiber.Handler {
 		return c.Next()
 	}
 }
+
+// OptionalHybridAuth intenta autenticar al usuario (Admin o Psicólogo), pero NO bloquea la petición si falla.
+// Es ideal para rutas "mixtas" (ej: Listado de Noticias) donde el contenido varía según quién lo ve.
+func (m *AuthMiddleware) OptionalHybridAuth() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		authHeader := c.Get("Authorization")
+
+		// 1. Si no hay cabecera, es un visitante anónimo. Continuamos sin error.
+		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+			return c.Next()
+		}
+
+		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+
+		// 2. Intentamos parsear el token
+		token, _ := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			// Validar algoritmo
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("algoritmo inválido")
+			}
+
+			claims, ok := token.Claims.(jwt.MapClaims)
+			if !ok {
+				return nil, errors.New("claims inválidos")
+			}
+
+			// 3. Extraer Identidad y Rol
+			userID, _ := claims["user_id"].(string)
+			role, _ := claims["role"].(string) // "admin" o "psi"
+
+			uid, err := uuid.Parse(userID)
+			if err != nil {
+				return nil, err
+			}
+
+			// 4. Búsqueda polimórfica según el rol
+			if role == "admin" {
+				// Es Admin: Buscamos en tabla de admins
+				admin, err := m.adminRepo.GetByID(c.UserContext(), uid)
+				if err != nil {
+					return nil, err
+				}
+
+				// Inyectamos y devolvemos su Key
+				c.Locals("admin", admin)
+				return []byte(admin.Key), nil
+
+			} else {
+				// Asumimos Psicólogo (rol="psi" o vacío)
+				psi, err := m.psiRepo.GetByID(c.UserContext(), uid)
+				if err != nil {
+					return nil, err
+				}
+
+				// Inyectamos y devolvemos su Key
+				c.Locals("psi_user", psi)
+				return []byte(psi.Key), nil
+			}
+		})
+
+		// 5. Decisión final:
+		// No nos importa si el token dio error (expirado, firma mala, usuario borrado).
+		// Si 'token.Valid' es false, simplemente no habremos inyectado nada en c.Locals.
+		// El Handler recibirá la petición como si fuera un usuario anónimo.
+
+		// Opcional: Podrías loguear advertencias aquí si quieres debug
+		if token != nil && !token.Valid {
+			// log.Println("[AUTH] Token inválido en ruta híbrida, tratando como anónimo")
+		}
+
+		return c.Next()
+	}
+}

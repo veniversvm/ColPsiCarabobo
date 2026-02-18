@@ -1,5 +1,70 @@
 basePath: /api/v1
 definitions:
+  domain.Post:
+    properties:
+      create_by:
+        description: CreateBy almacena el nombre o identificador textual del creador.
+        type: string
+      create_by_id:
+        description: |-
+          CreateById es el UUID del usuario/administrador que creó el registro.
+          Es un puntero para permitir valores nulos si la creación es automática por el sistema.
+        type: string
+      created_at:
+        description: |-
+          CreatedAt registra la fecha y hora exacta en que se creó el registro.
+          GORM gestiona este campo automáticamente durante la inserción.
+        type: string
+      id:
+        type: string
+      image_url:
+        description: |-
+          ImageS3Key almacena la ruta (Key) del archivo de imagen en el bucket de AWS S3/MinIO.
+          No guardamos la URL completa para mantener flexibilidad si cambia el dominio del bucket.
+        type: string
+      is_active:
+        description: IsActive permite el control de visibilidad (Borrador/Publicado).
+        type: boolean
+      short_description:
+        description: |-
+          ShortDescription actúa como un 'snippet' o resumen para las vistas de lista.
+          Ayuda al SEO y a la experiencia de usuario antes de entrar al detalle.
+        type: string
+      text:
+        allOf:
+        - $ref: '#/definitions/domain.TextModel'
+        description: |-
+          Text es la instancia cargada del contenido.
+          GORM permite cargar este campo mediante 'Preload' cuando se requiere el detalle completo.
+      text_id:
+        description: |-
+          Relación con el texto largo.
+          TextID es la clave foránea que apunta al contenido extenso en TextModel.
+        type: string
+      title:
+        description: |-
+          Title es el encabezado de la publicación.
+          Limitado a 100 caracteres para optimizar la visualización en el frontend.
+        type: string
+      type:
+        description: |-
+          Type define el alcance de la publicación.
+          Valores comunes: "public" (abierto a todos), "psi" (solo psicólogos logueados).
+        type: string
+      update_by:
+        description: UpdateBy almacena el nombre o identificador textual de la última
+          persona en modificarlo.
+        type: string
+      update_by_id:
+        description: UpdateById es el UUID del usuario/administrador que realizó la
+          última actualización.
+        type: string
+      updated_at:
+        description: |-
+          UpdatedAt registra la última fecha y hora en que se modificó el registro.
+          GORM actualiza este valor automáticamente en cada operación de guardado.
+        type: string
+    type: object
   domain.PsiSpecialtyModel:
     properties:
       active:
@@ -22,6 +87,42 @@ definitions:
       id:
         type: integer
       name:
+        type: string
+      update_by:
+        description: UpdateBy almacena el nombre o identificador textual de la última
+          persona en modificarlo.
+        type: string
+      update_by_id:
+        description: UpdateById es el UUID del usuario/administrador que realizó la
+          última actualización.
+        type: string
+      updated_at:
+        description: |-
+          UpdatedAt registra la última fecha y hora en que se modificó el registro.
+          GORM actualiza este valor automáticamente en cada operación de guardado.
+        type: string
+    type: object
+  domain.TextModel:
+    properties:
+      content:
+        description: |-
+          Content almacena el texto enriquecido o extenso.
+          Se define como tipo 'text' en Postgres para permitir longitud ilimitada.
+        type: string
+      create_by:
+        description: CreateBy almacena el nombre o identificador textual del creador.
+        type: string
+      create_by_id:
+        description: |-
+          CreateById es el UUID del usuario/administrador que creó el registro.
+          Es un puntero para permitir valores nulos si la creación es automática por el sistema.
+        type: string
+      created_at:
+        description: |-
+          CreatedAt registra la fecha y hora exacta en que se creó el registro.
+          GORM gestiona este campo automáticamente durante la inserción.
+        type: string
+      id:
         type: string
       update_by:
         description: UpdateBy almacena el nombre o identificador textual de la última
@@ -261,6 +362,122 @@ paths:
       summary: Listar administradores
       tags:
       - Administración - Gestión
+  /admin/posts:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Crea un post con contenido HTML y opcionalmente una imagen.
+      parameters:
+      - description: Título del post
+        in: formData
+        name: title
+        required: true
+        type: string
+      - description: Resumen para el feed
+        in: formData
+        name: short_description
+        type: string
+      - description: Contenido HTML/Texto
+        in: formData
+        name: content
+        required: true
+        type: string
+      - description: 'Tipo: public, psi'
+        in: formData
+        name: type
+        required: true
+        type: string
+      - description: Visible inmediatamente
+        in: formData
+        name: is_active
+        required: true
+        type: boolean
+      - description: Imagen de portada
+        in: formData
+        name: image
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Publicar nueva noticia
+      tags:
+      - Administración - Publicaciones
+  /admin/posts/{id}:
+    patch:
+      consumes:
+      - multipart/form-data
+      description: Actualiza metadatos e imagen. El ID se obtiene de la URL. Los campos
+        son opcionales (PATCH).
+      parameters:
+      - description: UUID de la publicación
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Nuevo título
+        in: formData
+        name: title
+        type: string
+      - description: Descripción corta
+        in: formData
+        name: short_description
+        type: string
+      - description: Contenido detallado
+        in: formData
+        name: content
+        type: string
+      - description: Tipo de post
+        in: formData
+        name: type
+        type: string
+      - description: Estado de activación
+        in: formData
+        name: is_active
+        type: boolean
+      - description: Nueva imagen de portada
+        in: formData
+        name: image
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"message": "Publicación actualizada"}'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: '{"error": "Datos inválidos"}'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Actualizar publicación
+      tags:
+      - Administración - Publicaciones
   /admin/specialties:
     post:
       consumes:
@@ -445,6 +662,62 @@ paths:
       summary: Iniciar sesión administrativo
       tags:
       - Administración - Auth
+  /posts:
+    get:
+      description: 'Obtiene noticias. El contenido varía según el usuario: Público
+        (solo noticias generales), Psicólogo (generales + gremiales), Admin (todo).'
+      parameters:
+      - description: 'Número de página (Default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items por página (Default: 10)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: data, total, page
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Listar noticias y publicaciones
+      tags:
+      - Publicaciones
+  /posts/{id}:
+    get:
+      description: Devuelve el detalle de la noticia incluyendo el contenido HTML.
+        Valida permisos de visibilidad.
+      parameters:
+      - description: UUID del Post
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Post'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Obtener noticia por ID
+      tags:
+      - Publicaciones
   /psi/upload-csv:
     post:
       consumes:

@@ -185,6 +185,182 @@
                 }
             }
         },
+        "/admin/posts": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Crea un post con contenido HTML y opcionalmente una imagen.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Publicaciones"
+                ],
+                "summary": "Publicar nueva noticia",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Título del post",
+                        "name": "title",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Resumen para el feed",
+                        "name": "short_description",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Contenido HTML/Texto",
+                        "name": "content",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Tipo: public, psi",
+                        "name": "type",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Visible inmediatamente",
+                        "name": "is_active",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Imagen de portada",
+                        "name": "image",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/posts/{id}": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Actualiza metadatos e imagen. El ID se obtiene de la URL. Los campos son opcionales (PATCH).",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Publicaciones"
+                ],
+                "summary": "Actualizar publicación",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID de la publicación",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Nuevo título",
+                        "name": "title",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Descripción corta",
+                        "name": "short_description",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Contenido detallado",
+                        "name": "content",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Tipo de post",
+                        "name": "type",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Estado de activación",
+                        "name": "is_active",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Nueva imagen de portada",
+                        "name": "image",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{\"message\": \"Publicación actualizada\"}",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "{\"error\": \"Datos inválidos\"}",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/admin/specialties": {
             "post": {
                 "security": [
@@ -467,6 +643,88 @@
                 }
             }
         },
+        "/posts": {
+            "get": {
+                "description": "Obtiene noticias. El contenido varía según el usuario: Público (solo noticias generales), Psicólogo (generales + gremiales), Admin (todo).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Publicaciones"
+                ],
+                "summary": "Listar noticias y publicaciones",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Número de página (Default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items por página (Default: 10)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "data, total, page",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/posts/{id}": {
+            "get": {
+                "description": "Devuelve el detalle de la noticia incluyendo el contenido HTML. Valida permisos de visibilidad.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Publicaciones"
+                ],
+                "summary": "Obtener noticia por ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del Post",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.Post"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/psi/upload-csv": {
             "post": {
                 "security": [
@@ -635,6 +893,70 @@
         }
     },
     "definitions": {
+        "domain.Post": {
+            "type": "object",
+            "properties": {
+                "create_by": {
+                    "description": "CreateBy almacena el nombre o identificador textual del creador.",
+                    "type": "string"
+                },
+                "create_by_id": {
+                    "description": "CreateById es el UUID del usuario/administrador que creó el registro.\nEs un puntero para permitir valores nulos si la creación es automática por el sistema.",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "CreatedAt registra la fecha y hora exacta en que se creó el registro.\nGORM gestiona este campo automáticamente durante la inserción.",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "description": "ImageS3Key almacena la ruta (Key) del archivo de imagen en el bucket de AWS S3/MinIO.\nNo guardamos la URL completa para mantener flexibilidad si cambia el dominio del bucket.",
+                    "type": "string"
+                },
+                "is_active": {
+                    "description": "IsActive permite el control de visibilidad (Borrador/Publicado).",
+                    "type": "boolean"
+                },
+                "short_description": {
+                    "description": "ShortDescription actúa como un 'snippet' o resumen para las vistas de lista.\nAyuda al SEO y a la experiencia de usuario antes de entrar al detalle.",
+                    "type": "string"
+                },
+                "text": {
+                    "description": "Text es la instancia cargada del contenido.\nGORM permite cargar este campo mediante 'Preload' cuando se requiere el detalle completo.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/domain.TextModel"
+                        }
+                    ]
+                },
+                "text_id": {
+                    "description": "Relación con el texto largo.\nTextID es la clave foránea que apunta al contenido extenso en TextModel.",
+                    "type": "string"
+                },
+                "title": {
+                    "description": "Title es el encabezado de la publicación.\nLimitado a 100 caracteres para optimizar la visualización en el frontend.",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "Type define el alcance de la publicación.\nValores comunes: \"public\" (abierto a todos), \"psi\" (solo psicólogos logueados).",
+                    "type": "string"
+                },
+                "update_by": {
+                    "description": "UpdateBy almacena el nombre o identificador textual de la última persona en modificarlo.",
+                    "type": "string"
+                },
+                "update_by_id": {
+                    "description": "UpdateById es el UUID del usuario/administrador que realizó la última actualización.",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "UpdatedAt registra la última fecha y hora en que se modificó el registro.\nGORM actualiza este valor automáticamente en cada operación de guardado.",
+                    "type": "string"
+                }
+            }
+        },
         "domain.PsiSpecialtyModel": {
             "type": "object",
             "properties": {
@@ -660,6 +982,42 @@
                     "type": "integer"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "update_by": {
+                    "description": "UpdateBy almacena el nombre o identificador textual de la última persona en modificarlo.",
+                    "type": "string"
+                },
+                "update_by_id": {
+                    "description": "UpdateById es el UUID del usuario/administrador que realizó la última actualización.",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "UpdatedAt registra la última fecha y hora en que se modificó el registro.\nGORM actualiza este valor automáticamente en cada operación de guardado.",
+                    "type": "string"
+                }
+            }
+        },
+        "domain.TextModel": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "Content almacena el texto enriquecido o extenso.\nSe define como tipo 'text' en Postgres para permitir longitud ilimitada.",
+                    "type": "string"
+                },
+                "create_by": {
+                    "description": "CreateBy almacena el nombre o identificador textual del creador.",
+                    "type": "string"
+                },
+                "create_by_id": {
+                    "description": "CreateById es el UUID del usuario/administrador que creó el registro.\nEs un puntero para permitir valores nulos si la creación es automática por el sistema.",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "CreatedAt registra la fecha y hora exacta en que se creó el registro.\nGORM gestiona este campo automáticamente durante la inserción.",
+                    "type": "string"
+                },
+                "id": {
                     "type": "string"
                 },
                 "update_by": {

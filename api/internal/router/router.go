@@ -30,6 +30,7 @@ func SetupRouter(app *fiber.App, db *gorm.DB, s3Client *s3.S3Client) {
 	SetupAdminRoutes(api, db)
 	SetupPsiRoutes(api, db, s3Client)
 	SetupSpecialtyRoutes(api, db)
+	SetupPostRoutes(api, db, s3Client)
 
 	// =========================================================================
 	// 2. DEFAULT 404 HANDLER (CATCH-ALL)

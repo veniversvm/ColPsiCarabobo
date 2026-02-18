@@ -1,0 +1,247 @@
+package service
+
+import (
+	"bytes"
+	"context"
+	"errors"
+	"fmt"
+	"mime/multipart"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/microcosm-cc/bluemonday"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/request_structs"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/utils"
+	"github.com/veniversvm/ColPsiCarabobo/api/pkg/s3"
+)
+
+type PostService struct {
+	repo      domain.PostRepository
+	s3Client  *s3.S3Client
+	sanitizer *bluemonday.Policy
+}
+
+func NewPostService(repo domain.PostRepository, s3 *s3.S3Client) *PostService {
+	return &PostService{
+		repo:      repo,
+		s3Client:  s3,
+		sanitizer: bluemonday.UGCPolicy(), // Política segura para contenido generado por usuario
+	}
+}
+
+// CreatePost maneja la subida de imagen, limpieza de HTML y creación de registros.
+func (s *PostService) CreatePost(ctx context.Context, admin *domain.UserAdmin, req request_structs.CreatePostRequest, file *multipart.FileHeader) error {
+	if !admin.CanPublish && !admin.Sudo {
+		return errors.New("no tienes permiso para publicar")
+	}
+
+	// 1. Subir imagen a S3 (si existe)
+	var s3Key string
+	if file != nil {
+		src, err := file.Open()
+		if err != nil {
+			return errors.New("error leyendo imagen")
+		}
+		defer src.Close()
+
+		// AHORA RECIBIMOS 3 VALORES: bytes, extensión y mime-type
+		cleanBytes, ext, contentType, err := utils.SanitizeImage(src)
+		if err != nil {
+			return fmt.Errorf("error de seguridad en imagen: %v", err)
+		}
+
+		// Generamos nombre único
+		filename := uuid.New().String() + ext
+
+		// Pasamos el Content-Type correcto a S3 (antes estaba hardcodeado a image/jpeg)
+		key, err := s.s3Client.UploadStream(ctx, bytes.NewReader(cleanBytes), "posts", filename, contentType)
+		if err != nil {
+			return err
+		}
+		s3Key = key
+	}
+
+	// 2. Sanitizar el HTML del contenido para evitar XSS
+	cleanContent := s.sanitizer.Sanitize(req.Content)
+
+	// 3. Preparar modelos
+	textID := uuid.New()
+	textModel := &domain.TextModel{
+		AuditModel: domain.AuditModel{
+			CreateBy: admin.Username, CreateById: &admin.ID,
+			UpdateBy: admin.Username, UpdateById: &admin.ID,
+		},
+		Content: cleanContent,
+	}
+
+	postModel := &domain.Post{
+		AuditModel: domain.AuditModel{
+			CreateBy: admin.Username, CreateById: &admin.ID,
+			UpdateBy: admin.Username, UpdateById: &admin.ID,
+		},
+		Title:            req.Title,
+		ShortDescription: req.ShortDescription,
+		Type:             req.Type,
+		ImageS3Key:       s3Key,
+		IsActive:         req.IsActive,
+		TextID:           textID,
+	}
+
+	return s.repo.Create(ctx, postModel, textModel)
+}
+
+// GetPostsList decide qué mostrar según quién pregunta
+func (s *PostService) GetPostsList(ctx context.Context, page, limit int, userRole string) (interface{}, error) {
+	filter := domain.PostFilter{}
+
+	switch userRole {
+	case "admin":
+		// Admin ve todo (incluso inactivos)
+		filter.IsActive = nil
+		filter.Type = "" // Todos los tipos
+	case "psi":
+		// Psicólogo ve Public + Psi, pero solo activos
+		active := true
+		filter.IsActive = &active
+		filter.Type = "all_visible" // Lógica especial en repo
+	default:
+		// Público ve solo Public y Activos
+		active := true
+		filter.IsActive = &active
+		filter.Type = "public"
+	}
+
+	posts, total, err := s.repo.List(ctx, filter, page, limit)
+	if err != nil {
+		return nil, err
+	}
+
+	// Opcional: Generar URLs firmadas de S3 para las imágenes aquí si son privadas
+
+	return map[string]interface{}{
+		"data":  posts,
+		"total": total,
+		"page":  page,
+	}, nil
+}
+
+// GetPostByID recupera un post específico validando visibilidad según el rol.
+func (s *PostService) GetPostByID(ctx context.Context, id uuid.UUID, userRole string) (*domain.Post, error) {
+	post, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Lógica de Visibilidad (ACL)
+	switch userRole {
+	case "admin":
+		// El admin puede ver todo (incluso borradores o privados)
+		return post, nil
+
+	case "psi":
+		// El psicólogo solo ve si está activo
+		if !post.IsActive {
+			return nil, errors.New("el post no está activo")
+		}
+		// Y si el tipo es público o exclusivo de psicólogos
+		if post.Type != "public" && post.Type != "psi" {
+			return nil, errors.New("acceso denegado")
+		}
+
+	default: // "public"
+		// El público solo ve activos y de tipo "public"
+		if !post.IsActive || post.Type != "public" {
+			return nil, errors.New("post no encontrado o privado")
+		}
+	}
+
+	return post, nil
+}
+
+func (s *PostService) UpdatePost(ctx context.Context, admin *domain.UserAdmin, req request_structs.UpdatePostRequest, file *multipart.FileHeader, id uuid.UUID) error {
+	// 1. Validar Permisos (Solo Admins pueden modificar)
+	if !admin.CanUpdatePublish && !admin.Sudo {
+		return errors.New("no tienes permiso para modificar publicaciones")
+	}
+
+	// 2. Obtener Post y su texto actual
+	post, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return errors.New("publicación no encontrada")
+	}
+
+	// 3. Lógica de Auditoría
+	post.UpdateBy = admin.Username
+	post.UpdateById = &admin.ID
+
+	// 4. PROCESAMIENTO DE IMAGEN (Si se envía una nueva)
+	oldS3Key := post.ImageS3Key
+	newS3Key := oldS3Key
+
+	if file != nil {
+		// A. Limpiar imagen (usando la utilidad que ya tenemos)
+		src, err := file.Open()
+		if err != nil {
+			return errors.New("error leyendo imagen")
+		}
+
+		cleanBytes, ext, contentType, err := utils.SanitizeImage(src)
+		if err != nil {
+			return fmt.Errorf("error de seguridad en imagen: %v", err)
+		}
+
+		// B. Generar nombre único y subir
+		filename := fmt.Sprintf("posts/updated_%s%s", uuid.New().String(), ext)
+		key, err := s.s3Client.UploadStream(ctx, bytes.NewReader(cleanBytes), "posts", filename, contentType)
+		if err != nil {
+			return err
+		}
+
+		newS3Key = key
+	}
+
+	// 5. APLICAR CAMBIOS PARCIALES (PATCH-LIKE)
+	if req.Title != nil {
+		post.Title = *req.Title
+	}
+	if req.ShortDescription != nil {
+		post.ShortDescription = *req.ShortDescription
+	}
+	if req.Type != nil {
+		post.Type = *req.Type
+	}
+	if req.IsActive != nil {
+		post.IsActive = *req.IsActive
+	}
+
+	// Actualización de texto (si viene en el request)
+	var textModel *domain.TextModel = nil
+	if req.Content != nil {
+		textModel = &domain.TextModel{
+			ID:      post.TextID, // Se asume que siempre actualizamos el contenido existente
+			Content: s.sanitizer.Sanitize(*req.Content),
+			AuditModel: domain.AuditModel{
+				UpdatedAt:  time.Now(),
+				UpdateBy:   admin.Username,
+				UpdateById: &admin.ID,
+			},
+		}
+	}
+
+	// 6. PERSISTENCIA
+	if err := s.repo.Update(ctx, post, textModel); err != nil {
+		// Si falla la DB, debemos eliminar la imagen que ya subimos
+		if newS3Key != "" && newS3Key != oldS3Key {
+			s.s3Client.DeleteFile(ctx, newS3Key)
+		}
+		return err
+	}
+
+	// 7. LIMPIEZA DE ARCHIVOS ANTIGUOS (Si se subió una nueva imagen)
+	if newS3Key != oldS3Key && oldS3Key != "" {
+		s.s3Client.DeleteFile(ctx, oldS3Key)
+	}
+
+	return nil
+}
