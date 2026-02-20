@@ -185,3 +185,39 @@ func (m *AuthMiddleware) OptionalHybridAuth() fiber.Handler {
 		return c.Next()
 	}
 }
+
+// ProtectedPsiUser verifica que el token pertenezca a un psicólogo colegiado.
+// Extrae la Key dinámica de la base de datos para validar la firma y previene el uso de sesiones antiguas.
+func (m *AuthMiddleware) ProtectedPsiUser() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		// Reutilizamos la función genérica validateToken
+		token, err := m.validateToken(c, func(userID string) (string, error) {
+			uid, err := uuid.Parse(userID)
+			if err != nil {
+				return "", err
+			}
+
+			// Buscamos en el repositorio de Psicólogos (no en el de Admins)
+			psi, err := m.psiRepo.GetByID(c.UserContext(), uid)
+			if err != nil {
+				return "", err
+			}
+
+			// Inyectamos el objeto completo del psicólogo en el contexto
+			// para que los handlers (/psi/me) no tengan que volver a buscarlo en la BD.
+			c.Locals("psi_user", psi)
+
+			// Retornamos su Key personal para verificar la firma del JWT
+			return psi.Key, nil
+		})
+
+		// Si el token falló la validación, fue alterado o el usuario ya no existe
+		if err != nil || !token.Valid {
+			log.Printf(" Error de validación JWT: %v", err)
+			return jwtError(c, fiber.StatusUnauthorized, "Sesión inválida o expirada. Por favor, inicie sesión nuevamente.")
+		}
+
+		// Si todo está bien, pasamos al siguiente Handler
+		return c.Next()
+	}
+}

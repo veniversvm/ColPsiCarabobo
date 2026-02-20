@@ -1,15 +1,23 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"encoding/csv"
+	"errors"
+	"fmt"
 	"io"
+	"mime/multipart"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/request_structs"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/utils"
 	"github.com/veniversvm/ColPsiCarabobo/api/pkg/s3"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -126,4 +134,430 @@ func parseDate(s string) time.Time {
 		return time.Time{} // Fecha cero si falla
 	}
 	return t
+}
+
+func (s *PsiService) UpdateProfileSelf(ctx context.Context, psi *domain.PsiUserModel, id uuid.UUID, req request_structs.PsiUserUpdateRequestSelf) (*domain.PsiUserModel, error) {
+
+	// A. Auditoría Automática
+	psi.UpdateBy = psi.Username
+	psi.UpdateById = &psi.ID
+
+	// B. Mapeo de campos del Modelo Principal (PsiUserModel)
+	if req.ContactEmail != nil {
+		psi.ContactEmail = *req.ContactEmail
+	}
+	if req.ShowContactEmail != nil {
+		psi.ShowContactEmail = *req.ShowContactEmail
+	}
+	if req.PublicPhone != nil {
+		psi.PublicPhone = *req.PublicPhone
+	}
+	if req.ShowPublicPhone != nil {
+		psi.ShowPublicPhone = *req.ShowPublicPhone
+	}
+	if req.ServiceAddress != nil {
+		psi.ServiceAddress = *req.ServiceAddress
+	}
+	if req.ShowPublicServiceAddress != nil {
+		psi.ShowPublicServiceAddress = *req.ShowPublicServiceAddress
+	}
+
+	// Ubicación
+	if req.MunicipalityCarabobo != nil {
+		psi.MunicipalityCarabobo = *req.MunicipalityCarabobo
+	}
+	if req.PhoneCarabobo != nil {
+		psi.PhoneCarabobo = *req.PhoneCarabobo
+	}
+	if req.CelPhoneCarabobo != nil {
+		psi.CelPhoneCarabobo = *req.CelPhoneCarabobo
+	}
+	if req.StateOutside != nil {
+		psi.StateOutside = *req.StateOutside
+	}
+	if req.MunicipalityOutSideCarabobo != nil {
+		psi.MunicipalityOutSideCarabobo = *req.MunicipalityOutSideCarabobo
+	}
+	if req.PhoneOutSideCarabobo != nil {
+		psi.PhoneOutSideCarabobo = *req.PhoneOutSideCarabobo
+	}
+	if req.CelPhoneOutSideCarabobo != nil {
+		psi.CelPhoneOutSideCarabobo = *req.CelPhoneOutSideCarabobo
+	}
+
+	// Profesional
+	if req.PrimarySpecialty != nil {
+		psi.PrimarySpecialty = *req.PrimarySpecialty
+	}
+	if req.SecondarySpecialty != nil {
+		psi.SecondarySpecialty = *req.SecondarySpecialty
+	}
+	if req.MiniBio != nil {
+		psi.MiniBio = *req.MiniBio
+	}
+
+	// C. Lógica Inteligente para ColData
+	// Solo traemos y actualizamos ColData si hay cambios relevantes en el request
+	var colDataToUpdate *domain.PsiUserColData
+
+	hasColDataChanges := req.ShowUniversityUndergraduate != nil ||
+		req.ShowGraduateDate != nil ||
+		req.ShowMentionUndergraduate != nil
+
+	if hasColDataChanges {
+		// Recuperamos solo los datos colegiales (Lazy Load eficiente)
+		currentColData, err := s.repo.GetPsiUserColData(ctx, psi.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		// Aplicamos cambios
+		if req.ShowUniversityUndergraduate != nil {
+			currentColData.ShowUniversityUndergraduate = *req.ShowUniversityUndergraduate
+		}
+		if req.ShowGraduateDate != nil {
+			currentColData.ShowGraduateDate = *req.ShowGraduateDate
+		}
+		if req.ShowMentionUndergraduate != nil {
+			currentColData.ShowMentionUndergraduate = *req.ShowMentionUndergraduate
+		}
+
+		// Auditoría de ColData
+		currentColData.UpdateBy = psi.Username
+		currentColData.UpdateById = &psi.ID
+
+		colDataToUpdate = currentColData
+	}
+
+	// D. Persistencia Transaccional
+	err := s.repo.UpdatePublicProfile(ctx, psi, colDataToUpdate)
+	if err != nil {
+		return nil, err
+	}
+
+	return psi, nil
+}
+
+func (s *PsiService) GetPublicDirectory(ctx context.Context, filter request_structs.PsiDirectoryFilterDTO) (interface{}, error) {
+	// Llamada al repo
+	users, total, err := s.repo.SearchDirectory(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	// Mapeo a DTO Ligero (Mini Profile)
+	list := make([]request_structs.PsiMiniProfileDTO, 0, len(users))
+	for _, u := range users {
+		list = append(list, request_structs.PsiMiniProfileDTO{
+			ID:             u.ID,
+			FirstName:      u.FirstName,
+			LastName:       u.LastName,
+			CI:             u.CI,
+			FPV:            u.FPV,
+			ProfilePicture: u.ProfilePictureS3Key,
+			MiniBio:        u.MiniBio,
+			Solvent:        u.Solvent,
+		})
+	}
+
+	// Respuesta paginada estándar
+	return fiber.Map{
+		"data":        list,
+		"total":       total,
+		"page":        filter.Page,
+		"limit":       filter.Limit,
+		"total_pages": (total + int64(filter.Limit) - 1) / int64(filter.Limit),
+	}, nil
+}
+
+// GetPublicProfile obtiene el detalle de un psicólogo y filtra datos sensibles.
+// GetPublicProfile obtiene el detalle de un psicólogo y filtra datos sensibles.
+// Aplica reglas de privacidad del usuario y de visibilidad según solvencia gremial.
+func (s *PsiService) GetPublicProfile(ctx context.Context, id uuid.UUID) (*request_structs.PsiFullProfileDTO, error) {
+	// 1. Obtener datos crudos de la DB (Con Preload de ColData y PostGrades)
+	psi, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return nil, errors.New("psicólogo no encontrado")
+	}
+
+	// 2. Verificar si está activo en el sistema general
+	if !psi.IsActive {
+		return nil, errors.New("perfil no disponible")
+	}
+
+	// 3. Inicializar el DTO Público
+	dto := &request_structs.PsiFullProfileDTO{
+		ID:             psi.ID,
+		FirstName:      psi.FirstName,
+		LastName:       psi.LastName,
+		FPV:            psi.FPV,
+		Gender:         psi.Genre,
+		ProfilePicture: psi.ProfilePictureS3Key,
+		Solvent:        psi.Solvent,
+		MiniBio:        psi.MiniBio,
+		Specialties:    make([]string, 0),
+		PostGrades:     make([]request_structs.PostGradeDTO, 0), // Inicializamos vacío
+	}
+
+	// --- LÓGICA DE PRIVACIDAD PERSONAL ---
+
+	if psi.ShowContactEmail {
+		dto.Email = psi.ContactEmail
+	}
+	if psi.ShowPublicPhone {
+		dto.Phone = psi.PublicPhone
+	}
+	if psi.ShowPublicServiceAddress {
+		dto.Address = psi.ServiceAddress
+	}
+
+	// Ubicación
+	if psi.MunicipalityCarabobo != "" {
+		dto.Location.State = "Carabobo"
+		dto.Location.Municipality = psi.MunicipalityCarabobo
+	} else {
+		dto.Location.State = psi.StateOutside
+		dto.Location.Municipality = psi.MunicipalityOutSideCarabobo
+	}
+
+	// Especialidades
+	if psi.PrimarySpecialty != "" {
+		dto.Specialties = append(dto.Specialties, psi.PrimarySpecialty)
+	}
+	if psi.SecondarySpecialty != "" {
+		dto.Specialties = append(dto.Specialties, psi.SecondarySpecialty)
+	}
+
+	// Datos Universitarios de Pregrado (Según privacidad del usuario)
+	if psi.ColData.ShowUniversityUndergraduate {
+		dto.Undergraduate.University = psi.ColData.UniversityUndergraduate
+	}
+	if psi.ColData.ShowGraduateDate && !psi.ColData.GraduateDate.IsZero() {
+		dto.Undergraduate.Date = psi.ColData.GraduateDate.Format("2006-01-02")
+	}
+	if psi.ColData.ShowMentionUndergraduate {
+		dto.Undergraduate.Mention = psi.ColData.MentionUndergraduate
+	}
+
+	// --- LÓGICA DE NEGOCIO INSTITUCIONAL (SOLVENCIA) ---
+
+	// Solo incluimos los Postgrados si el psicólogo está solvente.
+	// Si debe cuotas, el arreglo de PostGrades quedará vacío.
+	if psi.Solvent {
+		for _, pg := range psi.PostGrades {
+			// Además, el postgrado debe estar marcado como activo (validado)
+			if pg.Active {
+				dto.PostGrades = append(dto.PostGrades, request_structs.PostGradeDTO{
+					Title:      pg.Title,
+					University: pg.University,
+					Year:       pg.GraduationYear,
+				})
+			}
+		}
+	}
+
+	return dto, nil
+}
+
+// Login autentica al psicólogo y genera un token con clave dinámica.
+func (s *PsiService) Login(ctx context.Context, identifier, password string) (string, error) {
+	// 1. Buscar usuario
+	psi, err := s.repo.GetByIdentifier(ctx, identifier)
+	if err != nil {
+		return "", errors.New("credenciales inválidas")
+	}
+
+	// 2. Verificar si está activo (Soft delete o ban)
+	if !psi.IsActive {
+		return "", errors.New("cuenta inactiva o suspendida")
+	}
+
+	// 3. Verificar contraseña
+	if err := bcrypt.CompareHashAndPassword([]byte(psi.Password), []byte(password)); err != nil {
+		return "", errors.New("credenciales inválidas")
+	}
+
+	// 4. ROTACIÓN DE SESIÓN (Seguridad Senior)
+	// Generamos una nueva llave. Esto invalida tokens anteriores en otros dispositivos.
+	newKey := uuid.New().String()
+	psi.Key = newKey
+
+	// Auditoría automática de login
+	psi.UpdateBy = psi.Username
+	psi.UpdateById = &psi.ID
+
+	if err := s.repo.UpdateKey(ctx, psi); err != nil {
+		return "", errors.New("error de sistema al iniciar sesión")
+	}
+
+	// 5. Generar JWT
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id": psi.ID.String(),
+		"role":    "psi", // Rol específico para el middleware híbrido
+		"exp":     time.Now().Add(24 * time.Hour).Unix(),
+		"iat":     time.Now().Unix(),
+	})
+
+	// Firmar con la llave personal del usuario
+	return token.SignedString([]byte(newKey))
+}
+
+// AddPostGrade permite a un psicólogo agregar un título a su perfil.
+func (s *PsiService) AddPostGrade(ctx context.Context, psi *domain.PsiUserModel, req request_structs.CreatePostGradeRequest, files []*multipart.FileHeader) error {
+
+	// Estructura base
+	postGrade := &domain.PsiUserPostGrade{
+		AuditModel: domain.AuditModel{
+			CreateById: &psi.ID,
+			CreateBy:   psi.Username,
+			UpdateById: &psi.ID,
+			UpdateBy:   psi.Username,
+		},
+		PsiUserID:      psi.ID,
+		Title:          req.Title,
+		University:     req.University,
+		GraduationYear: req.GraduationYear,
+		Description:    req.Description,
+		Active:         true,
+	}
+
+	// Helper interno para procesar subidas
+	uploadHelper := func(fh *multipart.FileHeader) (string, error) {
+		if fh == nil {
+			return "", nil
+		}
+
+		// 1. Abrir y Sanitizar (Re-encoding a JPEG/PNG limpio)
+		src, err := fh.Open()
+		if err != nil {
+			return "", err
+		}
+		defer src.Close()
+
+		cleanBytes, ext, contentType, err := utils.SanitizeImage(src)
+		if err != nil {
+			return "", fmt.Errorf("error en imagen: %v", err)
+		}
+
+		// 2. Subir a S3
+		filename := uuid.New().String() + ext
+		// Guardamos en la carpeta 'certificates'
+		return s.s3Client.UploadStream(ctx, bytes.NewReader(cleanBytes), "certificates", filename, contentType)
+	}
+
+	// Procesar las 3 imágenes posibles
+	// Asumimos que el slice 'files' viene en orden [pic1, pic2, pic3] desde el handler
+	var err error
+	if len(files) > 0 {
+		postGrade.PicOneS3Key, err = uploadHelper(files[0])
+	}
+	if err != nil {
+		return err
+	}
+
+	if len(files) > 1 {
+		postGrade.PicTwoS3Key, err = uploadHelper(files[1])
+	}
+	if err != nil {
+		return err
+	}
+
+	if len(files) > 2 {
+		postGrade.PicThreeS3Key, err = uploadHelper(files[2])
+	}
+	if err != nil {
+		return err
+	}
+
+	// Persistir en DB
+	return s.repo.CreatePostGrade(ctx, postGrade)
+}
+
+// UpdatePostGrade permite editar un título y reemplazar sus imágenes.
+// fileMap: mapa donde la clave es el campo (ej: "pic_one") y el valor es el archivo.
+func (s *PsiService) UpdatePostGrade(ctx context.Context, psi *domain.PsiUserModel, pgID uuid.UUID, req request_structs.UpdatePostGradeRequest, fileMap map[string]*multipart.FileHeader) error {
+
+	// 1. Obtener el registro actual
+	pg, err := s.repo.GetPostGradeByID(ctx, pgID)
+	if err != nil {
+		return errors.New("título académico no encontrado")
+	}
+
+	// 2. SEGURIDAD: Verificar Propiedad (Ownership Check)
+	// Impedir que el Psicólogo A edite el título del Psicólogo B
+	if pg.PsiUserID != psi.ID {
+		return errors.New("no tienes permiso para editar este registro")
+	}
+
+	// 3. Auditoría
+	pg.UpdateBy = psi.Username
+	pg.UpdateById = &psi.ID
+	pg.UpdatedAt = time.Now()
+
+	// 4. Actualización de Campos de Texto (Si vienen en el request)
+	if req.Title != nil {
+		pg.Title = *req.Title
+	}
+	if req.University != nil {
+		pg.University = *req.University
+	}
+	if req.GraduationYear != nil {
+		pg.GraduationYear = *req.GraduationYear
+	}
+	if req.Description != nil {
+		pg.Description = *req.Description
+	}
+
+	// 5. GESTIÓN DE IMÁGENES (Reemplazo Inteligente)
+	// Helper para no repetir código: Sube nueva -> Borra vieja -> Retorna nueva Key
+	replaceImage := func(newFile *multipart.FileHeader, oldKey string) (string, error) {
+		// A. Sanitizar y leer
+		src, err := newFile.Open()
+		if err != nil {
+			return "", err
+		}
+		defer src.Close()
+
+		cleanBytes, ext, contentType, err := utils.SanitizeImage(src)
+		if err != nil {
+			return "", err
+		}
+
+		// B. Subir nueva
+		filename := uuid.New().String() + ext
+		newKey, err := s.s3Client.UploadStream(ctx, bytes.NewReader(cleanBytes), "certificates", filename, contentType)
+		if err != nil {
+			return "", err
+		}
+
+		// C. Borrar vieja (Si existía)
+		if oldKey != "" {
+			// No bloqueamos si falla el borrado, solo logueamos (idealmente)
+			_ = s.s3Client.DeleteFile(ctx, oldKey)
+		}
+		return newKey, nil
+	}
+
+	// Aplicar para cada slot si viene un archivo
+	if file, ok := fileMap["pic_one"]; ok {
+		pg.PicOneS3Key, err = replaceImage(file, pg.PicOneS3Key)
+		if err != nil {
+			return err
+		}
+	}
+	if file, ok := fileMap["pic_two"]; ok {
+		pg.PicTwoS3Key, err = replaceImage(file, pg.PicTwoS3Key)
+		if err != nil {
+			return err
+		}
+	}
+	if file, ok := fileMap["pic_three"]; ok {
+		pg.PicThreeS3Key, err = replaceImage(file, pg.PicThreeS3Key)
+		if err != nil {
+			return err
+		}
+	}
+
+	// 6. Persistir cambios
+	return s.repo.UpdatePostGrade(ctx, pg)
 }

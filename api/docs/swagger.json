@@ -361,6 +361,53 @@
                 }
             }
         },
+        "/admin/psi/upload-csv": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Procesa un archivo CSV y crea registros. Solo accesible para administradores autorizados.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Psicólogos  \u003c-- Tag corregido para agruparlo bien"
+                ],
+                "summary": "Importar psicólogos masivamente",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Archivo CSV a procesar",
+                        "name": "csv",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Retornado si el usuario no tiene permisos (Security by Obscurity)",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/admin/specialties": {
             "post": {
                 "security": [
@@ -725,31 +772,75 @@
                 }
             }
         },
-        "/psi/upload-csv": {
-            "post": {
-                "security": [
+        "/psi/directory": {
+            "get": {
+                "description": "Busca psicólogos. Si se usa 'q' (Nombre/CI/FPV), ignora solvencia. Si no, solo muestra solventes.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Psicólogos - Público"
+                ],
+                "summary": "Directorio Público (Mini Perfiles)",
+                "parameters": [
                     {
-                        "BearerAuth": []
+                        "type": "string",
+                        "description": "Búsqueda por Identidad",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filtro especialidad (Solo en navegación)",
+                        "name": "specialty",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Página",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Límite",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
-                "description": "Procesa un archivo CSV y crea registros. Solo accesible para administradores autorizados.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/psi/login": {
+            "post": {
+                "description": "Autentica a un agremiado y retorna un token de sesión.",
                 "consumes": [
-                    "multipart/form-data"
+                    "application/json"
                 ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "Psychologists"
+                    "Psicólogos - Auth"
                 ],
-                "summary": "Importar psicólogos masivamente",
+                "summary": "Login de Psicólogo",
                 "parameters": [
                     {
-                        "type": "file",
-                        "description": "Archivo CSV a procesar",
-                        "name": "csv",
-                        "in": "formData",
-                        "required": true
+                        "description": "Credenciales",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.PsiLoginRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -760,8 +851,285 @@
                             "additionalProperties": true
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/psi/me": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna toda la información del psicólogo autenticado (sin aplicar filtros de privacidad o solvencia). Ideal para el Dashboard del usuario.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Psicólogos - Perfil"
+                ],
+                "summary": "Obtener mi propio perfil (Autogestión)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.PsiUserModel"
+                        }
+                    },
+                    "401": {
+                        "description": "No autorizado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Permite al psicólogo actualizar su información de contacto y visibilidad.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Psicólogos - Perfil"
+                ],
+                "summary": "Actualizar mi perfil",
+                "parameters": [
+                    {
+                        "description": "Datos editables",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.PsiUserUpdateRequestSelf"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/psi/me/postgrades": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Registra un título académico y permite subir hasta 3 imágenes (título, notas, etc).",
+                "consumes": [
+                    "multipart/form-data   \u003c-- CAMBIO IMPORTANTE"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Psicólogos - Académico"
+                ],
+                "summary": "Agregar postgrado con soportes",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Título obtenido",
+                        "name": "title",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Universidad",
+                        "name": "university",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Año de graduación",
+                        "name": "graduation_year",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Descripción opcional",
+                        "name": "description",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Imagen del Título",
+                        "name": "pic_one",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Imagen de Notas",
+                        "name": "pic_two",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Imagen Extra",
+                        "name": "pic_three",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "message",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/psi/me/postgrades/{id}": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Edita un título. Permite reemplazar imágenes específicas enviando 'pic_one', 'pic_two' o 'pic_three'.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Psicólogos - Académico"
+                ],
+                "summary": "Actualizar postgrado",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID del Postgrado",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Título obtenido",
+                        "name": "title",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Universidad",
+                        "name": "university",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Año",
+                        "name": "graduation_year",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Descripción",
+                        "name": "description",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Reemplazar Imagen 1",
+                        "name": "pic_one",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Reemplazar Imagen 2",
+                        "name": "pic_two",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Reemplazar Imagen 3",
+                        "name": "pic_three",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "message",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "No es tu registro",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/psi/{id}": {
+            "get": {
+                "description": "Retorna la ficha técnica. Oculta datos privados (teléfono, email) según configuración del usuario.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Psicólogos - Público"
+                ],
+                "summary": "Ver perfil público de psicólogo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del Psicólogo",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.PsiFullProfileDTO"
+                        }
+                    },
                     "404": {
-                        "description": "Retornado si el usuario no tiene permisos (Security by Obscurity)",
+                        "description": "Not Found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -998,6 +1366,313 @@
                 }
             }
         },
+        "domain.PsiUserColData": {
+            "type": "object",
+            "properties": {
+                "cpsm": {
+                    "type": "boolean"
+                },
+                "create_by": {
+                    "description": "CreateBy almacena el nombre o identificador textual del creador.",
+                    "type": "string"
+                },
+                "create_by_id": {
+                    "description": "CreateById es el UUID del usuario/administrador que creó el registro.\nEs un puntero para permitir valores nulos si la creación es automática por el sistema.",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "CreatedAt registra la fecha y hora exacta en que se creó el registro.\nGORM gestiona este campo automáticamente durante la inserción.",
+                    "type": "string"
+                },
+                "date_of_last_solvency": {
+                    "description": "Histórico de solvencia y membresías dobles.",
+                    "type": "string"
+                },
+                "double_guild": {
+                    "type": "boolean"
+                },
+                "graduate_date": {
+                    "type": "string"
+                },
+                "guild_collaborator": {
+                    "type": "boolean"
+                },
+                "guild_director": {
+                    "description": "Professional Flags: Roles y estatus especiales dentro del gremio.",
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "mention_undergraduate": {
+                    "type": "string"
+                },
+                "psi_user_model_id": {
+                    "type": "string"
+                },
+                "public_employee": {
+                    "type": "boolean"
+                },
+                "register_folio": {
+                    "type": "string"
+                },
+                "register_number": {
+                    "type": "integer"
+                },
+                "register_title_date": {
+                    "type": "string"
+                },
+                "register_title_state": {
+                    "description": "Register Title: Datos de registro legal del título en el estado.",
+                    "type": "string"
+                },
+                "register_tome": {
+                    "type": "string"
+                },
+                "show_graduate_date": {
+                    "type": "boolean"
+                },
+                "show_mention_undergraduate": {
+                    "type": "boolean"
+                },
+                "show_university_undergraduate": {
+                    "type": "boolean"
+                },
+                "sixty_five_or_plus": {
+                    "type": "boolean"
+                },
+                "university_professor": {
+                    "type": "boolean"
+                },
+                "university_undergraduate": {
+                    "description": "Undergraduate Data: Información sobre el título de pregrado.",
+                    "type": "string"
+                },
+                "update_by": {
+                    "description": "UpdateBy almacena el nombre o identificador textual de la última persona en modificarlo.",
+                    "type": "string"
+                },
+                "update_by_id": {
+                    "description": "UpdateById es el UUID del usuario/administrador que realizó la última actualización.",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "UpdatedAt registra la última fecha y hora en que se modificó el registro.\nGORM actualiza este valor automáticamente en cada operación de guardado.",
+                    "type": "string"
+                }
+            }
+        },
+        "domain.PsiUserModel": {
+            "type": "object",
+            "properties": {
+                "bio_text_id": {
+                    "type": "string"
+                },
+                "born_date": {
+                    "type": "string"
+                },
+                "cel_phone_carabobo": {
+                    "type": "string"
+                },
+                "cel_phone_outside_carabobo": {
+                    "type": "string"
+                },
+                "ci": {
+                    "description": "CI es la Cédula de Identidad del profesional.",
+                    "type": "integer"
+                },
+                "col_data": {
+                    "description": "Relaciones: Conexión con datos académicos y gremiales.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/domain.PsiUserColData"
+                        }
+                    ]
+                },
+                "contact_email": {
+                    "description": "Contact \u0026 Privacy: Control de visibilidad para el directorio público.",
+                    "type": "string"
+                },
+                "create_by": {
+                    "description": "CreateBy almacena el nombre o identificador textual del creador.",
+                    "type": "string"
+                },
+                "create_by_id": {
+                    "description": "CreateById es el UUID del usuario/administrador que creó el registro.\nEs un puntero para permitir valores nulos si la creación es automática por el sistema.",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "CreatedAt registra la fecha y hora exacta en que se creó el registro.\nGORM gestiona este campo automáticamente durante la inserción.",
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "first_name": {
+                    "description": "Identity: Datos básicos de identificación legal.",
+                    "type": "string"
+                },
+                "fpv": {
+                    "description": "FPV es el Número de Federación de Psicólogos de Venezuela.",
+                    "type": "integer"
+                },
+                "genre": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "last_name": {
+                    "type": "string"
+                },
+                "mini_bio": {
+                    "description": "Bio: Información profesional resumida y detallada.",
+                    "type": "string"
+                },
+                "municipality_carabobo": {
+                    "description": "Location Carabobo: Ubicación dentro de la jurisdicción principal.",
+                    "type": "string"
+                },
+                "municipality_outside_carabobo": {
+                    "type": "string"
+                },
+                "nationality": {
+                    "type": "string"
+                },
+                "phone_carabobo": {
+                    "type": "string"
+                },
+                "phone_outside_carabobo": {
+                    "type": "string"
+                },
+                "post_grades": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.PsiUserPostGrade"
+                    }
+                },
+                "primary_specialty": {
+                    "description": "Especialidades: Categorización profesional.",
+                    "type": "string"
+                },
+                "profile_picture_url": {
+                    "type": "string"
+                },
+                "proof_of_life": {
+                    "type": "boolean"
+                },
+                "public_phone": {
+                    "type": "string"
+                },
+                "second_last_name": {
+                    "type": "string"
+                },
+                "second_name": {
+                    "type": "string"
+                },
+                "secondary_specialty": {
+                    "type": "string"
+                },
+                "service_address": {
+                    "type": "string"
+                },
+                "show_contact_email": {
+                    "type": "boolean"
+                },
+                "show_public_phone": {
+                    "type": "boolean"
+                },
+                "show_public_service_address": {
+                    "type": "boolean"
+                },
+                "solvent": {
+                    "description": "Status \u0026 Files: Estado de solvencia y archivos multimedia.",
+                    "type": "boolean"
+                },
+                "state_outside": {
+                    "description": "Location Outside: Ubicación para miembros en el exterior o fuera de Carabobo.",
+                    "type": "string"
+                },
+                "update_by": {
+                    "description": "UpdateBy almacena el nombre o identificador textual de la última persona en modificarlo.",
+                    "type": "string"
+                },
+                "update_by_id": {
+                    "description": "UpdateById es el UUID del usuario/administrador que realizó la última actualización.",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "UpdatedAt registra la última fecha y hora en que se modificó el registro.\nGORM actualiza este valor automáticamente en cada operación de guardado.",
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.PsiUserPostGrade": {
+            "type": "object",
+            "properties": {
+                "create_by": {
+                    "description": "CreateBy almacena el nombre o identificador textual del creador.",
+                    "type": "string"
+                },
+                "create_by_id": {
+                    "description": "CreateById es el UUID del usuario/administrador que creó el registro.\nEs un puntero para permitir valores nulos si la creación es automática por el sistema.",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "CreatedAt registra la fecha y hora exacta en que se creó el registro.\nGORM gestiona este campo automáticamente durante la inserción.",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "pic_one_url": {
+                    "description": "S3 Keys para certificados: Almacenan los comprobantes académicos en S3.",
+                    "type": "string"
+                },
+                "pic_three_url": {
+                    "type": "string"
+                },
+                "pic_two_url": {
+                    "type": "string"
+                },
+                "post_grade_description": {
+                    "type": "string"
+                },
+                "post_grade_graduation_year": {
+                    "type": "string"
+                },
+                "post_grade_title": {
+                    "type": "string"
+                },
+                "post_grade_university": {
+                    "type": "string"
+                },
+                "psi_user_id": {
+                    "type": "string"
+                },
+                "update_by": {
+                    "description": "UpdateBy almacena el nombre o identificador textual de la última persona en modificarlo.",
+                    "type": "string"
+                },
+                "update_by_id": {
+                    "description": "UpdateById es el UUID del usuario/administrador que realizó la última actualización.",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "UpdatedAt registra la última fecha y hora en que se modificó el registro.\nGORM actualiza este valor automáticamente en cada operación de guardado.",
+                    "type": "string"
+                }
+            }
+        },
         "domain.TextModel": {
             "type": "object",
             "properties": {
@@ -1142,6 +1817,188 @@
                 "name": {
                     "type": "string",
                     "example": "Psicología Clínica"
+                }
+            }
+        },
+        "request_structs.PostGradeDTO": {
+            "type": "object",
+            "properties": {
+                "title": {
+                    "type": "string"
+                },
+                "university": {
+                    "type": "string"
+                },
+                "year": {
+                    "type": "string"
+                }
+            }
+        },
+        "request_structs.PsiFullProfileDTO": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "email": {
+                    "description": "Contacto (Condicional)",
+                    "type": "string"
+                },
+                "first_name": {
+                    "type": "string"
+                },
+                "fpv": {
+                    "type": "integer"
+                },
+                "gender": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "Identidad Pública",
+                    "type": "string"
+                },
+                "last_name": {
+                    "type": "string"
+                },
+                "location": {
+                    "description": "Ubicación",
+                    "type": "object",
+                    "properties": {
+                        "full_address": {
+                            "type": "string"
+                        },
+                        "municipality": {
+                            "type": "string"
+                        },
+                        "state": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "mini_bio": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "post_grades": {
+                    "description": "Postgrados (Siempre visibles si existen)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/request_structs.PostGradeDTO"
+                    }
+                },
+                "profile_picture": {
+                    "type": "string"
+                },
+                "solvent": {
+                    "type": "boolean"
+                },
+                "specialties": {
+                    "description": "Profesional y Académico",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "undergraduate": {
+                    "description": "Datos Universitarios (Condicional)",
+                    "type": "object",
+                    "properties": {
+                        "date": {
+                            "type": "string"
+                        },
+                        "mention": {
+                            "type": "string"
+                        },
+                        "university": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "request_structs.PsiLoginRequest": {
+            "type": "object",
+            "required": [
+                "identifier",
+                "password"
+            ],
+            "properties": {
+                "identifier": {
+                    "type": "string",
+                    "example": "psicologo@email.com"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "12345678"
+                }
+            }
+        },
+        "request_structs.PsiUserUpdateRequestSelf": {
+            "type": "object",
+            "properties": {
+                "cel_phone_carabobo": {
+                    "type": "string"
+                },
+                "cel_phone_outside_carabobo": {
+                    "type": "string"
+                },
+                "contact_email": {
+                    "description": "Datos de Contacto y Privacidad (Permitido)",
+                    "type": "string"
+                },
+                "mini_bio": {
+                    "description": "Biografía (Permitido)",
+                    "type": "string"
+                },
+                "municipality_carabobo": {
+                    "description": "Ubicación (Permitido)",
+                    "type": "string"
+                },
+                "municipality_outside_carabobo": {
+                    "type": "string"
+                },
+                "phone_carabobo": {
+                    "type": "string"
+                },
+                "phone_outside_carabobo": {
+                    "type": "string"
+                },
+                "primary_specialty": {
+                    "description": "Especialidades (Permitido, si no está en la tabla de catálogo)",
+                    "type": "string"
+                },
+                "public_phone": {
+                    "type": "string"
+                },
+                "secondary_specialty": {
+                    "type": "string"
+                },
+                "service_address": {
+                    "type": "string"
+                },
+                "show_contact_email": {
+                    "type": "boolean"
+                },
+                "show_graduate_date": {
+                    "type": "boolean"
+                },
+                "show_mention_undergraduate": {
+                    "type": "boolean"
+                },
+                "show_public_phone": {
+                    "type": "boolean"
+                },
+                "show_public_service_address": {
+                    "type": "boolean"
+                },
+                "show_university_undergraduate": {
+                    "description": "Campos de ColData",
+                    "type": "boolean"
+                },
+                "state_outside": {
+                    "type": "string"
                 }
             }
         },

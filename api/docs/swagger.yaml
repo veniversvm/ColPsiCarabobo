@@ -102,6 +102,246 @@ definitions:
           GORM actualiza este valor automáticamente en cada operación de guardado.
         type: string
     type: object
+  domain.PsiUserColData:
+    properties:
+      cpsm:
+        type: boolean
+      create_by:
+        description: CreateBy almacena el nombre o identificador textual del creador.
+        type: string
+      create_by_id:
+        description: |-
+          CreateById es el UUID del usuario/administrador que creó el registro.
+          Es un puntero para permitir valores nulos si la creación es automática por el sistema.
+        type: string
+      created_at:
+        description: |-
+          CreatedAt registra la fecha y hora exacta en que se creó el registro.
+          GORM gestiona este campo automáticamente durante la inserción.
+        type: string
+      date_of_last_solvency:
+        description: Histórico de solvencia y membresías dobles.
+        type: string
+      double_guild:
+        type: boolean
+      graduate_date:
+        type: string
+      guild_collaborator:
+        type: boolean
+      guild_director:
+        description: 'Professional Flags: Roles y estatus especiales dentro del gremio.'
+        type: boolean
+      id:
+        type: string
+      mention_undergraduate:
+        type: string
+      psi_user_model_id:
+        type: string
+      public_employee:
+        type: boolean
+      register_folio:
+        type: string
+      register_number:
+        type: integer
+      register_title_date:
+        type: string
+      register_title_state:
+        description: 'Register Title: Datos de registro legal del título en el estado.'
+        type: string
+      register_tome:
+        type: string
+      show_graduate_date:
+        type: boolean
+      show_mention_undergraduate:
+        type: boolean
+      show_university_undergraduate:
+        type: boolean
+      sixty_five_or_plus:
+        type: boolean
+      university_professor:
+        type: boolean
+      university_undergraduate:
+        description: 'Undergraduate Data: Información sobre el título de pregrado.'
+        type: string
+      update_by:
+        description: UpdateBy almacena el nombre o identificador textual de la última
+          persona en modificarlo.
+        type: string
+      update_by_id:
+        description: UpdateById es el UUID del usuario/administrador que realizó la
+          última actualización.
+        type: string
+      updated_at:
+        description: |-
+          UpdatedAt registra la última fecha y hora en que se modificó el registro.
+          GORM actualiza este valor automáticamente en cada operación de guardado.
+        type: string
+    type: object
+  domain.PsiUserModel:
+    properties:
+      bio_text_id:
+        type: string
+      born_date:
+        type: string
+      cel_phone_carabobo:
+        type: string
+      cel_phone_outside_carabobo:
+        type: string
+      ci:
+        description: CI es la Cédula de Identidad del profesional.
+        type: integer
+      col_data:
+        allOf:
+        - $ref: '#/definitions/domain.PsiUserColData'
+        description: 'Relaciones: Conexión con datos académicos y gremiales.'
+      contact_email:
+        description: 'Contact & Privacy: Control de visibilidad para el directorio
+          público.'
+        type: string
+      create_by:
+        description: CreateBy almacena el nombre o identificador textual del creador.
+        type: string
+      create_by_id:
+        description: |-
+          CreateById es el UUID del usuario/administrador que creó el registro.
+          Es un puntero para permitir valores nulos si la creación es automática por el sistema.
+        type: string
+      created_at:
+        description: |-
+          CreatedAt registra la fecha y hora exacta en que se creó el registro.
+          GORM gestiona este campo automáticamente durante la inserción.
+        type: string
+      email:
+        type: string
+      first_name:
+        description: 'Identity: Datos básicos de identificación legal.'
+        type: string
+      fpv:
+        description: FPV es el Número de Federación de Psicólogos de Venezuela.
+        type: integer
+      genre:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      last_name:
+        type: string
+      mini_bio:
+        description: 'Bio: Información profesional resumida y detallada.'
+        type: string
+      municipality_carabobo:
+        description: 'Location Carabobo: Ubicación dentro de la jurisdicción principal.'
+        type: string
+      municipality_outside_carabobo:
+        type: string
+      nationality:
+        type: string
+      phone_carabobo:
+        type: string
+      phone_outside_carabobo:
+        type: string
+      post_grades:
+        items:
+          $ref: '#/definitions/domain.PsiUserPostGrade'
+        type: array
+      primary_specialty:
+        description: 'Especialidades: Categorización profesional.'
+        type: string
+      profile_picture_url:
+        type: string
+      proof_of_life:
+        type: boolean
+      public_phone:
+        type: string
+      second_last_name:
+        type: string
+      second_name:
+        type: string
+      secondary_specialty:
+        type: string
+      service_address:
+        type: string
+      show_contact_email:
+        type: boolean
+      show_public_phone:
+        type: boolean
+      show_public_service_address:
+        type: boolean
+      solvent:
+        description: 'Status & Files: Estado de solvencia y archivos multimedia.'
+        type: boolean
+      state_outside:
+        description: 'Location Outside: Ubicación para miembros en el exterior o fuera
+          de Carabobo.'
+        type: string
+      update_by:
+        description: UpdateBy almacena el nombre o identificador textual de la última
+          persona en modificarlo.
+        type: string
+      update_by_id:
+        description: UpdateById es el UUID del usuario/administrador que realizó la
+          última actualización.
+        type: string
+      updated_at:
+        description: |-
+          UpdatedAt registra la última fecha y hora en que se modificó el registro.
+          GORM actualiza este valor automáticamente en cada operación de guardado.
+        type: string
+      username:
+        type: string
+    type: object
+  domain.PsiUserPostGrade:
+    properties:
+      create_by:
+        description: CreateBy almacena el nombre o identificador textual del creador.
+        type: string
+      create_by_id:
+        description: |-
+          CreateById es el UUID del usuario/administrador que creó el registro.
+          Es un puntero para permitir valores nulos si la creación es automática por el sistema.
+        type: string
+      created_at:
+        description: |-
+          CreatedAt registra la fecha y hora exacta en que se creó el registro.
+          GORM gestiona este campo automáticamente durante la inserción.
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      pic_one_url:
+        description: 'S3 Keys para certificados: Almacenan los comprobantes académicos
+          en S3.'
+        type: string
+      pic_three_url:
+        type: string
+      pic_two_url:
+        type: string
+      post_grade_description:
+        type: string
+      post_grade_graduation_year:
+        type: string
+      post_grade_title:
+        type: string
+      post_grade_university:
+        type: string
+      psi_user_id:
+        type: string
+      update_by:
+        description: UpdateBy almacena el nombre o identificador textual de la última
+          persona en modificarlo.
+        type: string
+      update_by_id:
+        description: UpdateById es el UUID del usuario/administrador que realizó la
+          última actualización.
+        type: string
+      updated_at:
+        description: |-
+          UpdatedAt registra la última fecha y hora en que se modificó el registro.
+          GORM actualiza este valor automáticamente en cada operación de guardado.
+        type: string
+    type: object
   domain.TextModel:
     properties:
       content:
@@ -211,6 +451,130 @@ definitions:
         type: string
     required:
     - name
+    type: object
+  request_structs.PostGradeDTO:
+    properties:
+      title:
+        type: string
+      university:
+        type: string
+      year:
+        type: string
+    type: object
+  request_structs.PsiFullProfileDTO:
+    properties:
+      address:
+        type: string
+      email:
+        description: Contacto (Condicional)
+        type: string
+      first_name:
+        type: string
+      fpv:
+        type: integer
+      gender:
+        type: string
+      id:
+        description: Identidad Pública
+        type: string
+      last_name:
+        type: string
+      location:
+        description: Ubicación
+        properties:
+          full_address:
+            type: string
+          municipality:
+            type: string
+          state:
+            type: string
+        type: object
+      mini_bio:
+        type: string
+      phone:
+        type: string
+      post_grades:
+        description: Postgrados (Siempre visibles si existen)
+        items:
+          $ref: '#/definitions/request_structs.PostGradeDTO'
+        type: array
+      profile_picture:
+        type: string
+      solvent:
+        type: boolean
+      specialties:
+        description: Profesional y Académico
+        items:
+          type: string
+        type: array
+      undergraduate:
+        description: Datos Universitarios (Condicional)
+        properties:
+          date:
+            type: string
+          mention:
+            type: string
+          university:
+            type: string
+        type: object
+    type: object
+  request_structs.PsiLoginRequest:
+    properties:
+      identifier:
+        example: psicologo@email.com
+        type: string
+      password:
+        example: "12345678"
+        type: string
+    required:
+    - identifier
+    - password
+    type: object
+  request_structs.PsiUserUpdateRequestSelf:
+    properties:
+      cel_phone_carabobo:
+        type: string
+      cel_phone_outside_carabobo:
+        type: string
+      contact_email:
+        description: Datos de Contacto y Privacidad (Permitido)
+        type: string
+      mini_bio:
+        description: Biografía (Permitido)
+        type: string
+      municipality_carabobo:
+        description: Ubicación (Permitido)
+        type: string
+      municipality_outside_carabobo:
+        type: string
+      phone_carabobo:
+        type: string
+      phone_outside_carabobo:
+        type: string
+      primary_specialty:
+        description: Especialidades (Permitido, si no está en la tabla de catálogo)
+        type: string
+      public_phone:
+        type: string
+      secondary_specialty:
+        type: string
+      service_address:
+        type: string
+      show_contact_email:
+        type: boolean
+      show_graduate_date:
+        type: boolean
+      show_mention_undergraduate:
+        type: boolean
+      show_public_phone:
+        type: boolean
+      show_public_service_address:
+        type: boolean
+      show_university_undergraduate:
+        description: Campos de ColData
+        type: boolean
+      state_outside:
+        type: string
     type: object
   request_structs.UpdateAdminRequest:
     properties:
@@ -478,6 +842,37 @@ paths:
       summary: Actualizar publicación
       tags:
       - Administración - Publicaciones
+  /admin/psi/upload-csv:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Procesa un archivo CSV y crea registros. Solo accesible para administradores
+        autorizados.
+      parameters:
+      - description: Archivo CSV a procesar
+        in: formData
+        name: csv
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Retornado si el usuario no tiene permisos (Security by Obscurity)
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Importar psicólogos masivamente
+      tags:
+      - Administración - Psicólogos  <-- Tag corregido para agruparlo bien
   /admin/specialties:
     post:
       consumes:
@@ -718,18 +1113,53 @@ paths:
       summary: Obtener noticia por ID
       tags:
       - Publicaciones
-  /psi/upload-csv:
-    post:
-      consumes:
-      - multipart/form-data
-      description: Procesa un archivo CSV y crea registros. Solo accesible para administradores
-        autorizados.
+  /psi/{id}:
+    get:
+      description: Retorna la ficha técnica. Oculta datos privados (teléfono, email)
+        según configuración del usuario.
       parameters:
-      - description: Archivo CSV a procesar
-        in: formData
-        name: csv
+      - description: UUID del Psicólogo
+        in: path
+        name: id
         required: true
-        type: file
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/request_structs.PsiFullProfileDTO'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Ver perfil público de psicólogo
+      tags:
+      - Psicólogos - Público
+  /psi/directory:
+    get:
+      description: Busca psicólogos. Si se usa 'q' (Nombre/CI/FPV), ignora solvencia.
+        Si no, solo muestra solventes.
+      parameters:
+      - description: Búsqueda por Identidad
+        in: query
+        name: q
+        type: string
+      - description: Filtro especialidad (Solo en navegación)
+        in: query
+        name: specialty
+        type: string
+      - description: Página
+        in: query
+        name: page
+        type: integer
+      - description: Límite
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
@@ -738,17 +1168,195 @@ paths:
           schema:
             additionalProperties: true
             type: object
-        "404":
-          description: Retornado si el usuario no tiene permisos (Security by Obscurity)
+      summary: Directorio Público (Mini Perfiles)
+      tags:
+      - Psicólogos - Público
+  /psi/login:
+    post:
+      consumes:
+      - application/json
+      description: Autentica a un agremiado y retorna un token de sesión.
+      parameters:
+      - description: Credenciales
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.PsiLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Login de Psicólogo
+      tags:
+      - Psicólogos - Auth
+  /psi/me:
+    get:
+      description: Retorna toda la información del psicólogo autenticado (sin aplicar
+        filtros de privacidad o solvencia). Ideal para el Dashboard del usuario.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.PsiUserModel'
+        "401":
+          description: No autorizado
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Obtener mi propio perfil (Autogestión)
+      tags:
+      - Psicólogos - Perfil
+    patch:
+      consumes:
+      - application/json
+      description: Permite al psicólogo actualizar su información de contacto y visibilidad.
+      parameters:
+      - description: Datos editables
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.PsiUserUpdateRequestSelf'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Actualizar mi perfil
+      tags:
+      - Psicólogos - Perfil
+  /psi/me/postgrades:
+    post:
+      consumes:
+      - multipart/form-data   <-- CAMBIO IMPORTANTE
+      description: Registra un título académico y permite subir hasta 3 imágenes (título,
+        notas, etc).
+      parameters:
+      - description: Título obtenido
+        in: formData
+        name: title
+        required: true
+        type: string
+      - description: Universidad
+        in: formData
+        name: university
+        required: true
+        type: string
+      - description: Año de graduación
+        in: formData
+        name: graduation_year
+        required: true
+        type: string
+      - description: Descripción opcional
+        in: formData
+        name: description
+        type: string
+      - description: Imagen del Título
+        in: formData
+        name: pic_one
+        type: file
+      - description: Imagen de Notas
+        in: formData
+        name: pic_two
+        type: file
+      - description: Imagen Extra
+        in: formData
+        name: pic_three
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: message
           schema:
             additionalProperties:
               type: string
             type: object
       security:
       - BearerAuth: []
-      summary: Importar psicólogos masivamente
+      summary: Agregar postgrado con soportes
       tags:
-      - Psychologists
+      - Psicólogos - Académico
+  /psi/me/postgrades/{id}:
+    patch:
+      consumes:
+      - multipart/form-data
+      description: Edita un título. Permite reemplazar imágenes específicas enviando
+        'pic_one', 'pic_two' o 'pic_three'.
+      parameters:
+      - description: ID del Postgrado
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Título obtenido
+        in: formData
+        name: title
+        type: string
+      - description: Universidad
+        in: formData
+        name: university
+        type: string
+      - description: Año
+        in: formData
+        name: graduation_year
+        type: string
+      - description: Descripción
+        in: formData
+        name: description
+        type: string
+      - description: Reemplazar Imagen 1
+        in: formData
+        name: pic_one
+        type: file
+      - description: Reemplazar Imagen 2
+        in: formData
+        name: pic_two
+        type: file
+      - description: Reemplazar Imagen 3
+        in: formData
+        name: pic_three
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: No es tu registro
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Actualizar postgrado
+      tags:
+      - Psicólogos - Académico
   /specialties:
     get:
       description: Retorna el catálogo. Los usuarios ven solo las activas. Admins

@@ -3,8 +3,11 @@
 /home/fran/go/bin/linux_amd64/swag init -g cmd/api/main.go --parseDependency --parseInternal
 
 TODO
+Private phone para el psicologo
 
 
 
 EJEMPLO IMG
 http://localhost:9000/colpsi-bucket/posts/013c5fca-572b-4cf5-bab1-ce569df2099e.jpg
+
+

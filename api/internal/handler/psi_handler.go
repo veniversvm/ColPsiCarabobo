@@ -2,10 +2,15 @@ package handler
 
 import (
 	"fmt"
+	"mime/multipart"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/request_structs"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/service"
+	utils "github.com/veniversvm/ColPsiCarabobo/api/internal/utils"
 )
 
 type PsiHandler struct {
@@ -22,14 +27,14 @@ func NewPsiHandler(svc *service.PsiService) *PsiHandler {
 // UploadCsv godoc
 // @Summary      Importar psicólogos masivamente
 // @Description  Procesa un archivo CSV y crea registros. Solo accesible para administradores autorizados.
-// @Tags         Psychologists
+// @Tags         Administración - Psicólogos  <-- Tag corregido para agruparlo bien
 // @Accept       multipart/form-data
 // @Produce      json
 // @Param        csv  formData  file  true  "Archivo CSV a procesar"
 // @Security     BearerAuth
 // @Success      200  {object}  map[string]interface{}
 // @Failure      404  {object}  map[string]string "Retornado si el usuario no tiene permisos (Security by Obscurity)"
-// @Router       /psi/upload-csv [post]
+// @Router       /admin/psi/upload-csv [post]
 func (h *PsiHandler) UploadCsv(c *fiber.Ctx) error {
 	fmt.Println("Entrando a UploadCsv")
 	// 1. OBTENER EL ADMIN DESDE EL TOKEN (Locals)
@@ -68,7 +73,267 @@ func (h *PsiHandler) UploadCsv(c *fiber.Ctx) error {
 	})
 }
 
+// UpdateOwnProfile godoc
+// @Summary      Actualizar mi perfil
+// @Description  Permite al psicólogo actualizar su información de contacto y visibilidad.
+// @Security     BearerAuth
+// @Tags         Psicólogos - Perfil
+// @Accept       json
+// @Produce      json
+// @Param        request  body      request_structs.PsiUserUpdateRequestSelf  true  "Datos editables"
+// @Success      200      {object}  map[string]interface{}
+// @Router       /psi/me [patch]
+func (h *PsiHandler) UpdateOwnProfile(c *fiber.Ctx) error {
+	// 1. Obtener identidad segura desde el token
+	updater := c.Locals("psi_user").(*domain.PsiUserModel)
+
+	// 2. Parsear request
+	var req request_structs.PsiUserUpdateRequestSelf
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "JSON inválido"})
+	}
+
+	// 3. Validar que haya algo que actualizar
+	if utils.IsEmptyReq(req) {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "No se enviaron campos para actualizar"})
+	}
+
+	// 4. Llamar al servicio usando el ID del token (Zero Trust)
+	profile, err := h.service.UpdateProfileSelf(c.UserContext(), updater, updater.ID, req)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Perfil actualizado correctamente",
+		// Opcional: No devolver todo el perfil si es muy pesado, solo confirmación
+		"user_id": profile.ID,
+	})
+}
+
+// SearchDirectory godoc
+// @Summary      Directorio Público (Mini Perfiles)
+// @Description  Busca psicólogos. Si se usa 'q' (Nombre/CI/FPV), ignora solvencia. Si no, solo muestra solventes.
+// @Tags         Psicólogos - Público
+// @Produce      json
+// @Param        q          query     string  false  "Búsqueda por Identidad"
+// @Param        specialty  query     string  false  "Filtro especialidad (Solo en navegación)"
+// @Param        page       query     int     false  "Página"
+// @Param        limit      query     int     false  "Límite"
+// @Success      200        {object}  map[string]interface{}
+// @Router       /psi/directory [get]
+func (h *PsiHandler) SearchDirectory(c *fiber.Ctx) error {
+	page, _ := strconv.Atoi(c.Query("page", "1"))
+	limit, _ := strconv.Atoi(c.Query("limit", "12"))
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 12
+	}
+
+	filter := request_structs.PsiDirectoryFilterDTO{
+		SearchTerm: c.Query("q"),
+		Specialty:  c.Query("specialty"),
+		Page:       page,
+		Limit:      limit,
+	}
+
+	result, err := h.service.GetPublicDirectory(c.UserContext(), filter)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Error consultando directorio"})
+	}
+
+	return c.JSON(result)
+}
+
+// GetPublicProfile godoc
+// @Summary      Ver perfil público de psicólogo
+// @Description  Retorna la ficha técnica. Oculta datos privados (teléfono, email) según configuración del usuario.
+// @Tags         Psicólogos - Público
+// @Produce      json
+// @Param        id   path      string  true  "UUID del Psicólogo"
+// @Success      200  {object}  request_structs.PsiFullProfileDTO
+// @Failure      404  {object}  map[string]string
+// @Router       /psi/{id} [get]
+func (h *PsiHandler) GetPublicProfile(c *fiber.Ctx) error {
+	idStr := c.Params("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ID inválido"})
+	}
+
+	profile, err := h.service.GetPublicProfile(c.UserContext(), id)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(profile)
+}
+
+// GetMe godoc
+// @Summary Obtener mi propio perfil (Autogestión)
+// @Description Retorna toda la información del psicólogo autenticado (sin aplicar filtros de privacidad o solvencia). Ideal para el Dashboard del usuario.
+// @Security BearerAuth
+// @Tags Psicólogos - Perfil
+// @Produce json
+// @Success 200 {object} domain.PsiUserModel
+// @Failure 401 {object} map[string]interface{} "No autorizado"
+// @Router /psi/me [get]
+func (h *PsiHandler) GetMe(c *fiber.Ctx) error {
+	// Obtenemos el psicólogo inyectado por el middleware ProtectedPsiUser.
+	// Esta consulta ya se hizo hace microsegundos y trae TODO gracias al Preload del Repositorio.
+	psi, ok := c.Locals("psi_user").(*domain.PsiUserModel)
+	if !ok || psi == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Sesión inválida o expirada",
+		})
+	}
+
+	// Retornamos el modelo completo.
+	// Nota: Password y Key no se envían porque en domain.PsiUserModel tienen `json:"-"`.
+	return c.JSON(psi)
+}
+
+// Login godoc
+// @Summary      Login de Psicólogo
+// @Description  Autentica a un agremiado y retorna un token de sesión.
+// @Tags         Psicólogos - Auth
+// @Accept       json
+// @Produce      json
+// @Param        request  body      request_structs.PsiLoginRequest  true  "Credenciales"  <-- AQUÍ ESTÁ EL CAMBIO
+// @Success      200      {object}  map[string]interface{}
+// @Failure      401      {object}  map[string]string
+// @Router       /psi/login [post]
+func (h *PsiHandler) Login(c *fiber.Ctx) error {
+	var req request_structs.PsiLoginRequest // Esto está bien en Go
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "JSON inválido"})
+	}
+
+	token, err := h.service.Login(c.UserContext(), req.Identifier, req.Password)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Bienvenido colega",
+		"token":   token,
+	})
+}
+
+// AddPostGrade godoc
+// @Summary      Agregar postgrado con soportes
+// @Description  Registra un título académico y permite subir hasta 3 imágenes (título, notas, etc).
+// @Security     BearerAuth
+// @Tags         Psicólogos - Académico
+// @Accept       multipart/form-data   <-- CAMBIO IMPORTANTE
+// @Produce      json
+// @Param        title            formData  string  true   "Título obtenido"
+// @Param        university       formData  string  true   "Universidad"
+// @Param        graduation_year  formData  string  true   "Año de graduación"
+// @Param        description      formData  string  false  "Descripción opcional"
+// @Param        pic_one          formData  file    false  "Imagen del Título"
+// @Param        pic_two          formData  file    false  "Imagen de Notas"
+// @Param        pic_three        formData  file    false  "Imagen Extra"
+// @Success      201              {object}  map[string]string "message"
+// @Router       /psi/me/postgrades [post]
+func (h *PsiHandler) AddPostGrade(c *fiber.Ctx) error {
+	psi := c.Locals("psi_user").(*domain.PsiUserModel)
+
+	// 1. Parsear Texto
+	var req request_structs.CreatePostGradeRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Datos de formulario inválidos"})
+	}
+
+	// 2. Extraer Archivos
+	// Fiber retorna error si el archivo no existe, así que ignoramos el error
+	// y verificamos si el puntero es nil en el servicio.
+	file1, _ := c.FormFile("pic_one")
+	file2, _ := c.FormFile("pic_two")
+	file3, _ := c.FormFile("pic_three")
+
+	// Crear un slice para pasar al servicio
+	files := []*multipart.FileHeader{file1, file2, file3}
+
+	// 3. Llamar al servicio
+	if err := h.service.AddPostGrade(c.UserContext(), psi, req, files); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "Postgrado y documentos registrados exitosamente"})
+}
+
 // Los demás métodos (ListPsis, GetPsi, etc.) se implementarán siguiendo el mismo patrón...
 func (h *PsiHandler) ListPsis(c *fiber.Ctx) error  { return nil }
 func (h *PsiHandler) GetPsi(c *fiber.Ctx) error    { return nil }
 func (h *PsiHandler) UpdatePsi(c *fiber.Ctx) error { return nil }
+
+// UpdatePostGrade godoc
+// @Summary      Actualizar postgrado
+// @Description  Edita un título. Permite reemplazar imágenes específicas enviando 'pic_one', 'pic_two' o 'pic_three'.
+// @Security     BearerAuth
+// @Tags         Psicólogos - Académico
+// @Accept       multipart/form-data
+// @Produce      json
+// @Param        id               path      string  true   "ID del Postgrado"
+// @Param        title            formData  string  false  "Título obtenido"
+// @Param        university       formData  string  false  "Universidad"
+// @Param        graduation_year  formData  string  false  "Año"
+// @Param        description      formData  string  false  "Descripción"
+// @Param        pic_one          formData  file    false  "Reemplazar Imagen 1"
+// @Param        pic_two          formData  file    false  "Reemplazar Imagen 2"
+// @Param        pic_three        formData  file    false  "Reemplazar Imagen 3"
+// @Success      200              {object}  map[string]string "message"
+// @Failure      403              {object}  map[string]string "No es tu registro"
+// @Router       /psi/me/postgrades/{id} [patch]
+func (h *PsiHandler) UpdatePostGrade(c *fiber.Ctx) error {
+	psi := c.Locals("psi_user").(*domain.PsiUserModel)
+
+	// Validar ID del Path
+	pgID, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ID inválido"})
+	}
+
+	// Construir DTO manual para campos de texto (punteros)
+	req := request_structs.UpdatePostGradeRequest{}
+
+	if val := c.FormValue("title"); val != "" {
+		req.Title = &val
+	}
+	if val := c.FormValue("university"); val != "" {
+		req.University = &val
+	}
+	if val := c.FormValue("graduation_year"); val != "" {
+		req.GraduationYear = &val
+	}
+	if val := c.FormValue("description"); val != "" {
+		req.Description = &val
+	}
+
+	// Recolectar archivos en un mapa
+	fileMap := make(map[string]*multipart.FileHeader)
+
+	if f, err := c.FormFile("pic_one"); err == nil {
+		fileMap["pic_one"] = f
+	}
+	if f, err := c.FormFile("pic_two"); err == nil {
+		fileMap["pic_two"] = f
+	}
+	if f, err := c.FormFile("pic_three"); err == nil {
+		fileMap["pic_three"] = f
+	}
+
+	// Llamar servicio
+	if err := h.service.UpdatePostGrade(c.UserContext(), psi, pgID, req, fileMap); err != nil {
+		// Distinguir error de propiedad
+		if err.Error() == "no tienes permiso para editar este registro" {
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": err.Error()})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"message": "Título actualizado correctamente"})
+}
