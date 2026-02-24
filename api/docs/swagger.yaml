@@ -1,6 +1,6 @@
 basePath: /api/v1
 definitions:
-  domain.Post:
+  github_com_veniversvm_ColPsiCarabobo_api_internal_domain.Post:
     properties:
       create_by:
         description: CreateBy almacena el nombre o identificador textual del creador.
@@ -32,7 +32,7 @@ definitions:
         type: string
       text:
         allOf:
-        - $ref: '#/definitions/domain.TextModel'
+        - $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.TextModel'
         description: |-
           Text es la instancia cargada del contenido.
           GORM permite cargar este campo mediante 'Preload' cuando se requiere el detalle completo.
@@ -65,7 +65,7 @@ definitions:
           GORM actualiza este valor automáticamente en cada operación de guardado.
         type: string
     type: object
-  domain.PsiSpecialtyModel:
+  github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiSpecialtyModel:
     properties:
       active:
         type: boolean
@@ -102,7 +102,7 @@ definitions:
           GORM actualiza este valor automáticamente en cada operación de guardado.
         type: string
     type: object
-  domain.PsiUserColData:
+  github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserColData:
     properties:
       cpsm:
         type: boolean
@@ -177,7 +177,7 @@ definitions:
           GORM actualiza este valor automáticamente en cada operación de guardado.
         type: string
     type: object
-  domain.PsiUserModel:
+  github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserModel:
     properties:
       bio_text_id:
         type: string
@@ -192,7 +192,7 @@ definitions:
         type: integer
       col_data:
         allOf:
-        - $ref: '#/definitions/domain.PsiUserColData'
+        - $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserColData'
         description: 'Relaciones: Conexión con datos académicos y gremiales.'
       contact_email:
         description: 'Contact & Privacy: Control de visibilidad para el directorio
@@ -243,7 +243,7 @@ definitions:
         type: string
       post_grades:
         items:
-          $ref: '#/definitions/domain.PsiUserPostGrade'
+          $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserPostGrade'
         type: array
       primary_specialty:
         description: 'Especialidades: Categorización profesional.'
@@ -268,6 +268,10 @@ definitions:
         type: boolean
       show_public_service_address:
         type: boolean
+      social_networks:
+        items:
+          $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserSocialNetwork'
+        type: array
       solvent:
         description: 'Status & Files: Estado de solvencia y archivos multimedia.'
         type: boolean
@@ -291,7 +295,7 @@ definitions:
       username:
         type: string
     type: object
-  domain.PsiUserPostGrade:
+  github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserPostGrade:
     properties:
       create_by:
         description: CreateBy almacena el nombre o identificador textual del creador.
@@ -342,7 +346,48 @@ definitions:
           GORM actualiza este valor automáticamente en cada operación de guardado.
         type: string
     type: object
-  domain.TextModel:
+  github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserSocialNetwork:
+    properties:
+      create_by:
+        description: CreateBy almacena el nombre o identificador textual del creador.
+        type: string
+      create_by_id:
+        description: |-
+          CreateById es el UUID del usuario/administrador que creó el registro.
+          Es un puntero para permitir valores nulos si la creación es automática por el sistema.
+        type: string
+      created_at:
+        description: |-
+          CreatedAt registra la fecha y hora exacta en que se creó el registro.
+          GORM gestiona este campo automáticamente durante la inserción.
+        type: string
+      is_active:
+        description: IsActive permite al usuario ocultar una red sin borrarla físicamente
+        type: boolean
+      name:
+        description: 'Name identifica la plataforma (ej: "Instagram", "LinkedIn",
+          "Web Personal")'
+        type: string
+      psi_user_id:
+        type: string
+      update_by:
+        description: UpdateBy almacena el nombre o identificador textual de la última
+          persona en modificarlo.
+        type: string
+      update_by_id:
+        description: UpdateById es el UUID del usuario/administrador que realizó la
+          última actualización.
+        type: string
+      updated_at:
+        description: |-
+          UpdatedAt registra la última fecha y hora en que se modificó el registro.
+          GORM actualiza este valor automáticamente en cada operación de guardado.
+        type: string
+      url:
+        description: URL es el enlace directo al perfil o página
+        type: string
+    type: object
+  github_com_veniversvm_ColPsiCarabobo_api_internal_domain.TextModel:
     properties:
       content:
         description: |-
@@ -378,19 +423,7 @@ definitions:
           GORM actualiza este valor automáticamente en cada operación de guardado.
         type: string
     type: object
-  handler.LoginRequest:
-    properties:
-      identifier:
-        example: admin
-        type: string
-      password:
-        example: admin123
-        type: string
-    required:
-    - identifier
-    - password
-    type: object
-  request_structs.AdminPermissionsDTO:
+  github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.AdminPermissionsDTO:
     properties:
       can_create_admin:
         type: boolean
@@ -423,7 +456,7 @@ definitions:
       can_update_publish:
         type: boolean
     type: object
-  request_structs.CreateAdminRequest:
+  github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreateAdminRequest:
     properties:
       email:
         type: string
@@ -432,7 +465,7 @@ definitions:
         type: string
       permissions:
         allOf:
-        - $ref: '#/definitions/request_structs.AdminPermissionsDTO'
+        - $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.AdminPermissionsDTO'
         description: Permisos que se le quieren asignar
       username:
         type: string
@@ -441,7 +474,19 @@ definitions:
     - password
     - username
     type: object
-  request_structs.CreateSpecialtyRequest:
+  github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreateSocialNetworkRequest:
+    properties:
+      name:
+        example: ig
+        type: string
+      url:
+        example: https://instagram.com/psicologo
+        type: string
+    required:
+    - name
+    - url
+    type: object
+  github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreateSpecialtyRequest:
     properties:
       description:
         example: Especialidad enfocada en...
@@ -452,7 +497,7 @@ definitions:
     required:
     - name
     type: object
-  request_structs.PostGradeDTO:
+  github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.PostGradeDTO:
     properties:
       title:
         type: string
@@ -461,7 +506,7 @@ definitions:
       year:
         type: string
     type: object
-  request_structs.PsiFullProfileDTO:
+  github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.PsiFullProfileDTO:
     properties:
       address:
         type: string
@@ -496,10 +541,14 @@ definitions:
       post_grades:
         description: Postgrados (Siempre visibles si existen)
         items:
-          $ref: '#/definitions/request_structs.PostGradeDTO'
+          $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.PostGradeDTO'
         type: array
       profile_picture:
         type: string
+      social_networks:
+        items:
+          $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.SocialNetworkDTO'
+        type: array
       solvent:
         type: boolean
       specialties:
@@ -518,7 +567,7 @@ definitions:
             type: string
         type: object
     type: object
-  request_structs.PsiLoginRequest:
+  github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.PsiLoginRequest:
     properties:
       identifier:
         example: psicologo@email.com
@@ -530,7 +579,7 @@ definitions:
     - identifier
     - password
     type: object
-  request_structs.PsiUserUpdateRequestSelf:
+  github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.PsiUserUpdateRequestSelf:
     properties:
       cel_phone_carabobo:
         type: string
@@ -576,7 +625,14 @@ definitions:
       state_outside:
         type: string
     type: object
-  request_structs.UpdateAdminRequest:
+  github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.SocialNetworkDTO:
+    properties:
+      name:
+        type: string
+      url:
+        type: string
+    type: object
+  github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdateAdminRequest:
     properties:
       email:
         type: string
@@ -588,14 +644,25 @@ definitions:
         type: string
       permissions:
         allOf:
-        - $ref: '#/definitions/request_structs.AdminPermissionsDTO'
+        - $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.AdminPermissionsDTO'
         description: Permisos
       username:
         type: string
     required:
     - id
     type: object
-  request_structs.UpdateSpecialtyRequest:
+  github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdateSocialNetworkRequest:
+    properties:
+      is_active:
+        type: boolean
+      name:
+        example: Instagram
+        type: string
+      url:
+        example: https://instagram.com/nuevo_perfil
+        type: string
+    type: object
+  github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdateSpecialtyRequest:
     properties:
       active:
         type: boolean
@@ -603,6 +670,18 @@ definitions:
         type: string
       name:
         type: string
+    type: object
+  internal_handler.LoginRequest:
+    properties:
+      identifier:
+        example: admin
+        type: string
+      password:
+        example: admin123
+        type: string
+    required:
+    - identifier
+    - password
     type: object
 host: localhost:8080
 info:
@@ -623,7 +702,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/request_structs.CreateAdminRequest'
+          $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreateAdminRequest'
       produces:
       - application/json
       responses:
@@ -842,6 +921,27 @@ paths:
       summary: Actualizar publicación
       tags:
       - Administración - Publicaciones
+  /admin/psi/social/{id}:
+    delete:
+      description: Puede ser usado por el psicólogo dueño o por un Administrador.
+      parameters:
+      - description: UUID de la red
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Borrar red social (Soft Delete)
+      tags:
+      - Psicólogos - Perfil
   /admin/psi/upload-csv:
     post:
       consumes:
@@ -885,7 +985,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/request_structs.CreateSpecialtyRequest'
+          $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreateSpecialtyRequest'
       produces:
       - application/json
       responses:
@@ -943,7 +1043,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/request_structs.UpdateSpecialtyRequest'
+          $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdateSpecialtyRequest'
       produces:
       - application/json
       responses:
@@ -975,7 +1075,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/domain.PsiSpecialtyModel'
+              $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiSpecialtyModel'
             type: array
         "403":
           description: 'error: permisos insuficientes'
@@ -1000,7 +1100,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/request_structs.UpdateAdminRequest'
+          $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdateAdminRequest'
       produces:
       - application/json
       responses:
@@ -1033,7 +1133,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handler.LoginRequest'
+          $ref: '#/definitions/internal_handler.LoginRequest'
       produces:
       - application/json
       responses:
@@ -1103,7 +1203,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/domain.Post'
+            $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.Post'
         "404":
           description: Not Found
           schema:
@@ -1129,7 +1229,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/request_structs.PsiFullProfileDTO'
+            $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.PsiFullProfileDTO'
         "404":
           description: Not Found
           schema:
@@ -1182,7 +1282,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/request_structs.PsiLoginRequest'
+          $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.PsiLoginRequest'
       produces:
       - application/json
       responses:
@@ -1210,7 +1310,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/domain.PsiUserModel'
+            $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserModel'
         "401":
           description: No autorizado
           schema:
@@ -1231,7 +1331,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/request_structs.PsiUserUpdateRequestSelf'
+          $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.PsiUserUpdateRequestSelf'
       produces:
       - application/json
       responses:
@@ -1357,6 +1457,81 @@ paths:
       summary: Actualizar postgrado
       tags:
       - Psicólogos - Académico
+  /psi/me/social:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Datos de la red
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreateSocialNetworkRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Agregar red social
+      tags:
+      - Psicólogos - Perfil
+  /psi/me/social/{id}:
+    delete:
+      description: Puede ser usado por el psicólogo dueño o por un Administrador.
+      parameters:
+      - description: UUID de la red
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Borrar red social (Soft Delete)
+      tags:
+      - Psicólogos - Perfil
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: UUID de la red
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Campos parciales
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdateSocialNetworkRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Actualizar red social
+      tags:
+      - Psicólogos - Perfil
   /specialties:
     get:
       description: Retorna el catálogo. Los usuarios ven solo las activas. Admins
@@ -1373,7 +1548,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/domain.PsiSpecialtyModel'
+              $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiSpecialtyModel'
             type: array
         "500":
           description: error al recuperar especialidades
@@ -1400,7 +1575,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/domain.PsiSpecialtyModel'
+            $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiSpecialtyModel'
         "400":
           description: ID inválido
           schema:

@@ -297,6 +297,7 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id uuid.UUID) (*reque
 		MiniBio:        psi.MiniBio,
 		Specialties:    make([]string, 0),
 		PostGrades:     make([]request_structs.PostGradeDTO, 0), // Inicializamos vacío
+		SocialNetworks: make([]request_structs.SocialNetworkDTO, 0),
 	}
 
 	// --- LÓGICA DE PRIVACIDAD PERSONAL ---
@@ -337,6 +338,17 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id uuid.UUID) (*reque
 	}
 	if psi.ColData.ShowMentionUndergraduate {
 		dto.Undergraduate.Mention = psi.ColData.MentionUndergraduate
+	}
+
+	// --- MAPEO DE REDES SOCIALES ---
+	// Generalmente, las redes sociales son públicas, pero si quieres
+	// protegerlas por solvencia, envuélvelas en el "if psi.Solvent"
+	for _, sn := range psi.SocialNetworks {
+		dto.SocialNetworks = append(dto.SocialNetworks, request_structs.SocialNetworkDTO{
+			// Usamos nuestra utilidad de normalización para que el front reciba nombres bonitos
+			Name: sn.Name,
+			URL:  sn.URL,
+		})
 	}
 
 	// --- LÓGICA DE NEGOCIO INSTITUCIONAL (SOLVENCIA) ---

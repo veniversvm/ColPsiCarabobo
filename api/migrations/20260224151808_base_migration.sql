@@ -207,3 +207,26 @@ CREATE TABLE "psi_user_post_grades" (
 CREATE INDEX "idx_psi_user_post_grades_deleted_at" ON "psi_user_post_grades" ("deleted_at");
 -- Create index "idx_psi_user_post_grades_psi_user_id" to table: "psi_user_post_grades"
 CREATE INDEX "idx_psi_user_post_grades_psi_user_id" ON "psi_user_post_grades" ("psi_user_id");
+-- Create "psi_user_social_networks" table
+CREATE TABLE "psi_user_social_networks" (
+  "id" uuid NOT NULL,
+  "created_at" timestamptz NULL,
+  "updated_at" timestamptz NULL,
+  "deleted_at" timestamptz NULL,
+  "create_by" character varying(255) NULL,
+  "update_by" character varying(255) NULL,
+  "create_by_id" uuid NULL,
+  "update_by_id" uuid NULL,
+  "psi_user_id" uuid NOT NULL,
+  "name" character varying(50) NOT NULL,
+  "url" character varying(512) NOT NULL,
+  "is_active" boolean NOT NULL DEFAULT true,
+  PRIMARY KEY ("id"),
+  CONSTRAINT "fk_psi_users_social_networks" FOREIGN KEY ("psi_user_id") REFERENCES "psi_users" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION
+);
+-- Create index "idx_psi_user_social_networks_deleted_at" to table: "psi_user_social_networks"
+CREATE INDEX "idx_psi_user_social_networks_deleted_at" ON "psi_user_social_networks" ("deleted_at");
+-- Create index "idx_psi_user_social_networks_id" to table: "psi_user_social_networks"
+CREATE INDEX "idx_psi_user_social_networks_id" ON "psi_user_social_networks" ("id");
+-- Create index "idx_psi_user_social_networks_psi_user_id" to table: "psi_user_social_networks"
+CREATE INDEX "idx_psi_user_social_networks_psi_user_id" ON "psi_user_social_networks" ("psi_user_id");

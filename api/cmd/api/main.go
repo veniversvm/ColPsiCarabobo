@@ -54,6 +54,7 @@ func main() {
 		&domain.PsiUserPostGrade{},
 		&domain.Post{},
 		&domain.PsiSpecialtyModel{},
+		&domain.PsiUserSocialNetwork{},
 	)
 	if err != nil {
 		log.Fatalf("❌ Error: Falló la migración de GORM: %v", err)

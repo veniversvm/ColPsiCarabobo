@@ -123,8 +123,9 @@ type PsiUserModel struct {
 	BioTextID uuid.UUID `json:"bio_text_id,omitempty"`
 
 	// Relaciones: Conexión con datos académicos y gremiales.
-	ColData    PsiUserColData     `gorm:"foreignKey:PsiUserModelID" json:"col_data"`
-	PostGrades []PsiUserPostGrade `gorm:"foreignKey:PsiUserID" json:"post_grades"`
+	ColData        PsiUserColData         `gorm:"foreignKey:PsiUserModelID" json:"col_data"`
+	PostGrades     []PsiUserPostGrade     `gorm:"foreignKey:PsiUserID" json:"post_grades"`
+	SocialNetworks []PsiUserSocialNetwork `gorm:"foreignKey:PsiUserID" json:"social_networks"`
 }
 
 func (PsiUserModel) TableName() string {

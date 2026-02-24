@@ -337,3 +337,85 @@ func (h *PsiHandler) UpdatePostGrade(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{"message": "Título actualizado correctamente"})
 }
+
+// AddSocialNetwork godoc
+// @Summary      Agregar red social
+// @Security     BearerAuth
+// @Tags         Psicólogos - Perfil
+// @Accept       json
+// @Produce      json
+// @Param        request body request_structs.CreateSocialNetworkRequest true "Datos de la red"
+// @Success      201 {object} map[string]string
+// @Router       /psi/me/social [post]
+func (h *PsiHandler) AddSocialNetwork(c *fiber.Ctx) error {
+	psi := c.Locals("psi_user").(*domain.PsiUserModel)
+	var req request_structs.CreateSocialNetworkRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "JSON inválido"})
+	}
+
+	if err := h.service.AddSocialNetwork(c.UserContext(), psi, req); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.Status(201).JSON(fiber.Map{"message": "Red social agregada"})
+}
+
+// UpdateSocialNetwork godoc
+// @Summary      Actualizar red social
+// @Security     BearerAuth
+// @Tags         Psicólogos - Perfil
+// @Accept       json
+// @Produce      json
+// @Param        id path string true "UUID de la red"
+// @Param        request body request_structs.UpdateSocialNetworkRequest true "Campos parciales"
+// @Success      200 {object} map[string]string
+// @Router       /psi/me/social/{id} [patch]
+func (h *PsiHandler) UpdateSocialNetwork(c *fiber.Ctx) error {
+	psi := c.Locals("psi_user").(*domain.PsiUserModel)
+	netID, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "ID inválido"})
+	}
+
+	var req request_structs.UpdateSocialNetworkRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "JSON inválido"})
+	}
+
+	if err := h.service.UpdateSocialNetwork(c.UserContext(), psi, netID, req); err != nil {
+		return c.Status(403).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"message": "Red social actualizada"})
+}
+
+// DeleteSocialNetwork godoc
+// @Summary      Borrar red social (Soft Delete)
+// @Description  Puede ser usado por el psicólogo dueño o por un Administrador.
+// @Security     BearerAuth
+// @Tags         Psicólogos - Perfil
+// @Param        id path string true "UUID de la red"
+// @Success      200 {object} map[string]string
+// @Router       /psi/me/social/{id} [delete]
+// @Router       /admin/psi/social/{id} [delete]
+func (h *PsiHandler) DeleteSocialNetwork(c *fiber.Ctx) error {
+	netID, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "ID inválido"})
+	}
+
+	role := ""
+	var execID uuid.UUID
+
+	if admin, ok := c.Locals("admin").(*domain.UserAdmin); ok && admin != nil {
+		role = "admin"
+		execID = admin.ID
+	} else if psi, ok := c.Locals("psi_user").(*domain.PsiUserModel); ok && psi != nil {
+		role = "psi"
+		execID = psi.ID
+	}
+
+	if err := h.service.DeleteSocialNetwork(c.UserContext(), role, execID, netID); err != nil {
+		return c.Status(403).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"message": "Red social eliminada correctamente"})
+}

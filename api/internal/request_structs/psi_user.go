@@ -104,7 +104,8 @@ type PsiFullProfileDTO struct {
 	} `json:"undergraduate"`
 
 	// Postgrados (Siempre visibles si existen)
-	PostGrades []PostGradeDTO `json:"post_grades,omitempty"`
+	PostGrades     []PostGradeDTO     `json:"post_grades,omitempty"`
+	SocialNetworks []SocialNetworkDTO `json:"social_networks,omitempty"`
 }
 
 type PostGradeDTO struct {

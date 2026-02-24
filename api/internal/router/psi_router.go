@@ -58,4 +58,8 @@ func SetupPsiRoutes(router fiber.Router, db *gorm.DB, s3Client *s3.S3Client) {
 	// Tip Senior: Usamos <uuid> para asegurar que solo entre aquí si es un UUID válido.
 	// Esto evita que Fiber confunda "/psi/directory" con un ID si algo falla en el orden.
 	psiGroup.Get("/:id<uuid>", h.GetPublicProfile)
+
+	meGroup.Post("/social", h.AddSocialNetwork)
+	meGroup.Patch("/social/:id", h.UpdateSocialNetwork)
+	meGroup.Delete("/social/:id", h.DeleteSocialNetwork)
 }

@@ -51,6 +51,7 @@ func (r *psiRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.PsiUserMod
 		Preload("PostGrades", func(db *gorm.DB) *gorm.DB {
 			return db.Order("graduation_year DESC")
 		}).
+		Preload("SocialNetworks").
 		First(&psi, "id = ?", id).Error
 
 	if err != nil {
@@ -260,4 +261,38 @@ func (r *psiRepo) GetPostGradeByID(ctx context.Context, id uuid.UUID) (*domain.P
 // UpdatePostGrade actualiza el registro.
 func (r *psiRepo) UpdatePostGrade(ctx context.Context, pg *domain.PsiUserPostGrade) error {
 	return r.db.WithContext(ctx).Save(pg).Error
+}
+
+////////////////////////////////////
+// SOCIAL MEDIA
+////////////////////////////////////
+
+func (r *psiRepo) CreateSocialNetwork(ctx context.Context, sn *domain.PsiUserSocialNetwork) error {
+	return r.db.WithContext(ctx).Create(sn).Error
+}
+
+func (r *psiRepo) GetSocialNetworkByID(ctx context.Context, id uuid.UUID) (*domain.PsiUserSocialNetwork, error) {
+	var sn domain.PsiUserSocialNetwork
+	err := r.db.WithContext(ctx).First(&sn, "id = ?", id).Error
+	return &sn, err
+}
+
+func (r *psiRepo) UpdateSocialNetwork(ctx context.Context, sn *domain.PsiUserSocialNetwork) error {
+	return r.db.WithContext(ctx).Save(sn).Error
+}
+
+func (r *psiRepo) DeleteSocialNetwork(ctx context.Context, id uuid.UUID) error {
+	// GORM hará el Soft Delete automáticamente gracias a DeletedAt
+	return r.db.WithContext(ctx).Delete(&domain.PsiUserSocialNetwork{}, "id = ?", id).Error
+}
+
+func (r *psiRepo) CountSocialNetworksByPsiID(ctx context.Context, psiID uuid.UUID) (int64, error) {
+	var count int64
+	// Contamos solo las que no han sido borradas (GORM maneja el Soft Delete automáticamente)
+	err := r.db.WithContext(ctx).
+		Model(&domain.PsiUserSocialNetwork{}).
+		Where("psi_user_id = ?", psiID).
+		Count(&count).Error
+
+	return count, err
 }

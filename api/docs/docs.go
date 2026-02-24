@@ -40,7 +40,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/request_structs.CreateAdminRequest"
+                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreateAdminRequest"
                         }
                     }
                 ],
@@ -367,6 +367,40 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/psi/social/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Puede ser usado por el psicólogo dueño o por un Administrador.",
+                "tags": [
+                    "Psicólogos - Perfil"
+                ],
+                "summary": "Borrar red social (Soft Delete)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID de la red",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/admin/psi/upload-csv": {
             "post": {
                 "security": [
@@ -439,7 +473,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/request_structs.CreateSpecialtyRequest"
+                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreateSpecialtyRequest"
                         }
                     }
                 ],
@@ -486,7 +520,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/domain.PsiSpecialtyModel"
+                                "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiSpecialtyModel"
                             }
                         }
                     },
@@ -566,7 +600,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/request_structs.UpdateSpecialtyRequest"
+                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdateSpecialtyRequest"
                         }
                     }
                 ],
@@ -617,7 +651,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/request_structs.UpdateAdminRequest"
+                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdateAdminRequest"
                         }
                     }
                 ],
@@ -663,7 +697,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handler.LoginRequest"
+                            "$ref": "#/definitions/internal_handler.LoginRequest"
                         }
                     }
                 ],
@@ -763,7 +797,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/domain.Post"
+                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.Post"
                         }
                     },
                     "404": {
@@ -845,7 +879,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/request_structs.PsiLoginRequest"
+                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.PsiLoginRequest"
                         }
                     }
                 ],
@@ -888,7 +922,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/domain.PsiUserModel"
+                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserModel"
                         }
                     },
                     "401": {
@@ -924,7 +958,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/request_structs.PsiUserUpdateRequestSelf"
+                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.PsiUserUpdateRequestSelf"
                         }
                     }
                 ],
@@ -1108,6 +1142,127 @@ const docTemplate = `{
                 }
             }
         },
+        "/psi/me/social": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Psicólogos - Perfil"
+                ],
+                "summary": "Agregar red social",
+                "parameters": [
+                    {
+                        "description": "Datos de la red",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreateSocialNetworkRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/psi/me/social/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Puede ser usado por el psicólogo dueño o por un Administrador.",
+                "tags": [
+                    "Psicólogos - Perfil"
+                ],
+                "summary": "Borrar red social (Soft Delete)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID de la red",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Psicólogos - Perfil"
+                ],
+                "summary": "Actualizar red social",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID de la red",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Campos parciales",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdateSocialNetworkRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/psi/{id}": {
             "get": {
                 "description": "Retorna la ficha técnica. Oculta datos privados (teléfono, email) según configuración del usuario.",
@@ -1131,7 +1286,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/request_structs.PsiFullProfileDTO"
+                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.PsiFullProfileDTO"
                         }
                     },
                     "404": {
@@ -1170,7 +1325,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/domain.PsiSpecialtyModel"
+                                "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiSpecialtyModel"
                             }
                         }
                     },
@@ -1241,7 +1396,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/domain.PsiSpecialtyModel"
+                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiSpecialtyModel"
                         }
                     },
                     "400": {
@@ -1267,7 +1422,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "domain.Post": {
+        "github_com_veniversvm_ColPsiCarabobo_api_internal_domain.Post": {
             "type": "object",
             "properties": {
                 "create_by": {
@@ -1301,7 +1456,7 @@ const docTemplate = `{
                     "description": "Text es la instancia cargada del contenido.\nGORM permite cargar este campo mediante 'Preload' cuando se requiere el detalle completo.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/domain.TextModel"
+                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.TextModel"
                         }
                     ]
                 },
@@ -1331,7 +1486,7 @@ const docTemplate = `{
                 }
             }
         },
-        "domain.PsiSpecialtyModel": {
+        "github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiSpecialtyModel": {
             "type": "object",
             "properties": {
                 "active": {
@@ -1372,7 +1527,7 @@ const docTemplate = `{
                 }
             }
         },
-        "domain.PsiUserColData": {
+        "github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserColData": {
             "type": "object",
             "properties": {
                 "cpsm": {
@@ -1468,7 +1623,7 @@ const docTemplate = `{
                 }
             }
         },
-        "domain.PsiUserModel": {
+        "github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserModel": {
             "type": "object",
             "properties": {
                 "bio_text_id": {
@@ -1491,7 +1646,7 @@ const docTemplate = `{
                     "description": "Relaciones: Conexión con datos académicos y gremiales.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/domain.PsiUserColData"
+                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserColData"
                         }
                     ]
                 },
@@ -1557,7 +1712,7 @@ const docTemplate = `{
                 "post_grades": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/domain.PsiUserPostGrade"
+                        "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserPostGrade"
                     }
                 },
                 "primary_specialty": {
@@ -1594,6 +1749,12 @@ const docTemplate = `{
                 "show_public_service_address": {
                     "type": "boolean"
                 },
+                "social_networks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserSocialNetwork"
+                    }
+                },
                 "solvent": {
                     "description": "Status \u0026 Files: Estado de solvencia y archivos multimedia.",
                     "type": "boolean"
@@ -1619,7 +1780,7 @@ const docTemplate = `{
                 }
             }
         },
-        "domain.PsiUserPostGrade": {
+        "github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserPostGrade": {
             "type": "object",
             "properties": {
                 "create_by": {
@@ -1679,7 +1840,51 @@ const docTemplate = `{
                 }
             }
         },
-        "domain.TextModel": {
+        "github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserSocialNetwork": {
+            "type": "object",
+            "properties": {
+                "create_by": {
+                    "description": "CreateBy almacena el nombre o identificador textual del creador.",
+                    "type": "string"
+                },
+                "create_by_id": {
+                    "description": "CreateById es el UUID del usuario/administrador que creó el registro.\nEs un puntero para permitir valores nulos si la creación es automática por el sistema.",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "CreatedAt registra la fecha y hora exacta en que se creó el registro.\nGORM gestiona este campo automáticamente durante la inserción.",
+                    "type": "string"
+                },
+                "is_active": {
+                    "description": "IsActive permite al usuario ocultar una red sin borrarla físicamente",
+                    "type": "boolean"
+                },
+                "name": {
+                    "description": "Name identifica la plataforma (ej: \"Instagram\", \"LinkedIn\", \"Web Personal\")",
+                    "type": "string"
+                },
+                "psi_user_id": {
+                    "type": "string"
+                },
+                "update_by": {
+                    "description": "UpdateBy almacena el nombre o identificador textual de la última persona en modificarlo.",
+                    "type": "string"
+                },
+                "update_by_id": {
+                    "description": "UpdateById es el UUID del usuario/administrador que realizó la última actualización.",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "UpdatedAt registra la última fecha y hora en que se modificó el registro.\nGORM actualiza este valor automáticamente en cada operación de guardado.",
+                    "type": "string"
+                },
+                "url": {
+                    "description": "URL es el enlace directo al perfil o página",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_veniversvm_ColPsiCarabobo_api_internal_domain.TextModel": {
             "type": "object",
             "properties": {
                 "content": {
@@ -1715,24 +1920,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handler.LoginRequest": {
-            "type": "object",
-            "required": [
-                "identifier",
-                "password"
-            ],
-            "properties": {
-                "identifier": {
-                    "type": "string",
-                    "example": "admin"
-                },
-                "password": {
-                    "type": "string",
-                    "example": "admin123"
-                }
-            }
-        },
-        "request_structs.AdminPermissionsDTO": {
+        "github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.AdminPermissionsDTO": {
             "type": "object",
             "properties": {
                 "can_create_admin": {
@@ -1782,7 +1970,7 @@ const docTemplate = `{
                 }
             }
         },
-        "request_structs.CreateAdminRequest": {
+        "github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreateAdminRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -1801,7 +1989,7 @@ const docTemplate = `{
                     "description": "Permisos que se le quieren asignar",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/request_structs.AdminPermissionsDTO"
+                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.AdminPermissionsDTO"
                         }
                     ]
                 },
@@ -1810,7 +1998,24 @@ const docTemplate = `{
                 }
             }
         },
-        "request_structs.CreateSpecialtyRequest": {
+        "github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreateSocialNetworkRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "url"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "example": "ig"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://instagram.com/psicologo"
+                }
+            }
+        },
+        "github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreateSpecialtyRequest": {
             "type": "object",
             "required": [
                 "name"
@@ -1826,7 +2031,7 @@ const docTemplate = `{
                 }
             }
         },
-        "request_structs.PostGradeDTO": {
+        "github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.PostGradeDTO": {
             "type": "object",
             "properties": {
                 "title": {
@@ -1840,7 +2045,7 @@ const docTemplate = `{
                 }
             }
         },
-        "request_structs.PsiFullProfileDTO": {
+        "github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.PsiFullProfileDTO": {
             "type": "object",
             "properties": {
                 "address": {
@@ -1891,11 +2096,17 @@ const docTemplate = `{
                     "description": "Postgrados (Siempre visibles si existen)",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/request_structs.PostGradeDTO"
+                        "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.PostGradeDTO"
                     }
                 },
                 "profile_picture": {
                     "type": "string"
+                },
+                "social_networks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.SocialNetworkDTO"
+                    }
                 },
                 "solvent": {
                     "type": "boolean"
@@ -1924,7 +2135,7 @@ const docTemplate = `{
                 }
             }
         },
-        "request_structs.PsiLoginRequest": {
+        "github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.PsiLoginRequest": {
             "type": "object",
             "required": [
                 "identifier",
@@ -1941,7 +2152,7 @@ const docTemplate = `{
                 }
             }
         },
-        "request_structs.PsiUserUpdateRequestSelf": {
+        "github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.PsiUserUpdateRequestSelf": {
             "type": "object",
             "properties": {
                 "cel_phone_carabobo": {
@@ -2008,7 +2219,18 @@ const docTemplate = `{
                 }
             }
         },
-        "request_structs.UpdateAdminRequest": {
+        "github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.SocialNetworkDTO": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdateAdminRequest": {
             "type": "object",
             "required": [
                 "id"
@@ -2030,7 +2252,7 @@ const docTemplate = `{
                     "description": "Permisos",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/request_structs.AdminPermissionsDTO"
+                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.AdminPermissionsDTO"
                         }
                     ]
                 },
@@ -2039,7 +2261,23 @@ const docTemplate = `{
                 }
             }
         },
-        "request_structs.UpdateSpecialtyRequest": {
+        "github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdateSocialNetworkRequest": {
+            "type": "object",
+            "properties": {
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Instagram"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://instagram.com/nuevo_perfil"
+                }
+            }
+        },
+        "github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdateSpecialtyRequest": {
             "type": "object",
             "properties": {
                 "active": {
@@ -2050,6 +2288,23 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                }
+            }
+        },
+        "internal_handler.LoginRequest": {
+            "type": "object",
+            "required": [
+                "identifier",
+                "password"
+            ],
+            "properties": {
+                "identifier": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "admin123"
                 }
             }
         }

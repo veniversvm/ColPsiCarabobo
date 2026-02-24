@@ -1,9 +1,20 @@
+MIGRACIONES
+Ver instrucciones en carpeta de migraciones
+
+
+
+SAWGGER
 /home/fran/go/bin/linux_amd64/swag init -g cmd/api/main.go
 
 /home/fran/go/bin/linux_amd64/swag init -g cmd/api/main.go --parseDependency --parseInternal
 
 TODO
-Private phone para el psicologo
+RRSS
+
+Búsqueda avanzada: Pulir el buscador público con los filtros de especialidades que creamos.
+
+
+MAX IMG MB
 
 
 
