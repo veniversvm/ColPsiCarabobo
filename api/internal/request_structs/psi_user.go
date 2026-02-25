@@ -51,10 +51,12 @@ type CreatePostGradeRequest struct {
 
 // PsiDirectoryFilterDTO captura los parámetros de la URL
 type PsiDirectoryFilterDTO struct {
-	SearchTerm string // q: Nombre, Apellido, CI, FPV
-	Specialty  string // filtro secundario
-	Page       int
-	Limit      int
+	SearchTerm  string `query:"q"`         // Nombre, Apellido, CI, FPV
+	SpecialtyID uint32 `query:"specialty"` // ID del catálogo maestro
+	Location    string `query:"location"`  // Municipio o Estado
+	Gender      string `query:"gender"`    // M / F
+	Page        int    `query:"page"`
+	Limit       int    `query:"limit"`
 }
 
 // PsiMiniProfileDTO es la respuesta optimizada para el listado público.
@@ -66,7 +68,8 @@ type PsiMiniProfileDTO struct {
 	FPV            int       `json:"fpv"`
 	ProfilePicture string    `json:"profile_picture"` // S3 Key o URL
 	MiniBio        string    `json:"mini_bio"`
-	Solvent        bool      `json:"solvent"` // Útil para que el frontend muestre un badge
+	// Solvent        bool      `json:"solvent"` // Útil para que el frontend muestre un badge
+	Specialties []string `json:"specialties"`
 }
 
 // PsiFullProfileDTO representa la ficha pública completa del psicólogo.

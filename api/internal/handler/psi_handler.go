@@ -3,7 +3,6 @@ package handler
 import (
 	"fmt"
 	"mime/multipart"
-	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -112,36 +111,28 @@ func (h *PsiHandler) UpdateOwnProfile(c *fiber.Ctx) error {
 }
 
 // SearchDirectory godoc
-// @Summary      Directorio Público (Mini Perfiles)
-// @Description  Busca psicólogos. Si se usa 'q' (Nombre/CI/FPV), ignora solvencia. Si no, solo muestra solventes.
+// @Summary      Directorio Público de Psicólogos
+// @Description  Motor de búsqueda avanzado. Si se usa 'q', busca por identidad (ignora solvencia). Si no se usa 'q', solo muestra solventes y aplica filtros de ubicación/especialidad.
 // @Tags         Psicólogos - Público
 // @Produce      json
-// @Param        q          query     string  false  "Búsqueda por Identidad"
-// @Param        specialty  query     string  false  "Filtro especialidad (Solo en navegación)"
-// @Param        page       query     int     false  "Página"
-// @Param        limit      query     int     false  "Límite"
+// @Param        q          query     string  false  "Búsqueda por Nombre, Apellido, CI o FPV"
+// @Param        specialty  query     int     false  "ID de la Especialidad (Catálogo Maestro)"
+// @Param        location   query     string  false  "Municipio o Estado"
+// @Param        gender     query     string  false  "Género: M o F"
+// @Param        page       query     int     false  "Página (Def: 1)"
+// @Param        limit      query     int     false  "Límite (Def: 12)"
 // @Success      200        {object}  map[string]interface{}
 // @Router       /psi/directory [get]
 func (h *PsiHandler) SearchDirectory(c *fiber.Ctx) error {
-	page, _ := strconv.Atoi(c.Query("page", "1"))
-	limit, _ := strconv.Atoi(c.Query("limit", "12"))
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 {
-		limit = 12
-	}
-
-	filter := request_structs.PsiDirectoryFilterDTO{
-		SearchTerm: c.Query("q"),
-		Specialty:  c.Query("specialty"),
-		Page:       page,
-		Limit:      limit,
+	// Usamos QueryParser para llenar el DTO automáticamente
+	var filter request_structs.PsiDirectoryFilterDTO
+	if err := c.QueryParser(&filter); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Parámetros de consulta inválidos"})
 	}
 
 	result, err := h.service.GetPublicDirectory(c.UserContext(), filter)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "Error consultando directorio"})
+		return c.Status(500).JSON(fiber.Map{"error": "Error interno en la búsqueda"})
 	}
 
 	return c.JSON(result)

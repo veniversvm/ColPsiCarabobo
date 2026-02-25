@@ -814,36 +814,48 @@ const docTemplate = `{
         },
         "/psi/directory": {
             "get": {
-                "description": "Busca psicólogos. Si se usa 'q' (Nombre/CI/FPV), ignora solvencia. Si no, solo muestra solventes.",
+                "description": "Motor de búsqueda avanzado. Si se usa 'q', busca por identidad (ignora solvencia). Si no se usa 'q', solo muestra solventes y aplica filtros de ubicación/especialidad.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Psicólogos - Público"
                 ],
-                "summary": "Directorio Público (Mini Perfiles)",
+                "summary": "Directorio Público de Psicólogos",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Búsqueda por Identidad",
+                        "description": "Búsqueda por Nombre, Apellido, CI o FPV",
                         "name": "q",
                         "in": "query"
                     },
                     {
-                        "type": "string",
-                        "description": "Filtro especialidad (Solo en navegación)",
+                        "type": "integer",
+                        "description": "ID de la Especialidad (Catálogo Maestro)",
                         "name": "specialty",
                         "in": "query"
                     },
                     {
+                        "type": "string",
+                        "description": "Municipio o Estado",
+                        "name": "location",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Género: M o F",
+                        "name": "gender",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
-                        "description": "Página",
+                        "description": "Página (Def: 1)",
                         "name": "page",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Límite",
+                        "description": "Límite (Def: 12)",
                         "name": "limit",
                         "in": "query"
                     }
@@ -1853,6 +1865,9 @@ const docTemplate = `{
                 },
                 "created_at": {
                     "description": "CreatedAt registra la fecha y hora exacta en que se creó el registro.\nGORM gestiona este campo automáticamente durante la inserción.",
+                    "type": "string"
+                },
+                "id": {
                     "type": "string"
                 },
                 "is_active": {

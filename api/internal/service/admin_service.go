@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/mail"
 	"strings"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/patrickmn/go-cache"
 	domain "github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/request_structs"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/utils"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -174,6 +176,15 @@ func (s *AdminService) CreateAdmin(
 
 	if !creator.CanCreateAdmin && !creator.Sudo {
 		return errors.New("permisos insuficientes para crear administradores")
+	}
+
+	_, err := mail.ParseAddress(req.Email)
+	if err != nil {
+		return errors.New("el formato del email es inválido")
+	}
+
+	if !utils.IsStrongPassword(req.Password) {
+		return errors.New("la contraseña no cumple con los estándares de seguridad")
 	}
 
 	newAdmin := &domain.UserAdmin{

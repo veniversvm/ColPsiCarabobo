@@ -361,6 +361,8 @@ definitions:
           CreatedAt registra la fecha y hora exacta en que se creó el registro.
           GORM gestiona este campo automáticamente durante la inserción.
         type: string
+      id:
+        type: string
       is_active:
         description: IsActive permite al usuario ocultar una red sin borrarla físicamente
         type: boolean
@@ -1241,22 +1243,31 @@ paths:
       - Psicólogos - Público
   /psi/directory:
     get:
-      description: Busca psicólogos. Si se usa 'q' (Nombre/CI/FPV), ignora solvencia.
-        Si no, solo muestra solventes.
+      description: Motor de búsqueda avanzado. Si se usa 'q', busca por identidad
+        (ignora solvencia). Si no se usa 'q', solo muestra solventes y aplica filtros
+        de ubicación/especialidad.
       parameters:
-      - description: Búsqueda por Identidad
+      - description: Búsqueda por Nombre, Apellido, CI o FPV
         in: query
         name: q
         type: string
-      - description: Filtro especialidad (Solo en navegación)
+      - description: ID de la Especialidad (Catálogo Maestro)
         in: query
         name: specialty
+        type: integer
+      - description: Municipio o Estado
+        in: query
+        name: location
         type: string
-      - description: Página
+      - description: 'Género: M o F'
+        in: query
+        name: gender
+        type: string
+      - description: 'Página (Def: 1)'
         in: query
         name: page
         type: integer
-      - description: Límite
+      - description: 'Límite (Def: 12)'
         in: query
         name: limit
         type: integer
@@ -1268,7 +1279,7 @@ paths:
           schema:
             additionalProperties: true
             type: object
-      summary: Directorio Público (Mini Perfiles)
+      summary: Directorio Público de Psicólogos
       tags:
       - Psicólogos - Público
   /psi/login:

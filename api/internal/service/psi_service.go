@@ -239,16 +239,27 @@ func (s *PsiService) UpdateProfileSelf(ctx context.Context, psi *domain.PsiUserM
 }
 
 func (s *PsiService) GetPublicDirectory(ctx context.Context, filter request_structs.PsiDirectoryFilterDTO) (interface{}, error) {
-	// Llamada al repo
+	// Normalizar paginación
+	if filter.Page < 1 {
+		filter.Page = 1
+	}
+	if filter.Limit < 1 {
+		filter.Limit = 12
+	}
+
+	filter.Gender = strings.ToUpper(strings.TrimSpace(filter.Gender))
+	if filter.Gender != "M" && filter.Gender != "F" {
+		filter.Gender = ""
+	}
+
 	users, total, err := s.repo.SearchDirectory(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
 
-	// Mapeo a DTO Ligero (Mini Profile)
 	list := make([]request_structs.PsiMiniProfileDTO, 0, len(users))
 	for _, u := range users {
-		list = append(list, request_structs.PsiMiniProfileDTO{
+		mini := request_structs.PsiMiniProfileDTO{
 			ID:             u.ID,
 			FirstName:      u.FirstName,
 			LastName:       u.LastName,
@@ -256,11 +267,21 @@ func (s *PsiService) GetPublicDirectory(ctx context.Context, filter request_stru
 			FPV:            u.FPV,
 			ProfilePicture: u.ProfilePictureS3Key,
 			MiniBio:        u.MiniBio,
-			Solvent:        u.Solvent,
-		})
+			// Solvent:        u.Solvent, // no mostrar al publico
+		}
+
+		// Añadimos las especialidades al mini perfil para que aparezcan en las "cards"
+		mini.Specialties = []string{}
+		if u.PrimarySpecialty != "" {
+			mini.Specialties = append(mini.Specialties, u.PrimarySpecialty)
+		}
+		if u.SecondarySpecialty != "" {
+			mini.Specialties = append(mini.Specialties, u.SecondarySpecialty)
+		}
+
+		list = append(list, mini)
 	}
 
-	// Respuesta paginada estándar
 	return fiber.Map{
 		"data":        list,
 		"total":       total,

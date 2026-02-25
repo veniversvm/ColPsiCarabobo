@@ -181,17 +181,16 @@ func (r *psiRepo) SearchDirectory(ctx context.Context, filter request_structs.Ps
 	var users []domain.PsiUserModel
 	var total int64
 
-	// Optimizamos la query seleccionando SOLO las columnas necesarias
+	// 1. Base Query con selección de campos mínimos para rendimiento
 	query := r.db.WithContext(ctx).Model(&domain.PsiUserModel{}).
-		Select("id, first_name, last_name, ci, fpv, profile_picture_s3_key, mini_bio, solvent").
+		Select("id, first_name, last_name, ci, fpv, profile_picture_s3_key, mini_bio, solvent, primary_specialty, secondary_specialty").
 		Where("is_active = ?", true)
 
-	// LÓGICA DE NEGOCIO PRINCIPAL
+	// 2. LÓGICA DE IDENTIDAD (q) vs NAVEGACIÓN
 	if filter.SearchTerm != "" {
-		// CASO A: Búsqueda por Identidad (Nombre, Apellido, CI, FPV)
-		// Regla: Traer el resultado INDIFERENTEMENTE de si está solvente o no.
+		// CASO IDENTIDAD: Buscamos por nombre, CI o FPV
+		// REGLA: No filtramos por solvencia aquí.
 		term := "%" + filter.SearchTerm + "%"
-
 		query = query.Where(
 			r.db.Where("first_name ILIKE ?", term).
 				Or("last_name ILIKE ?", term).
@@ -199,28 +198,46 @@ func (r *psiRepo) SearchDirectory(ctx context.Context, filter request_structs.Ps
 				Or("CAST(fpv AS TEXT) LIKE ?", term),
 		)
 	} else {
-		// CASO B: Navegación General
-		// Regla: Solo mostrar psicólogos SOLVENTES.
+		// CASO NAVEGACIÓN: El usuario está explorando el catálogo.
+		// REGLA: Solo mostramos SOLVENTES.
 		query = query.Where("solvent = ?", true)
 
-		// Filtros secundarios (solo aplican en navegación)
-		if filter.Specialty != "" {
-			spec := "%" + filter.Specialty + "%"
-			query = query.Where("primary_specialty ILIKE ? OR secondary_specialty ILIKE ?", spec, spec)
+		// Filtro por Especialidad (Desde el catálogo maestro)
+		if filter.SpecialtyID > 0 {
+			// Buscamos el nombre de la especialidad para comparar con los campos del usuario
+			// (Nota: Esto es así porque los usuarios guardan el nombre de la especialidad como string)
+			var specName string
+			r.db.Model(&domain.PsiSpecialtyModel{}).Select("name").Where("id = ?", filter.SpecialtyID).Scan(&specName)
+
+			if specName != "" {
+				query = query.Where("primary_specialty = ? OR secondary_specialty = ?", specName, specName)
+			}
+		}
+
+		// Filtro por Ubicación (Carabobo o Exterior)
+		if filter.Location != "" {
+			loc := "%" + filter.Location + "%"
+			query = query.Where(
+				r.db.Where("municipality_carabobo ILIKE ?", loc).
+					Or("state_outside ILIKE ?", loc).
+					Or("municipality_outside_carabobo ILIKE ?", loc),
+			)
+		}
+
+		// Filtro por Género
+		if filter.Gender != "" {
+			query = query.Where("genre = ?", filter.Gender)
 		}
 	}
 
-	// Contar total para paginación
-	if err := query.Count(&total).Error; err != nil {
-		return nil, 0, err
-	}
+	// 3. Conteo y Paginación
+	query.Count(&total)
 
-	// Ejecutar consulta paginada
 	offset := (filter.Page - 1) * filter.Limit
-	err := query.Order("last_name ASC").
-		Limit(filter.Limit).
-		Offset(offset).
-		Find(&users).Error
+	err := query.Order("solvent DESC, last_name ASC"). // Priorizamos solventes en el orden
+								Limit(filter.Limit).
+								Offset(offset).
+								Find(&users).Error
 
 	return users, total, err
 }
