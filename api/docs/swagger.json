@@ -361,6 +361,148 @@
                 }
             }
         },
+        "/admin/psi/create": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Permite a un administrador crear un nuevo perfil de psicólogo junto con sus datos colegiales básicos en una sola transacción.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Psicólogos"
+                ],
+                "summary": "Registrar psicólogo (Manual/Individual)",
+                "parameters": [
+                    {
+                        "description": "Datos de identidad, contacto y registro colegial",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreatePsiAdminRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "message: Psicólogo registrado con éxito",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "error: JSON malformado o validación fallida",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "error: No autorizado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "error: Fallo interno al crear el registro",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/psi/list": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Buscador total de psicólogos. Ignora las reglas de solvencia e inactividad. Solo Admin.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Psicólogos"
+                ],
+                "summary": "Listado administrativo de psicólogos",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Búsqueda por Nombre, CI, FPV",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "ID Especialidad",
+                        "name": "specialty",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Municipio o Estado",
+                        "name": "location",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Género (M/F)",
+                        "name": "gender",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Página (Def: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Límite (Def: 12)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/admin/psi/social/{id}": {
             "delete": {
                 "security": [
@@ -432,6 +574,203 @@
                     },
                     "404": {
                         "description": "Retornado si el usuario no tiene permisos (Security by Obscurity)",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/psi/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna TODA la información del psicólogo (Identidad, Privacidad, ColData, Postgrados y RRSS). Ignora configuraciones de privacidad del usuario.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Psicólogos"
+                ],
+                "summary": "Ver expediente completo (Admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del Psicólogo",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserModel"
+                        }
+                    },
+                    "400": {
+                        "description": "ID inválido",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Permiso denegado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Psicólogo no encontrado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Marca a un psicólogo como eliminado. El registro permanece en la base de datos para auditoría legal pero queda invisible en el sistema.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Psicólogos"
+                ],
+                "summary": "Eliminar psicólogo (Soft Delete)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del Psicólogo",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "message: Psicólogo eliminado correctamente",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "error: No autorizado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "error: Permisos insuficientes",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "error: Registro no encontrado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Permite a un administrador modificar CUALQUIER campo del psicólogo (Identidad legal, solvencia, datos gremiales). Soporta actualizaciones parciales (PATCH).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Psicólogos"
+                ],
+                "summary": "Editar perfil completo de psicólogo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del Psicólogo",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Campos a modificar (solo enviar los necesarios)",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdatePsiAdminRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "message: Perfil actualizado por administración",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "error: ID inválido o sin campos para actualizar",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "error: Permisos insuficientes para editar este registro",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "error: Registro no encontrado",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -2007,6 +2346,165 @@
                 }
             }
         },
+        "github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreatePsiAdminRequest": {
+            "type": "object",
+            "required": [
+                "born_date",
+                "ci",
+                "email",
+                "first_name",
+                "fpv",
+                "genre",
+                "last_name",
+                "nationality",
+                "password",
+                "second_last_name",
+                "username"
+            ],
+            "properties": {
+                "born_date": {
+                    "type": "string",
+                    "example": "1990-01-01"
+                },
+                "cel_phone_outside_carabobo": {
+                    "type": "string"
+                },
+                "ci": {
+                    "description": "Datos filiatorios",
+                    "type": "integer"
+                },
+                "contact_email": {
+                    "description": "Datos de contacto publico",
+                    "type": "string"
+                },
+                "cpsm": {
+                    "type": "boolean"
+                },
+                "date_of_last_solvency": {
+                    "description": "Histórico de solvencia y membresías dobles.",
+                    "type": "string"
+                },
+                "double_guild": {
+                    "type": "boolean"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "first_name": {
+                    "type": "string"
+                },
+                "fpv": {
+                    "description": "FPV es el Número de Federación de Psicólogos de Venezuela, obligatorio para registro administrativo",
+                    "type": "integer"
+                },
+                "genre": {
+                    "type": "string",
+                    "enum": [
+                        "M",
+                        "F"
+                    ]
+                },
+                "graduate_date": {
+                    "type": "string"
+                },
+                "guild_collaborator": {
+                    "type": "boolean"
+                },
+                "guild_director": {
+                    "description": "Professional Flags: Roles y estatus especiales dentro del gremio.",
+                    "type": "boolean"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "last_name": {
+                    "type": "string"
+                },
+                "mention_undergraduate": {
+                    "type": "string"
+                },
+                "municipality_outside_carabobo": {
+                    "type": "string"
+                },
+                "nationality": {
+                    "type": "string",
+                    "enum": [
+                        "V",
+                        "E"
+                    ]
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 8
+                },
+                "phone_outside_carabobo": {
+                    "type": "string"
+                },
+                "primary_specialty": {
+                    "description": "Especialidades",
+                    "type": "string"
+                },
+                "proof_of_life": {
+                    "type": "boolean"
+                },
+                "public_employee": {
+                    "type": "boolean"
+                },
+                "public_phone": {
+                    "type": "string"
+                },
+                "register_folio": {
+                    "type": "string"
+                },
+                "register_number": {
+                    "description": "Register Title: Datos de registro legal del título en el estado.",
+                    "type": "integer"
+                },
+                "register_title_date": {
+                    "type": "string"
+                },
+                "register_title_state": {
+                    "type": "string"
+                },
+                "register_tome": {
+                    "type": "string"
+                },
+                "second_last_name": {
+                    "type": "string"
+                },
+                "second_name": {
+                    "type": "string"
+                },
+                "secondary_specialty": {
+                    "type": "string"
+                },
+                "service_address": {
+                    "type": "string"
+                },
+                "sixty_five_or_plus": {
+                    "type": "boolean"
+                },
+                "solvent": {
+                    "description": "Estatus Administrativo (Solo Admin)",
+                    "type": "boolean"
+                },
+                "state_outside": {
+                    "description": "Si el psicologo esta fuera del estado Carabobo",
+                    "type": "string"
+                },
+                "university_professor": {
+                    "type": "boolean"
+                },
+                "university_undergraduate": {
+                    "description": "--- DATOS COLEGIALES --- //\nUndergraduate Data",
+                    "type": "string"
+                },
+                "username": {
+                    "description": "Auth \u0026 Identidad",
+                    "type": "string"
+                }
+            }
+        },
         "github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreateSocialNetworkRequest": {
             "type": "object",
             "required": [
@@ -2266,6 +2764,158 @@
                     ]
                 },
                 "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdatePsiAdminRequest": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "born_date": {
+                    "type": "string",
+                    "example": "1990-01-01"
+                },
+                "cel_phone_outside_carabobo": {
+                    "type": "string"
+                },
+                "ci": {
+                    "description": "datos filiatorios (Solo Admin)",
+                    "type": "integer"
+                },
+                "contact_email": {
+                    "description": "Datos de contacto y ubicación",
+                    "type": "string"
+                },
+                "cpsm": {
+                    "type": "boolean"
+                },
+                "date_of_last_solvency": {
+                    "description": "Histórico de solvencia y membresías dobles.",
+                    "type": "string"
+                },
+                "double_guild": {
+                    "type": "boolean"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "first_name": {
+                    "description": "Identidad (Solo Admin)",
+                    "type": "string"
+                },
+                "fpv": {
+                    "description": "FPV es el Número de Federación de Psicólogos de Venezuela, obligatorio para registro administrativo",
+                    "type": "integer"
+                },
+                "full_bio": {
+                    "type": "string"
+                },
+                "genre": {
+                    "type": "string"
+                },
+                "graduate_date": {
+                    "type": "string"
+                },
+                "guild_collaborator": {
+                    "type": "boolean"
+                },
+                "guild_director": {
+                    "description": "Flags Profesionales (Solo Admin)",
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "last_name": {
+                    "type": "string"
+                },
+                "mention_undergraduate": {
+                    "type": "string"
+                },
+                "mini_bio": {
+                    "description": "En caso de que el admin quiera modificar las bios, aunque lo ideal es que el psicologo sea el encargado de esto",
+                    "type": "string"
+                },
+                "municipality_outside_carabobo": {
+                    "type": "string"
+                },
+                "nationality": {
+                    "type": "string"
+                },
+                "phone_outside_carabobo": {
+                    "type": "string"
+                },
+                "primary_specialty": {
+                    "description": "Especialidades",
+                    "type": "string"
+                },
+                "proof_of_life": {
+                    "type": "boolean"
+                },
+                "public_employee": {
+                    "type": "boolean"
+                },
+                "public_phone": {
+                    "type": "string"
+                },
+                "register_folio": {
+                    "type": "string"
+                },
+                "register_number": {
+                    "type": "integer"
+                },
+                "register_title_date": {
+                    "type": "string"
+                },
+                "register_title_state": {
+                    "type": "string"
+                },
+                "register_tome": {
+                    "type": "string"
+                },
+                "second_last_name": {
+                    "type": "string"
+                },
+                "second_name": {
+                    "type": "string"
+                },
+                "secondary_specialty": {
+                    "type": "string"
+                },
+                "service_address": {
+                    "type": "string"
+                },
+                "show_contact_email": {
+                    "type": "boolean"
+                },
+                "show_public_phone": {
+                    "type": "boolean"
+                },
+                "show_service_address": {
+                    "type": "boolean"
+                },
+                "sixty_five_or_plus": {
+                    "type": "boolean"
+                },
+                "solvent": {
+                    "description": "Estatus Administrativo (Solo Admin)",
+                    "type": "boolean"
+                },
+                "state_outside": {
+                    "description": "Si el psicologo esta fuera del estado Carabobo",
+                    "type": "string"
+                },
+                "university_professor": {
+                    "type": "boolean"
+                },
+                "university_undergraduate": {
+                    "description": "Datos Colegiales (ColData - Solo Admin puede alterar la info)",
                     "type": "string"
                 }
             }

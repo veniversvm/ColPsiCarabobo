@@ -18,6 +18,7 @@ type PsiUserRepository interface {
 	SearchDirectory(ctx context.Context, filter request_structs.PsiDirectoryFilterDTO) ([]PsiUserModel, int64, error)
 	GetByIdentifier(ctx context.Context, identifier string) (*PsiUserModel, error)
 	UpdateKey(ctx context.Context, psi *PsiUserModel) error
+	Delete(ctx context.Context, id uuid.UUID) error
 	// Postgrado CRUD
 	CreatePostGrade(ctx context.Context, pg *PsiUserPostGrade) error
 	GetPostGradeByID(ctx context.Context, id uuid.UUID) (*PsiUserPostGrade, error)
@@ -28,4 +29,5 @@ type PsiUserRepository interface {
 	UpdateSocialNetwork(ctx context.Context, sn *PsiUserSocialNetwork) error
 	DeleteSocialNetwork(ctx context.Context, id uuid.UUID) error
 	CountSocialNetworksByPsiID(ctx context.Context, psiID uuid.UUID) (int64, error)
+	SearchAdmin(ctx context.Context, filter request_structs.PsiDirectoryFilterDTO) ([]PsiUserModel, int64, error)
 }

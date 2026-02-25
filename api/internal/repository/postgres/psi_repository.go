@@ -34,9 +34,6 @@ func (r *psiRepo) CreateWithColData(ctx context.Context, psi *domain.PsiUserMode
 			return fmt.Errorf("error creating col data: %w", err)
 		}
 
-		// ELIMINAMOS LA TERCERA PARTE (El Update circular)
-		// No es necesario que PsiUserModel guarde el ID de ColData si ColData ya guarda el ID del Usuario.
-
 		return nil
 	})
 }
@@ -280,6 +277,13 @@ func (r *psiRepo) UpdatePostGrade(ctx context.Context, pg *domain.PsiUserPostGra
 	return r.db.WithContext(ctx).Save(pg).Error
 }
 
+// Delete realiza un borrado lógico (Soft Delete) del psicólogo.
+// Gracias a que el modelo tiene el campo DeletedAt, GORM hace un UPDATE en lugar de un DELETE.
+func (r *psiRepo) Delete(ctx context.Context, id uuid.UUID) error {
+	// Es importante pasar el modelo para que GORM sepa qué tabla afectar
+	return r.db.WithContext(ctx).Delete(&domain.PsiUserModel{}, "id = ?", id).Error
+}
+
 ////////////////////////////////////
 // SOCIAL MEDIA
 ////////////////////////////////////
@@ -312,4 +316,63 @@ func (r *psiRepo) CountSocialNetworksByPsiID(ctx context.Context, psiID uuid.UUI
 		Count(&count).Error
 
 	return count, err
+}
+
+// SearchAdmin es la consulta de "Rayos X" para el panel de control. Ignora privacidad y estatus.
+func (r *psiRepo) SearchAdmin(ctx context.Context, filter request_structs.PsiDirectoryFilterDTO) ([]domain.PsiUserModel, int64, error) {
+	var users []domain.PsiUserModel
+	var total int64
+
+	// NOTA SENIOR: No filtramos por is_active ni solvent
+	query := r.db.WithContext(ctx).Model(&domain.PsiUserModel{}).
+		Select("id, first_name, last_name, ci, fpv, email, solvent, is_active, primary_specialty, secondary_specialty")
+
+	// 1. Búsqueda por Identidad
+	if filter.SearchTerm != "" {
+		term := "%" + filter.SearchTerm + "%"
+		query = query.Where(
+			r.db.Where("first_name ILIKE ?", term).
+				Or("last_name ILIKE ?", term).
+				Or("CAST(ci AS TEXT) LIKE ?", term).
+				Or("CAST(fpv AS TEXT) LIKE ?", term),
+		)
+	}
+
+	// 2. Filtro de Especialidad
+	if filter.SpecialtyID > 0 {
+		var specName string
+		r.db.Model(&domain.PsiSpecialtyModel{}).Select("name").Where("id = ?", filter.SpecialtyID).Scan(&specName)
+		if specName != "" {
+			query = query.Where("primary_specialty = ? OR secondary_specialty = ?", specName, specName)
+		}
+	}
+
+	// 3. Filtro de Ubicación
+	if filter.Location != "" {
+		loc := "%" + filter.Location + "%"
+		query = query.Where(
+			r.db.Where("municipality_carabobo ILIKE ?", loc).
+				Or("state_outside ILIKE ?", loc).
+				Or("municipality_outside_carabobo ILIKE ?", loc),
+		)
+	}
+
+	// 4. Filtro de Género
+	if filter.Gender != "" {
+		query = query.Where("genre = ?", filter.Gender)
+	}
+
+	// Conteo y Paginación
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := (filter.Page - 1) * filter.Limit
+	// Ordenamos por los más recientes primero para facilitar la moderación
+	err := query.Order("created_at DESC").
+		Limit(filter.Limit).
+		Offset(offset).
+		Find(&users).Error
+
+	return users, total, err
 }

@@ -27,8 +27,12 @@ func SetupPsiRoutes(router fiber.Router, db *gorm.DB, s3Client *s3.S3Client) {
 	// Usamos un grupo separado para la gestión interna.
 	adminGroup := router.Group("/admin/psi", authMid.ProtectedAdmin404())
 
-	// URL: POST /api/v1/admin/psi/upload-csv
-	adminGroup.Post("/upload-csv", h.UploadCsv)
+	adminGroup.Get("/list", h.ListAllPsis)
+	adminGroup.Post("/create", h.CreatePsiByAdmin) // Creación individual
+	adminGroup.Post("/upload-csv", h.UploadCsv)    // Creación masiva vía CSV
+	adminGroup.Get("/:id<uuid>", h.GetPsiByIDAdmin)
+	adminGroup.Patch("/:id", h.UpdatePsiByAdmin)  // Edición total
+	adminGroup.Delete("/:id", h.DeletePsiByAdmin) // Borrado lógico
 
 	// =========================================================================
 	// ZONA 2: AUTOGESTIÓN (Requiere Token de Psicólogo)
