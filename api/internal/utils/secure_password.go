@@ -32,7 +32,14 @@ func IsStrongPassword(password string) bool {
 		hasMinLen = true
 	}
 
-	// 2. Análisis de Composición (Iteración por Runas)
+	// 2. Validación de Espacios (No se permiten espacios en blanco)
+	for _, char := range password {
+		if unicode.IsSpace(char) {
+			return false
+		}
+	}
+
+	// 3. Análisis de Composición (Iteración por Runas)
 	// Se itera sobre cada carácter (runa) para soportar caracteres UTF-8.
 	for _, char := range password {
 		switch {

@@ -121,7 +121,9 @@ func (r *psiRepo) Update(ctx context.Context, psi *domain.PsiUserModel, colData 
 // Usa tx.Omit("ColData") para prevenir que GORM intente actualizar asociaciones no deseadas.
 func (r *psiRepo) UpdatePublicProfile(ctx context.Context, psi *domain.PsiUserModel, colData *domain.PsiUserColData) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Omit("ColData").Save(psi).Error; err != nil {
+		// FIX: Solo actualizar campos públicos permitidos (lista blanca)
+		// Si usas Save(psi) te sobrescribe todo.
+		if err := tx.Model(psi).Omit("CI", "FPV", "IsActive", "Solvent", "Password").Updates(psi).Error; err != nil {
 			return err
 		}
 
@@ -130,7 +132,6 @@ func (r *psiRepo) UpdatePublicProfile(ctx context.Context, psi *domain.PsiUserMo
 				return err
 			}
 		}
-
 		return nil
 	})
 }
@@ -198,7 +199,8 @@ func (r *psiRepo) SearchDirectory(ctx context.Context, filter request_structs.Ps
 			query = query.Where(
 				r.db.Where("municipality_carabobo ILIKE ?", loc).
 					Or("state_outside ILIKE ?", loc).
-					Or("municipality_outside_carabobo ILIKE ?", loc),
+					// FIX: Corregido el nombre exacto de la columna generada por GORM
+					Or("municipality_out_side_carabobo ILIKE ?", loc),
 			)
 		}
 
@@ -250,7 +252,8 @@ func (r *psiRepo) SearchAdmin(ctx context.Context, filter request_structs.PsiDir
 		query = query.Where(
 			r.db.Where("municipality_carabobo ILIKE ?", loc).
 				Or("state_outside ILIKE ?", loc).
-				Or("municipality_outside_carabobo ILIKE ?", loc),
+				// FIX: Corregido el nombre exacto de la columna generada por GORM
+				Or("municipality_out_side_carabobo ILIKE ?", loc),
 		)
 	}
 
