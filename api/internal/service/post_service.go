@@ -1,3 +1,8 @@
+// api/internal/service/post_service.go
+
+// Package service implementa la capa de lógica de negocio (Business Logic Layer).
+// El PostService gestiona el ciclo de vida de las noticias y publicaciones,
+// asegurando la integridad entre los metadatos y el contenido extenso.
 package service
 
 import (
@@ -16,12 +21,15 @@ import (
 	"github.com/veniversvm/ColPsiCarabobo/api/pkg/s3"
 )
 
+// PostService encapsula las dependencias para la gestión de contenido.
+// Utiliza bluemonday para prevenir ataques de Cross-Site Scripting (XSS).
 type PostService struct {
 	repo      domain.PostRepository
 	s3Client  *s3.S3Client
 	sanitizer *bluemonday.Policy
 }
 
+// NewPostService inicializa el servicio con una política de sanitización estándar (UGC).
 func NewPostService(repo domain.PostRepository, s3 *s3.S3Client) *PostService {
 	return &PostService{
 		repo:      repo,
@@ -30,13 +38,18 @@ func NewPostService(repo domain.PostRepository, s3 *s3.S3Client) *PostService {
 	}
 }
 
-// CreatePost maneja la subida de imagen, limpieza de HTML y creación de registros.
+// =========================================================================
+// CREACIÓN DE CONTENIDO
+// =========================================================================
+
+// CreatePost orquesta la creación de una noticia.
+// Procesa imágenes, limpia el HTML y persiste metadatos y contenido en una sola transacción.
 func (s *PostService) CreatePost(ctx context.Context, admin *domain.UserAdmin, req request_structs.CreatePostRequest, file *multipart.FileHeader) error {
 	if !admin.CanPublish && !admin.Sudo {
 		return errors.New("no tienes permiso para publicar")
 	}
 
-	// 1. Subir imagen a S3 (si existe)
+	// 1. Subir imagen a S3 (si existe + Sanitización)
 	var s3Key string
 	if file != nil {
 		src, err := file.Open()
@@ -45,7 +58,8 @@ func (s *PostService) CreatePost(ctx context.Context, admin *domain.UserAdmin, r
 		}
 		defer src.Close()
 
-		// AHORA RECIBIMOS 3 VALORES: bytes, extensión y mime-type
+		// RECIBIMOS 3 VALORES: bytes, extensión y mime-type
+		// Re-codificación para eliminar scripts ocultos y metadatos sensibles (GPS/EXIF)
 		cleanBytes, ext, contentType, err := utils.SanitizeImage(src)
 		if err != nil {
 			return fmt.Errorf("error de seguridad en imagen: %v", err)
@@ -91,7 +105,14 @@ func (s *PostService) CreatePost(ctx context.Context, admin *domain.UserAdmin, r
 	return s.repo.Create(ctx, postModel, textModel)
 }
 
-// GetPostsList decide qué mostrar según quién pregunta
+// =========================================================================
+// CONSULTA Y VISIBILIDAD (ACL)
+// =========================================================================
+
+// GetPostsList implementa filtros de visibilidad dinámicos según el rol del usuario.
+// - Admin: Ve todo (activos, inactivos, públicos y privados).
+// - Psi: Ve activos de tipo 'public' y 'psi'.
+// - Public: Solo ve activos de tipo 'public'.
 func (s *PostService) GetPostsList(ctx context.Context, page, limit int, userRole string) (interface{}, error) {
 	filter := domain.PostFilter{}
 
@@ -104,7 +125,7 @@ func (s *PostService) GetPostsList(ctx context.Context, page, limit int, userRol
 		// Psicólogo ve Public + Psi, pero solo activos
 		active := true
 		filter.IsActive = &active
-		filter.Type = "all_visible" // Lógica especial en repo
+		filter.Type = "all_visible" // Lógica interna del repo para (public + psi)
 	default:
 		// Público ve solo Public y Activos
 		active := true
@@ -126,14 +147,14 @@ func (s *PostService) GetPostsList(ctx context.Context, page, limit int, userRol
 	}, nil
 }
 
-// GetPostByID recupera un post específico validando visibilidad según el rol.
+// GetPostByID recupera una noticia específica validando el nivel de acceso del solicitante.
 func (s *PostService) GetPostByID(ctx context.Context, id uuid.UUID, userRole string) (*domain.Post, error) {
 	post, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	// Lógica de Visibilidad (ACL)
+	// Validación de lista de control de acceso (ACL)
 	switch userRole {
 	case "admin":
 		// El admin puede ver todo (incluso borradores o privados)
@@ -159,6 +180,12 @@ func (s *PostService) GetPostByID(ctx context.Context, id uuid.UUID, userRole st
 	return post, nil
 }
 
+// =========================================================================
+// ACTUALIZACIÓN Y LIMPIEZA
+// =========================================================================
+
+// UpdatePost permite la edición parcial (PATCH) y gestiona el reemplazo de archivos en S3.
+// Implementa un mecanismo de "Rollback Manual" para S3: si la DB falla, borra la imagen nueva subida.
 func (s *PostService) UpdatePost(ctx context.Context, admin *domain.UserAdmin, req request_structs.UpdatePostRequest, file *multipart.FileHeader, id uuid.UUID) error {
 	// 1. Validar Permisos (Solo Admins pueden modificar)
 	if !admin.CanUpdatePublish && !admin.Sudo {
@@ -229,9 +256,9 @@ func (s *PostService) UpdatePost(ctx context.Context, admin *domain.UserAdmin, r
 		}
 	}
 
-	// 6. PERSISTENCIA
+	// 6. PERSISTENCIA Y LIMPIEZA DE S3
 	if err := s.repo.Update(ctx, post, textModel); err != nil {
-		// Si falla la DB, debemos eliminar la imagen que ya subimos
+		// ROLLBACK S3: Si la base de datos falla, borramos la imagen que acabamos de subir
 		if newS3Key != "" && newS3Key != oldS3Key {
 			s.s3Client.DeleteFile(ctx, newS3Key)
 		}
@@ -239,6 +266,7 @@ func (s *PostService) UpdatePost(ctx context.Context, admin *domain.UserAdmin, r
 	}
 
 	// 7. LIMPIEZA DE ARCHIVOS ANTIGUOS (Si se subió una nueva imagen)
+	//Borramos la imagen antigua para liberar espacio
 	if newS3Key != oldS3Key && oldS3Key != "" {
 		s.s3Client.DeleteFile(ctx, oldS3Key)
 	}

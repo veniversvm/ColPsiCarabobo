@@ -1,13 +1,33 @@
+// api/internal/request_structs/psi_user.go
+
+// Package request_structs contiene las estructuras de datos (DTOs) para la entrada y salida de la API.
+// Estas estructuras actúan como contratos entre el frontend y el backend, asegurando la integridad
+// y la privacidad de la información según el rol del usuario.
 package request_structs
 
 import "github.com/google/uuid"
 
-// ==========================================
-// PSI SELF: EDICIÓN RESTRINGIDA
-// ==========================================
+// =========================================================================
+// AUTENTICACIÓN
+// =========================================================================
 
+// PsiLoginRequest representa las credenciales necesarias para el inicio de sesión.
+type PsiLoginRequest struct {
+	// Identifier puede ser el correo electrónico o el nombre de usuario.
+	Identifier string `json:"identifier" validate:"required" example:"psicologo@email.com"`
+	Password   string `json:"password" validate:"required" example:"12345678"`
+}
+
+// =========================================================================
+// AUTOGESTIÓN DEL PSICÓLOGO (SELF-MANAGEMENT)
+// =========================================================================
+
+// PsiUserUpdateRequestSelf define el contrato para que un psicólogo edite su propio perfil.
+// Aplica el principio de "Menor Privilegio": omite campos sensibles (CI, FPV, Solvencia)
+// para que el usuario no pueda alterarlos mediante inyección de JSON.
+// Nota: Se usan punteros (*tipo) para soportar semántica PATCH (actualizar solo lo enviado).
 type PsiUserUpdateRequestSelf struct {
-	// Datos de Contacto y Privacidad (Permitido)
+	// --- Datos de Contacto y Privacidad ---
 	ContactEmail             *string `json:"contact_email"`
 	ShowContactEmail         *bool   `json:"show_contact_email"`
 	PublicPhone              *string `json:"public_phone"`
@@ -15,7 +35,7 @@ type PsiUserUpdateRequestSelf struct {
 	ServiceAddress           *string `json:"service_address"`
 	ShowPublicServiceAddress *bool   `json:"show_public_service_address"`
 
-	// Ubicación (Permitido)
+	// --- Ubicación Geográfica ---
 	MunicipalityCarabobo        *string `json:"municipality_carabobo"`
 	PhoneCarabobo               *string `json:"phone_carabobo"`
 	CelPhoneCarabobo            *string `json:"cel_phone_carabobo"`
@@ -24,57 +44,50 @@ type PsiUserUpdateRequestSelf struct {
 	PhoneOutSideCarabobo        *string `json:"phone_outside_carabobo"`
 	CelPhoneOutSideCarabobo     *string `json:"cel_phone_outside_carabobo"`
 
-	// Especialidades (Permitido, si no está en la tabla de catálogo)
+	// --- Perfil Profesional y Biografía ---
+	// Las especialidades pueden ser texto libre si no se encuentran en el catálogo maestro.
 	PrimarySpecialty   *string `json:"primary_specialty"`
 	SecondarySpecialty *string `json:"secondary_specialty"`
+	MiniBio            *string `json:"mini_bio"`
 
-	// Biografía (Permitido)
-	MiniBio *string `json:"mini_bio"`
-	// Nota: BioTextID debe manejarse por un endpoint separado si el texto es muy grande
-
-	// Campos de ColData
+	// --- Visibilidad de Datos Colegiales (Pregrado) ---
 	ShowUniversityUndergraduate *bool `json:"show_university_undergraduate"`
 	ShowGraduateDate            *bool `json:"show_graduate_date"`
 	ShowMentionUndergraduate    *bool `json:"show_mention_undergraduate"`
 }
 
-// ==========================================//
-// POSTGRADOS (CREADOS POR EL USUARIO)		 //
-// ==========================================//
+// =========================================================================
+// DIRECTORIO PÚBLICO (BÚSQUEDA Y LECTURA)
+// =========================================================================
 
-type CreatePostGradeRequest struct {
-	Title          string `form:"title" json:"title" validate:"required"`
-	University     string `form:"university" json:"university" validate:"required"`
-	GraduationYear string `form:"graduation_year" json:"graduation_year" validate:"required"`
-	Description    string `form:"description" json:"description"`
-}
-
-// PsiDirectoryFilterDTO captura los parámetros de la URL
+// PsiDirectoryFilterDTO captura y tipa los parámetros de búsqueda desde la URL.
 type PsiDirectoryFilterDTO struct {
-	SearchTerm  string `query:"q"`         // Nombre, Apellido, CI, FPV
-	SpecialtyID uint32 `query:"specialty"` // ID del catálogo maestro
-	Location    string `query:"location"`  // Municipio o Estado
-	Gender      string `query:"gender"`    // M / F
-	Page        int    `query:"page"`
-	Limit       int    `query:"limit"`
+	SearchTerm  string `query:"q"`         // Texto para buscar por Nombre, Apellido, CI o FPV
+	SpecialtyID uint32 `query:"specialty"` // Filtrado por ID del catálogo de especialidades
+	Location    string `query:"location"`  // Filtro por Municipio o Estado
+	Gender      string `query:"gender"`    // Filtro por género (M / F)
+	Page        int    `query:"page"`      // Número de página para paginación
+	Limit       int    `query:"limit"`     // Cantidad de registros por página
 }
 
-// PsiMiniProfileDTO es la respuesta optimizada para el listado público.
+// PsiMiniProfileDTO es una respuesta optimizada para el listado masivo (Grid/Cards).
+// Reduce el ancho de banda y protege datos de contacto sensibles en vistas generales.
 type PsiMiniProfileDTO struct {
 	ID             uuid.UUID `json:"id"`
 	FirstName      string    `json:"first_name"`
 	LastName       string    `json:"last_name"`
 	CI             int       `json:"ci"`
 	FPV            int       `json:"fpv"`
-	ProfilePicture string    `json:"profile_picture"` // S3 Key o URL
+	ProfilePicture string    `json:"profile_picture"` // Contiene el S3 Key o la URL de la imagen
 	MiniBio        string    `json:"mini_bio"`
-	// Solvent        bool      `json:"solvent"` // Útil para que el frontend muestre un badge
-	Specialties []string `json:"specialties"`
+	Specialties    []string  `json:"specialties"` // Slice de especialidades principales
 }
 
-// PsiFullProfileDTO representa la ficha pública completa del psicólogo.
+// PsiFullProfileDTO representa la ficha pública detallada de un psicólogo.
+// Implementa el "Privacy Shield": los campos marcados con 'omitempty' solo se renderizan
+// en el JSON si el usuario ha autorizado su visibilidad o si contienen datos.
 type PsiFullProfileDTO struct {
-	// Identidad Pública
+	// Identidad Pública (Siempre visible)
 	ID             uuid.UUID `json:"id"`
 	FirstName      string    `json:"first_name"`
 	LastName       string    `json:"last_name"`
@@ -83,49 +96,58 @@ type PsiFullProfileDTO struct {
 	ProfilePicture string    `json:"profile_picture"`
 	Solvent        bool      `json:"solvent"`
 
-	// Contacto (Condicional)
+	// Contacto (Visibilidad Condicional)
 	Email   string `json:"email,omitempty"`
 	Phone   string `json:"phone,omitempty"`
 	Address string `json:"address,omitempty"`
 
-	// Ubicación
+	// Ubicación Estructurada
 	Location struct {
 		State        string `json:"state"`
 		Municipality string `json:"municipality"`
 		FullAddress  string `json:"full_address,omitempty"`
 	} `json:"location"`
 
-	// Profesional y Académico
+	// Historial Académico y Profesional
 	Specialties []string `json:"specialties"`
 	MiniBio     string   `json:"mini_bio"`
 
-	// Datos Universitarios (Condicional)
+	// Datos de Pregrado (Condicional)
 	Undergraduate struct {
 		University string `json:"university,omitempty"`
 		Date       string `json:"date,omitempty"`
 		Mention    string `json:"mention,omitempty"`
 	} `json:"undergraduate"`
 
-	// Postgrados (Siempre visibles si existen)
+	// Relaciones (Colecciones)
 	PostGrades     []PostGradeDTO     `json:"post_grades,omitempty"`
 	SocialNetworks []SocialNetworkDTO `json:"social_networks,omitempty"`
 }
 
-type PostGradeDTO struct {
-	Title      string `json:"title"`
-	University string `json:"university"`
-	Year       string `json:"year"`
+// =========================================================================
+// MÓDULO ACADÉMICO (POSTGRADOS)
+// =========================================================================
+
+// CreatePostGradeRequest estructura la carga útil para registrar nuevos postgrados.
+// Usa etiquetas 'form' para facilitar la carga de archivos (ej. diploma en PDF/JPG).
+type CreatePostGradeRequest struct {
+	Title          string `form:"title" json:"title" validate:"required"`
+	University     string `form:"university" json:"university" validate:"required"`
+	GraduationYear string `form:"graduation_year" json:"graduation_year" validate:"required"`
+	Description    string `form:"description" json:"description"`
 }
 
-type PsiLoginRequest struct {
-	Identifier string `json:"identifier" validate:"required" example:"psicologo@email.com"`
-	Password   string `json:"password" validate:"required" example:"12345678"`
-}
-
+// UpdatePostGradeRequest permite la edición parcial de un registro de postgrado.
 type UpdatePostGradeRequest struct {
 	Title          *string `form:"title"`
 	University     *string `form:"university"`
 	GraduationYear *string `form:"graduation_year"`
 	Description    *string `form:"description"`
-	// Las imágenes se manejan directo en el Handler
+}
+
+// PostGradeDTO es la proyección pública de un postgrado para la ficha del psicólogo.
+type PostGradeDTO struct {
+	Title      string `json:"title"`
+	University string `json:"university"`
+	Year       string `json:"year"`
 }

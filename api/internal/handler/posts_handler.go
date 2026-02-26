@@ -1,3 +1,4 @@
+// api/internal/handler/posts_handler.go
 package handler
 
 import (

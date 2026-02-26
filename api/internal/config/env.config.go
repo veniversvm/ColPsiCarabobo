@@ -1,3 +1,5 @@
+// api/internal/config/env.config.go
+
 // Package config centraliza la gestión de variables de entorno y parámetros de
 // configuración global de la aplicación.
 package config

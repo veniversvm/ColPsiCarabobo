@@ -1,5 +1,8 @@
+// api/internal/service/specialty_service.go
+
 // Package service implementa la lógica de negocio central de la aplicación.
-// Esta capa actúa como orquestador entre los controladores (Handlers) y la persistencia (Repository).
+// Esta capa actúa como orquestador entre los controladores (Handlers) y la persistencia (Repository),
+// asegurando que las reglas del Colegio se cumplan antes de afectar la base de datos.
 package service
 
 import (
@@ -11,20 +14,26 @@ import (
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/request_structs"
 )
 
-// SpecialtyService gestiona las reglas de negocio para el catálogo de especialidades.
+// SpecialtyService gestiona las reglas de negocio para el catálogo maestro de especialidades.
+// Se encarga de validar permisos administrativos y mantener la consistencia de la auditoría.
 type SpecialtyService struct {
 	repo domain.SpecialtyRepository
 }
 
-// NewSpecialtyService crea una nueva instancia del servicio inyectando sus dependencias.
+// NewSpecialtyService crea una nueva instancia del servicio inyectando sus dependencias (DI).
 func NewSpecialtyService(repo domain.SpecialtyRepository) *SpecialtyService {
 	return &SpecialtyService{repo: repo}
 }
 
-// Create registra una nueva especialidad validando permisos administrativos.
-// Implementa la política de auditoría inicial asignando al creador como primer editor.
+// =========================================================================
+// ESCRITURA Y GESTIÓN ADMINISTRATIVA
+// =========================================================================
+
+// Create registra una nueva especialidad validando permisos específicos.
+// Implementa la política de auditoría inicial asignando al administrador responsable
+// tanto en la creación como en la primera edición.
 func (s *SpecialtyService) Create(ctx context.Context, admin *domain.UserAdmin, req request_structs.CreateSpecialtyRequest) error {
-	// Seguridad: Validar que el administrador tenga permiso de gestión de etiquetas/catálogos.
+	// SEGURIDAD: Validación de permisos granulares (RBAC).
 	if !admin.CanCreateTags && !admin.Sudo {
 		return errors.New("no tienes permiso para crear especialidades")
 	}
@@ -33,7 +42,7 @@ func (s *SpecialtyService) Create(ctx context.Context, admin *domain.UserAdmin, 
 		Name:        req.Name,
 		Description: req.Description,
 		Active:      true,
-		// Inicia campos de auditoría de forma atómica.
+		// Inicia campos de auditoría de forma atómica para rastreabilidad total.
 		AuditModel: domain.AuditModel{
 			CreateBy:   admin.Username,
 			CreateById: &admin.ID,
@@ -47,43 +56,8 @@ func (s *SpecialtyService) Create(ctx context.Context, admin *domain.UserAdmin, 
 	return s.repo.Create(ctx, newSpec)
 }
 
-// GetSpecialties aplica reglas de visibilidad según el rol del solicitante.
-// Si el usuario no es administrador, el sistema fuerza la visualización exclusiva de registros activos,
-// protegiendo la integridad de la información pública.
-func (s *SpecialtyService) GetSpecialties(ctx context.Context, requestedStatus string, isAdmin bool) ([]domain.PsiSpecialtyModel, error) {
-	finalStatus := "active"
-
-	// Solo los administradores pueden ver estados 'inactive' o 'all'.
-	if isAdmin {
-		finalStatus = requestedStatus
-	}
-
-	return s.repo.GetAll(ctx, finalStatus)
-}
-
-// Count retorna estadísticas de registros aplicando filtros de privacidad.
-// Los usuarios restringidos reciben el conteo de registros públicos únicamente.
-func (s *SpecialtyService) Count(ctx context.Context, active *bool, admin *domain.UserAdmin) (int64, error) {
-	// Regla de Falla Segura: Si el admin es nulo o no tiene permisos, forzar 'solo activos'.
-	if admin == nil || (!admin.Sudo && !admin.CanReadNotifications) {
-		onlyActive := true
-		return s.repo.Count(ctx, &onlyActive)
-	}
-
-	// El administrador autorizado puede ver el conteo total (active=nil), activos o inactivos.
-	return s.repo.Count(ctx, active)
-}
-
-// GetByID recupera una especialidad validando la integridad del identificador.
-func (s *SpecialtyService) GetByID(ctx context.Context, id uint32) (*domain.PsiSpecialtyModel, error) {
-	if id < 1 {
-		return nil, errors.New("ID de especialidad inválido")
-	}
-	return s.repo.GetByID(ctx, id)
-}
-
-// Update modifica una especialidad existente y actualiza obligatoriamente la auditoría.
-// Utiliza punteros en el request para permitir actualizaciones parciales (PATCH).
+// Update modifica una especialidad y actualiza obligatoriamente la auditoría.
+// Soporta actualizaciones parciales (PATCH) mediante el uso de punteros en el DTO.
 func (s *SpecialtyService) Update(ctx context.Context, admin *domain.UserAdmin, id uint32, req request_structs.UpdateSpecialtyRequest) error {
 	if !admin.CanEditTags && !admin.Sudo {
 		return errors.New("no tienes permiso para editar especialidades")
@@ -94,7 +68,7 @@ func (s *SpecialtyService) Update(ctx context.Context, admin *domain.UserAdmin, 
 		return err
 	}
 
-	// Mapeo selectivo de campos.
+	// Mapeo selectivo: solo se alteran los campos presentes en el request.
 	if req.Name != nil {
 		spec.Name = *req.Name
 	}
@@ -105,7 +79,7 @@ func (s *SpecialtyService) Update(ctx context.Context, admin *domain.UserAdmin, 
 		spec.Active = *req.Active
 	}
 
-	// FIX AUDITORÍA: Garantizar que sepamos quién realizó el último cambio.
+	// TRAZABILIDAD: Garantiza que sepamos quién realizó el último cambio y cuándo.
 	spec.UpdateBy = admin.Username
 	spec.UpdateById = &admin.ID
 	spec.UpdatedAt = time.Now()
@@ -122,7 +96,45 @@ func (s *SpecialtyService) Delete(ctx context.Context, admin *domain.UserAdmin, 
 	return s.repo.Delete(ctx, id)
 }
 
-// GetAllAdmin es un método de conveniencia para obtener el catálogo completo sin filtros de privacidad.
+// =========================================================================
+// CONSULTAS Y VISIBILIDAD
+// =========================================================================
+
+// GetSpecialties aplica reglas de visibilidad según el rol del solicitante.
+// Implementa una "Falla Segura": si no es admin, el sistema fuerza la visualización
+// exclusiva de registros activos, evitando fugas de información interna.
+func (s *SpecialtyService) GetSpecialties(ctx context.Context, requestedStatus string, isAdmin bool) ([]domain.PsiSpecialtyModel, error) {
+	finalStatus := "active"
+
+	// Solo los administradores pueden explorar estados 'inactive' o 'all'.
+	if isAdmin {
+		finalStatus = requestedStatus
+	}
+
+	return s.repo.GetAll(ctx, finalStatus)
+}
+
+// Count retorna estadísticas de registros aplicando filtros de privacidad.
+// Los usuarios restringidos reciben el conteo de registros públicos únicamente.
+func (s *SpecialtyService) Count(ctx context.Context, active *bool, admin *domain.UserAdmin) (int64, error) {
+	// Regla de Protección: Si el admin es nulo o carece de permisos de lectura, forzar 'solo activos'.
+	if admin == nil || (!admin.Sudo && !admin.CanReadNotifications) {
+		onlyActive := true
+		return s.repo.Count(ctx, &onlyActive)
+	}
+
+	return s.repo.Count(ctx, active)
+}
+
+// GetByID recupera una especialidad validando la integridad del identificador.
+func (s *SpecialtyService) GetByID(ctx context.Context, id uint32) (*domain.PsiSpecialtyModel, error) {
+	if id < 1 {
+		return nil, errors.New("ID de especialidad inválido")
+	}
+	return s.repo.GetByID(ctx, id)
+}
+
+// GetAllAdmin es un método de conveniencia para obtener el catálogo completo bypassando filtros.
 func (s *SpecialtyService) GetAllAdmin(ctx context.Context) ([]domain.PsiSpecialtyModel, error) {
 	return s.repo.GetAllAdmin(ctx)
 }

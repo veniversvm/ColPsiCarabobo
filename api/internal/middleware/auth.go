@@ -1,3 +1,7 @@
+//	api/internal/middleware/auth.go
+
+// Package middleware contiene los interceptores de peticiones para lógica transversal
+// como seguridad, trazabilidad y manejo de errores.
 package middleware
 
 import (
@@ -12,11 +16,14 @@ import (
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 )
 
+// AuthMiddleware centraliza la lógica de autenticación y autorización.
+// Utiliza inyección de dependencias para acceder a los repositorios de usuarios.
 type AuthMiddleware struct {
 	adminRepo domain.UserAdminRepository
 	psiRepo   domain.PsiUserRepository
 }
 
+// NewAuthMiddleware inicializa el middleware con los repositorios necesarios.
 func NewAuthMiddleware(a domain.UserAdminRepository, p domain.PsiUserRepository) *AuthMiddleware {
 	return &AuthMiddleware{
 		adminRepo: a,
@@ -24,6 +31,7 @@ func NewAuthMiddleware(a domain.UserAdminRepository, p domain.PsiUserRepository)
 	}
 }
 
+// jwtError es un helper interno para estandarizar las respuestas de error en formato JSON.
 func jwtError(c *fiber.Ctx, status int, message string) error {
 	return c.Status(status).JSON(fiber.Map{
 		"status":  "error",
@@ -31,6 +39,10 @@ func jwtError(c *fiber.Ctx, status int, message string) error {
 	})
 }
 
+// validateToken realiza el "heavy lifting" de la validación JWT.
+// 1. Extrae el token del header Authorization.
+// 2. Valida el algoritmo de firma (HS256).
+// 3. Ejecuta un callback (getKeyFunc) para obtener la clave secreta dinámica del usuario desde la DB.
 func (m *AuthMiddleware) validateToken(c *fiber.Ctx, getKeyFunc func(string) (string, error)) (*jwt.Token, error) {
 	authHeader := c.Get("Authorization")
 	if authHeader == "" {
@@ -38,6 +50,7 @@ func (m *AuthMiddleware) validateToken(c *fiber.Ctx, getKeyFunc func(string) (st
 		return nil, errors.New("missing JWT")
 	}
 
+	// El estándar RFC 6750 requiere el prefijo "Bearer "
 	if !strings.HasPrefix(authHeader, "Bearer ") {
 		log.Println("[DEBUG AUTH] Error: Formato de cabecera inválido (falta Bearer)")
 		return nil, errors.New("malformed JWT")
@@ -46,7 +59,7 @@ func (m *AuthMiddleware) validateToken(c *fiber.Ctx, getKeyFunc func(string) (st
 	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
 	return jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		// Validar algoritmo
+		// Verificación de integridad del método de firma
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			log.Printf("[DEBUG AUTH] Error: Algoritmo inesperado: %v", token.Header["alg"])
 			return nil, fmt.Errorf("unexpected signing method")
@@ -54,170 +67,126 @@ func (m *AuthMiddleware) validateToken(c *fiber.Ctx, getKeyFunc func(string) (st
 
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
-			log.Println("[DEBUG AUTH] Error: No se pudieron parsear los claims")
 			return nil, errors.New("invalid claims")
 		}
 
-		// IMPORTANTE: Verifica que en el LoginService uses "user_id"
 		userID, ok := claims["user_id"].(string)
 		if !ok {
-			log.Println("[DEBUG AUTH] Error: claim 'user_id' no encontrado en el token")
 			return nil, errors.New("user_id not found")
 		}
 
-		log.Printf("[DEBUG AUTH] Buscando Key para user_id: %s", userID)
+		// Invocamos la función de búsqueda para obtener la 'Key' específica de este usuario
 		key, err := getKeyFunc(userID)
 		if err != nil {
-			log.Printf("[DEBUG AUTH] Error: No se encontró la Key en la DB para el usuario: %v", err)
 			return nil, err
 		}
 
-		log.Println("[DEBUG AUTH] Key recuperada exitosamente. Verificando firma...")
 		return []byte(key), nil
 	})
 }
 
+// ProtectedAdmin404 protege rutas administrativas.
+// Si la autenticación falla, devuelve 404 Not Found en lugar de 401.
+// Estrategia: "Security by Obscurity" para evitar el reconocimiento de endpoints privados.
 func (m *AuthMiddleware) ProtectedAdmin404() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		log.Printf("[DEBUG AUTH] --- Nueva petición a ruta protegida: %s ---", c.Path())
-
 		token, err := m.validateToken(c, func(userID string) (string, error) {
 			uid, err := uuid.Parse(userID)
 			if err != nil {
 				return "", err
 			}
+			// Propagamos el contexto de usuario para trazabilidad y cancelación
 			admin, err := m.adminRepo.GetByID(c.UserContext(), uid)
 			if err != nil {
 				return "", err
 			}
+			// Inyectamos el modelo completo para evitar re-consultas en los handlers
 			c.Locals("admin", admin)
 			return admin.Key, nil
 		})
 
-		if err != nil {
-			log.Printf("[DEBUG AUTH] Error de validación JWT: %v", err)
+		// Si el token es inválido o el usuario no existe, devolvemos 404 estandarizado
+		if err != nil || !token.Valid {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 				"message": fmt.Sprintf("Cannot %s %s", c.Method(), c.Path()),
 			})
 		}
 
-		if !token.Valid {
-			log.Println("[DEBUG AUTH] El token es inválido (expirado o firma incorrecta)")
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-				"message": fmt.Sprintf("Cannot %s %s", c.Method(), c.Path()),
-			})
-		}
-
-		log.Println("[DEBUG AUTH] Acceso concedido.")
 		return c.Next()
 	}
 }
 
-// OptionalHybridAuth intenta autenticar al usuario (Admin o Psicólogo), pero NO bloquea la petición si falla.
-// Es ideal para rutas "mixtas" (ej: Listado de Noticias) donde el contenido varía según quién lo ve.
+// OptionalHybridAuth es un middleware no-bloqueante.
+// Identifica si quien llama es un Admin, un Psicólogo o un visitante anónimo.
+// Útil para endpoints públicos donde el contenido se expande si el usuario está logueado.
 func (m *AuthMiddleware) OptionalHybridAuth() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		authHeader := c.Get("Authorization")
 
-		// 1. Si no hay cabecera, es un visitante anónimo. Continuamos sin error.
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-			return c.Next()
+			return c.Next() // Usuario anónimo, continuar
 		}
 
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
-		// 2. Intentamos parsear el token
-		token, _ := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			// Validar algoritmo
+		// Intentamos identificar al usuario sin abortar la petición en caso de error
+		_, _ = jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("algoritmo inválido")
+				return nil, nil
 			}
 
 			claims, ok := token.Claims.(jwt.MapClaims)
 			if !ok {
-				return nil, errors.New("claims inválidos")
+				return nil, nil
 			}
 
-			// 3. Extraer Identidad y Rol
 			userID, _ := claims["user_id"].(string)
-			role, _ := claims["role"].(string) // "admin" o "psi"
+			role, _ := claims["role"].(string)
+			uid, _ := uuid.Parse(userID)
 
-			uid, err := uuid.Parse(userID)
-			if err != nil {
-				return nil, err
-			}
-
-			// 4. Búsqueda polimórfica según el rol
 			if role == "admin" {
-				// Es Admin: Buscamos en tabla de admins
 				admin, err := m.adminRepo.GetByID(c.UserContext(), uid)
-				if err != nil {
-					return nil, err
+				if err == nil {
+					c.Locals("admin", admin)
+					return []byte(admin.Key), nil
 				}
-
-				// Inyectamos y devolvemos su Key
-				c.Locals("admin", admin)
-				return []byte(admin.Key), nil
-
 			} else {
-				// Asumimos Psicólogo (rol="psi" o vacío)
 				psi, err := m.psiRepo.GetByID(c.UserContext(), uid)
-				if err != nil {
-					return nil, err
+				if err == nil {
+					c.Locals("psi_user", psi)
+					return []byte(psi.Key), nil
 				}
-
-				// Inyectamos y devolvemos su Key
-				c.Locals("psi_user", psi)
-				return []byte(psi.Key), nil
 			}
+			return nil, nil
 		})
-
-		// 5. Decisión final:
-		// No nos importa si el token dio error (expirado, firma mala, usuario borrado).
-		// Si 'token.Valid' es false, simplemente no habremos inyectado nada en c.Locals.
-		// El Handler recibirá la petición como si fuera un usuario anónimo.
-
-		// Opcional: Podrías loguear advertencias aquí si quieres debug
-		if token != nil && !token.Valid {
-			// log.Println("[AUTH] Token inválido en ruta híbrida, tratando como anónimo")
-		}
 
 		return c.Next()
 	}
 }
 
-// ProtectedPsiUser verifica que el token pertenezca a un psicólogo colegiado.
-// Extrae la Key dinámica de la base de datos para validar la firma y previene el uso de sesiones antiguas.
+// ProtectedPsiUser garantiza que la petición provenga de un psicólogo autenticado.
+// Utiliza la Key dinámica almacenada en la tabla de psicólogos para la validación.
 func (m *AuthMiddleware) ProtectedPsiUser() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		// Reutilizamos la función genérica validateToken
 		token, err := m.validateToken(c, func(userID string) (string, error) {
 			uid, err := uuid.Parse(userID)
 			if err != nil {
 				return "", err
 			}
 
-			// Buscamos en el repositorio de Psicólogos (no en el de Admins)
 			psi, err := m.psiRepo.GetByID(c.UserContext(), uid)
 			if err != nil {
 				return "", err
 			}
 
-			// Inyectamos el objeto completo del psicólogo en el contexto
-			// para que los handlers (/psi/me) no tengan que volver a buscarlo en la BD.
 			c.Locals("psi_user", psi)
-
-			// Retornamos su Key personal para verificar la firma del JWT
 			return psi.Key, nil
 		})
 
-		// Si el token falló la validación, fue alterado o el usuario ya no existe
 		if err != nil || !token.Valid {
-			log.Printf(" Error de validación JWT: %v", err)
-			return jwtError(c, fiber.StatusUnauthorized, "Sesión inválida o expirada. Por favor, inicie sesión nuevamente.")
+			return jwtError(c, fiber.StatusUnauthorized, "Sesión inválida o expirada.")
 		}
 
-		// Si todo está bien, pasamos al siguiente Handler
 		return c.Next()
 	}
 }

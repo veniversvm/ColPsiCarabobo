@@ -1,3 +1,9 @@
+// api/internal/service/psi_service.go
+
+// Package service implementa la capa de lógica de negocio (Business Logic Layer).
+// Este archivo contiene las operaciones centrales relacionadas con los psicólogos colegiados,
+// incluyendo la importación masiva desde CSV, la gestión de perfiles públicos y la autenticación.
+
 package service
 
 import (
@@ -22,11 +28,13 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// PsiService es la estructura que implementa la lógica de negocio relacionada con los psicólogos.
 type PsiService struct {
 	repo     domain.PsiUserRepository
 	s3Client *s3.S3Client
 }
 
+// NewPsiService es el constructor de PsiService, inyectando las dependencias necesarias.
 func NewPsiService(repo domain.PsiUserRepository, s3Client *s3.S3Client) *PsiService {
 	return &PsiService{
 		repo:     repo,
@@ -34,6 +42,13 @@ func NewPsiService(repo domain.PsiUserRepository, s3Client *s3.S3Client) *PsiSer
 	}
 }
 
+// =========================================================================
+// GESTIÓN MASIVA (CSV IMPORT)
+// =========================================================================
+
+// ImportFromCSV procesa la carga masiva de agremiados desde un flujo de datos CSV.
+// Implementa seguridad mediante el hashing de contraseñas y garantiza la integridad
+// mediante transacciones atómicas por cada registro.
 func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminID uuid.UUID) (int, []map[string]string) {
 	csvReader := csv.NewReader(reader)
 	_, _ = csvReader.Read() // Saltar cabeceras
@@ -115,27 +130,13 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 	return successCount, failedRecords
 }
 
-// --- HELPERS DE CONVERSIÓN (Privados) ---
+// =========================================================================
+// AUTOGESTIÓN Y PRIVACIDAD (SELF-MANAGEMENT)
+// =========================================================================
 
-func parseInt(s string) int {
-	val, _ := strconv.Atoi(strings.TrimSpace(s))
-	return val
-}
-
-func parseBool(s string) bool {
-	s = strings.ToLower(strings.TrimSpace(s))
-	return s == "true" || s == "1" || s == "v" || s == "s"
-}
-
-func parseDate(s string) time.Time {
-	layout := "2006-01-02" // Formato estándar del CSV que pasaste
-	t, err := time.Parse(layout, strings.TrimSpace(s))
-	if err != nil {
-		return time.Time{} // Fecha cero si falla
-	}
-	return t
-}
-
+// UpdateProfileSelf permite al psicólogo actualizar sus datos de contacto y visibilidad.
+// Implementa "Lazy Loading" para ColData: solo consulta y actualiza la tabla de datos
+// colegiales si el usuario solicita cambios en esos campos específicos.
 func (s *PsiService) UpdateProfileSelf(ctx context.Context, psi *domain.PsiUserModel, id uuid.UUID, req request_structs.PsiUserUpdateRequestSelf) (*domain.PsiUserModel, error) {
 
 	// A. Auditoría Automática
@@ -238,6 +239,12 @@ func (s *PsiService) UpdateProfileSelf(ctx context.Context, psi *domain.PsiUserM
 	return psi, nil
 }
 
+// =========================================================================
+// CONSULTA PÚBLICA (DIRECTORY & PROFILE)
+// =========================================================================
+
+// GetPublicDirectory devuelve una lista paginada de mini-perfiles.
+// Aplica normalización de género y oculta datos sensibles de solvencia al público.
 func (s *PsiService) GetPublicDirectory(ctx context.Context, filter request_structs.PsiDirectoryFilterDTO) (interface{}, error) {
 	// Normalizar paginación
 	if filter.Page < 1 {
@@ -291,9 +298,9 @@ func (s *PsiService) GetPublicDirectory(ctx context.Context, filter request_stru
 	}, nil
 }
 
-// GetPublicProfile obtiene el detalle de un psicólogo y filtra datos sensibles.
-// GetPublicProfile obtiene el detalle de un psicólogo y filtra datos sensibles.
-// Aplica reglas de privacidad del usuario y de visibilidad según solvencia gremial.
+// GetPublicProfile construye la ficha técnica del psicólogo aplicando el "Escudo de Privacidad".
+// Los datos personales (Email, Teléfono) y académicos (Postgrados) se ocultan dinámicamente
+// según la configuración del usuario y su estatus de solvencia institucional.
 func (s *PsiService) GetPublicProfile(ctx context.Context, id uuid.UUID) (*request_structs.PsiFullProfileDTO, error) {
 	// 1. Obtener datos crudos de la DB (Con Preload de ColData y PostGrades)
 	psi, err := s.repo.GetByID(ctx, id)
@@ -392,7 +399,13 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id uuid.UUID) (*reque
 	return dto, nil
 }
 
-// Login autentica al psicólogo y genera un token con clave dinámica.
+// =========================================================================
+// AUTENTICACIÓN Y SESIÓN
+// =========================================================================
+
+// Login gestiona el acceso de psicólogos implementando "Key Rotation".
+// Al iniciar sesión, se genera un nuevo secreto de firma que invalida físicamente
+// cualquier token previo del usuario en otros dispositivos.
 func (s *PsiService) Login(ctx context.Context, identifier, password string) (string, error) {
 	// 1. Buscar usuario
 	psi, err := s.repo.GetByIdentifier(ctx, identifier)
@@ -435,7 +448,12 @@ func (s *PsiService) Login(ctx context.Context, identifier, password string) (st
 	return token.SignedString([]byte(newKey))
 }
 
-// AddPostGrade permite a un psicólogo agregar un título a su perfil.
+// =========================================================================
+// MÓDULO ACADÉMICO (CERTIFICADOS)
+// =========================================================================
+
+// AddPostGrade registra un título y gestiona la subida de hasta 3 documentos a S3.
+// Implementa saneamiento de imágenes para eliminar metadatos y scripts maliciosos.
 func (s *PsiService) AddPostGrade(ctx context.Context, psi *domain.PsiUserModel, req request_structs.CreatePostGradeRequest, files []*multipart.FileHeader) error {
 
 	// Estructura base
@@ -507,6 +525,7 @@ func (s *PsiService) AddPostGrade(ctx context.Context, psi *domain.PsiUserModel,
 }
 
 // UpdatePostGrade permite editar un título y reemplazar sus imágenes.
+// Implementa un reemplazo inteligente: si se sube una nueva imagen, se borra la anterior de S3 para evitar acumulación de archivos huérfanos.
 // fileMap: mapa donde la clave es el campo (ej: "pic_one") y el valor es el archivo.
 func (s *PsiService) UpdatePostGrade(ctx context.Context, psi *domain.PsiUserModel, pgID uuid.UUID, req request_structs.UpdatePostGradeRequest, fileMap map[string]*multipart.FileHeader) error {
 
@@ -593,4 +612,26 @@ func (s *PsiService) UpdatePostGrade(ctx context.Context, psi *domain.PsiUserMod
 
 	// 6. Persistir cambios
 	return s.repo.UpdatePostGrade(ctx, pg)
+}
+
+// =========================================================================
+// --- HELPERS DE CONVERSIÓN (Privados) ---
+// =========================================================================
+func parseInt(s string) int {
+	val, _ := strconv.Atoi(strings.TrimSpace(s))
+	return val
+}
+
+func parseBool(s string) bool {
+	s = strings.ToLower(strings.TrimSpace(s))
+	return s == "true" || s == "1" || s == "v" || s == "s"
+}
+
+func parseDate(s string) time.Time {
+	layout := "2006-01-02" // Formato estándar del CSV que pasaste
+	t, err := time.Parse(layout, strings.TrimSpace(s))
+	if err != nil {
+		return time.Time{} // Fecha cero si falla
+	}
+	return t
 }

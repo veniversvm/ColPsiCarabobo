@@ -1,4 +1,8 @@
 // api/internal/service/psi_user_admin_service.go
+
+// Package service implementa la capa de lógica de negocio (Business Logic Layer).
+// Este archivo contiene las operaciones administrativas de alto nivel para la gestión
+// de los expedientes de los psicólogos colegiados.
 package service
 
 import (
@@ -14,8 +18,13 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// GetPsiByIDAdmin devuelve el perfil total para gestión administrativa.
-// GetPsiByIDAdmin retorna el perfil completo sin restricciones de privacidad para el staff administrativo.
+// =========================================================================
+// GESTIÓN DE EXPEDIENTES (LECTURA DETALLADA)
+// =========================================================================
+
+// GetPsiByIDAdmin retorna el expediente completo de un psicólogo sin restricciones de privacidad.
+// Está diseñado exclusivamente para el uso del personal administrativo autorizado.
+// Implementa una barrera de permisos RBAC interna para asegurar que solo personal de gestión acceda.
 func (s *PsiService) GetPsiByIDAdmin(ctx context.Context, admin *domain.UserAdmin, targetID uuid.UUID) (*domain.PsiUserModel, error) {
 	// Como es una operación de solo lectura para el panel interno,
 	// verificamos que sea Sudo o que al menos tenga un permiso administrativo básico.
@@ -31,7 +40,13 @@ func (s *PsiService) GetPsiByIDAdmin(ctx context.Context, admin *domain.UserAdmi
 	return psi, nil
 }
 
-// CreatePsiByAdmin orquestador de la creación individual
+// =========================================================================
+// REGISTRO INDIVIDUAL (ESCRITURA ATÓMICA)
+// =========================================================================
+
+// CreatePsiByAdmin orquestador de la creación manual de un nuevo colegiado.
+// Realiza el hashing de credenciales, el parseo de fechas de registro y la vinculación
+// transaccional entre el perfil de usuario y sus datos de grado universitario.
 func (s *PsiService) CreatePsiByAdmin(ctx context.Context, admin *domain.UserAdmin, req request_structs.CreatePsiAdminRequest) error {
 	// 1. Validar Permisos
 	if !admin.CanCreatePsi && !admin.Sudo {
@@ -107,8 +122,13 @@ func (s *PsiService) CreatePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 	return s.repo.CreateWithColData(ctx, psi, colData)
 }
 
-// UpdatePsiByAdmin permite a un administrador modificar cualquier campo del perfil de un psicólogo
-// y sus datos colegiales asociados en una sola operación transaccional.
+// =========================================================================
+// ACTUALIZACIÓN MAESTRA (CONTROL TOTAL)
+// =========================================================================
+
+// UpdatePsiByAdmin permite a un administrador modificar íntegramente el expediente.
+// Soporta actualizaciones parciales (PATCH) mediante el uso de punteros en el DTO,
+// garantizando que solo los campos enviados en el JSON sean alterados en la base de datos.
 func (s *PsiService) UpdatePsiByAdmin(ctx context.Context, admin *domain.UserAdmin, targetID uuid.UUID, req request_structs.UpdatePsiAdminRequest) error {
 	// 1. VALIDACIÓN DE PERMISOS (RBAC)
 	if !admin.CanUpdatePsi && !admin.Sudo {
@@ -304,6 +324,13 @@ func (s *PsiService) UpdatePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 	return nil
 }
 
+// =========================================================================
+// DESTRUCCIÓN LÓGICA (SOFT DELETE)
+// =========================================================================
+
+// DeletePsiByAdmin realiza un borrado lógico del registro.
+// El sistema preserva la integridad referencial para propósitos legales históricos,
+// pero el usuario deja de existir para el motor de búsqueda y la autenticación.
 func (s *PsiService) DeletePsiByAdmin(ctx context.Context, admin *domain.UserAdmin, targetID uuid.UUID) error {
 	// 1. Validación de permisos (RBAC)
 	if !admin.CanDeletePsi && !admin.Sudo {
@@ -318,7 +345,13 @@ func (s *PsiService) DeletePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 	return nil
 }
 
-// GetAdminDirectory procesa la búsqueda para el panel de control
+// =========================================================================
+// DASHBOARD Y LISTADOS
+// =========================================================================
+
+// GetAdminDirectory proporciona una vista de "Rayos X" del listado de miembros.
+// Ignora filtros de solvencia y visibilidad pública, permitiendo al staff administrativo
+// gestionar la morosidad y estados de actividad.
 func (s *PsiService) GetAdminDirectory(ctx context.Context, admin *domain.UserAdmin, filter request_structs.PsiDirectoryFilterDTO) (interface{}, error) {
 	// Seguridad: Validar que sea administrador autorizado
 	if !admin.Sudo && !admin.CanUpdatePsi && !admin.CanCreatePsi {

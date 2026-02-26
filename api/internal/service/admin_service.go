@@ -1,7 +1,8 @@
 // api/internal/service/admin_service.go
 
-// api/internal/service/admin_service.go
-
+// Package service implementa la capa de orquestación de lógica de negocio.
+// El AdminService centraliza la gestión de identidad, autorización jerárquica
+// y optimización de rendimiento para el staff administrativo.
 package service
 
 import (
@@ -22,15 +23,16 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// AdminService maneja la lógica de negocio para la gestión de administradores,
-// incluyendo autenticación, control de acceso basado en permisos (RBAC) y caché.
+// AdminService encapsula las dependencias necesarias para la administración.
+// Utiliza un patrón de repositorio para la persistencia y un caché en memoria
+// para reducir la latencia en operaciones de lectura masiva.
 type AdminService struct {
 	repo  domain.UserAdminRepository
 	cache *cache.Cache
 }
 
-// NewAdminService crea una nueva instancia de AdminService con un caché por defecto
-// de 5 minutos de expiración y 10 minutos para limpieza de basura.
+// NewAdminService inicializa el servicio con una política de caché de 5 minutos
+// y limpieza automática de registros expirados cada 10 minutos.
 func NewAdminService(repo domain.UserAdminRepository) *AdminService {
 	return &AdminService{
 		repo:  repo,
@@ -38,13 +40,14 @@ func NewAdminService(repo domain.UserAdminRepository) *AdminService {
 	}
 }
 
-////////////////////////////////////////////////////////////
-///////////////////////// LOGIN ////////////////////////////
-////////////////////////////////////////////////////////////
+// =========================================================================
+// GESTIÓN DE SESIÓN Y AUTENTICACIÓN
+// =========================================================================
 
-// Login autentica a un administrador.
-// Genera un JWT firmado con una "Key" única almacenada en la base de datos,
-// lo que permite invalidar sesiones previas al cambiar dicha clave.
+// Login procesa la autenticación de administradores.
+// Implementa "Key Rotation Security": Cada inicio de sesión exitoso genera un nuevo
+// secreto UUID en la base de datos que invalida físicamente cualquier JWT
+// emitido con anterioridad para este usuario (Single Session Enforcement).
 func (s *AdminService) Login(ctx context.Context, identifier, password string) (string, error) {
 
 	admin, err := s.repo.GetByIdentifier(ctx, identifier)
@@ -78,12 +81,13 @@ func (s *AdminService) Login(ctx context.Context, identifier, password string) (
 	return token.SignedString([]byte(newKey))
 }
 
-////////////////////////////////////////////////////////////
-//////////////////////// LISTADO ///////////////////////////
-////////////////////////////////////////////////////////////
+// =========================================================================
+// LECTURA Y RENDIMIENTO (CACHE-ASIDE PATTERN)
+// =========================================================================
 
-// GetAdmins retorna una lista paginada de administradores.
-// Implementa un sistema de caché basado en los parámetros de búsqueda para optimizar el rendimiento.
+// GetAdmins recupera una colección paginada de administradores.
+// Utiliza una clave de caché compuesta por los filtros de búsqueda para garantizar
+// que los resultados en memoria sean consistentes con los criterios de filtrado.
 func (s *AdminService) GetAdmins(
 	ctx context.Context,
 	active *bool,
@@ -91,6 +95,7 @@ func (s *AdminService) GetAdmins(
 	page, limit int,
 ) (interface{}, error) {
 
+	// Generación de llave de caché determinística
 	cacheKey := fmt.Sprintf("admins_l:%d_p:%d_s:%s_a:%v", limit, page, search, active)
 
 	if cached, found := s.cache.Get(cacheKey); found {
@@ -115,17 +120,16 @@ func (s *AdminService) GetAdmins(
 	return result, nil
 }
 
-// GetRepo expone el repositorio subyacente (útil para validaciones externas).
+// GetRepo expone la interfaz de persistencia para uso en middlewares de autorización dinámica.
 func (s *AdminService) GetRepo() domain.UserAdminRepository {
 	return s.repo
 }
 
-////////////////////////////////////////////////////////////
-//////////////////// PERMISSION ENGINE /////////////////////
-////////////////////////////////////////////////////////////
+// =========================================================================
+// MOTOR DE VALIDACIÓN DE PERMISOS (MATRIX ENGINE)
+// =========================================================================
 
-// permissionUpdate es una estructura interna para mapear campos de DTO a campos de dominio
-// facilitando la validación masiva de permisos.
+// permissionUpdate define una estructura de mapeo para validaciones masivas de RBAC.
 type permissionUpdate struct {
 	name       string
 	requested  *bool
@@ -134,8 +138,9 @@ type permissionUpdate struct {
 	setTarget  func(bool)
 }
 
-// buildPermissionMatrix construye una matriz de permisos que permite comparar qué se pidió,
-// qué tiene el administrador actual y si el ejecutor tiene autoridad para otorgar dicho permiso.
+// buildPermissionMatrix construye un mapa declarativo de todos los flags de permisos.
+// Esta técnica evita el uso de Reflection y garantiza que añadir nuevos permisos
+// en el futuro solo requiera una línea de código adicional.
 func buildPermissionMatrix(
 	req request_structs.AdminPermissionsDTO,
 	target *domain.UserAdmin,
@@ -161,32 +166,36 @@ func buildPermissionMatrix(
 	}
 }
 
-////////////////////////////////////////////////////////////
-/////////////////////// CREATE //////////////////////////////
-////////////////////////////////////////////////////////////
+// =========================================================================
+// OPERACIONES DE ESCRITURA Y CONTROL JERÁRQUICO
+// =========================================================================
 
-// CreateAdmin registra un nuevo administrador.
-// Valida que el creador tenga el permiso 'CanCreateAdmin' o sea 'Sudo'.
-// Un administrador no-Sudo no puede otorgar permisos que él mismo no posea.
+// CreateAdmin registra un nuevo miembro del staff administrativo.
+// Aplica el Principio de Menor Privilegio: Un administrador no-Sudo tiene prohibido
+// otorgar permisos que él mismo no posea explícitamente.
 func (s *AdminService) CreateAdmin(
 	ctx context.Context,
 	creator domain.UserAdmin,
 	req request_structs.CreateAdminRequest,
 ) error {
 
+	// Validación de autoridad base
 	if !creator.CanCreateAdmin && !creator.Sudo {
 		return errors.New("permisos insuficientes para crear administradores")
 	}
 
+	// Sanitización y validación de formato
 	_, err := mail.ParseAddress(req.Email)
 	if err != nil {
 		return errors.New("el formato del email es inválido")
 	}
 
+	// Validación de fortaleza de contraseña
 	if !utils.IsStrongPassword(req.Password) {
 		return errors.New("la contraseña no cumple con los estándares de seguridad")
 	}
 
+	// Construcción de la entidad con trazabilidad de auditoría inicial
 	newAdmin := &domain.UserAdmin{
 		AuditModel: domain.AuditModel{
 			CreateBy:   creator.Username,
@@ -198,7 +207,7 @@ func (s *AdminService) CreateAdmin(
 		Email:    req.Email,
 		IsActive: true,
 		Key:      uuid.New().String(),
-		Sudo:     false,
+		Sudo:     false, // Forzado a false; la elevación a Sudo es una operación externa a la API
 	}
 
 	hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
@@ -207,17 +216,20 @@ func (s *AdminService) CreateAdmin(
 	}
 	newAdmin.Password = string(hashed)
 
+	// Procesamiento de seguridad jerárquica
 	matrix := buildPermissionMatrix(req.Permissions, newAdmin, creator)
 
 	// Regla: No puedes dar lo que no tienes (a menos que seas Sudo)
 	if !creator.Sudo {
 		for _, perm := range matrix {
+			// Bloqueo si intenta dar un permiso (true) que el creador no tiene
 			if perm.requested != nil && *perm.requested && !perm.updaterHas {
 				return fmt.Errorf("no puedes otorgar el permiso: %s", perm.name)
 			}
 		}
 	}
 
+	// Aplicación definitiva de permisos validados
 	for _, perm := range matrix {
 		if perm.requested != nil {
 			perm.setTarget(*perm.requested)
@@ -232,7 +244,7 @@ func (s *AdminService) CreateAdmin(
 		return err
 	}
 
-	s.cache.Flush()
+	s.cache.Flush() // Invalidez total para reflejar el nuevo usuario en listados
 	return nil
 }
 
@@ -240,9 +252,9 @@ func (s *AdminService) CreateAdmin(
 //////////////////////// UPDATE ////////////////////////////
 ////////////////////////////////////////////////////////////
 
-// UpdateAdmin actualiza los datos de un administrador existente.
-// Incluye lógica para cambiar contraseñas (que invalida sesiones) y actualización de permisos.
-// Restricción: Los usuarios no-Sudo no pueden editar a un usuario Sudo.
+// UpdateAdmin gestiona la modificación parcial de administradores.
+// Implementa lógica de protección jerárquica: Ningún administrador, excepto un Sudo,
+// puede modificar datos de un usuario de rango Sudo.
 func (s *AdminService) UpdateAdmin(
 	ctx context.Context,
 	updater domain.UserAdmin,
@@ -259,9 +271,11 @@ func (s *AdminService) UpdateAdmin(
 			return errors.New("no puedes editar a un Super Usuario")
 		}
 
+		// Validación de escalada de privilegios durante la actualización
 		matrix := buildPermissionMatrix(req.Permissions, target, updater)
 
-		// Regla: No puedes modificar un permiso si no lo posees tú mismo
+		// Un administrador no puede alterar el estado de un permiso (darlo o quitarlo)
+		// si él mismo no posee dicho privilegio.
 		for _, perm := range matrix {
 			if perm.requested != nil &&
 				*perm.requested != perm.current &&
@@ -271,9 +285,11 @@ func (s *AdminService) UpdateAdmin(
 		}
 	}
 
+	// Trazabilidad mandataria de última modificación
 	target.UpdateBy = updater.Username
 	target.UpdateById = &updater.ID
 
+	// Actualización selectiva (Campos no nulos en el DTO)
 	if req.Username != nil {
 		target.Username = *req.Username
 	}
@@ -294,6 +310,7 @@ func (s *AdminService) UpdateAdmin(
 		target.Key = uuid.New().String()
 	}
 
+	// Aplicación de mutaciones de permisos validadas
 	matrix := buildPermissionMatrix(req.Permissions, target, updater)
 	for _, perm := range matrix {
 		if perm.requested != nil {
@@ -313,14 +330,16 @@ func (s *AdminService) UpdateAdmin(
 //////////////////////// DELETE ////////////////////////////
 ////////////////////////////////////////////////////////////
 
-// DeleteAdmin elimina un administrador de la base de datos.
-// Impide que un usuario se elimine a sí mismo y que usuarios no-Sudo eliminen a un Sudo.
+// DeleteAdmin ejecuta la baja lógica (Soft Delete) de un registro administrativo.
+// Implementa protecciones críticas: impide el auto-suicidio de cuenta y protege la
+// inmutabilidad del Super Usuario ante personal de staff.
 func (s *AdminService) DeleteAdmin(
 	ctx context.Context,
 	updater *domain.UserAdmin,
 	targetID uuid.UUID,
 ) error {
 
+	// Prevención de bloqueo accidental del propio operador
 	if updater.ID == targetID {
 		return errors.New("no puedes eliminar tu propia cuenta")
 	}
