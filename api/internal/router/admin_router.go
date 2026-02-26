@@ -1,6 +1,8 @@
 package router
 
 import (
+	"log"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/monitor"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/handler"
@@ -14,7 +16,11 @@ func SetupAdminRoutes(router fiber.Router, db *gorm.DB) {
 	// 1. Configuración de dependencias
 	repo := postgres.NewAdminRepository(db)
 	psiRepo := postgres.NewPsiRepository(db)
-	svc := service.NewAdminService(repo)
+	mailSvc, err := service.NewMailService()
+	if err != nil {
+		log.Printf("⚠️  Advertencia: No se pudo conectar al servidor SMTP: %v", err)
+	}
+	svc := service.NewAdminService(repo, mailSvc)
 	h := handler.NewAdminHandler(svc)
 	authMid := middleware.NewAuthMiddleware(repo, psiRepo)
 

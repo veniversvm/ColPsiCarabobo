@@ -14,8 +14,12 @@ func SetupPsiRoutes(router fiber.Router, db *gorm.DB, s3Client *s3.S3Client) {
 	// 1. Inicialización de dependencias
 	repo := postgres.NewPsiRepository(db)
 	adminRepo := postgres.NewAdminRepository(db)
+	mailService, err := service.NewMailService()
+	if err != nil {
+		panic("Error al inicializar el servicio de correo: " + err.Error())
+	}
 
-	svc := service.NewPsiService(repo, s3Client)
+	svc := service.NewPsiService(repo, s3Client, mailService)
 	h := handler.NewPsiHandler(svc)
 
 	// Instanciar Middleware de protección

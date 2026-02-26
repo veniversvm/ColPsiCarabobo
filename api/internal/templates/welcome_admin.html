@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h1>Bienvenido(a), {{.Name}}!</h1>
+    <p>Este correo te confirma como administrador del sistema.</p>
+    <p>Ya puedes acceder a tu perfil y gestionar las funciones administrativas.</p>
+    
+     <p>Tus credenciales de acceso son:</p>
+    <ul>
+        <li><strong>Usuario:</strong> {{.Name}}</li>
+        <li><strong>Correo:</strong> {{.Email}}</li>
+        <p>Password : <strong>{{.TempPassword}}</strong></p>
+    </ul>
+    
+    <br>
+    
+    <p>Atentamente,<br>
+    Administración ColPsiCarabobo</p>
+    <hr>
+
+    <p><small>Este es un mensaje automático, por favor no responda.</small></p>
+
+</body>
+</html>

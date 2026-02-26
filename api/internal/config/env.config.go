@@ -5,8 +5,10 @@
 package config
 
 import (
+	"fmt"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
 )
@@ -32,6 +34,15 @@ type Config struct {
 	S3SecretKey string // Credencial secreta (Secret Access Key)
 
 	Environment string // Entorno de ejecución (development, production, etc.)
+
+	// Email
+	SMTPHost     string
+	SMTPPort     int
+	SMTPUser     string
+	SMTPPass     string
+	SMTPFrom     string
+	SMTPReplyTo  string
+	SMTPFromName string
 }
 
 // Envs es una instancia global (Singleton) que contiene la configuración cargada.
@@ -51,6 +62,10 @@ func InitConfig() {
 	}
 
 	// Poblamos el struct Envs con valores del entorno o sus fallbacks (valores por defecto)
+	email_port, err := strconv.Atoi(getEnv("SMTP_PORT", "1025"))
+	if err != nil {
+		fmt.Println("ERROR for EMAIL PORT:", err)
+	}
 	Envs = &Config{
 		// Configuración del Servidor
 		Port: getEnv("PORT", "8080"),
@@ -71,6 +86,15 @@ func InitConfig() {
 
 		// Configuración de Entorno
 		Environment: getEnv("APP_ENV", "development"),
+
+		// Configuración de Email
+		SMTPHost:     getEnv("SMTP_HOST", "localhost"),
+		SMTPPort:     email_port, // Helper parseInt
+		SMTPUser:     getEnv("SMTP_USER", ""),
+		SMTPPass:     getEnv("SMTP_PASS", ""),
+		SMTPFrom:     getEnv("SMTP_FROM", "info@colpsicarabobo.com"),
+		SMTPReplyTo:  getEnv("SMTP_REPLY_TO", ""),
+		SMTPFromName: getEnv("SMTP_FROM_NAME", "Colegio de Psicólogos de Carabobo"),
 	}
 }
 

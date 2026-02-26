@@ -9,6 +9,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -117,6 +118,18 @@ func (s *PsiService) CreatePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 			CreateBy: admin.Username, CreateById: &admin.ID,
 			UpdateBy: admin.Username, UpdateById: &admin.ID,
 		},
+	}
+
+	// 6. Notificación de Bienvenida (No bloqueante)
+	mailData := map[string]interface{}{
+		"Name":     psi.Username,
+		"Email":    psi.Email,
+		"Password": req.Password,
+	}
+
+	// Invocación dinámica y no-bloqueante
+	if err := s.mailService.SendEmail(psi.Email, "Bienvenido a la plataforma Colegio de Psicólogos", "welcome_psi", mailData); err != nil {
+		log.Printf("⚠️ Error al preparar el correo (pero el psi-user se creó): %v", err)
 	}
 
 	return s.repo.CreateWithColData(ctx, psi, colData)

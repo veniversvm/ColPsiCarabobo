@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"mime/multipart"
 	"strconv"
 	"strings"
@@ -30,15 +31,17 @@ import (
 
 // PsiService es la estructura que implementa la lógica de negocio relacionada con los psicólogos.
 type PsiService struct {
-	repo     domain.PsiUserRepository
-	s3Client *s3.S3Client
+	repo        domain.PsiUserRepository
+	s3Client    *s3.S3Client
+	mailService *MailService // Inyectamos el servicio de correo para notificaciones
 }
 
 // NewPsiService es el constructor de PsiService, inyectando las dependencias necesarias.
-func NewPsiService(repo domain.PsiUserRepository, s3Client *s3.S3Client) *PsiService {
+func NewPsiService(repo domain.PsiUserRepository, s3Client *s3.S3Client, mailService *MailService) *PsiService {
 	return &PsiService{
-		repo:     repo,
-		s3Client: s3Client,
+		repo:        repo,
+		s3Client:    s3Client,
+		mailService: mailService,
 	}
 }
 
@@ -123,6 +126,18 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 				"error":     err.Error(),
 			})
 			continue
+		}
+
+		// 5. Notificación de Bienvenida (No bloqueante)
+		mailData := map[string]interface{}{
+			"Name":     psi.Username,
+			"Email":    psi.Email,
+			"Password": record[2],
+		}
+
+		// Invocación dinámica y no-bloqueante
+		if err := s.mailService.SendEmail(psi.Email, "Bienvenido a la plataforma Colegio de Psicólogos", "welcome_psi", mailData); err != nil {
+			log.Printf("⚠️ Error al preparar el correo (pero el psi-user se creó): %v", err)
 		}
 		successCount++
 	}
@@ -443,6 +458,18 @@ func (s *PsiService) Login(ctx context.Context, identifier, password string) (st
 		"exp":     time.Now().Add(24 * time.Hour).Unix(),
 		"iat":     time.Now().Unix(),
 	})
+
+	// Notificacion de Login
+	mailData := map[string]interface{}{
+		"Name":      psi.Username,
+		"Email":     psi.Email,
+		"LoginTime": time.Now().Format(time.RFC1123),
+	}
+
+	// Invocación dinámica y no-bloqueante
+	if err := s.mailService.SendEmail(psi.Email, "Colegio de Psicólogos de Carabobo - Inicio de sesión en la plataforma.", "login_psi", mailData); err != nil {
+		log.Printf("⚠️ Error al preparar el correo (pero el psicólogo se logueó): %v", err)
+	}
 
 	// Firmar con la llave personal del usuario
 	return token.SignedString([]byte(newKey))

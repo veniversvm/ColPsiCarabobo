@@ -9,6 +9,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"net/mail"
 	"strings"
 	"time"
@@ -27,16 +28,18 @@ import (
 // Utiliza un patrón de repositorio para la persistencia y un caché en memoria
 // para reducir la latencia en operaciones de lectura masiva.
 type AdminService struct {
-	repo  domain.UserAdminRepository
-	cache *cache.Cache
+	repo        domain.UserAdminRepository
+	cache       *cache.Cache
+	mailService *MailService // Inyección de servicio de correo para notificaciones administrativas
 }
 
 // NewAdminService inicializa el servicio con una política de caché de 5 minutos
 // y limpieza automática de registros expirados cada 10 minutos.
-func NewAdminService(repo domain.UserAdminRepository) *AdminService {
+func NewAdminService(repo domain.UserAdminRepository, mailService *MailService) *AdminService {
 	return &AdminService{
-		repo:  repo,
-		cache: cache.New(5*time.Minute, 10*time.Minute),
+		repo:        repo,
+		mailService: mailService,
+		cache:       cache.New(5*time.Minute, 10*time.Minute),
 	}
 }
 
@@ -77,6 +80,18 @@ func (s *AdminService) Login(ctx context.Context, identifier, password string) (
 		"iat":     time.Now().Unix(),
 		"role":    "admin",
 	})
+
+	// Notificacion de Login
+	mailData := map[string]interface{}{
+		"Name":      admin.Username,
+		"Email":     admin.Email,
+		"LoginTime": time.Now().Format(time.RFC1123),
+	}
+
+	// Invocación dinámica y no-bloqueante
+	if err := s.mailService.SendEmail(admin.Email, "Inicio de sesión en el sistema", "login_admin", mailData); err != nil {
+		log.Printf("⚠️ Error al preparar el correo (pero el admin se creó): %v", err)
+	}
 
 	return token.SignedString([]byte(newKey))
 }
@@ -169,7 +184,6 @@ func buildPermissionMatrix(
 // =========================================================================
 // OPERACIONES DE ESCRITURA Y CONTROL JERÁRQUICO
 // =========================================================================
-
 // CreateAdmin registra un nuevo miembro del staff administrativo.
 // Aplica el Principio de Menor Privilegio: Un administrador no-Sudo tiene prohibido
 // otorgar permisos que él mismo no posea explícitamente.
@@ -242,6 +256,17 @@ func (s *AdminService) CreateAdmin(
 			return errors.New("ya existe un usuario SUDO")
 		}
 		return err
+	}
+
+	mailData := map[string]interface{}{
+		"Name":     newAdmin.Username,
+		"Email":    newAdmin.Email,
+		"Password": req.Password,
+	}
+
+	// Invocación dinámica y no-bloqueante
+	if err := s.mailService.SendEmail(newAdmin.Email, "Bienvenido al Colegio de Psicólogos", "welcome_admin", mailData); err != nil {
+		log.Printf("⚠️ Error al preparar el correo (pero el admin se creó): %v", err)
 	}
 
 	s.cache.Flush() // Invalidez total para reflejar el nuevo usuario en listados
