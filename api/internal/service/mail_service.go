@@ -14,6 +14,12 @@ import (
 	"github.com/wneessen/go-mail"
 )
 
+// IMailService define el contrato para el envío de correos.
+// Esto permite que los servicios sean testeables.
+type IMailService interface {
+	SendEmail(to string, subject string, templateName string, data interface{}) error
+}
+
 // MailJob representa un correo pendiente en la cola
 type MailJob struct {
 	To           string

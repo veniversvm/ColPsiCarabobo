@@ -33,11 +33,11 @@ import (
 type PsiService struct {
 	repo        domain.PsiUserRepository
 	s3Client    *s3.S3Client
-	mailService *MailService // Inyectamos el servicio de correo para notificaciones
+	mailService IMailService // Inyectamos el servicio de correo para notificaciones
 }
 
 // NewPsiService es el constructor de PsiService, inyectando las dependencias necesarias.
-func NewPsiService(repo domain.PsiUserRepository, s3Client *s3.S3Client, mailService *MailService) *PsiService {
+func NewPsiService(repo domain.PsiUserRepository, s3Client *s3.S3Client, mailService IMailService) *PsiService {
 	return &PsiService{
 		repo:        repo,
 		s3Client:    s3Client,
