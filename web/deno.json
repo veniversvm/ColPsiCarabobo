@@ -1,0 +1,11 @@
+{
+  "tasks": {
+    "dev": "deno run -A npm:vinxi dev",
+    "build": "deno run -A npm:vinxi build",
+    "start": "deno run -A .output/server/index.mjs"
+  },
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "solid-js"
+  }
+}
