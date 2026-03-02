@@ -121,12 +121,16 @@ func (r *psiRepo) Update(ctx context.Context, psi *domain.PsiUserModel, colData 
 // Usa tx.Omit("ColData") para prevenir que GORM intente actualizar asociaciones no deseadas.
 func (r *psiRepo) UpdatePublicProfile(ctx context.Context, psi *domain.PsiUserModel, colData *domain.PsiUserColData) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// FIX: Solo actualizar campos públicos permitidos (lista blanca)
-		// Si usas Save(psi) te sobrescribe todo.
-		if err := tx.Model(psi).Omit("CI", "FPV", "IsActive", "Solvent", "Password").Updates(psi).Error; err != nil {
+
+		// FIX GORM: Usamos Save() en lugar de Updates() para garantizar que los
+		// valores "false" y "" (strings vacíos) sí se guarden en la base de datos.
+		// Omitimos estrictamente los campos administrativos y la relación ColData.
+		err := tx.Omit("ci", "fpv", "is_active", "solvent", "password", "key", "ColData").Save(psi).Error
+		if err != nil {
 			return err
 		}
 
+		// Actualizar ColData solo si se envió (Save ya soporta zero values)
 		if colData != nil {
 			if err := tx.Save(colData).Error; err != nil {
 				return err

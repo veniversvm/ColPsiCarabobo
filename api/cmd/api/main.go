@@ -36,8 +36,9 @@ import (
 // @bearerFormat                JWT
 func main() {
 	// 1. CONFIGURACIÓN
+	println("Intentando cargar configuración...") // println (minúscula) es directo
 	config.InitConfig()
-
+	println("Configuración cargada. Intentando conectar a DB...")
 	// 2. PERSISTENCIA
 	db, err := database.ConnectDB()
 	if err != nil {

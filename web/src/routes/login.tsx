@@ -26,14 +26,17 @@ export default function LoginPage() {
         password: password(),
       });
 
-      // Nota de Arquitectura: Guardamos el token temporalmente en la cookie 
-      // mediante el fetcher para que la siguiente petición (/me) vaya autorizada.
-      // (js-cookie ya se encarga de esto en lib/api.ts)
+      // 2. Recuperar el perfil completo
+      // FIX SENIOR: Como la cookie aún no existe, inyectamos el token recién recibido 
+      // directamente en las cabeceras de esta petición específica.
+      const userProfile = await apiGet<any>("/psi/me", {
+        headers: {
+          "Authorization": `Bearer ${authResponse.token}`
+        }
+      });
 
-      // 2. Recuperar el perfil completo (Usando el endpoint /me que hicimos en Go)
-      const userProfile = await apiGet<any>("/psi/me");
-
-      // 3. Inicializar estado global con los datos reales de la DB
+      // 3. Inicializar estado global 
+      // (Aquí es donde la función useAuth guarda las cookies permanentemente)
       login(authResponse.token, {
         id: userProfile.id,
         username: userProfile.username,
@@ -43,13 +46,15 @@ export default function LoginPage() {
         lastName: userProfile.last_name,
       });
 
+      // 4. Redirigir al Dashboard personal
       navigate("/psi", { replace: true });
       
     } catch (err) {
       if (err instanceof ApiError) {
+        // Mostrar el mensaje real que viene de Go (ej. "credenciales inválidas")
         setError(err.message);
       } else {
-        setError("No se pudo conectar con el servidor administrativo.");
+        setError("Ocurrió un error inesperado al intentar conectar.");
       }
     } finally {
       setLoading(false);

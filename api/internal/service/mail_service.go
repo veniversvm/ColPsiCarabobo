@@ -147,9 +147,9 @@ func (s *MailService) executeSend(job MailJob) error {
 
 	// 4. Envío físico
 	// DialAndSend se encarga de abrir la conexión, enviar y cerrar.
-	if err := s.client.DialAndSend(m); err != nil {
-		return fmt.Errorf("fallo la conexión SMTP o el envío: %w", err)
-	}
+	// if err := s.client.DialAndSend(m); err != nil {
+	// 	return fmt.Errorf("fallo la conexión SMTP o el envío: %w", err)
+	// }
 
 	return nil
 }

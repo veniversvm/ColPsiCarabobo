@@ -7,11 +7,10 @@ export default function Navbar() {
   const { user, isAuthenticated, logout, role } = useAuth();
   const [isOpen, setIsOpen] = createSignal(false);
 
-  // Clase común para los links para no repetir código
   const navLinkClass = "text-[#1e3a8a] hover:bg-blue-50 md:hover:bg-transparent md:hover:text-blue-700 block px-3 py-4 md:py-0 rounded-md text-base font-medium transition-colors";
 
   return (
-    <nav class="bg-white shadow-md sticky top-0 z-50">
+    <nav class="bg-white shadow-md sticky top-0 z-50 font-sans">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16 items-center">
           
@@ -23,7 +22,7 @@ export default function Navbar() {
               </div>
               <div class="flex flex-col leading-none">
                 <span class="text-[#1e3a8a] font-extrabold text-lg tracking-tight">COLPSI</span>
-                <span class="text-gray-400 text-[10px] font-bold tracking-widest">CARABOBO</span>
+                <span class="text-gray-400 text-[10px] font-bold tracking-widest uppercase">Carabobo</span>
               </div>
             </A>
           </div>
@@ -42,18 +41,31 @@ export default function Navbar() {
               }
             >
               <div class="flex items-center gap-4 border-l pl-6 border-gray-100">
-                <div class="text-right flex flex-col">
-                  <span class="text-xs text-gray-400">Bienvenido(a)</span>
-                  <span class="text-sm font-bold text-[#1e3a8a]">{user()?.username}</span>
-                </div>
+                {/* Info de Usuario / Enlace a Perfil */}
+                <A href={role() === 'admin' ? '/admin' : '/psi'} class="text-right flex flex-col group">
+                  <span class="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Bienvenido(a)</span>
+                  <span class="text-sm font-bold text-[#1e3a8a] group-hover:underline">
+                    {user()?.firstName || user()?.username}
+                  </span>
+                </A>
                 
-                <Show when={role() === "admin"}>
-                  <A href="/admin" class="text-xs bg-red-100 text-red-700 px-2 py-1 rounded font-bold hover:bg-red-200 uppercase">Panel</A>
+                {/* Botón condicional según Rol */}
+                <Show 
+                  when={role() === "admin"}
+                  fallback={
+                    <A href="/psi/me" class="text-xs bg-blue-50 text-colpsi-blue px-3 py-1.5 rounded-lg font-bold hover:bg-[#facc15] transition-colors uppercase">
+                      Mi Perfil
+                    </A>
+                  }
+                >
+                  <A href="/admin" class="text-xs bg-red-100 text-red-700 px-3 py-1.5 rounded-lg font-bold hover:bg-red-200 uppercase tracking-tighter">
+                    Panel Admin
+                  </A>
                 </Show>
 
                 <button 
                   onClick={logout}
-                  class="text-gray-400 hover:text-red-600 transition-colors"
+                  class="text-gray-400 hover:text-red-600 transition-colors p-1"
                   title="Cerrar Sesión"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -85,46 +97,53 @@ export default function Navbar() {
 
       {/* MOBILE MENU CONTENT (Dropdown) */}
       <Show when={isOpen()}>
-        <div class="md:hidden bg-white border-t border-gray-50 shadow-inner animate-in slide-in-from-top duration-200">
-          <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            <A href="/directorio" onClick={() => setIsOpen(false)} class={navLinkClass}>Directorio</A>
-            <A href="/noticias" onClick={() => setIsOpen(false)} class={navLinkClass}>Noticias</A>
+        <div class="md:hidden bg-white border-t border-gray-50 shadow-2xl animate-in slide-in-from-top duration-300">
+          <div class="px-4 pt-4 pb-6 space-y-2">
+            <A href="/directorio" onClick={() => setIsOpen(false)} class={navLinkClass}>Directorio Profesional</A>
+            <A href="/noticias" onClick={() => setIsOpen(false)} class={navLinkClass}>Noticias y Avisos</A>
             
-            <hr class="my-2 border-gray-50" />
-            
-            <Show 
-              when={isAuthenticated()} 
-              fallback={
-                <A href="/login" onClick={() => setIsOpen(false)} class="block w-full text-center bg-[#facc15] text-[#1e3a8a] px-4 py-3 rounded-lg font-bold">
-                  Iniciar Sesión
-                </A>
-              }
-            >
-              <div class="px-3 py-4 flex flex-col gap-3">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-[#1e3a8a] font-bold">
-                    {user()?.username.charAt(0).toUpperCase()}
+            <div class="my-4 border-t border-gray-100 pt-4">
+              <Show 
+                when={isAuthenticated()} 
+                fallback={
+                  <A href="/login" onClick={() => setIsOpen(false)} class="block w-full text-center bg-[#facc15] text-[#1e3a8a] px-4 py-4 rounded-2xl font-black shadow-lg shadow-yellow-500/20">
+                    INICIAR SESIÓN
+                  </A>
+                }
+              >
+                <div class="space-y-4">
+                  <div class="flex items-center gap-4 bg-gray-50 p-4 rounded-2xl">
+                    <div class="w-12 h-12 bg-colpsi-blue rounded-xl flex items-center justify-center text-white font-black text-xl">
+                      {user()?.username.charAt(0).toUpperCase()}
+                    </div>
+                    <div class="overflow-hidden">
+                      <p class="text-sm font-black text-colpsi-blue truncate">
+                        {user()?.firstName} {user()?.lastName}
+                      </p>
+                      <p class="text-xs text-gray-400 truncate">{user()?.email}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p class="text-sm font-bold text-[#1e3a8a]">{user()?.username}</p>
-                    <p class="text-xs text-gray-400">{user()?.email}</p>
-                  </div>
+                  
+                  <Show when={role() === "admin"}>
+                    <A href="/admin" onClick={() => setIsOpen(false)} class="block w-full bg-red-50 text-red-700 px-4 py-3 rounded-xl font-bold text-center border border-red-100">
+                      Panel Administrativo
+                    </A>
+                  </Show>
+                  
+                  <A href="/psi/me" onClick={() => setIsOpen(false)} class="block w-full bg-blue-50 text-[#1e3a8a] px-4 py-3 rounded-xl font-bold text-center border border-blue-100">
+                    Gestionar Mi Perfil
+                  </A>
+                  
+                  <button 
+                    onClick={() => { logout(); setIsOpen(false); }}
+                    class="w-full text-red-500 font-bold py-3 text-sm flex items-center justify-center gap-2"
+                  >
+                    <span>Cerrar Sesión</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                  </button>
                 </div>
-                
-                <Show when={role() === "admin"}>
-                  <A href="/admin" onClick={() => setIsOpen(false)} class="bg-red-50 text-red-700 px-4 py-3 rounded-lg font-bold text-center">Panel Administrativo</A>
-                </Show>
-                
-                <A href="/psi/me" onClick={() => setIsOpen(false)} class="bg-blue-50 text-[#1e3a8a] px-4 py-3 rounded-lg font-bold text-center">Mi Perfil</A>
-                
-                <button 
-                  onClick={logout}
-                  class="w-full text-red-600 font-bold py-3 border border-red-100 rounded-lg"
-                >
-                  Cerrar Sesión
-                </button>
-              </div>
-            </Show>
+              </Show>
+            </div>
           </div>
         </div>
       </Show>
