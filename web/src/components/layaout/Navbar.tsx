@@ -53,7 +53,7 @@ export default function Navbar() {
                 <Show 
                   when={role() === "admin"}
                   fallback={
-                    <A href="/psi/me" class="text-xs bg-blue-50 text-colpsi-blue px-3 py-1.5 rounded-lg font-bold hover:bg-[#facc15] transition-colors uppercase">
+                    <A href="/psi" class="text-xs bg-blue-50 text-colpsi-blue px-3 py-1.5 rounded-lg font-bold hover:bg-[#facc15] transition-colors uppercase">
                       Mi Perfil
                     </A>
                   }

@@ -27,33 +27,39 @@ type PsiLoginRequest struct {
 // para que el usuario no pueda alterarlos mediante inyección de JSON.
 // Nota: Se usan punteros (*tipo) para soportar semántica PATCH (actualizar solo lo enviado).
 type PsiUserUpdateRequestSelf struct {
+	// --- Datos de Usuario Básicos ---
+	Username     *string `json:"username,omitempty" form:"username"`
+	Email        *string `json:"email,omitempty" form:"email"`
+	NewPassword1 *string `json:"new_password_1,omitempty" form:"new_password_1"`
+	NewPassword2 *string `json:"new_password_2,omitempty" form:"new_password_2"`
+	Password     string  `json:"password,omitempty" form:"password" validate:"required"`
+
 	// --- Datos de Contacto y Privacidad ---
-	ContactEmail             *string `json:"contact_email"`
-	ShowContactEmail         *bool   `json:"show_contact_email"`
-	PublicPhone              *string `json:"public_phone"`
-	ShowPublicPhone          *bool   `json:"show_public_phone"`
-	ServiceAddress           *string `json:"service_address"`
-	ShowPublicServiceAddress *bool   `json:"show_public_service_address"`
+	ContactEmail             *string `json:"contact_email" form:"contact_email"`
+	ShowContactEmail         *bool   `json:"show_contact_email" form:"show_contact_email"`
+	PublicPhone              *string `json:"public_phone" form:"public_phone"`
+	ShowPublicPhone          *bool   `json:"show_public_phone" form:"show_public_phone"`
+	ServiceAddress           *string `json:"service_address" form:"service_address"`
+	ShowPublicServiceAddress *bool   `json:"show_public_service_address" form:"show_public_service_address"`
 
 	// --- Ubicación Geográfica ---
-	MunicipalityCarabobo        *string `json:"municipality_carabobo"`
-	PhoneCarabobo               *string `json:"phone_carabobo"`
-	CelPhoneCarabobo            *string `json:"cel_phone_carabobo"`
-	StateOutside                *string `json:"state_outside"`
-	MunicipalityOutSideCarabobo *string `json:"municipality_outside_carabobo"`
-	PhoneOutSideCarabobo        *string `json:"phone_outside_carabobo"`
-	CelPhoneOutSideCarabobo     *string `json:"cel_phone_outside_carabobo"`
+	MunicipalityCarabobo        *string `json:"municipality_carabobo" form:"municipality_carabobo"`
+	PhoneCarabobo               *string `json:"phone_carabobo" form:"phone_carabobo"`
+	CelPhoneCarabobo            *string `json:"cel_phone_carabobo" form:"cel_phone_carabobo"`
+	StateOutside                *string `json:"state_outside" form:"state_outside"`
+	MunicipalityOutSideCarabobo *string `json:"municipality_outside_carabobo" form:"municipality_outside_carabobo"`
+	PhoneOutSideCarabobo        *string `json:"phone_outside_carabobo" form:"phone_outside_carabobo"`
+	CelPhoneOutSideCarabobo     *string `json:"cel_phone_outside_carabobo" form:"cel_phone_outside_carabobo"`
 
 	// --- Perfil Profesional y Biografía ---
-	// Las especialidades pueden ser texto libre si no se encuentran en el catálogo maestro.
-	PrimarySpecialty   *string `json:"primary_specialty"`
-	SecondarySpecialty *string `json:"secondary_specialty"`
-	MiniBio            *string `json:"mini_bio"`
+	PrimarySpecialty   *string `json:"primary_specialty" form:"primary_specialty"`
+	SecondarySpecialty *string `json:"secondary_specialty" form:"secondary_specialty"`
+	MiniBio            *string `json:"mini_bio" form:"mini_bio"`
 
 	// --- Visibilidad de Datos Colegiales (Pregrado) ---
-	ShowUniversityUndergraduate *bool `json:"show_university_undergraduate"`
-	ShowGraduateDate            *bool `json:"show_graduate_date"`
-	ShowMentionUndergraduate    *bool `json:"show_mention_undergraduate"`
+	ShowUniversityUndergraduate *bool `json:"show_university_undergraduate" form:"show_university_undergraduate"`
+	ShowGraduateDate            *bool `json:"show_graduate_date" form:"show_graduate_date"`
+	ShowMentionUndergraduate    *bool `json:"show_mention_undergraduate" form:"show_mention_undergraduate"`
 }
 
 // =========================================================================
@@ -147,7 +153,12 @@ type UpdatePostGradeRequest struct {
 
 // PostGradeDTO es la proyección pública de un postgrado para la ficha del psicólogo.
 type PostGradeDTO struct {
-	Title      string `json:"title"`
-	University string `json:"university"`
-	Year       string `json:"year"`
+	Title       string `json:"title"`
+	University  string `json:"university"`
+	Year        string `json:"year"`
+	Description string `json:"description,omitempty"`
+	PicOneURL   string `json:"pic_one_url,omitempty"`   // URL o S3 Key del diploma o certificado
+	PicTwoURL   string `json:"pic_two_url,omitempty"`   // URL o S3 Key de un segundo documento (opcional)
+	PicThreeURL string `json:"pic_three_url,omitempty"` // URL o S3 Key de un tercer documento (opcional)
+
 }

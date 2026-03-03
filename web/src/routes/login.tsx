@@ -4,6 +4,7 @@ import { createSignal, Show } from "solid-js";
 import { useNavigate, A } from "@solidjs/router";
 import { useAuth } from "~/lib/auth";
 import { apiPost, apiGet, ApiError } from "~/lib/api";
+import { PasswordInputComponent } from "~/components/ui/PasswordInput";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -101,12 +102,19 @@ export default function LoginPage() {
 
                 <div>
                   <label class="block text-xs font-bold text-gray-400 uppercase mb-1 ml-1">Contraseña</label>
-                  <input
+                  {/* <input
                     type="password"
                     required
                     placeholder="••••••••"
                     class="w-full bg-gray-50 border-2 border-transparent focus:border-[#facc15] focus:bg-white rounded-xl px-4 py-3.5 outline-none transition-all text-gray-700"
                     onInput={(e) => setPassword(e.currentTarget.value)}
+                  /> */}
+                  <PasswordInputComponent 
+                      required 
+                      value={password()} 
+                      onInput={(e) => setPassword(e.currentTarget.value)}
+                      class="w-full bg-gray-50 border-2 border-transparent focus:border-[#facc15] focus:bg-white rounded-xl px-4 py-3.5 outline-none transition-all text-gray-700"
+                      placeholder="••••••••" 
                   />
                 </div>
               </div>

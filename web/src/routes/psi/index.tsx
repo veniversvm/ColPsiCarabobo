@@ -1,5 +1,11 @@
 // web/src/routes/psi/index.ts
-
+/**
+ * Inicio del Portal del Psicólogo ya logueado. Aquí se muestra un resumen del perfil, estatus de solvencia y noticias gremiales.
+ * Desde aquí el psicólogo puede navegar a su perfil completo, postgrados y otras secciones relevantes.
+ * 
+ * FIX SENIOR: Este es el dashboard principal del psicólogo. Se carga información sensible del perfil, por lo que se accede a través de la cookie de autenticación.
+ * El endpoint /psi/me en Go se encarga de devolver toda la información relevante del perfil en una sola petición para optimizar la experiencia.
+ */
 import { createResource, For, Show, Suspense } from "solid-js";
 import { useAuth } from "~/lib/auth";
 import { apiGet } from "~/lib/api";

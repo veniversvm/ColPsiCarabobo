@@ -11,7 +11,6 @@ import (
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/request_structs"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/service"
-	utils "github.com/veniversvm/ColPsiCarabobo/api/internal/utils"
 )
 
 type PsiHandler struct {
@@ -75,40 +74,50 @@ func (h *PsiHandler) UploadCsv(c *fiber.Ctx) error {
 }
 
 // UpdateOwnProfile godoc
-// @Summary      Actualizar mi perfil
-// @Description  Permite al psicólogo actualizar su información de contacto y visibilidad.
+// @Summary      Actualizar mi perfil (Autogestión)
+// @Description  Permite al psicólogo actualizar su información. Requiere la contraseña actual para validar cambios. Soporta subida de foto de perfil.
 // @Security     BearerAuth
 // @Tags         Psicólogos - Perfil
-// @Accept       json
+// @Accept       multipart/form-data
 // @Produce      json
-// @Param        request  body      request_structs.PsiUserUpdateRequestSelf  true  "Datos editables"
-// @Success      200      {object}  map[string]interface{}
+// @Param        password      formData string true  "Contraseña actual obligatoria"
+// @Param        username      formData string false "Nuevo nombre de usuario"
+// @Param        profile_picture formData file  false "Imagen de perfil (JPEG/PNG)"
+// @Param        request       body     request_structs.PsiUserUpdateRequestSelf true "Otros datos (enviar como form-data)"
+// @Success      200           {object} map[string]interface{}
+// @Failure      401           {object} map[string]string "Contraseña incorrecta"
 // @Router       /psi/me [patch]
 func (h *PsiHandler) UpdateOwnProfile(c *fiber.Ctx) error {
 	// 1. Obtener identidad segura desde el token
 	updater := c.Locals("psi_user").(*domain.PsiUserModel)
 
-	// 2. Parsear request
+	// 2. Parsear campos de texto del formulario
 	var req request_structs.PsiUserUpdateRequestSelf
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "JSON inválido"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Formato de datos inválido"})
 	}
 
-	// 3. Validar que haya algo que actualizar
-	if utils.IsEmptyReq(req) {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "No se enviaron campos para actualizar"})
+	// 3. Capturar archivo de imagen (Opcional)
+	file, _ := c.FormFile("profile_picture")
+
+	// 4. Validar contraseña actual presente
+	if req.Password == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Se requiere la contraseña actual para confirmar cambios"})
 	}
 
-	// 4. Llamar al servicio usando el ID del token (Zero Trust)
-	profile, err := h.service.UpdateProfileSelf(c.UserContext(), updater, updater.ID, req)
+	// 5. Llamar al servicio inyectando el archivo
+	profile, err := h.service.UpdateProfileSelf(c.UserContext(), updater, updater.ID, req, file)
 	if err != nil {
+		// Diferenciar errores de autenticación de errores de servidor
+		if err.Error() == "contraseña actual incorrecta" {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
+		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	return c.JSON(fiber.Map{
 		"message": "Perfil actualizado correctamente",
-		// Opcional: No devolver todo el perfil si es muy pesado, solo confirmación
-		"user_id": profile.ID,
+		"id":      profile.ID,
 	})
 }
 

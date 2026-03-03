@@ -166,7 +166,7 @@ func TestPsiService_UpdateProfileSelf_LazyLoading(t *testing.T) {
 		newBio := "Nueva biografía"
 		req := request_structs.PsiUserUpdateRequestSelf{MiniBio: &newBio}
 
-		_, err := svc.UpdateProfileSelf(context.Background(), psi, psi.ID, req)
+		_, err := svc.UpdateProfileSelf(context.Background(), psi, psi.ID, req, nil)
 		if err != nil {
 			t.Fatal(err)
 		}

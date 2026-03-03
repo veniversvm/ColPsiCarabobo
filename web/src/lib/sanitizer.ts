@@ -20,9 +20,9 @@ export function sanitizePhone(val: string): string {
  */
 export function sanitizeText(val: string): string {
   if (!val) return "";
-  // Regex: Permite letras (con acentos), números y espacios. 
+  // Regex: Permite letras (con acentos), números, espacios, puntos, comas y guiones.
   // Elimina: < > ; ' " -- (comentarios SQL) { } [ ]
-  return val.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,-]/g, "").trim();
+  return val.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s,-]/g, "").trim();
 }
 
 /**
@@ -80,4 +80,42 @@ export function sanitizeProfileRequest(data: any): any {
   });
 
   return cleanData;
+}
+
+
+// web/src/lib/sanitizer.ts
+
+/**
+ * Valida si una contraseña cumple con los estándares de seguridad de la API en Go.
+ * Reglas:
+ * 1. Mínimo 8 caracteres.
+ * 2. Al menos una letra mayúscula.
+ * 3. Al menos una letra minúscula.
+ * 4. Al menos un número.
+ * 5. Al menos un carácter especial (puntuación o símbolo).
+ * 6. NO contiene espacios en blanco.
+ */
+export function isStrongPassword(password: string): boolean {
+  if (!password || password.length < 8) return false;
+  
+  // Regla: Sin espacios en blanco
+  if (/\s/.test(password)) return false;
+
+  // Reglas de composición usando Regex
+  const hasUpper = /[A-Z]/.test(password);
+  const hasLower = /[a-z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  
+  // Caracteres especiales: Cualquier cosa que no sea alfanumérica ni espacio
+  const hasSpecial = /[^a-zA-Z0-9\s]/.test(password);
+
+  return hasUpper && hasLower && hasNumber && hasSpecial;
+}
+
+/**
+ * Trunca un texto al máximo permitido para evitar errores en la base de datos.
+ */
+export function enforceMaxLength(val: string, max: number): string {
+  if (!val) return "";
+  return val.length > max ? val.substring(0, max) : val;
 }

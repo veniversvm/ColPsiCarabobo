@@ -1,5 +1,6 @@
 // Componente ToggleSwitch Reactivo (Safe for SolidJS Context)
-export const  ToggleSwitch = (props: { label: string, checked: boolean, onChange: (val: boolean) => void }) => {
+// FIX SENIOR: Componente Reactivo usando classList en lugar de template strings para evitar pérdida de estado.
+export function ToggleSwitch(props: { label: string, checked: boolean, onChange: (val: boolean) => void }) {
   return (
     <label class="flex items-center cursor-pointer mt-3 w-max group">
       <div class="relative flex items-center">

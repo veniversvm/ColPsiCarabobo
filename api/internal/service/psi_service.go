@@ -152,13 +152,61 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 // UpdateProfileSelf permite al psicólogo actualizar sus datos de contacto y visibilidad.
 // Implementa "Lazy Loading" para ColData: solo consulta y actualiza la tabla de datos
 // colegiales si el usuario solicita cambios en esos campos específicos.
-func (s *PsiService) UpdateProfileSelf(ctx context.Context, psi *domain.PsiUserModel, id uuid.UUID, req request_structs.PsiUserUpdateRequestSelf) (*domain.PsiUserModel, error) {
+func (s *PsiService) UpdateProfileSelf(ctx context.Context, psi *domain.PsiUserModel, id uuid.UUID, req request_structs.PsiUserUpdateRequestSelf, file *multipart.FileHeader) (*domain.PsiUserModel, error) {
+
+	// 1. VALIDACIÓN DE CONTRASEÑA (Security First)
+	if err := bcrypt.CompareHashAndPassword([]byte(psi.Password), []byte(req.Password)); err != nil {
+		return nil, errors.New("contraseña actual incorrecta")
+	}
+
+	// 2. CAMBIO DE PASSWORD (Si se solicitó)
+	if req.NewPassword1 != nil && *req.NewPassword1 != "" {
+		if req.NewPassword2 == nil || *req.NewPassword1 != *req.NewPassword2 {
+			return nil, errors.New("las nuevas contraseñas no coinciden")
+		}
+		hashed, _ := bcrypt.GenerateFromPassword([]byte(*req.NewPassword1), bcrypt.DefaultCost)
+		psi.Password = string(hashed)
+		// Al cambiar password, rotamos la Key para invalidar otras sesiones
+		psi.Key = uuid.New().String()
+	}
+
+	// 3. MANEJO DE IMAGEN EN S3
+	if file != nil {
+		// Sanitizar y subir (usando tu utilidad ya existente)
+		src, _ := file.Open()
+		defer src.Close()
+
+		cleanBytes, ext, contentType, err := utils.SanitizeImage(src)
+		if err != nil {
+			return nil, err
+		}
+
+		filename := fmt.Sprintf("avatars/%s%s", psi.ID.String(), ext)
+		newKey, err := s.s3Client.UploadStream(ctx, bytes.NewReader(cleanBytes), "avatars", filename, contentType)
+		if err != nil {
+			return nil, err
+		}
+
+		// Si tenía una foto anterior, borrarla de S3 para no dejar basura
+		if psi.ProfilePictureS3Key != "" && psi.ProfilePictureS3Key != newKey {
+			_ = s.s3Client.DeleteFile(ctx, psi.ProfilePictureS3Key)
+		}
+		psi.ProfilePictureS3Key = newKey
+	}
 
 	// A. Auditoría Automática
 	psi.UpdateBy = psi.Username
 	psi.UpdateById = &psi.ID
 
 	// B. Mapeo de campos del Modelo Principal (PsiUserModel)
+	if req.Username != nil {
+		psi.Username = *req.Username
+	}
+
+	if req.Email != nil {
+		psi.Email = *req.Email
+	}
+
 	if req.ContactEmail != nil {
 		psi.ContactEmail = *req.ContactEmail
 	}
@@ -403,9 +451,14 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id uuid.UUID) (*reque
 			// Además, el postgrado debe estar marcado como activo (validado)
 			if pg.Active {
 				dto.PostGrades = append(dto.PostGrades, request_structs.PostGradeDTO{
-					Title:      pg.Title,
-					University: pg.University,
-					Year:       pg.GraduationYear,
+					Title:       pg.Title,
+					University:  pg.University,
+					Year:        pg.GraduationYear,
+					Description: pg.Description,
+					PicOneURL:   pg.PicOneS3Key,
+					PicTwoURL:   pg.PicTwoS3Key,
+					PicThreeURL: pg.PicThreeS3Key,
+					// No incluimos las fechas de creación o actualización para no saturar el perfil público
 				})
 			}
 		}
