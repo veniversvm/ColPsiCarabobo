@@ -62,10 +62,9 @@ func SetupPsiRoutes(router fiber.Router, db *gorm.DB, s3Client *s3.S3Client) {
 	// Nota: Siempre colocar las rutas estáticas antes de las dinámicas (/:id)
 	psiGroup.Get("/directory", h.SearchDirectory)
 
-	// URL: GET /api/v1/psi/a1b2c3d4... (Detalle público)
-	// Tip Senior: Usamos <uuid> para asegurar que solo entre aquí si es un UUID válido.
-	// Esto evita que Fiber confunda "/psi/directory" con un ID si algo falla en el orden.
-	psiGroup.Get("/:id<uuid>", h.GetPublicProfile)
+	// URL: GET /api/v1/psi/123456... (Detalle público)
+	// usamos el fpv para la busqueda
+	psiGroup.Get("/:id", h.GetPublicProfile)
 
 	meGroup.Post("/social", h.AddSocialNetwork)
 	meGroup.Patch("/social/:id", h.UpdateSocialNetwork)

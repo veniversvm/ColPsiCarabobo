@@ -1,13 +1,10 @@
-// web/src/routes/directorio/[id].tsx
+// web/src/routes/directorio/[slug].tsx
 /**
- * Página de perfil público del psicólogo. Aquí se muestra la información básica, especialidades, mini biografía y datos de contacto autorizados por el profesional.
- * 
- * FIX SENIOR: Esta página es accesible para cualquier usuario que haga clic en un resultado del directorio. No requiere autenticación, pero sí debe mostrar solo la información que el psicólogo ha autorizado como pública.
- * El endpoint /psi/{id} en Go se encarga de devolver solo los campos públicos del perfil para garantizar la privacidad.
+ * Página de perfil público del psicólogo con URLs amigables.
+ * Formato: nombre-apellido(s)-fpv-1234
+ * El backend busca por FPV
  */
-// web/src/routes/directorio/[id].tsx
-// Página principal simplificada
-import { createResource, createSignal, Show, Suspense } from "solid-js";
+import { createEffect, createResource, createSignal, Show, Suspense } from "solid-js";
 import { useParams, A } from "@solidjs/router";
 import { apiGet } from "~/lib/api";
 import { PsiProfile } from "~/types/psi";
@@ -15,15 +12,43 @@ import { ProfileHeader } from "~/components/psi/ProfileHeader";
 import { ContactCard } from "~/components/psi/ContactCard";
 import { AcademicSection } from "~/components/psi/AcademicSection";
 import { PostGradeModal } from "~/components/psi/PostGradeModal";
-import { sortPostGradesByYear } from "~/lib/utils";
+import { sortPostGradesByYear, extractFpvFromSlug, createProfileSlug } from "~/lib/utils";
 
 export default function PsiProfilePage() {
   const params = useParams();
   const [selectedPostGrade, setSelectedPostGrade] = createSignal(null);
+  
+  // Extraer el FPV del slug (después de -fpv-)
+  const fpv = () => extractFpvFromSlug(params.slug ?? "");
 
-  const [profile] = createResource(() => 
-    apiGet<PsiProfile>(`/psi/${params.id}`)
+  const [profile] = createResource(
+    () => fpv(),
+    async (fpvNumber) => {
+      if (!fpvNumber) throw new Error("FPV no válido");
+      return await apiGet<PsiProfile>(`/psi/${fpvNumber}`);
+    }
   );
+
+  // Efecto para verificar que el slug coincide con los datos (SEO)
+  createEffect(() => {
+    const p = profile();
+    if (p) {
+      const correctSlug = createProfileSlug({
+        first_name: p.first_name,
+        second_name: p.second_name,
+        last_name: p.last_name,
+        second_last_name: p.second_last_name,
+        fpv: p.fpv
+      });
+      
+      if (params.slug !== correctSlug) {
+        // Opcional: Redirigir a la URL correcta
+        // window.history.replaceState(null, '', `/directorio/${correctSlug}`);
+        console.log("Slug actual:", params.slug);
+        console.log("Slug correcto:", correctSlug);
+      }
+    }
+  });
 
   return (
     <main class="min-h-screen bg-[#f5f5f5] pb-20 font-sans">
@@ -54,8 +79,11 @@ export default function PsiProfilePage() {
                   <div class="space-y-4">
                     <ProfileHeader 
                       firstName={psi().first_name}
+                      secondName={psi().second_name}
                       lastName={psi().last_name}
+                      secondLastName={psi().second_last_name}
                       fpv={psi().fpv}
+                      ci={psi().ci}
                       profilePicture={psi().profile_picture}
                       solvent={psi().solvent}
                       specialties={psi().specialties}
@@ -65,6 +93,7 @@ export default function PsiProfilePage() {
                       phone={psi().phone}
                       location={psi().location}
                       socialNetworks={psi().social_networks}
+                      service_address={psi().address}
                     />
                   </div>
 

@@ -2,7 +2,7 @@
 /**
  * Página principal del directorio profesional. Aquí los usuarios pueden buscar psicólogos por nombre, cédula, FPV o especialidad.
  */
-import { createResource, createSignal, Suspense } from "solid-js";
+import { createEffect, createResource, createSignal, Suspense } from "solid-js";
 import { apiGet } from "~/lib/api";
 import { DirectoryPsychologist } from "~/types/psi";
 import { SearchHeader } from "~/components/directory/SearchHeader";
@@ -13,9 +13,10 @@ export default function DirectoryPage() {
   // Estados para los valores del formulario
   const [query, setQuery] = createSignal("");
   const [specialty, setSpecialty] = createSignal("");
+  const [location, setLocation] = createSignal("");
   
   // Estado "Trigger" (El que realmente dispara la petición)
-  const [searchParams, setSearchParams] = createSignal({ q: "", spec: "" });
+  const [searchParams, setSearchParams] = createSignal({ q: "", spec: "", location: "" });
 
   // Cargamos el catálogo de especialidades
   const [specialties] = createResource(() => apiGet<any[]>("/specialties"));
@@ -25,7 +26,7 @@ export default function DirectoryPage() {
     () => searchParams(),
     async (params) => {
       return await apiGet<{ data: DirectoryPsychologist[] }>(
-        `/psi/directory?q=${params.q}&specialty=${params.spec}&limit=12`
+        `/psi/directory?q=${params.q}&specialty=${params.spec}&limit=12&location=${params.location}`
       );
     }
   );
@@ -33,17 +34,29 @@ export default function DirectoryPage() {
   // Manejador del botón Buscar
   const handleSearch = (e: Event) => {
     e.preventDefault();
-    setSearchParams({ q: query(), spec: specialty() });
+    setSearchParams({ q: query(), spec: specialty(), location: location() });
   };
+
+
+  // En DirectoryPage, agrega este log para ver qué campos vienen:
+createEffect(() => {
+  const results = data();
+  if (results?.data) {
+    console.log("Primer psicólogo del directorio:", results.data[0]);
+    // Esto mostrará todos los campos disponibles
+  }
+});
 
   return (
     <main class="min-h-screen bg-[#fcfcfc] pb-24">
       <SearchHeader
         query={query()}
         specialty={specialty()}
+        location={location()}
         specialties={specialties()}
         onQueryChange={setQuery}
         onSpecialtyChange={setSpecialty}
+        onLocationChange={setLocation}
         onSearch={handleSearch}
       />
 

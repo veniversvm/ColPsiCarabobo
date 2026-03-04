@@ -152,7 +152,17 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 // UpdateProfileSelf permite al psicólogo actualizar sus datos de contacto y visibilidad.
 // Implementa "Lazy Loading" para ColData: solo consulta y actualiza la tabla de datos
 // colegiales si el usuario solicita cambios en esos campos específicos.
-func (s *PsiService) UpdateProfileSelf(ctx context.Context, psi *domain.PsiUserModel, id uuid.UUID, req request_structs.PsiUserUpdateRequestSelf, file *multipart.FileHeader) (*domain.PsiUserModel, error) {
+// UpdateProfileSelf permite al psicólogo actualizar sus datos de contacto y visibilidad.
+func (s *PsiService) UpdateProfileSelf(
+	ctx context.Context,
+	psi *domain.PsiUserModel,
+	id uuid.UUID,
+	req request_structs.PsiUserUpdateRequestSelf,
+	profilePic *multipart.FileHeader,
+	titleImgOne *multipart.FileHeader,
+	titleImgTwo *multipart.FileHeader,
+	titleImgThree *multipart.FileHeader,
+) (*domain.PsiUserModel, error) {
 
 	// 1. VALIDACIÓN DE CONTRASEÑA (Security First)
 	if err := bcrypt.CompareHashAndPassword([]byte(psi.Password), []byte(req.Password)); err != nil {
@@ -166,14 +176,12 @@ func (s *PsiService) UpdateProfileSelf(ctx context.Context, psi *domain.PsiUserM
 		}
 		hashed, _ := bcrypt.GenerateFromPassword([]byte(*req.NewPassword1), bcrypt.DefaultCost)
 		psi.Password = string(hashed)
-		// Al cambiar password, rotamos la Key para invalidar otras sesiones
 		psi.Key = uuid.New().String()
 	}
 
-	// 3. MANEJO DE IMAGEN EN S3
-	if file != nil {
-		// Sanitizar y subir (usando tu utilidad ya existente)
-		src, _ := file.Open()
+	// 3. MANEJO DE IMAGEN EN S3 (Perfil)
+	if profilePic != nil {
+		src, _ := profilePic.Open()
 		defer src.Close()
 
 		cleanBytes, ext, contentType, err := utils.SanitizeImage(src)
@@ -181,13 +189,13 @@ func (s *PsiService) UpdateProfileSelf(ctx context.Context, psi *domain.PsiUserM
 			return nil, err
 		}
 
-		filename := fmt.Sprintf("avatars/%s%s", psi.ID.String(), ext)
+		// Se quitó "avatars/" de aquí porque UploadStream ya hace `fmt.Sprintf("%s/%s", folder, filename)`
+		filename := fmt.Sprintf("%s%s", psi.ID.String(), ext)
 		newKey, err := s.s3Client.UploadStream(ctx, bytes.NewReader(cleanBytes), "avatars", filename, contentType)
 		if err != nil {
 			return nil, err
 		}
 
-		// Si tenía una foto anterior, borrarla de S3 para no dejar basura
 		if psi.ProfilePictureS3Key != "" && psi.ProfilePictureS3Key != newKey {
 			_ = s.s3Client.DeleteFile(ctx, psi.ProfilePictureS3Key)
 		}
@@ -198,15 +206,13 @@ func (s *PsiService) UpdateProfileSelf(ctx context.Context, psi *domain.PsiUserM
 	psi.UpdateBy = psi.Username
 	psi.UpdateById = &psi.ID
 
-	// B. Mapeo de campos del Modelo Principal (PsiUserModel)
+	// B. Mapeo de campos del Modelo Principal (PsiUserModel)... (Igual a tu código actual)
 	if req.Username != nil {
 		psi.Username = *req.Username
 	}
-
 	if req.Email != nil {
 		psi.Email = *req.Email
 	}
-
 	if req.ContactEmail != nil {
 		psi.ContactEmail = *req.ContactEmail
 	}
@@ -226,7 +232,6 @@ func (s *PsiService) UpdateProfileSelf(ctx context.Context, psi *domain.PsiUserM
 		psi.ShowPublicServiceAddress = *req.ShowPublicServiceAddress
 	}
 
-	// Ubicación
 	if req.MunicipalityCarabobo != nil {
 		psi.MunicipalityCarabobo = *req.MunicipalityCarabobo
 	}
@@ -249,7 +254,6 @@ func (s *PsiService) UpdateProfileSelf(ctx context.Context, psi *domain.PsiUserM
 		psi.CelPhoneOutSideCarabobo = *req.CelPhoneOutSideCarabobo
 	}
 
-	// Profesional
 	if req.PrimarySpecialty != nil {
 		psi.PrimarySpecialty = *req.PrimarySpecialty
 	}
@@ -261,21 +265,20 @@ func (s *PsiService) UpdateProfileSelf(ctx context.Context, psi *domain.PsiUserM
 	}
 
 	// C. Lógica Inteligente para ColData
-	// Solo traemos y actualizamos ColData si hay cambios relevantes en el request
-	var colDataToUpdate *domain.PsiUserColData
-
+	// Ahora también se activa si se sube alguna de las imágenes de los títulos
 	hasColDataChanges := req.ShowUniversityUndergraduate != nil ||
 		req.ShowGraduateDate != nil ||
-		req.ShowMentionUndergraduate != nil
+		req.ShowMentionUndergraduate != nil ||
+		titleImgOne != nil || titleImgTwo != nil || titleImgThree != nil
+
+	var colDataToUpdate *domain.PsiUserColData
 
 	if hasColDataChanges {
-		// Recuperamos solo los datos colegiales (Lazy Load eficiente)
 		currentColData, err := s.repo.GetPsiUserColData(ctx, psi.ID)
 		if err != nil {
 			return nil, err
 		}
 
-		// Aplicamos cambios
 		if req.ShowUniversityUndergraduate != nil {
 			currentColData.ShowUniversityUndergraduate = *req.ShowUniversityUndergraduate
 		}
@@ -284,6 +287,65 @@ func (s *PsiService) UpdateProfileSelf(ctx context.Context, psi *domain.PsiUserM
 		}
 		if req.ShowMentionUndergraduate != nil {
 			currentColData.ShowMentionUndergraduate = *req.ShowMentionUndergraduate
+		}
+
+		// Función auxiliar para subir las fotos de títulos y evitar repetición
+		processTitleImage := func(file *multipart.FileHeader, orderNum string, oldKey string) (string, error) {
+			if file == nil {
+				return oldKey, nil
+			}
+			src, err := file.Open()
+			if err != nil {
+				return "", err
+			}
+			defer src.Close()
+
+			cleanBytes, ext, contentType, err := utils.SanitizeImage(src)
+			if err != nil {
+				return "", err
+			}
+
+			// Agregamos un hash/UUID corto al final para que las URLs cambien
+			// y evitar que el CDN/Navegador cachee un título viejo si lo reemplazan
+			shortUUID := uuid.New().String()[:6]
+			filename := fmt.Sprintf("%s_title_%s_%s%s", psi.ID.String(), orderNum, shortUUID, ext)
+
+			// Se guardarán en el folder "titles/" de S3
+			newKey, err := s.s3Client.UploadStream(ctx, bytes.NewReader(cleanBytes), "titles", filename, contentType)
+			if err != nil {
+				return "", err
+			}
+
+			// Limpieza del archivo viejo
+			if oldKey != "" && oldKey != newKey {
+				_ = s.s3Client.DeleteFile(ctx, oldKey)
+			}
+			return newKey, nil
+		}
+
+		// Procesamos y asignamos los archivos si existen
+		if titleImgOne != nil {
+			if newKey, err := processTitleImage(titleImgOne, "1", currentColData.TitleImageOneS3Key); err == nil {
+				currentColData.TitleImageOneS3Key = newKey
+			} else {
+				return nil, err
+			}
+		}
+
+		if titleImgTwo != nil {
+			if newKey, err := processTitleImage(titleImgTwo, "2", currentColData.TitleImageTwoS3Key); err == nil {
+				currentColData.TitleImageTwoS3Key = newKey
+			} else {
+				return nil, err
+			}
+		}
+
+		if titleImgThree != nil {
+			if newKey, err := processTitleImage(titleImgThree, "3", currentColData.TitleImageThreeS3Key); err == nil {
+				currentColData.TitleImageThreeS3Key = newKey
+			} else {
+				return nil, err
+			}
 		}
 
 		// Auditoría de ColData
@@ -364,9 +426,9 @@ func (s *PsiService) GetPublicDirectory(ctx context.Context, filter request_stru
 // GetPublicProfile construye la ficha técnica del psicólogo aplicando el "Escudo de Privacidad".
 // Los datos personales (Email, Teléfono) y académicos (Postgrados) se ocultan dinámicamente
 // según la configuración del usuario y su estatus de solvencia institucional.
-func (s *PsiService) GetPublicProfile(ctx context.Context, id uuid.UUID) (*request_structs.PsiFullProfileDTO, error) {
+func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_structs.PsiFullProfileDTO, error) {
 	// 1. Obtener datos crudos de la DB (Con Preload de ColData y PostGrades)
-	psi, err := s.repo.GetByID(ctx, id)
+	psi, err := s.repo.GetByFPV(ctx, id)
 	if err != nil {
 		return nil, errors.New("psicólogo no encontrado")
 	}
@@ -376,16 +438,29 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id uuid.UUID) (*reque
 		return nil, errors.New("perfil no disponible")
 	}
 
+	undergraduate_data := request_structs.UndergraduateDTO{
+		University:         psi.ColData.UniversityUndergraduate,
+		Date:               psi.ColData.GraduateDate.Format("2006-01-02"),
+		Mention:            psi.ColData.MentionUndergraduate,
+		TitleImageOneURL:   psi.ColData.TitleImageOneS3Key,
+		TitleImageTwoURL:   psi.ColData.TitleImageTwoS3Key,
+		TitleImageThreeURL: psi.ColData.TitleImageThreeS3Key,
+	}
+
 	// 3. Inicializar el DTO Público
 	dto := &request_structs.PsiFullProfileDTO{
 		ID:             psi.ID,
 		FirstName:      psi.FirstName,
+		SecondName:     psi.SecondName,
 		LastName:       psi.LastName,
+		SecondLastName: psi.SecondLastName,
 		FPV:            psi.FPV,
+		CI:             psi.CI,
 		Gender:         psi.Genre,
 		ProfilePicture: psi.ProfilePictureS3Key,
 		Solvent:        psi.Solvent,
 		MiniBio:        psi.MiniBio,
+		Undergraduate:  undergraduate_data,
 		Specialties:    make([]string, 0),
 		PostGrades:     make([]request_structs.PostGradeDTO, 0), // Inicializamos vacío
 		SocialNetworks: make([]request_structs.SocialNetworkDTO, 0),

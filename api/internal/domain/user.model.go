@@ -1,3 +1,4 @@
+// api/internal/domain/user.model.go
 package domain
 
 import (
@@ -148,6 +149,11 @@ type PsiUserColData struct {
 	ShowGraduateDate            bool      `gorm:"default:false" json:"show_graduate_date"`
 	MentionUndergraduate        string    `gorm:"size:255" json:"mention_undergraduate"`
 	ShowMentionUndergraduate    bool      `gorm:"default:false" json:"show_mention_undergraduate"`
+
+	// title images: S3 Keys para los archivos de registro del título.
+	TitleImageOneS3Key   string `gorm:"size:512" json:"title_image_one_url"`
+	TitleImageTwoS3Key   string `gorm:"size:512" json:"title_image_two_url"`
+	TitleImageThreeS3Key string `gorm:"size:512" json:"title_image_three_url"`
 
 	// Register Title: Datos de registro legal del título en el estado.
 	RegisterTitleState string    `gorm:"size:255" json:"register_title_state"`

@@ -24,6 +24,9 @@ export type PostGrade = {
 };
 
 export type Undergraduate = {
+  title_image_two_url: any;
+  title_image_three_url: any;
+  title_image_one_url: any;
   university?: string;
   date?: string;
   mention?: string;
@@ -35,9 +38,12 @@ export type Location = {
 };
 
 export type PsiProfile = {
+  ci: number;
   id: string;
   first_name: string;
+  second_name?: string;
   last_name: string;
+  second_last_name?: string;  
   fpv: number;
   gender: string;
   profile_picture: string;
@@ -60,11 +66,18 @@ export interface PostGradeModalProps {
 }
 
 export type PsiProfileSettings = {
+  id: string;
   username: string;
   email: string;
   contact_email?: string;
   public_phone?: string;
   service_address?: string;
+
+  // Datos personales
+  first_name: string;
+  second_name?: string;
+  last_name: string;
+  second_last_name?: string;
   
   // Ubicación Carabobo
   municipality_carabobo?: string;
@@ -112,7 +125,11 @@ export type DirectoryPsychologist = {
   id: string;
   first_name: string;
   last_name: string;
+  // Estos campos pueden no venir en la lista del directorio
+  second_name?: string;
+  second_last_name?: string;
   fpv: number;
+  ci: number;
   profile_picture: string;
   specialties: string[];
   mini_bio: string;

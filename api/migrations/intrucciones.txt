@@ -23,8 +23,7 @@ Efecto:
 --- 2. APLICAR MIGRACIONES A LA BASE DE DATOS (APPLY) ---
 Para ejecutar los archivos SQL pendientes en tu Postgres local:
 
-$ atlas migrate apply --env gorm \
-  --url "postgres://postgres:postgres@localhost:5432/colpsi_db?sslmode=disable"
+$ atlas migrate apply --env gorm --url "postgres://postgres:postgres@localhost:5432/colpsi_db?sslmode=disable"
 
 Efecto:
 - Ejecuta los SQL pendientes.

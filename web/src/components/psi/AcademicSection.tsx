@@ -3,11 +3,13 @@
 import { Show, For } from "solid-js";
 import { PostGrade, Undergraduate } from "~/types/psi";
 import { PostGradeCard } from "./PostGradeCard";
+import { UndergraduateCard } from "./UndergraduateCard";
 
 interface AcademicSectionProps {
   undergraduate?: Undergraduate;
   postGrades?: PostGrade[];
   onPostGradeClick: (postGrade: PostGrade) => void;
+  onUndergraduateClick?: () => void; // Opcional
 }
 
 export function AcademicSection(props: AcademicSectionProps) {
@@ -22,19 +24,11 @@ export function AcademicSection(props: AcademicSectionProps) {
       
       {/* Pregrado */}
       <Show when={hasUndergraduate()}>
-        <div class="mb-4 pb-4 border-b border-gray-100">
-          <h4 class="font-bold text-gray-900 text-base md:text-lg">Psicólogo</h4>
-          <p class="text-colpsi-blue text-sm md:text-base">{props.undergraduate?.university}</p>
-          <Show when={props.undergraduate?.date || props.undergraduate?.mention}>
-            <div class="text-xs md:text-sm text-gray-500 mt-1 flex flex-col md:flex-row gap-1 md:gap-4">
-              <Show when={props.undergraduate?.date}>
-                <span>Egreso: {props.undergraduate?.date}</span>
-              </Show>
-              <Show when={props.undergraduate?.mention}>
-                <span>Mención: {props.undergraduate?.mention}</span>
-              </Show>
-            </div>
-          </Show>
+        <div class="mb-6 pb-6 border-b border-gray-100 last:border-0 last:mb-0 last:pb-0">
+          <UndergraduateCard 
+            undergraduate={props.undergraduate!} 
+            onClick={props.onUndergraduateClick}
+          />
         </div>
       </Show>
 

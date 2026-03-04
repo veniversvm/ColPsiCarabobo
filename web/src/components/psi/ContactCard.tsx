@@ -8,6 +8,7 @@ interface ContactCardProps {
   phone?: string;
   location: Location;
   socialNetworks?: SocialNetwork[];
+  service_address?: string;
 }
 
 export function ContactCard(props: ContactCardProps) {
@@ -42,6 +43,13 @@ export function ContactCard(props: ContactCardProps) {
           <div class="flex items-center gap-3 text-xs md:text-sm">
             <span class="text-colpsi-yellow text-base md:text-lg">📍</span>
             <span class="text-gray-600">{props.location.municipality}, {props.location.state}</span>
+          </div>
+        </Show>
+
+        <Show when={props.service_address}>
+          <div class="flex items-center gap-3 text-xs md:text-sm">
+            <span class="text-colpsi-yellow text-base md:text-lg">🏢</span>
+            <span class="text-gray-600">{props.service_address}</span>
           </div>
         </Show>
 

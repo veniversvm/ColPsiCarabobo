@@ -1,26 +1,27 @@
-// web/src/routes/psi/perfil.tsx (refactorizado - completo)
-/**
- * Página de Perfil Completo del Psicólogo. Aquí el psicólogo puede ver y editar toda su información personal.
- */
-import { createResource, createEffect, Show, Suspense, createSignal } from "solid-js";
+import { createResource, createEffect, Show, Suspense, createSignal, For } from "solid-js";
 import { createStore } from "solid-js/store";
 import { A, action, useAction } from "@solidjs/router";
-import { apiGet, apiPost, apiDelete, ApiError } from "~/lib/api";
+import { apiGet, apiPatch, apiPost, apiDelete, ApiError } from "~/lib/api";
 import { sanitizeEmail, sanitizePhone, sanitizeText, isStrongPassword, enforceMaxLength } from "~/lib/sanitizer";
-import { ProfileFormData, PsiProfileSettings } from "~/types/psi";
+import { ProfileFormData } from "~/types/psi";
 
 // Importamos todos los componentes
-import { AvatarUploader } from "~/components/psi/profile/vatarUploader";
 import { AccountSection } from "~/components/psi/profile/AccountSection";
 import { ContactSection } from "~/components/psi/profile/ContactSection";
 import { LocationSection } from "~/components/psi/profile/LocationSection";
 import { ProfessionalSection } from "~/components/psi/profile/ProfessionalSection";
 import { PrivacySection } from "~/components/psi/profile/PrivacySection";
 import { SecuritySection } from "~/components/psi/profile/SecuritySection";
-import { SocialNetworksSection } from "~/components/psi/profile/SocialNetworksSection";
 import { SaveButton } from "~/components/psi/profile/SaveButton";
 import { MessageAlert } from "~/components/psi/profile/MessageAlert";
+import { AcademicSection } from "~/components/psi/profile/AcademicSection";
+import { SocialNetworksSection } from "~/components/psi/profile/SocialNetworksSection";
+import { AvatarUploader } from "~/components/psi/profile/vatarUploader";
 
+/**
+ * ACCIÓN DE SERVIDOR (BFF)
+ * Sanitiza los campos antes de enviarlos a Go.
+ */
 const updateProfileServer = action(async (formData: FormData) => {
   "use server";
   const { sanitizeEmail, sanitizePhone, sanitizeText, enforceMaxLength } = await import("~/lib/sanitizer");
@@ -36,14 +37,11 @@ const updateProfileServer = action(async (formData: FormData) => {
 
     if (typeof value === "string") {
       let cleanValue = value;
-
-      if (key === "mini_bio") {
-        cleanValue = enforceMaxLength(cleanValue, 250);
-      }
+      if (key === "mini_bio") cleanValue = enforceMaxLength(cleanValue, 250);
 
       if (["public_phone", "phone_carabobo", "cel_phone_carabobo", "phone_outside_carabobo", "cel_phone_outside_carabobo"].includes(key)) {
         cleanFd.append(key, sanitizePhone(cleanValue));
-      } else if (["municipality_carabobo", "state_outside", "municipality_outside_carabobo", "primary_specialty", "secondary_specialty", "service_address"].includes(key)) {
+      } else if (["municipality_carabobo", "state_outside", "municipality_outside_carabobo", "primary_specialty", "secondary_specialty", "mini_bio", "service_address"].includes(key)) {
         cleanFd.append(key, sanitizeText(cleanValue));
       } else if (key.includes("email")) {
         cleanFd.append(key, sanitizeEmail(cleanValue) ?? "");
@@ -63,7 +61,11 @@ export default function ProfilePage() {
   const [saving, setSaving] = createSignal(false);
   const [message, setMessage] = createSignal<{ type: "success" | "error"; text: string } | null>(null);
 
+  // ESTADO: Archivos
+  const [files, setFiles] = createSignal<{ [key: string]: File }>({});
   const [avatarFile, setAvatarFile] = createSignal<File | null>(null);
+  
+  // ESTADO: Redes Sociales
   const [socialForm, setSocialForm] = createStore({ name: "", url: "" });
   const [savingSocial, setSavingSocial] = createSignal(false);
 
@@ -76,34 +78,26 @@ export default function ProfilePage() {
       setForm({
         username: p.username || "",
         email: p.email || "",
-        password: "", 
-        new_password_1: "",
-        new_password_2: "",
-        
         contact_email: sanitizeEmail(p.contact_email) || "",
         public_phone: sanitizePhone(p.public_phone) || "",
         service_address: sanitizeText(p.service_address) || "",
-
         municipality_carabobo: sanitizeText(p.municipality_carabobo) || "",
         phone_carabobo: sanitizePhone(p.phone_carabobo) || "",
         cel_phone_carabobo: sanitizePhone(p.cel_phone_carabobo) || "",
-
         state_outside: sanitizeText(p.state_outside) || "",
         municipality_outside_carabobo: sanitizeText(p.municipality_outside_carabobo || p.municipality_out_side_carabobo) || "",
         phone_outside_carabobo: sanitizePhone(p.phone_outside_carabobo) || "",
         cel_phone_outside_carabobo: sanitizePhone(p.cel_phone_outside_carabobo) || "",
-
         mini_bio: sanitizeText(p.mini_bio) || "",
         primary_specialty: p.primary_specialty || "",
         secondary_specialty: p.secondary_specialty || "",
-
         show_contact_email: p.show_contact_email ?? false,
         show_public_phone: p.show_public_phone ?? false,
         show_public_service_address: p.show_public_service_address ?? false,
         show_university_undergraduate: p.col_data?.show_university_undergraduate ?? false,
         show_graduate_date: p.col_data?.show_graduate_date ?? false,
         show_mention_undergraduate: p.col_data?.show_mention_undergraduate ?? false,
-      });
+      } as ProfileFormData);
     }
   });
 
@@ -111,23 +105,8 @@ export default function ProfilePage() {
     e.preventDefault();
     
     if (!form.password) {
-      setMessage({ type: "error", text: "Debe ingresar su contraseña actual para confirmar los cambios." });
+      setMessage({ type: "error", text: "Debe ingresar su contraseña actual." });
       return;
-    }
-
-    if (form.new_password_1) {
-      if (form.new_password_1 !== form.new_password_2) {
-        setMessage({ type: "error", text: "Las nuevas contraseñas no coinciden." });
-        return;
-      }
-      
-      if (!isStrongPassword(form.new_password_1)) {
-        setMessage({ 
-          type: "error", 
-          text: "La nueva contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número, un símbolo especial y no tener espacios." 
-        });
-        return;
-      }
     }
     
     setSaving(true);
@@ -135,31 +114,41 @@ export default function ProfilePage() {
 
     const fd = new FormData();
     
-    Object.keys(form).forEach(key => {
-      if (form[key as keyof ProfileFormData] !== undefined && form[key as keyof ProfileFormData] !== null) {
-        fd.append(key, String(form[key as keyof ProfileFormData]));
+    // Mapear campos del Store
+    (Object.keys(form) as (keyof ProfileFormData)[]).forEach(key => {
+      const val = form[key];
+      if (val !== undefined && val !== null) {
+        fd.append(key, String(val));
       }
     });
 
-    const file = avatarFile();
-    if (file) fd.append("profile_picture", file);
+    // Mapear archivos de títulos
+    const filesObj = files(); 
+    if (filesObj.title_image_one) fd.append("title_image_one", filesObj.title_image_one);
+    if (filesObj.title_image_two) fd.append("title_image_two", filesObj.title_image_two);
+    if (filesObj.title_image_three) fd.append("title_image_three", filesObj.title_image_three);
+
+    // Mapear avatar
+    const avatar = avatarFile();
+    if (avatar) fd.append("profile_picture", avatar);
 
     try {
       await runUpdateAction(fd);
-      setMessage({ type: "success", text: "Perfil actualizado con éxito." });
+      setMessage({ type: "success", text: "Perfil actualizado correctamente." });
       setForm("password", ""); 
       setForm("new_password_1", "");
       setForm("new_password_2", "");
       setAvatarFile(null);
+      setFiles({});
       refetch(); 
     } catch (err: any) {
-      const errorMsg = err instanceof ApiError ? err.message : "Error de red al actualizar el perfil.";
-      setMessage({ type: "error", text: errorMsg });
+      setMessage({ type: "error", text: err.message || "Error al actualizar." });
     } finally {
       setSaving(false);
     }
   };
 
+  // Handlers sociales...
   const handleAddSocial = async (e: Event) => {
     e.preventDefault();
     if (!socialForm.name || !socialForm.url) return;
@@ -168,22 +157,23 @@ export default function ProfilePage() {
       await apiPost("/psi/me/social", socialForm);
       setSocialForm({ name: "", url: "" });
       refetch(); 
-    } catch (err: any) {
-      alert(err instanceof ApiError ? err.message : "Error al añadir la red social.");
     } finally {
       setSavingSocial(false);
     }
   };
 
   const handleDeleteSocial = async (id: string) => {
-    if (!confirm("¿Estás seguro de que deseas eliminar este enlace de tu perfil público?")) return;
-    try {
-      await apiDelete(`/psi/me/social/${id}`);
-      refetch();
-    } catch (err: any) {
-      alert("Error al eliminar la red social.");
-    }
+    if (!confirm("¿Eliminar?")) return;
+    await apiDelete(`/psi/me/social/${id}`);
+    refetch();
   };
+
+
+  createEffect(() => {
+    if (profile) {
+      console.log("Perfil cargado:", profile());
+    }
+  });
 
   return (
     <main class="bg-[#f8fafc] min-h-screen pb-24 font-sans">
@@ -209,6 +199,12 @@ export default function ProfilePage() {
             currentAvatarUrl={profile()?.profile_picture_url}
             avatarFile={avatarFile()}
             onFileChange={setAvatarFile}
+            firstName={profile()?.first_name || ""}
+            secondName={profile()?.second_name || ""}
+            lastName={profile()?.last_name || ""}
+            secondLastName={profile()?.second_last_name || ""}
+            FPV={profile()?.fpv || 0}
+            CI={profile()?.ci || 0}
           />
 
           <Show when={message()}>
@@ -235,6 +231,28 @@ export default function ProfilePage() {
               onPublicPhoneChange={(v) => setForm("public_phone", v)}
               onServiceAddressChange={(v) => setForm("service_address", v)}
             />
+
+
+            <AcademicSection 
+              undergraduateData={{
+                university_undergraduate: profile()?.col_data?.university_undergraduate,
+                graduate_date: profile()?.col_data?.graduate_date,
+                mention_undergraduate: profile()?.col_data?.mention_undergraduate,
+                title_image_one_url: profile()?.col_data?.title_image_one_url,
+                title_image_two_url: profile()?.col_data?.title_image_two_url,
+                title_image_three_url: profile()?.col_data?.title_image_three_url,
+                register_number: profile()?.col_data?.register_number,
+                register_folio: profile()?.col_data?.register_folio,
+                register_tome: profile()?.col_data?.register_tome,
+                register_title_date: profile()?.col_data?.register_title_date,
+                register_title_state: profile()?.col_data?.register_title_state,
+              }}
+              showUniversity={form.show_university_undergraduate}
+              showGraduateDate={form.show_graduate_date}
+              showMention={form.show_mention_undergraduate}
+              files={files()} 
+              setFiles={setFiles} 
+/>
 
             <LocationSection
               municipalityCarabobo={form.municipality_carabobo ?? ""}
@@ -280,6 +298,7 @@ export default function ProfilePage() {
             <SecuritySection
               password={form.password}
               onPasswordChange={(v) => setForm("password", v)}
+              message={message()}
             />
 
             <SaveButton saving={saving()} />

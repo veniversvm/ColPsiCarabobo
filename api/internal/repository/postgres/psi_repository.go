@@ -72,6 +72,29 @@ func (r *psiRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.PsiUserMod
 	return &psi, nil
 }
 
+// GetByFPV recupera un psicólogo incluyendo sus relaciones mediante Eager Loading.
+// Optimiza la carga de postgrados ordenándolos cronológicamente de forma descendente.
+func (r *psiRepo) GetByFPV(ctx context.Context, id int) (domain.PsiUserModel, error) {
+	var psi domain.PsiUserModel
+
+	err := r.db.WithContext(ctx).
+		Preload("ColData").
+		Preload("PostGrades", func(db *gorm.DB) *gorm.DB {
+			return db.Order("graduation_year DESC")
+		}).
+		Preload("SocialNetworks").
+		First(&psi, "fpv = ?", id).Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return psi, fmt.Errorf("psicólogo no encontrado: %w", err)
+		}
+		return psi, err
+	}
+
+	return psi, nil
+}
+
 // GetByIdentifier busca un psicólogo por su nombre de usuario o correo electrónico.
 // Es una función crítica para los procesos de autenticación (Login).
 func (r *psiRepo) GetByIdentifier(ctx context.Context, identifier string) (*domain.PsiUserModel, error) {

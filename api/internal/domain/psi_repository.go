@@ -24,6 +24,10 @@ type PsiUserRepository interface {
 	// de sus relaciones: ColData, PostGrades y SocialNetworks.
 	GetByID(ctx context.Context, id uuid.UUID) (*PsiUserModel, error)
 
+	// GetByFPV busca un psicólogo por su número de FPV, que es el identificador público
+	// utilizado en las URLs del directorio. También realiza un Preload de relaciones.
+	GetByFPV(ctx context.Context, id int) (PsiUserModel, error)
+
 	// GetByIdentifier busca un psicólogo por su identificador único (Username o Email).
 	// Es el método principal para el proceso de autenticación/login.
 	GetByIdentifier(ctx context.Context, identifier string) (*PsiUserModel, error)

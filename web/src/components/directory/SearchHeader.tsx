@@ -4,38 +4,41 @@ import { For, Suspense } from "solid-js";
 interface SearchHeaderProps {
   query: string;
   specialty: string;
+  location: string;
   specialties: any[] | undefined;
   onQueryChange: (value: string) => void;
   onSpecialtyChange: (value: string) => void;
+  onLocationChange: (value: string) => void;
   onSearch: (e: Event) => void;
 }
 
 export function SearchHeader(props: SearchHeaderProps) {
   return (
     <section class="bg-colpsi-blue pt-12 pb-24 px-6 text-center relative shadow-2xl">
-      <div class="max-w-4xl mx-auto space-y-6 relative z-10">
+      <div class="max-w-5xl mx-auto space-y-6 relative z-10">
         <h1 class="text-white text-3xl md:text-5xl font-black tracking-tighter italic">
           DIRECTORIO PROFESIONAL
         </h1>
         
         <form onSubmit={props.onSearch} class="space-y-4">
-          <div class="flex flex-col md:flex-row gap-3 max-w-3xl mx-auto">
-            {/* Input de texto */}
-            <div class="relative flex-grow">
+          {/* Fila 1: Input de texto y especialidad */}
+          <div class="flex flex-col md:flex-row gap-3 max-w-4xl mx-auto">
+            {/* Input de texto principal */}
+            <div class="relative flex-1">
               <input
                 type="text"
                 placeholder="Nombre, Cédula o FPV..."
                 value={props.query}
-                class="w-full bg-white rounded-2xl py-4 px-6 shadow-xl outline-none focus:ring-4 focus:ring-colpsi-yellow/50 transition-all text-colpsi-text font-medium"
+                class="w-full bg-white rounded-2xl py-4 px-6 shadow-xl outline-none focus:ring-4 focus:ring-colpsi-yellow/50 transition-all text-colpsi-text font-medium pr-12"
                 onInput={(e) => props.onQueryChange(e.currentTarget.value)}
               />
-              <span class="absolute right-5 top-4 opacity-30">🔍</span>
+              <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
             </div>
             
             {/* Select de Especialidad */}
             <select 
               value={props.specialty}
-              class="bg-white rounded-2xl py-4 px-6 shadow-xl outline-none focus:ring-4 focus:ring-colpsi-yellow/50 transition-all text-colpsi-text font-bold appearance-none cursor-pointer"
+              class="md:w-64 bg-white rounded-2xl py-4 px-6 shadow-xl outline-none focus:ring-4 focus:ring-colpsi-yellow/50 transition-all text-colpsi-text font-bold appearance-none cursor-pointer"
               onChange={(e) => props.onSpecialtyChange(e.currentTarget.value)}
             >
               <option value="">Todas las áreas</option>
@@ -45,15 +48,36 @@ export function SearchHeader(props: SearchHeaderProps) {
                 </For>
               </Suspense>
             </select>
+          </div>
+
+          {/* Fila 2: Input de ubicación y botón */}
+          <div class="flex flex-col md:flex-row gap-3 max-w-4xl mx-auto">
+            {/* Input de ubicación */}
+            <div class="relative flex-1">
+              <input
+                type="text"
+                placeholder="Ubicación (Municipio, Ciudad o Estado)..."
+                value={props.location}
+                class="w-full bg-white rounded-2xl py-4 px-6 shadow-xl outline-none focus:ring-4 focus:ring-colpsi-yellow/50 transition-all text-colpsi-text font-medium pr-12"
+                onInput={(e) => props.onLocationChange(e.currentTarget.value)}
+              />
+              <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">📍</span>
+            </div>
 
             {/* BOTÓN DE ACCIÓN */}
             <button 
               type="submit"
-              class="bg-colpsi-yellow text-colpsi-blue px-8 py-4 rounded-2xl font-black shadow-lg shadow-yellow-500/20 hover:scale-105 active:scale-95 transition-all whitespace-nowrap"
+              class="md:w-48 bg-colpsi-yellow text-colpsi-blue px-8 py-4 rounded-2xl font-black shadow-lg shadow-yellow-500/20 hover:scale-105 active:scale-95 transition-all whitespace-nowrap flex items-center justify-center gap-2"
             >
-              BUSCAR PROFESIONAL
+              <span>🔍</span>
+              BUSCAR
             </button>
           </div>
+
+          {/* Sugerencia de búsqueda opcional */}
+          <p class="text-blue-200 text-xs mt-4 text-left md:text-center">
+            💡 Puedes buscar por nombre, número de cédula, FPV, especialidad o ubicación
+          </p>
         </form>
       </div>
     </section>

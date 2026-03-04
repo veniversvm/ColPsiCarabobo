@@ -89,6 +89,15 @@ type PsiMiniProfileDTO struct {
 	Specialties    []string  `json:"specialties"` // Slice de especialidades principales
 }
 
+type UndergraduateDTO struct {
+	University         string `json:"university,omitempty"`
+	Date               string `json:"date,omitempty"`
+	Mention            string `json:"mention,omitempty"`
+	TitleImageOneURL   string `json:"title_image_one_url,omitempty"`   // URL o S3 Key del título de pregrado
+	TitleImageTwoURL   string `json:"title_image_two_url,omitempty"`   // URL o S3 Key de un segundo documento (opcional)
+	TitleImageThreeURL string `json:"title_image_three_url,omitempty"` // URL o S3 Key de un tercer documento (opcional)
+}
+
 // PsiFullProfileDTO representa la ficha pública detallada de un psicólogo.
 // Implementa el "Privacy Shield": los campos marcados con 'omitempty' solo se renderizan
 // en el JSON si el usuario ha autorizado su visibilidad o si contienen datos.
@@ -96,8 +105,11 @@ type PsiFullProfileDTO struct {
 	// Identidad Pública (Siempre visible)
 	ID             uuid.UUID `json:"id"`
 	FirstName      string    `json:"first_name"`
+	SecondName     string    `json:"second_name,omitempty"`
 	LastName       string    `json:"last_name"`
+	SecondLastName string    `json:"second_last_name,omitempty"`
 	FPV            int       `json:"fpv"`
+	CI             int       `json:"ci"`
 	Gender         string    `json:"gender"`
 	ProfilePicture string    `json:"profile_picture"`
 	Solvent        bool      `json:"solvent"`
@@ -119,11 +131,7 @@ type PsiFullProfileDTO struct {
 	MiniBio     string   `json:"mini_bio"`
 
 	// Datos de Pregrado (Condicional)
-	Undergraduate struct {
-		University string `json:"university,omitempty"`
-		Date       string `json:"date,omitempty"`
-		Mention    string `json:"mention,omitempty"`
-	} `json:"undergraduate"`
+	Undergraduate UndergraduateDTO `json:"undergraduate"`
 
 	// Relaciones (Colecciones)
 	PostGrades     []PostGradeDTO     `json:"post_grades,omitempty"`

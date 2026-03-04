@@ -1,30 +1,59 @@
-// web/src/components/psi/PostGradeModal.tsx
-import { Show, For, createMemo } from "solid-js";
+// web/src/components/psi/PostGradeModal.tsx (actualizado para usar ImageModal)
+import { Show, For, createSignal } from "solid-js";
 import { Portal } from "solid-js/web";
-import { PostGradeModalProps } from "~/types/psi";
-import { ImageGrid } from "~/components/ui/ImageGrid";
+import { PostGrade } from "~/types/psi";
+import { ImageModal } from "~/components/ui/ImageModal";
 import { ModalHeader } from "./ModalHeader";
 
+interface PostGradeModalProps {
+  postGrade: PostGrade | null;
+  onClose: () => void;
+}
+
 export function PostGradeModal(props: PostGradeModalProps) {
-  // Usamos createMemo para crear un array tipado correctamente
-  const images = createMemo<string[]>(() => {
+  const [modalImage, setModalImage] = createSignal<{ src: string; alt: string } | null>(null);
+
+  const images = () => {
     const urls = [
       props.postGrade?.pic_one_url,
       props.postGrade?.pic_two_url,
       props.postGrade?.pic_three_url,
     ];
     
-    // Filtramos y aseguramos que solo strings no vacíos
     return urls.filter((url): url is string => 
       typeof url === 'string' && url.trim() !== ""
     );
-  });
+  };
 
   const hasImages = () => images().length > 0;
+
+  const getImageUrl = (url: string) => {
+    return `http://localhost:9000/colpsi-bucket/${url}`;
+  };
+
+  const openImageModal = (url: string, label: string) => {
+    setModalImage({ 
+      src: getImageUrl(url), 
+      alt: `${props.postGrade?.title} - ${label}` 
+    });
+  };
+
+  const closeModal = () => {
+    setModalImage(null);
+  };
 
   return (
     <Show when={props.postGrade}>
       <Portal>
+        {/* Modal de imagen (anidado) */}
+        <ImageModal 
+          src={modalImage()?.src || ""}
+          alt={modalImage()?.alt || ""}
+          isOpen={!!modalImage()}
+          onClose={closeModal}
+        />
+
+        {/* Modal principal */}
         <div 
           class="fixed inset-0 bg-black/50 z-50 flex items-end md:items-center justify-center p-0 md:p-4 animate-in fade-in"
           onClick={props.onClose}
@@ -63,16 +92,38 @@ export function PostGradeModal(props: PostGradeModalProps) {
                 </div>
               </Show>
 
-              {/* Certificados */}
+              {/* Certificados con miniaturas clickeables */}
               <Show when={hasImages()}>
                 <div>
                   <h4 class="text-xs font-black text-colpsi-blue uppercase tracking-wider mb-3">
                     Certificados ({images().length})
                   </h4>
-                  <ImageGrid images={images()} />
-                  <p class="text-[10px] text-gray-400 text-center mt-3">
-                    Click en la imagen para ver en tamaño completo
-                  </p>
+                  <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <For each={images()}>
+                      {(imgUrl, index) => (
+                        <div class="space-y-2">
+                          <div 
+                            class="relative aspect-square rounded-xl overflow-hidden border-2 border-gray-100 hover:border-colpsi-yellow transition-all cursor-pointer group shadow-md"
+                            onClick={() => openImageModal(imgUrl, `Certificado ${index() + 1}`)}
+                          >
+                            <img 
+                              src={getImageUrl(imgUrl)}
+                              alt={`Certificado ${index() + 1}`}
+                              class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                            />
+                            <div class="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                              <span class="bg-white text-colpsi-blue p-2 rounded-full shadow-lg transform scale-90 group-hover:scale-100 transition-transform opacity-0 group-hover:opacity-100">
+                                🔍
+                              </span>
+                            </div>
+                          </div>
+                          <p class="text-[10px] text-center text-gray-500">
+                            Certificado {index() + 1}
+                          </p>
+                        </div>
+                      )}
+                    </For>
+                  </div>
                 </div>
               </Show>
 

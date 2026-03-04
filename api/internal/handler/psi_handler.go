@@ -75,7 +75,7 @@ func (h *PsiHandler) UploadCsv(c *fiber.Ctx) error {
 
 // UpdateOwnProfile godoc
 // @Summary      Actualizar mi perfil (Autogestión)
-// @Description  Permite al psicólogo actualizar su información. Requiere la contraseña actual para validar cambios. Soporta subida de foto de perfil.
+// @Description  Permite al psicólogo actualizar su información. Requiere la contraseña actual para validar cambios. Soporta subida de foto de perfil e imágenes del título.
 // @Security     BearerAuth
 // @Tags         Psicólogos - Perfil
 // @Accept       multipart/form-data
@@ -83,6 +83,9 @@ func (h *PsiHandler) UploadCsv(c *fiber.Ctx) error {
 // @Param        password      formData string true  "Contraseña actual obligatoria"
 // @Param        username      formData string false "Nuevo nombre de usuario"
 // @Param        profile_picture formData file  false "Imagen de perfil (JPEG/PNG)"
+// @Param        title_image_one   formData file false "Imagen del título 1 (JPEG/PNG)"
+// @Param        title_image_two   formData file false "Imagen del título 2 (JPEG/PNG)"
+// @Param        title_image_three formData file false "Imagen del título 3 (JPEG/PNG)"
 // @Param        request       body     request_structs.PsiUserUpdateRequestSelf true "Otros datos (enviar como form-data)"
 // @Success      200           {object} map[string]interface{}
 // @Failure      401           {object} map[string]string "Contraseña incorrecta"
@@ -97,18 +100,30 @@ func (h *PsiHandler) UpdateOwnProfile(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Formato de datos inválido"})
 	}
 
-	// 3. Capturar archivo de imagen (Opcional)
-	file, _ := c.FormFile("profile_picture")
+	// 3. Capturar archivos de imagen (Opcionales)
+	profilePic, _ := c.FormFile("profile_picture")
+	titleImgOne, _ := c.FormFile("title_image_one")
+	titleImgTwo, _ := c.FormFile("title_image_two")
+	titleImgThree, _ := c.FormFile("title_image_three")
 
 	// 4. Validar contraseña actual presente
 	if req.Password == "" {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Se requiere la contraseña actual para confirmar cambios"})
 	}
 
-	// 5. Llamar al servicio inyectando el archivo
-	profile, err := h.service.UpdateProfileSelf(c.UserContext(), updater, updater.ID, req, file)
+	// 5. Llamar al servicio inyectando los archivos
+	profile, err := h.service.UpdateProfileSelf(
+		c.UserContext(),
+		updater,
+		updater.ID,
+		req,
+		profilePic,
+		titleImgOne,
+		titleImgTwo,
+		titleImgThree,
+	)
+
 	if err != nil {
-		// Diferenciar errores de autenticación de errores de servidor
 		if err.Error() == "contraseña actual incorrecta" {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
 		}
@@ -159,13 +174,12 @@ func (h *PsiHandler) SearchDirectory(c *fiber.Ctx) error {
 // @Failure      404  {object}  map[string]string
 // @Router       /psi/{id} [get]
 func (h *PsiHandler) GetPublicProfile(c *fiber.Ctx) error {
-	idStr := c.Params("id")
-	id, err := uuid.Parse(idStr)
+	fvp, err := c.ParamsInt("id")
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ID inválido"})
 	}
 
-	profile, err := h.service.GetPublicProfile(c.UserContext(), id)
+	profile, err := h.service.GetPublicProfile(c.UserContext(), fvp)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": err.Error()})
 	}

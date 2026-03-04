@@ -4,8 +4,11 @@ import { Show, For } from "solid-js";
 
 interface ProfileHeaderProps {
   firstName: string;
+  secondName?: string;
   lastName: string;
+  secondLastName?: string;
   fpv: number;
+  ci: number;
   profilePicture?: string;
   solvent: boolean;
   specialties: string[];
@@ -14,11 +17,11 @@ interface ProfileHeaderProps {
 export function ProfileHeader(props: ProfileHeaderProps) {
   return (
     <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 text-center relative overflow-hidden">
-      <Show when={props.solvent}>
+      {/* <Show when={props.solvent}>
         <div class="absolute top-3 right-3 bg-green-100 text-green-700 p-2 rounded-full shadow-sm text-sm" title="Miembro Solvente">
           ✓
         </div>
-      </Show>
+      </Show> */}
 
       <div class="w-24 h-24 md:w-32 md:h-32 mx-auto bg-gray-50 rounded-full overflow-hidden border-4 border-colpsi-yellow shadow-inner mb-4">
         <Show 
@@ -34,10 +37,13 @@ export function ProfileHeader(props: ProfileHeaderProps) {
       </div>
 
       <h1 class="text-xl md:text-2xl font-black text-colpsi-blue leading-tight">
-        {props.firstName} {props.lastName}
+        {props.firstName} {props.secondName} {props.lastName} {props.secondLastName}
       </h1>
       <p class="text-gray-500 font-bold tracking-widest uppercase mt-1 text-xs md:text-sm">
         FPV: {props.fpv}
+      </p>
+      <p class="text-gray-500 font-bold tracking-widest uppercase mt-1 text-xs md:text-sm">
+        CI: {props.ci}
       </p>
 
       <div class="mt-3 flex justify-center gap-2 flex-wrap">

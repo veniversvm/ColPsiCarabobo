@@ -106,8 +106,7 @@ func TestPsiService_Login(t *testing.T) {
 func TestPsiService_GetPublicProfile_Privacy(t *testing.T) {
 	repo := &mockPsiRepo{}
 	svc := NewPsiService(repo, nil, nil)
-	psiID := uuid.New()
-
+	psiID := uuid.New() // necesita ahora en un int para el FPV
 	t.Run("Restricción de Solvencia: No solvente no muestra Postgrados", func(t *testing.T) {
 		repo.GetByIDFunc = func(ctx context.Context, id uuid.UUID) (*domain.PsiUserModel, error) {
 			return &domain.PsiUserModel{
@@ -166,7 +165,7 @@ func TestPsiService_UpdateProfileSelf_LazyLoading(t *testing.T) {
 		newBio := "Nueva biografía"
 		req := request_structs.PsiUserUpdateRequestSelf{MiniBio: &newBio}
 
-		_, err := svc.UpdateProfileSelf(context.Background(), psi, psi.ID, req, nil)
+		_, err := svc.UpdateProfileSelf(context.Background(), psi, psi.ID, req, nil, nil, nil, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
