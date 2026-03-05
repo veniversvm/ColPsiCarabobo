@@ -22,6 +22,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/microcosm-cc/bluemonday"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/request_structs"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/utils"
@@ -33,7 +34,8 @@ import (
 type PsiService struct {
 	repo        domain.PsiUserRepository
 	s3Client    *s3.S3Client
-	mailService IMailService // Inyectamos el servicio de correo para notificaciones
+	mailService IMailService       // Inyectamos el servicio de correo para notificaciones
+	sanitizer   *bluemonday.Policy // Política de sanitización para biografías (XSS Protection)
 }
 
 // NewPsiService es el constructor de PsiService, inyectando las dependencias necesarias.
@@ -42,6 +44,7 @@ func NewPsiService(repo domain.PsiUserRepository, s3Client *s3.S3Client, mailSer
 		repo:        repo,
 		s3Client:    s3Client,
 		mailService: mailService,
+		sanitizer:   bluemonday.UGCPolicy(),
 	}
 }
 
@@ -153,6 +156,8 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 // Implementa "Lazy Loading" para ColData: solo consulta y actualiza la tabla de datos
 // colegiales si el usuario solicita cambios en esos campos específicos.
 // UpdateProfileSelf permite al psicólogo actualizar sus datos de contacto y visibilidad.
+// UpdateProfileSelf procesa la autogestión del perfil del psicólogo.
+// Implementa actualizaciones parciales, manejo seguro de binarios y sanitización XSS.
 func (s *PsiService) UpdateProfileSelf(
 	ctx context.Context,
 	psi *domain.PsiUserModel,
@@ -174,12 +179,20 @@ func (s *PsiService) UpdateProfileSelf(
 		if req.NewPassword2 == nil || *req.NewPassword1 != *req.NewPassword2 {
 			return nil, errors.New("las nuevas contraseñas no coinciden")
 		}
+		if !utils.IsStrongPassword(*req.NewPassword1) {
+			return nil, errors.New("la nueva contraseña no cumple los requisitos de seguridad")
+		}
 		hashed, _ := bcrypt.GenerateFromPassword([]byte(*req.NewPassword1), bcrypt.DefaultCost)
 		psi.Password = string(hashed)
+		// Invalidar sesiones activas en otros dispositivos
 		psi.Key = uuid.New().String()
 	}
 
-	// 3. MANEJO DE IMAGEN EN S3 (Perfil)
+	// Lista para rastrear qué llaves de S3 debemos borrar si la DB falla (Rollback manual)
+	var uploadedS3Keys []string
+	var oldS3KeysToDelete []string
+
+	// 3. MANEJO DE IMAGEN DE PERFIL EN S3
 	if profilePic != nil {
 		src, _ := profilePic.Open()
 		defer src.Close()
@@ -189,24 +202,23 @@ func (s *PsiService) UpdateProfileSelf(
 			return nil, err
 		}
 
-		// Se quitó "avatars/" de aquí porque UploadStream ya hace `fmt.Sprintf("%s/%s", folder, filename)`
 		filename := fmt.Sprintf("%s%s", psi.ID.String(), ext)
 		newKey, err := s.s3Client.UploadStream(ctx, bytes.NewReader(cleanBytes), "avatars", filename, contentType)
 		if err != nil {
 			return nil, err
 		}
 
+		uploadedS3Keys = append(uploadedS3Keys, newKey)
 		if psi.ProfilePictureS3Key != "" && psi.ProfilePictureS3Key != newKey {
-			_ = s.s3Client.DeleteFile(ctx, psi.ProfilePictureS3Key)
+			oldS3KeysToDelete = append(oldS3KeysToDelete, psi.ProfilePictureS3Key)
 		}
 		psi.ProfilePictureS3Key = newKey
 	}
 
-	// A. Auditoría Automática
+	// 4. MAPEO DE CAMPOS BASE Y AUDITORÍA
 	psi.UpdateBy = psi.Username
 	psi.UpdateById = &psi.ID
 
-	// B. Mapeo de campos del Modelo Principal (PsiUserModel)... (Igual a tu código actual)
 	if req.Username != nil {
 		psi.Username = *req.Username
 	}
@@ -261,17 +273,44 @@ func (s *PsiService) UpdateProfileSelf(
 		psi.SecondarySpecialty = *req.SecondarySpecialty
 	}
 	if req.MiniBio != nil {
-		psi.MiniBio = *req.MiniBio
+		runes := []rune(*req.MiniBio)
+		if len(runes) > 250 {
+			psi.MiniBio = string(runes[:250])
+		} else {
+			psi.MiniBio = *req.MiniBio
+		}
 	}
 
-	// C. Lógica Inteligente para ColData
-	// Ahora también se activa si se sube alguna de las imágenes de los títulos
+	// 5. LÓGICA DE BIOGRAFÍA EXTENSA (XSS Protection)
+	var bioTextToUpdate *domain.TextModel
+	if req.FullBio != nil {
+		cleanHTML := s.sanitizer.Sanitize(*req.FullBio)
+
+		if psi.BioTextID != uuid.Nil {
+			psi.FullBio.Content = cleanHTML
+			psi.FullBio.UpdateBy = psi.Username
+			psi.FullBio.UpdateById = &psi.ID
+		} else {
+			psi.FullBio = domain.TextModel{
+				ID:      uuid.New(),
+				Content: cleanHTML,
+				AuditModel: domain.AuditModel{
+					CreateBy: psi.Username, CreateById: &psi.ID,
+					UpdateBy: psi.Username, UpdateById: &psi.ID,
+				},
+			}
+			psi.BioTextID = psi.FullBio.ID
+		}
+
+		bioTextToUpdate = &psi.FullBio // ← ESTA ES LA LÍNEA QUE FALTABA
+	}
+
+	// 6. GESTIÓN DE DATOS COLEGIALES Y TÍTULOS ACADÉMICOS
+	var colDataToUpdate *domain.PsiUserColData
 	hasColDataChanges := req.ShowUniversityUndergraduate != nil ||
 		req.ShowGraduateDate != nil ||
 		req.ShowMentionUndergraduate != nil ||
 		titleImgOne != nil || titleImgTwo != nil || titleImgThree != nil
-
-	var colDataToUpdate *domain.PsiUserColData
 
 	if hasColDataChanges {
 		currentColData, err := s.repo.GetPsiUserColData(ctx, psi.ID)
@@ -289,7 +328,7 @@ func (s *PsiService) UpdateProfileSelf(
 			currentColData.ShowMentionUndergraduate = *req.ShowMentionUndergraduate
 		}
 
-		// Función auxiliar para subir las fotos de títulos y evitar repetición
+		// Helper interno para subida de Soportes
 		processTitleImage := func(file *multipart.FileHeader, orderNum string, oldKey string) (string, error) {
 			if file == nil {
 				return oldKey, nil
@@ -305,60 +344,58 @@ func (s *PsiService) UpdateProfileSelf(
 				return "", err
 			}
 
-			// Agregamos un hash/UUID corto al final para que las URLs cambien
-			// y evitar que el CDN/Navegador cachee un título viejo si lo reemplazan
 			shortUUID := uuid.New().String()[:6]
 			filename := fmt.Sprintf("%s_title_%s_%s%s", psi.ID.String(), orderNum, shortUUID, ext)
 
-			// Se guardarán en el folder "titles/" de S3
 			newKey, err := s.s3Client.UploadStream(ctx, bytes.NewReader(cleanBytes), "titles", filename, contentType)
 			if err != nil {
 				return "", err
 			}
 
-			// Limpieza del archivo viejo
+			uploadedS3Keys = append(uploadedS3Keys, newKey)
 			if oldKey != "" && oldKey != newKey {
-				_ = s.s3Client.DeleteFile(ctx, oldKey)
+				oldS3KeysToDelete = append(oldS3KeysToDelete, oldKey)
 			}
 			return newKey, nil
 		}
 
-		// Procesamos y asignamos los archivos si existen
-		if titleImgOne != nil {
-			if newKey, err := processTitleImage(titleImgOne, "1", currentColData.TitleImageOneS3Key); err == nil {
-				currentColData.TitleImageOneS3Key = newKey
-			} else {
-				return nil, err
-			}
+		if newKey, err := processTitleImage(titleImgOne, "1", currentColData.TitleImageOneS3Key); err == nil {
+			currentColData.TitleImageOneS3Key = newKey
+		} else {
+			return nil, err
 		}
 
-		if titleImgTwo != nil {
-			if newKey, err := processTitleImage(titleImgTwo, "2", currentColData.TitleImageTwoS3Key); err == nil {
-				currentColData.TitleImageTwoS3Key = newKey
-			} else {
-				return nil, err
-			}
+		if newKey, err := processTitleImage(titleImgTwo, "2", currentColData.TitleImageTwoS3Key); err == nil {
+			currentColData.TitleImageTwoS3Key = newKey
+		} else {
+			return nil, err
 		}
 
-		if titleImgThree != nil {
-			if newKey, err := processTitleImage(titleImgThree, "3", currentColData.TitleImageThreeS3Key); err == nil {
-				currentColData.TitleImageThreeS3Key = newKey
-			} else {
-				return nil, err
-			}
+		if newKey, err := processTitleImage(titleImgThree, "3", currentColData.TitleImageThreeS3Key); err == nil {
+			currentColData.TitleImageThreeS3Key = newKey
+		} else {
+			return nil, err
 		}
 
-		// Auditoría de ColData
 		currentColData.UpdateBy = psi.Username
 		currentColData.UpdateById = &psi.ID
-
 		colDataToUpdate = currentColData
 	}
 
-	// D. Persistencia Transaccional
-	err := s.repo.UpdatePublicProfile(ctx, psi, colDataToUpdate)
+	// 7. PERSISTENCIA Y MANEJO DE ESTADOS (COMMIT / ROLLBACK)
+	err := s.repo.UpdatePublicProfile(ctx, psi, colDataToUpdate, bioTextToUpdate)
+
 	if err != nil {
+		// ROLLBACK MANUAL S3: Si la DB falla, borramos las imágenes que subimos en este request
+		for _, key := range uploadedS3Keys {
+			_ = s.s3Client.DeleteFile(context.Background(), key)
+		}
 		return nil, err
+	}
+
+	// COMMIT S3: Si la DB fue un éxito, procedemos a borrar las imágenes viejas
+	for _, oldKey := range oldS3KeysToDelete {
+		_ = s.s3Client.DeleteFile(context.Background(), oldKey)
 	}
 
 	return psi, nil
@@ -789,4 +826,12 @@ func parseDate(s string) time.Time {
 		return time.Time{} // Fecha cero si falla
 	}
 	return t
+}
+
+func (s *PsiService) GetPsiBioByID(ctx context.Context, id uuid.UUID) (string, error) {
+	bio, err := s.repo.GetTextContentByID(ctx, id)
+	if err != nil {
+		return "", err
+	}
+	return bio, nil
 }

@@ -4,6 +4,7 @@ package handler
 
 import (
 	"fmt"
+	"log"
 	"mime/multipart"
 
 	"github.com/gofiber/fiber/v2"
@@ -205,6 +206,16 @@ func (h *PsiHandler) GetMe(c *fiber.Ctx) error {
 			"error": "Sesión inválida o expirada",
 		})
 	}
+
+	bio, err := h.service.GetPsiBioByID(c.UserContext(), psi.BioTextID)
+	if err != nil {
+		log.Printf("---- error al recuperar la BIO ----\n")
+		log.Printf("%v\n", err)
+	}
+	log.Printf("----- BIO ----\n")
+	log.Printf("%v", bio)
+
+	psi.FullBio.Content = bio
 
 	// Retornamos el modelo completo.
 	// Nota: Password y Key no se envían porque en domain.PsiUserModel tienen `json:"-"`.

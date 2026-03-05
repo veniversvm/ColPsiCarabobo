@@ -34,12 +34,24 @@ func NewPsiRepository(db *gorm.DB) domain.PsiUserRepository {
 // Utiliza una transacción para asegurar que no se cree un usuario sin sus datos base asociados.
 func (r *psiRepo) CreateWithColData(ctx context.Context, psi *domain.PsiUserModel, colData *domain.PsiUserColData) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// 1. Crear el Psicólogo (Genera el ID y maneja auditoría básica)
+		// 1. Crear una bio vacía para satisfacer la FK (siempre requerida)
+		emptyBio := &domain.TextModel{
+			// Ajusta los campos requeridos de tu TextModel aquí
+			Content: "",
+		}
+		if err := tx.Create(emptyBio).Error; err != nil {
+			return fmt.Errorf("error creating empty bio: %w", err)
+		}
+
+		// 2. Asignar el ID de la bio al usuario ANTES de insertarlo
+		psi.BioTextID = emptyBio.ID
+
+		// 3. Crear el Psicólogo (ahora bio_text_id apunta a un registro real)
 		if err := tx.Create(psi).Error; err != nil {
 			return fmt.Errorf("error creating psi user: %w", err)
 		}
 
-		// 2. Vincular los datos colegiales a la llave foránea del psicólogo recién creado
+		// 4. Vincular los datos colegiales
 		colData.PsiUserModelID = psi.ID
 		if err := tx.Create(colData).Error; err != nil {
 			return fmt.Errorf("error creating col data: %w", err)
@@ -60,6 +72,7 @@ func (r *psiRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.PsiUserMod
 			return db.Order("graduation_year DESC")
 		}).
 		Preload("SocialNetworks").
+		Preload("FullBio").
 		First(&psi, "id = ?", id).Error
 
 	if err != nil {
@@ -83,6 +96,7 @@ func (r *psiRepo) GetByFPV(ctx context.Context, id int) (domain.PsiUserModel, er
 			return db.Order("graduation_year DESC")
 		}).
 		Preload("SocialNetworks").
+		Preload("FullBio").
 		First(&psi, "fpv = ?", id).Error
 
 	if err != nil {
@@ -143,18 +157,40 @@ func (r *psiRepo) Update(ctx context.Context, psi *domain.PsiUserModel, colData 
 // UpdatePublicProfile actualiza los datos permitidos para edición por parte del usuario.
 // Usa tx.Omit("ColData") para prevenir que GORM intente actualizar asociaciones no deseadas.
 // api/internal/repository/postgres/psi_repository.go
-func (r *psiRepo) UpdatePublicProfile(ctx context.Context, psi *domain.PsiUserModel, colData *domain.PsiUserColData) error {
+func (r *psiRepo) UpdatePublicProfile(ctx context.Context, psi *domain.PsiUserModel, colData *domain.PsiUserColData, bioText *domain.TextModel) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Usar Omit evita que GORM guarde relaciones (postgrades, rrss) innecesariamente y protege campos
-		if err := tx.Model(psi).Omit("CI", "FPV", "IsActive", "Solvent", "ColData", "PostGrades", "SocialNetworks").Updates(psi).Error; err != nil {
+
+		// 1. Guardar/Actualizar la Bio Extensa
+		if bioText != nil {
+			if err := tx.Save(bioText).Error; err != nil {
+				return err
+			}
+			// Sincronizar el ID en la memoria
+			psi.BioTextID = bioText.ID
+		}
+
+		// 2. Actualizar el perfil
+		// Omitimos relaciones para que no se guarde el grafo entero
+		// Añadimos "bio_text_id" al Update para asegurar que se guarde el vínculo
+		err := tx.Model(psi).
+			Omit("CI", "FPV", "IsActive", "Solvent", "Password", "Key", "ColData", "PostGrades", "SocialNetworks").
+			Updates(map[string]interface{}{
+				"bio_text_id": psi.BioTextID, // Forzamos la actualización de la FK
+				// Aquí podrías añadir otros campos si ves que Updates(psi) no los detecta
+			}).
+			Updates(psi).Error
+
+		if err != nil {
 			return err
 		}
 
+		// 3. Actualizar los Datos Colegiales (si hubo cambios)
 		if colData != nil {
 			if err := tx.Save(colData).Error; err != nil {
 				return err
 			}
 		}
+
 		return nil
 	})
 }
@@ -404,4 +440,26 @@ func (r *psiRepo) CountSocialNetworksByPsiID(ctx context.Context, psiID uuid.UUI
 		Count(&count).Error
 
 	return count, err
+}
+
+// GetTextContentByID recupera el contenido de un TextModel dado su UUID.
+// Usamos Select("content") para no traer toda la estructura de auditoría si no es necesaria,
+// optimizando la transferencia de datos desde Postgres.
+func (r *psiRepo) GetTextContentByID(ctx context.Context, id uuid.UUID) (string, error) {
+	var textModel domain.TextModel
+
+	err := r.db.WithContext(ctx).
+		Model(&domain.TextModel{}).
+		Select("content"). // Solo traemos el campo necesario
+		Where("id = ?", id).
+		First(&textModel).Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return "", fmt.Errorf("biografía no encontrada: %w", err)
+		}
+		return "", err
+	}
+
+	return textModel.Content, nil
 }

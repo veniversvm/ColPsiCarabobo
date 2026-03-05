@@ -122,6 +122,7 @@ type PsiUserModel struct {
 	// Bio: Información profesional resumida y detallada.
 	MiniBio   string    `json:"mini_bio"`
 	BioTextID uuid.UUID `json:"bio_text_id,omitempty"`
+	FullBio   TextModel `gorm:"foreignKey:BioTextID" json:"full_bio,omitempty"`
 
 	// Relaciones: Conexión con datos académicos y gremiales.
 	ColData        PsiUserColData         `gorm:"foreignKey:PsiUserModelID" json:"col_data"`

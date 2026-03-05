@@ -55,6 +55,7 @@ type PsiUserUpdateRequestSelf struct {
 	PrimarySpecialty   *string `json:"primary_specialty" form:"primary_specialty"`
 	SecondarySpecialty *string `json:"secondary_specialty" form:"secondary_specialty"`
 	MiniBio            *string `json:"mini_bio" form:"mini_bio"`
+	FullBio            *string `json:"full_bio" form:"full_bio"`
 
 	// --- Visibilidad de Datos Colegiales (Pregrado) ---
 	ShowUniversityUndergraduate *bool `json:"show_university_undergraduate" form:"show_university_undergraduate"`

@@ -35,6 +35,9 @@ type PsiUserRepository interface {
 	// GetPsiUserColData recupera exclusivamente la información colegial de un psicólogo.
 	GetPsiUserColData(ctx context.Context, psiID uuid.UUID) (*PsiUserColData, error)
 
+	// Biografia full
+	GetTextContentByID(ctx context.Context, id uuid.UUID) (string, error)
+
 	// =========================================================================
 	// ACTUALIZACIONES (MUTACIONES)
 	// =========================================================================
@@ -45,7 +48,7 @@ type PsiUserRepository interface {
 
 	// UpdatePublicProfile actualiza la información que el psicólogo gestiona de sí mismo,
 	// como datos de contacto, biografía y preferencias de visibilidad.
-	UpdatePublicProfile(ctx context.Context, psi *PsiUserModel, colData *PsiUserColData) error
+	UpdatePublicProfile(ctx context.Context, psi *PsiUserModel, colData *PsiUserColData, bioText *TextModel) error
 
 	// UpdateKey actualiza la semilla de firma (Key) del usuario.
 	// Vital para la rotación de sesiones y la invalidación de tokens JWT.
