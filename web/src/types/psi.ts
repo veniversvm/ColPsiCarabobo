@@ -92,6 +92,7 @@ export type PsiProfileSettings = {
   
   // Perfil profesional
   mini_bio?: string;
+  full_bio?: string;
   primary_specialty?: string;
   secondary_specialty?: string;
   
@@ -117,6 +118,8 @@ export type ProfileFormData = PsiProfileSettings & {
   password: string;
   new_password_1: string;
   new_password_2: string;
+  mini_bio?: string;
+  full_bio?: string;
 };
 
 

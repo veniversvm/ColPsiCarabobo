@@ -12,11 +12,11 @@ import { LocationSection } from "~/components/psi/profile/LocationSection";
 import { ProfessionalSection } from "~/components/psi/profile/ProfessionalSection";
 import { PrivacySection } from "~/components/psi/profile/PrivacySection";
 import { SecuritySection } from "~/components/psi/profile/SecuritySection";
-import { SaveButton } from "~/components/psi/profile/SaveButton";
 import { MessageAlert } from "~/components/psi/profile/MessageAlert";
 import { AcademicSection } from "~/components/psi/profile/AcademicSection";
 import { SocialNetworksSection } from "~/components/psi/profile/SocialNetworksSection";
 import { AvatarUploader } from "~/components/psi/profile/vatarUploader";
+import { SaveButton } from "~/components/psi/profile/SaveButton";
 
 /**
  * ACCIÓN DE SERVIDOR (BFF)
@@ -38,6 +38,12 @@ const updateProfileServer = action(async (formData: FormData) => {
     if (typeof value === "string") {
       let cleanValue = value;
       if (key === "mini_bio") cleanValue = enforceMaxLength(cleanValue, 250);
+
+      // EXCEPCIÓN: Si es la biografía completa (HTML), la pasamos intacta a Go
+      if (key === "full_bio") {
+        cleanFd.append(key, cleanValue);
+        continue;
+      }
 
       if (["public_phone", "phone_carabobo", "cel_phone_carabobo", "phone_outside_carabobo", "cel_phone_outside_carabobo"].includes(key)) {
         cleanFd.append(key, sanitizePhone(cleanValue));
@@ -97,6 +103,7 @@ export default function ProfilePage() {
         show_university_undergraduate: p.col_data?.show_university_undergraduate ?? false,
         show_graduate_date: p.col_data?.show_graduate_date ?? false,
         show_mention_undergraduate: p.col_data?.show_mention_undergraduate ?? false,
+        full_bio: p.full_bio.content || "",
       } as ProfileFormData);
     }
   });
@@ -275,6 +282,8 @@ export default function ProfilePage() {
               primarySpecialty={form.primary_specialty ?? ""}
               secondarySpecialty={form.secondary_specialty ?? ""}
               miniBio={form.mini_bio ?? ""}
+              fullBio={form.full_bio ?? ""}
+              onFullBioChange={(v) => setForm("full_bio", v)}
               onPrimarySpecialtyChange={(v) => setForm("primary_specialty", v)}
               onSecondarySpecialtyChange={(v) => setForm("secondary_specialty", v)}
               onMiniBioChange={(v) => setForm("mini_bio", v)}
