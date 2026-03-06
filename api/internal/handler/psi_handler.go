@@ -100,6 +100,14 @@ func (h *PsiHandler) UpdateOwnProfile(c *fiber.Ctx) error {
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Formato de datos inválido"})
 	}
+	log.Printf("---- ##################### ----\n")
+	var t string
+	if req.FullBio != nil {
+		t = *req.FullBio
+	} else {
+		t = ""
+	}
+	log.Printf("####FULLBIO %s\n", t)
 
 	// 3. Capturar archivos de imagen (Opcionales)
 	profilePic, _ := c.FormFile("profile_picture")

@@ -40,11 +40,14 @@ type PsiService struct {
 
 // NewPsiService es el constructor de PsiService, inyectando las dependencias necesarias.
 func NewPsiService(repo domain.PsiUserRepository, s3Client *s3.S3Client, mailService IMailService) *PsiService {
+	policy := bluemonday.UGCPolicy()
+	policy.AllowStyles("text-align").OnElements("p", "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "li", "blockquote")
+
 	return &PsiService{
 		repo:        repo,
 		s3Client:    s3Client,
 		mailService: mailService,
-		sanitizer:   bluemonday.UGCPolicy(),
+		sanitizer:   policy,
 	}
 }
 
@@ -174,6 +177,9 @@ func (s *PsiService) UpdateProfileSelf(
 		return nil, errors.New("contraseña actual incorrecta")
 	}
 
+	// LOG TEMPORAL
+	log.Printf("--- MINI BIO: '%s'", *req.MiniBio)
+
 	// 2. CAMBIO DE PASSWORD (Si se solicitó)
 	if req.NewPassword1 != nil && *req.NewPassword1 != "" {
 		if req.NewPassword2 == nil || *req.NewPassword1 != *req.NewPassword2 {
@@ -184,11 +190,9 @@ func (s *PsiService) UpdateProfileSelf(
 		}
 		hashed, _ := bcrypt.GenerateFromPassword([]byte(*req.NewPassword1), bcrypt.DefaultCost)
 		psi.Password = string(hashed)
-		// Invalidar sesiones activas en otros dispositivos
 		psi.Key = uuid.New().String()
 	}
 
-	// Lista para rastrear qué llaves de S3 debemos borrar si la DB falla (Rollback manual)
 	var uploadedS3Keys []string
 	var oldS3KeysToDelete []string
 
@@ -228,22 +232,12 @@ func (s *PsiService) UpdateProfileSelf(
 	if req.ContactEmail != nil {
 		psi.ContactEmail = *req.ContactEmail
 	}
-	if req.ShowContactEmail != nil {
-		psi.ShowContactEmail = *req.ShowContactEmail
-	}
 	if req.PublicPhone != nil {
 		psi.PublicPhone = *req.PublicPhone
-	}
-	if req.ShowPublicPhone != nil {
-		psi.ShowPublicPhone = *req.ShowPublicPhone
 	}
 	if req.ServiceAddress != nil {
 		psi.ServiceAddress = *req.ServiceAddress
 	}
-	if req.ShowPublicServiceAddress != nil {
-		psi.ShowPublicServiceAddress = *req.ShowPublicServiceAddress
-	}
-
 	if req.MunicipalityCarabobo != nil {
 		psi.MunicipalityCarabobo = *req.MunicipalityCarabobo
 	}
@@ -265,7 +259,6 @@ func (s *PsiService) UpdateProfileSelf(
 	if req.CelPhoneOutSideCarabobo != nil {
 		psi.CelPhoneOutSideCarabobo = *req.CelPhoneOutSideCarabobo
 	}
-
 	if req.PrimarySpecialty != nil {
 		psi.PrimarySpecialty = *req.PrimarySpecialty
 	}
@@ -279,6 +272,18 @@ func (s *PsiService) UpdateProfileSelf(
 		} else {
 			psi.MiniBio = *req.MiniBio
 		}
+	}
+
+	// FIX: Los booleans de privacidad ahora vienen de los getters (campos Raw → *bool)
+	// Siempre los aplicamos — el frontend los envía siempre como "1" o "0"
+	if v := req.ShowContactEmail(); v != nil {
+		psi.ShowContactEmail = *v
+	}
+	if v := req.ShowPublicPhone(); v != nil {
+		psi.ShowPublicPhone = *v
+	}
+	if v := req.ShowPublicServiceAddress(); v != nil {
+		psi.ShowPublicServiceAddress = *v
 	}
 
 	// 5. LÓGICA DE BIOGRAFÍA EXTENSA (XSS Protection)
@@ -301,15 +306,16 @@ func (s *PsiService) UpdateProfileSelf(
 			}
 			psi.BioTextID = psi.FullBio.ID
 		}
-
-		bioTextToUpdate = &psi.FullBio // ← ESTA ES LA LÍNEA QUE FALTABA
+		bioTextToUpdate = &psi.FullBio
 	}
 
 	// 6. GESTIÓN DE DATOS COLEGIALES Y TÍTULOS ACADÉMICOS
+	// FIX: hasColDataChanges usa los campos Raw (string), no los *bool viejos que ya no existen.
+	// BoolFromForm retorna nil solo si el string está vacío — si es "0" o "1" retorna *bool.
 	var colDataToUpdate *domain.PsiUserColData
-	hasColDataChanges := req.ShowUniversityUndergraduate != nil ||
-		req.ShowGraduateDate != nil ||
-		req.ShowMentionUndergraduate != nil ||
+	hasColDataChanges := req.ShowUniversityUndergraduateRaw != "" ||
+		req.ShowGraduateDateRaw != "" ||
+		req.ShowMentionUndergraduateRaw != "" ||
 		titleImgOne != nil || titleImgTwo != nil || titleImgThree != nil
 
 	if hasColDataChanges {
@@ -318,17 +324,17 @@ func (s *PsiService) UpdateProfileSelf(
 			return nil, err
 		}
 
-		if req.ShowUniversityUndergraduate != nil {
-			currentColData.ShowUniversityUndergraduate = *req.ShowUniversityUndergraduate
+		// FIX: igual que arriba — getters en vez de campos *bool directos
+		if v := req.ShowUniversityUndergraduate(); v != nil {
+			currentColData.ShowUniversityUndergraduate = *v
 		}
-		if req.ShowGraduateDate != nil {
-			currentColData.ShowGraduateDate = *req.ShowGraduateDate
+		if v := req.ShowGraduateDate(); v != nil {
+			currentColData.ShowGraduateDate = *v
 		}
-		if req.ShowMentionUndergraduate != nil {
-			currentColData.ShowMentionUndergraduate = *req.ShowMentionUndergraduate
+		if v := req.ShowMentionUndergraduate(); v != nil {
+			currentColData.ShowMentionUndergraduate = *v
 		}
 
-		// Helper interno para subida de Soportes
 		processTitleImage := func(file *multipart.FileHeader, orderNum string, oldKey string) (string, error) {
 			if file == nil {
 				return oldKey, nil
@@ -364,13 +370,11 @@ func (s *PsiService) UpdateProfileSelf(
 		} else {
 			return nil, err
 		}
-
 		if newKey, err := processTitleImage(titleImgTwo, "2", currentColData.TitleImageTwoS3Key); err == nil {
 			currentColData.TitleImageTwoS3Key = newKey
 		} else {
 			return nil, err
 		}
-
 		if newKey, err := processTitleImage(titleImgThree, "3", currentColData.TitleImageThreeS3Key); err == nil {
 			currentColData.TitleImageThreeS3Key = newKey
 		} else {
@@ -382,18 +386,15 @@ func (s *PsiService) UpdateProfileSelf(
 		colDataToUpdate = currentColData
 	}
 
-	// 7. PERSISTENCIA Y MANEJO DE ESTADOS (COMMIT / ROLLBACK)
+	// 7. PERSISTENCIA
 	err := s.repo.UpdatePublicProfile(ctx, psi, colDataToUpdate, bioTextToUpdate)
-
 	if err != nil {
-		// ROLLBACK MANUAL S3: Si la DB falla, borramos las imágenes que subimos en este request
 		for _, key := range uploadedS3Keys {
 			_ = s.s3Client.DeleteFile(context.Background(), key)
 		}
 		return nil, err
 	}
 
-	// COMMIT S3: Si la DB fue un éxito, procedemos a borrar las imágenes viejas
 	for _, oldKey := range oldS3KeysToDelete {
 		_ = s.s3Client.DeleteFile(context.Background(), oldKey)
 	}
@@ -475,6 +476,11 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 		return nil, errors.New("perfil no disponible")
 	}
 
+	fullBio, err := s.repo.GetTextContentByID(ctx, psi.BioTextID)
+	if err != nil {
+		log.Printf("⚠️ Error al obtener la biografía extensa del psicólogo %d: %v", id, err)
+	}
+
 	undergraduate_data := request_structs.UndergraduateDTO{
 		University:         psi.ColData.UniversityUndergraduate,
 		Date:               psi.ColData.GraduateDate.Format("2006-01-02"),
@@ -486,7 +492,7 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 
 	// 3. Inicializar el DTO Público
 	dto := &request_structs.PsiFullProfileDTO{
-		ID:             psi.ID,
+		// ID:             psi.ID,
 		FirstName:      psi.FirstName,
 		SecondName:     psi.SecondName,
 		LastName:       psi.LastName,
@@ -497,6 +503,7 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 		ProfilePicture: psi.ProfilePictureS3Key,
 		Solvent:        psi.Solvent,
 		MiniBio:        psi.MiniBio,
+		FullBioContent: fullBio,
 		Undergraduate:  undergraduate_data,
 		Specialties:    make([]string, 0),
 		PostGrades:     make([]request_structs.PostGradeDTO, 0), // Inicializamos vacío
@@ -516,7 +523,7 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 	}
 
 	// Ubicación
-	if psi.MunicipalityCarabobo != "" {
+	if psi.MunicipalityCarabobo != "" && psi.ShowPublicServiceAddress {
 		dto.Location.State = "Carabobo"
 		dto.Location.Municipality = psi.MunicipalityCarabobo
 	} else {
@@ -532,15 +539,22 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 		dto.Specialties = append(dto.Specialties, psi.SecondarySpecialty)
 	}
 
+	// log.Printf("ShowUniversityUndergraduate = %v\nShowUniversityUndergraduate = %v\nColData.ShowMentionUndergraduate = %v", psi.ColData.ShowUniversityUndergraduate, psi.ColData.ShowGraduateDate, psi.ColData.ShowMentionUndergraduate)
 	// Datos Universitarios de Pregrado (Según privacidad del usuario)
 	if psi.ColData.ShowUniversityUndergraduate {
 		dto.Undergraduate.University = psi.ColData.UniversityUndergraduate
+	} else {
+		dto.Undergraduate.University = ""
 	}
-	if psi.ColData.ShowGraduateDate && !psi.ColData.GraduateDate.IsZero() {
+	if psi.ColData.ShowGraduateDate {
 		dto.Undergraduate.Date = psi.ColData.GraduateDate.Format("2006-01-02")
+	} else {
+		dto.Undergraduate.Date = ""
 	}
 	if psi.ColData.ShowMentionUndergraduate {
 		dto.Undergraduate.Mention = psi.ColData.MentionUndergraduate
+	} else {
+		dto.Undergraduate.Mention = ""
 	}
 
 	// --- MAPEO DE REDES SOCIALES ---

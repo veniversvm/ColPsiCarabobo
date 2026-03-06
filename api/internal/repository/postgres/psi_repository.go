@@ -157,36 +157,96 @@ func (r *psiRepo) Update(ctx context.Context, psi *domain.PsiUserModel, colData 
 // UpdatePublicProfile actualiza los datos permitidos para edición por parte del usuario.
 // Usa tx.Omit("ColData") para prevenir que GORM intente actualizar asociaciones no deseadas.
 // api/internal/repository/postgres/psi_repository.go
-func (r *psiRepo) UpdatePublicProfile(ctx context.Context, psi *domain.PsiUserModel, colData *domain.PsiUserColData, bioText *domain.TextModel) error {
+// PROBLEMA: GORM ignora zero values (false, "", 0) tanto en Updates(struct)
+// como en Updates(map) cuando el valor es un tipo nativo de Go.
+//
+// SOLUCIÓN: Usar gorm.Expr() para los campos bool, lo que fuerza a GORM
+// a escribir el valor literal en el SQL sin importar si es true o false.
+
+func (r *psiRepo) UpdatePublicProfile(
+	ctx context.Context,
+	psi *domain.PsiUserModel,
+	colData *domain.PsiUserColData,
+	bioText *domain.TextModel,
+) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 
-		// 1. Guardar/Actualizar la Bio Extensa
+		// 1. Guardar Bio Extensa
 		if bioText != nil {
 			if err := tx.Save(bioText).Error; err != nil {
 				return err
 			}
-			// Sincronizar el ID en la memoria
 			psi.BioTextID = bioText.ID
 		}
 
-		// 2. Actualizar el perfil
-		// Omitimos relaciones para que no se guarde el grafo entero
-		// Añadimos "bio_text_id" al Update para asegurar que se guarde el vínculo
-		err := tx.Model(psi).
-			Omit("CI", "FPV", "IsActive", "Solvent", "Password", "Key", "ColData", "PostGrades", "SocialNetworks").
-			Updates(map[string]interface{}{
-				"bio_text_id": psi.BioTextID, // Forzamos la actualización de la FK
-				// Aquí podrías añadir otros campos si ves que Updates(psi) no los detecta
-			}).
-			Updates(psi).Error
+		// 2. Actualizar perfil principal
+		// Usamos gorm.Expr() para los bool — garantiza que false se escriba en SQL.
+		// Para strings y otros tipos, el map normal funciona bien porque nunca
+		// queremos omitir un string vacío (sí es un valor válido a persistir).
+		updateMap := map[string]interface{}{
+			// Texto
+			"username":        psi.Username,
+			"contact_email":   psi.ContactEmail,
+			"public_phone":    psi.PublicPhone,
+			"service_address": psi.ServiceAddress,
 
-		if err != nil {
+			// Ubicación
+			"municipality_carabobo":          psi.MunicipalityCarabobo,
+			"phone_carabobo":                 psi.PhoneCarabobo,
+			"cel_phone_carabobo":             psi.CelPhoneCarabobo,
+			"state_outside":                  psi.StateOutside,
+			"municipality_out_side_carabobo": psi.MunicipalityOutSideCarabobo,
+			"phone_out_side_carabobo":        psi.PhoneOutSideCarabobo,
+			"cel_phone_out_side_carabobo":    psi.CelPhoneOutSideCarabobo,
+
+			// Profesional
+			"primary_specialty":      psi.PrimarySpecialty,
+			"secondary_specialty":    psi.SecondarySpecialty,
+			"mini_bio":               psi.MiniBio,
+			"bio_text_id":            psi.BioTextID,
+			"profile_picture_s3_key": psi.ProfilePictureS3Key,
+
+			// Password (solo cambia si el usuario lo solicitó, pero siempre lo incluimos
+			// porque el service ya mantuvo el valor anterior si no hubo cambio)
+			"password": psi.Password,
+			"key":      psi.Key,
+
+			// Auditoría
+			"update_by":    psi.UpdateBy,
+			"update_by_id": psi.UpdateById,
+
+			// FIX BOOL: gorm.Expr fuerza el valor literal — false NO se omite
+			"show_contact_email":          gorm.Expr("?", psi.ShowContactEmail),
+			"show_public_phone":           gorm.Expr("?", psi.ShowPublicPhone),
+			"show_public_service_address": gorm.Expr("?", psi.ShowPublicServiceAddress),
+		}
+
+		if err := tx.Model(psi).
+			Where("id = ?", psi.ID).
+			Omit("ci", "fpv", "is_active", "solvent", "created_at", "create_by", "create_by_id").
+			Updates(updateMap).Error; err != nil {
 			return err
 		}
 
-		// 3. Actualizar los Datos Colegiales (si hubo cambios)
+		// 3. Actualizar Datos Colegiales
 		if colData != nil {
-			if err := tx.Save(colData).Error; err != nil {
+			colDataMap := map[string]interface{}{
+				// FIX BOOL: igual
+				"show_university_undergraduate": gorm.Expr("?", colData.ShowUniversityUndergraduate),
+				"show_graduate_date":            gorm.Expr("?", colData.ShowGraduateDate),
+				"show_mention_undergraduate":    gorm.Expr("?", colData.ShowMentionUndergraduate),
+
+				"title_image_one_s3_key":   colData.TitleImageOneS3Key,
+				"title_image_two_s3_key":   colData.TitleImageTwoS3Key,
+				"title_image_three_s3_key": colData.TitleImageThreeS3Key,
+
+				"update_by":    colData.UpdateBy,
+				"update_by_id": colData.UpdateById,
+			}
+
+			if err := tx.Model(colData).
+				Where("id = ?", colData.ID).
+				Updates(colDataMap).Error; err != nil {
 				return err
 			}
 		}

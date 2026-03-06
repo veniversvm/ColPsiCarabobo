@@ -51,11 +51,11 @@ export function PrivacySection(props: PrivacySectionProps) {
           <h3 class="text-sm font-bold text-colpsi-text uppercase tracking-widest border-b border-gray-200 pb-2">
             Datos Académicos (Pregrado)
           </h3>
-          <ToggleSwitch 
+          {/* <ToggleSwitch 
             label="Mostrar Universidad de Egreso" 
             checked={props.showUniversity} 
             onChange={props.onShowUniversityChange} 
-          />
+          /> */}
           <ToggleSwitch 
             label="Mostrar Fecha de Egreso" 
             checked={props.showGraduateDate} 

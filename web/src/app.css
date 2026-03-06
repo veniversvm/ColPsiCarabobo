@@ -41,3 +41,29 @@
     @apply text-colpsi-blue font-bold tracking-tight;
   }
 }
+
+/* Custom Scrollbar for Webkit (Chrome, Edge, Safari) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f8fafc; /* Gris muy claro */
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(30, 58, 138, 0.2); /* colpsi-blue transparente */
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(30, 58, 138, 0.4);
+}
+
+/* Firefox support */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(30, 58, 138, 0.2) #f8fafc;
+}

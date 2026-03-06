@@ -54,6 +54,7 @@ export type PsiProfile = {
   location: Location;
   specialties: string[];
   mini_bio: string;
+  full_bio_content?: string;
   undergraduate: Undergraduate;
   post_grades?: PostGrade[];
   social_networks?: SocialNetwork[];

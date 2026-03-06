@@ -1,11 +1,11 @@
-import { createResource, createEffect, Show, Suspense, createSignal, For } from "solid-js";
+// web/src/routes/psi/perfil.tsx
+import { createResource, createEffect, Show, Suspense, createSignal } from "solid-js";
 import { createStore } from "solid-js/store";
 import { A, action, useAction } from "@solidjs/router";
-import { apiGet, apiPatch, apiPost, apiDelete, ApiError } from "~/lib/api";
-import { sanitizeEmail, sanitizePhone, sanitizeText, isStrongPassword, enforceMaxLength } from "~/lib/sanitizer";
+import { apiGet, apiPatch, apiPost, apiDelete } from "~/lib/api";
+import { sanitizeEmail, sanitizePhone, sanitizeText, enforceMaxLength } from "~/lib/sanitizer";
 import { ProfileFormData } from "~/types/psi";
 
-// Importamos todos los componentes
 import { AccountSection } from "~/components/psi/profile/AccountSection";
 import { ContactSection } from "~/components/psi/profile/ContactSection";
 import { LocationSection } from "~/components/psi/profile/LocationSection";
@@ -15,12 +15,15 @@ import { SecuritySection } from "~/components/psi/profile/SecuritySection";
 import { MessageAlert } from "~/components/psi/profile/MessageAlert";
 import { AcademicSection } from "~/components/psi/profile/AcademicSection";
 import { SocialNetworksSection } from "~/components/psi/profile/SocialNetworksSection";
-import { AvatarUploader } from "~/components/psi/profile/vatarUploader";
 import { SaveButton } from "~/components/psi/profile/SaveButton";
+import { AvatarUploader } from "~/components/psi/profile/vatarUploader";
 
 /**
  * ACCIÓN DE SERVIDOR (BFF)
  * Sanitiza los campos antes de enviarlos a Go.
+ *
+ * FIX: El orden del loop importa — aplicamos enforceMaxLength solo a mini_bio,
+ * y dejamos full_bio completamente intacto antes de cualquier otra transformación.
  */
 const updateProfileServer = action(async (formData: FormData) => {
   "use server";
@@ -35,21 +38,34 @@ const updateProfileServer = action(async (formData: FormData) => {
       continue;
     }
 
-    if (typeof value === "string") {
-      let cleanValue = value;
-      if (key === "mini_bio") cleanValue = enforceMaxLength(cleanValue, 250);
+    if (key === "full_bio") {
+      console.log("full_bio recibido:", value.substring(0, 300)) // ver si llega con style=
+      cleanFd.append(key, value);
+    }
 
-      // EXCEPCIÓN: Si es la biografía completa (HTML), la pasamos intacta a Go
+    if (typeof value === "string") {
+      // full_bio: intacto, sin transformaciones
       if (key === "full_bio") {
-        cleanFd.append(key, cleanValue);
+        cleanFd.append(key, value);
         continue;
       }
+
+      // Campos bool de privacidad: pasan directamente como "0" o "1"
+      // NUNCA deben pasar por sanitizeEmail ni ninguna otra transformación
+      if (key.startsWith("show_")) {
+        cleanFd.append(key, value);
+        continue;
+      }
+
+      let cleanValue = key === "mini_bio" ? enforceMaxLength(value, 250) : value;
 
       if (["public_phone", "phone_carabobo", "cel_phone_carabobo", "phone_outside_carabobo", "cel_phone_outside_carabobo"].includes(key)) {
         cleanFd.append(key, sanitizePhone(cleanValue));
       } else if (["municipality_carabobo", "state_outside", "municipality_outside_carabobo", "primary_specialty", "secondary_specialty", "mini_bio", "service_address"].includes(key)) {
         cleanFd.append(key, sanitizeText(cleanValue));
-      } else if (key.includes("email")) {
+      } else if (key === "contact_email" || key === "email") {
+        // FIX: comparación exacta en vez de key.includes("email")
+        // Así "show_contact_email" nunca entra aquí
         cleanFd.append(key, sanitizeEmail(cleanValue) ?? "");
       } else {
         cleanFd.append(key, cleanValue);
@@ -59,25 +75,21 @@ const updateProfileServer = action(async (formData: FormData) => {
 
   return await apiPatch("/psi/me", cleanFd);
 });
-
 export default function ProfilePage() {
   const [profile, { refetch }] = createResource(() => apiGet<any>("/psi/me"));
-  
+
   const [form, setForm] = createStore<ProfileFormData>({} as ProfileFormData);
   const [saving, setSaving] = createSignal(false);
   const [message, setMessage] = createSignal<{ type: "success" | "error"; text: string } | null>(null);
 
-  // ESTADO: Archivos
   const [files, setFiles] = createSignal<{ [key: string]: File }>({});
   const [avatarFile, setAvatarFile] = createSignal<File | null>(null);
-  
-  // ESTADO: Redes Sociales
+
   const [socialForm, setSocialForm] = createStore({ name: "", url: "" });
   const [savingSocial, setSavingSocial] = createSignal(false);
 
   const runUpdateAction = useAction(updateProfileServer);
 
-  // Sincronización de datos
   createEffect(() => {
     const p = profile();
     if (p) {
@@ -97,57 +109,87 @@ export default function ProfilePage() {
         mini_bio: sanitizeText(p.mini_bio) || "",
         primary_specialty: p.primary_specialty || "",
         secondary_specialty: p.secondary_specialty || "",
+        // FIX 3: Protección contra full_bio nulo/undefined
+        full_bio: p.full_bio?.content || "",
+        // Privacidad — booleans directos desde el perfil
         show_contact_email: p.show_contact_email ?? false,
         show_public_phone: p.show_public_phone ?? false,
         show_public_service_address: p.show_public_service_address ?? false,
         show_university_undergraduate: p.col_data?.show_university_undergraduate ?? false,
         show_graduate_date: p.col_data?.show_graduate_date ?? false,
         show_mention_undergraduate: p.col_data?.show_mention_undergraduate ?? false,
-        full_bio: p.full_bio.content || "",
       } as ProfileFormData);
     }
   });
 
   const handleSaveProfile = async (e: Event) => {
     e.preventDefault();
-    
+
     if (!form.password) {
       setMessage({ type: "error", text: "Debe ingresar su contraseña actual." });
       return;
     }
-    
+
     setSaving(true);
     setMessage(null);
 
     const fd = new FormData();
-    
-    // Mapear campos del Store
-    (Object.keys(form) as (keyof ProfileFormData)[]).forEach(key => {
+
+    // ── CAMPOS DE TEXTO ──────────────────────────────────────────────────
+    // Iteramos el store manualmente para tener control total sobre la serialización.
+    const textFields: (keyof ProfileFormData)[] = [
+      "username", "email", "password", "new_password_1", "new_password_2",
+      "contact_email", "public_phone", "service_address",
+      "municipality_carabobo", "phone_carabobo", "cel_phone_carabobo",
+      "state_outside", "municipality_outside_carabobo", "phone_outside_carabobo", "cel_phone_outside_carabobo",
+      "primary_specialty", "secondary_specialty", "mini_bio", "full_bio",
+    ];
+
+    for (const key of textFields) {
       const val = form[key];
-      if (val !== undefined && val !== null) {
+      if (val !== undefined && val !== null && val !== "") {
         fd.append(key, String(val));
       }
-    });
+    }
 
-    // Mapear archivos de títulos
-    const filesObj = files(); 
-    if (filesObj.title_image_one) fd.append("title_image_one", filesObj.title_image_one);
-    if (filesObj.title_image_two) fd.append("title_image_two", filesObj.title_image_two);
+    // ── BOOLEANS — Go/Fiber espera "1" / "0" para parsear *bool desde form tags ──
+    // FIX 4: Serializar booleans como "1"/"0", no como "true"/"false"
+    const boolFields: (keyof ProfileFormData)[] = [
+      "show_contact_email",
+      "show_public_phone",
+      "show_public_service_address",
+      "show_university_undergraduate",
+      "show_graduate_date",
+      "show_mention_undergraduate",
+    ];
+
+    for (const key of boolFields) {
+      const val = form[key];
+      // Enviamos siempre el valor (incluso false → "0") para que el backend pueda
+      // distinguir "no enviado" (nil) de "enviado como false" (false).
+      fd.append(key, val ? "1" : "0");
+    }
+
+    // ── ARCHIVOS DE TÍTULOS ──────────────────────────────────────────────
+    const filesObj = files();
+    if (filesObj.title_image_one)   fd.append("title_image_one",   filesObj.title_image_one);
+    if (filesObj.title_image_two)   fd.append("title_image_two",   filesObj.title_image_two);
     if (filesObj.title_image_three) fd.append("title_image_three", filesObj.title_image_three);
 
-    // Mapear avatar
+    // ── AVATAR ───────────────────────────────────────────────────────────
+    // FIX 5: El avatar se agrega como File directamente, nunca como String
     const avatar = avatarFile();
     if (avatar) fd.append("profile_picture", avatar);
 
     try {
       await runUpdateAction(fd);
       setMessage({ type: "success", text: "Perfil actualizado correctamente." });
-      setForm("password", ""); 
+      setForm("password", "");
       setForm("new_password_1", "");
       setForm("new_password_2", "");
       setAvatarFile(null);
       setFiles({});
-      refetch(); 
+      refetch();
     } catch (err: any) {
       setMessage({ type: "error", text: err.message || "Error al actualizar." });
     } finally {
@@ -155,7 +197,6 @@ export default function ProfilePage() {
     }
   };
 
-  // Handlers sociales...
   const handleAddSocial = async (e: Event) => {
     e.preventDefault();
     if (!socialForm.name || !socialForm.url) return;
@@ -163,7 +204,7 @@ export default function ProfilePage() {
     try {
       await apiPost("/psi/me/social", socialForm);
       setSocialForm({ name: "", url: "" });
-      refetch(); 
+      refetch();
     } finally {
       setSavingSocial(false);
     }
@@ -175,12 +216,6 @@ export default function ProfilePage() {
     refetch();
   };
 
-
-  createEffect(() => {
-    if (profile) {
-      console.log("Perfil cargado:", profile());
-    }
-  });
 
   return (
     <main class="bg-[#f8fafc] min-h-screen pb-24 font-sans">
@@ -201,8 +236,8 @@ export default function ProfilePage() {
 
       <div class="max-w-4xl mx-auto px-4 md:px-8 -mt-16 relative z-10 space-y-8">
         <Suspense fallback={<div class="h-96 bg-white animate-pulse rounded-[2.5rem] shadow-premium border border-gray-100" />}>
-          
-          <AvatarUploader 
+
+          <AvatarUploader
             currentAvatarUrl={profile()?.profile_picture_url}
             avatarFile={avatarFile()}
             onFileChange={setAvatarFile}
@@ -239,8 +274,7 @@ export default function ProfilePage() {
               onServiceAddressChange={(v) => setForm("service_address", v)}
             />
 
-
-            <AcademicSection 
+            <AcademicSection
               undergraduateData={{
                 university_undergraduate: profile()?.col_data?.university_undergraduate,
                 graduate_date: profile()?.col_data?.graduate_date,
@@ -257,9 +291,9 @@ export default function ProfilePage() {
               showUniversity={form.show_university_undergraduate}
               showGraduateDate={form.show_graduate_date}
               showMention={form.show_mention_undergraduate}
-              files={files()} 
-              setFiles={setFiles} 
-/>
+              files={files()}
+              setFiles={setFiles}
+            />
 
             <LocationSection
               municipalityCarabobo={form.municipality_carabobo ?? ""}

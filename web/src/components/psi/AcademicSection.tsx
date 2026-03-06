@@ -1,5 +1,4 @@
 // web/src/components/psi/AcademicSection.tsx
-// Sección de formación académica completa
 import { Show, For } from "solid-js";
 import { PostGrade, Undergraduate } from "~/types/psi";
 import { PostGradeCard } from "./PostGradeCard";
@@ -9,7 +8,7 @@ interface AcademicSectionProps {
   undergraduate?: Undergraduate;
   postGrades?: PostGrade[];
   onPostGradeClick: (postGrade: PostGrade) => void;
-  onUndergraduateClick?: () => void; // Opcional
+  onUndergraduateClick?: () => void;
 }
 
 export function AcademicSection(props: AcademicSectionProps) {
@@ -17,14 +16,14 @@ export function AcademicSection(props: AcademicSectionProps) {
   const hasPostGrades = () => props.postGrades && props.postGrades.length > 0;
 
   return (
-    <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-      <h3 class="text-xs md:text-sm font-black text-colpsi-blue uppercase tracking-widest mb-4">
-        Formación Académica
+    <div class="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-premium border border-gray-100">
+      <h3 class="text-xs md:text-sm font-black text-colpsi-blue uppercase tracking-widest mb-6 flex items-center gap-2 border-b-2 border-gray-50 pb-4">
+        <span class="text-xl">🎓</span> Formación Académica
       </h3>
       
-      {/* Pregrado */}
+      {/* PREGRADO */}
       <Show when={hasUndergraduate()}>
-        <div class="mb-6 pb-6 border-b border-gray-100 last:border-0 last:mb-0 last:pb-0">
+        <div class="mb-6">
           <UndergraduateCard 
             undergraduate={props.undergraduate!} 
             onClick={props.onUndergraduateClick}
@@ -32,23 +31,40 @@ export function AcademicSection(props: AcademicSectionProps) {
         </div>
       </Show>
 
-      {/* Postgrados */}
+      {/* POSTGRADOS (Lista Compacta) */}
       <Show when={hasPostGrades()}>
-        <div class="space-y-4">
-          <For each={props.postGrades}>
-            {(pg) => (
-              <PostGradeCard 
-                postGrade={pg} 
-                onClick={() => props.onPostGradeClick(pg)} 
-              />
-            )}
-          </For>
+        <div class="space-y-3 relative">
+          <h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 pl-1">
+            Especializaciones y Títulos Adicionales
+          </h4>
+          
+          {/* CONTENEDOR CON SCROLL OPTIMIZADO */}
+          {/* Al ser tarjetas más delgadas, 350px es suficiente para ver 4-5 a la vez */}
+          <div class="max-h-[350px] overflow-y-auto pr-1 pb-1 space-y-2 
+                      scrollbar-thin scrollbar-thumb-colpsi-blue/10 hover:scrollbar-thumb-colpsi-blue/30 transition-colors">
+            <For each={props.postGrades}>
+              {(pg) => (
+                <PostGradeCard 
+                  postGrade={pg} 
+                  onClick={() => props.onPostGradeClick(pg)} 
+                />
+              )}
+            </For>
+          </div>
+          
+          {/* Sombra inferior indicadora de scroll (Aparece solo si hay muchos) */}
+          <Show when={props.postGrades!.length > 4}>
+             <div class="absolute bottom-0 left-0 w-full h-8 bg-linear-to-t from-white to-transparent pointer-events-none rounded-b-2xl"></div>
+          </Show>
         </div>
       </Show>
 
-      {/* Sin información */}
+      {/* ESTADO VACÍO */}
       <Show when={!hasUndergraduate() && !hasPostGrades()}>
-        <p class="text-gray-400 italic text-sm">Información académica no disponible</p>
+        <div class="bg-gray-50 p-8 rounded-3xl text-center border-2 border-dashed border-gray-200">
+           <span class="text-3xl grayscale opacity-50 mb-2 block">🎓</span>
+           <p class="text-gray-400 text-sm font-bold">Sin información académica pública</p>
+        </div>
       </Show>
     </div>
   );

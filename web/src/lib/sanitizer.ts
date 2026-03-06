@@ -22,7 +22,7 @@ export function sanitizeText(val: string): string {
   if (!val) return "";
   // Regex: Permite letras (con acentos), números, espacios, puntos, comas y guiones.
   // Elimina: < > ; ' " -- (comentarios SQL) { } [ ]
-  return val.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s,-]/g, "").trim();
+  return val.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s,.¿?¡!-]/g, "").trim();
 }
 
 /**

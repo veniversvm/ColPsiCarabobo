@@ -144,6 +144,7 @@ export function RichTextEditor(props: RichTextEditorProps) {
     }`;
 
   const Sep = () => <div class="w-px h-6 bg-gray-200 mx-1 self-center" />;
+  
 
   return (
     <div class="space-y-2 font-sans">

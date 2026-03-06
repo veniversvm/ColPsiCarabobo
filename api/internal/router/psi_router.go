@@ -50,6 +50,10 @@ func SetupPsiRoutes(router fiber.Router, db *gorm.DB, s3Client *s3.S3Client) {
 	// // Añadir un postgrado a mi cuenta
 	meGroup.Patch("/postgrades/:id", h.UpdatePostGrade) // Actualizar un postgrado existente
 
+	meGroup.Post("/social", h.AddSocialNetwork)
+	meGroup.Patch("/social/:id", h.UpdateSocialNetwork)
+	meGroup.Delete("/social/:id", h.DeleteSocialNetwork)
+
 	// =========================================================================
 	// ZONA 3: PÚBLICO (Sin autenticación)
 	// =========================================================================
@@ -66,7 +70,4 @@ func SetupPsiRoutes(router fiber.Router, db *gorm.DB, s3Client *s3.S3Client) {
 	// usamos el fpv para la busqueda
 	psiGroup.Get("/:id", h.GetPublicProfile)
 
-	meGroup.Post("/social", h.AddSocialNetwork)
-	meGroup.Patch("/social/:id", h.UpdateSocialNetwork)
-	meGroup.Delete("/social/:id", h.DeleteSocialNetwork)
 }

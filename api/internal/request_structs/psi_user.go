@@ -26,6 +26,26 @@ type PsiLoginRequest struct {
 // Aplica el principio de "Menor Privilegio": omite campos sensibles (CI, FPV, Solvencia)
 // para que el usuario no pueda alterarlos mediante inyección de JSON.
 // Nota: Se usan punteros (*tipo) para soportar semántica PATCH (actualizar solo lo enviado).
+// api/internal/delivery/http/request_structs/psi_update_self.go
+//
+// FIX: Los campos de privacidad (*bool) no se parsean correctamente desde
+// multipart/form-data con el BodyParser de Fiber cuando llegan como "true"/"false".
+//
+// Solución: Cambiar los *bool a *string en el struct de request y hacer la
+// conversión explícita en el handler o en un método helper.
+// Esto es lo más robusto para multipart forms.
+//
+// BoolFromForm convierte los valores de formulario "1"/"0"/"true"/"false" a *bool.
+// Retorna nil si el valor está vacío (campo no enviado → semántica PATCH).
+func BoolFromForm(s string) *bool {
+	if s == "" {
+		return nil
+	}
+	v := s == "1" || s == "true" || s == "on"
+	return &v
+}
+
+// PsiUserUpdateRequestSelf define el contrato para que un psicólogo edite su propio perfil.
 type PsiUserUpdateRequestSelf struct {
 	// --- Datos de Usuario Básicos ---
 	Username     *string `json:"username,omitempty" form:"username"`
@@ -35,12 +55,14 @@ type PsiUserUpdateRequestSelf struct {
 	Password     string  `json:"password,omitempty" form:"password" validate:"required"`
 
 	// --- Datos de Contacto y Privacidad ---
-	ContactEmail             *string `json:"contact_email" form:"contact_email"`
-	ShowContactEmail         *bool   `json:"show_contact_email" form:"show_contact_email"`
-	PublicPhone              *string `json:"public_phone" form:"public_phone"`
-	ShowPublicPhone          *bool   `json:"show_public_phone" form:"show_public_phone"`
-	ServiceAddress           *string `json:"service_address" form:"service_address"`
-	ShowPublicServiceAddress *bool   `json:"show_public_service_address" form:"show_public_service_address"`
+	ContactEmail   *string `json:"contact_email" form:"contact_email"`
+	PublicPhone    *string `json:"public_phone" form:"public_phone"`
+	ServiceAddress *string `json:"service_address" form:"service_address"`
+
+	// FIX: *bool → string para multipart. Usar BoolFromForm() en el handler.
+	ShowContactEmailRaw         string `form:"show_contact_email"`
+	ShowPublicPhoneRaw          string `form:"show_public_phone"`
+	ShowPublicServiceAddressRaw string `form:"show_public_service_address"`
 
 	// --- Ubicación Geográfica ---
 	MunicipalityCarabobo        *string `json:"municipality_carabobo" form:"municipality_carabobo"`
@@ -57,10 +79,30 @@ type PsiUserUpdateRequestSelf struct {
 	MiniBio            *string `json:"mini_bio" form:"mini_bio"`
 	FullBio            *string `json:"full_bio" form:"full_bio"`
 
-	// --- Visibilidad de Datos Colegiales (Pregrado) ---
-	ShowUniversityUndergraduate *bool `json:"show_university_undergraduate" form:"show_university_undergraduate"`
-	ShowGraduateDate            *bool `json:"show_graduate_date" form:"show_graduate_date"`
-	ShowMentionUndergraduate    *bool `json:"show_mention_undergraduate" form:"show_mention_undergraduate"`
+	// FIX: igual que arriba — string para multipart
+	ShowUniversityUndergraduateRaw string `form:"show_university_undergraduate"`
+	ShowGraduateDateRaw            string `form:"show_graduate_date"`
+	ShowMentionUndergraduateRaw    string `form:"show_mention_undergraduate"`
+}
+
+// Getters que devuelven *bool — úsalos en el Service en lugar de los campos directos.
+func (r *PsiUserUpdateRequestSelf) ShowContactEmail() *bool {
+	return BoolFromForm(r.ShowContactEmailRaw)
+}
+func (r *PsiUserUpdateRequestSelf) ShowPublicPhone() *bool {
+	return BoolFromForm(r.ShowPublicPhoneRaw)
+}
+func (r *PsiUserUpdateRequestSelf) ShowPublicServiceAddress() *bool {
+	return BoolFromForm(r.ShowPublicServiceAddressRaw)
+}
+func (r *PsiUserUpdateRequestSelf) ShowUniversityUndergraduate() *bool {
+	return BoolFromForm(r.ShowUniversityUndergraduateRaw)
+}
+func (r *PsiUserUpdateRequestSelf) ShowGraduateDate() *bool {
+	return BoolFromForm(r.ShowGraduateDateRaw)
+}
+func (r *PsiUserUpdateRequestSelf) ShowMentionUndergraduate() *bool {
+	return BoolFromForm(r.ShowMentionUndergraduateRaw)
 }
 
 // =========================================================================
@@ -104,16 +146,16 @@ type UndergraduateDTO struct {
 // en el JSON si el usuario ha autorizado su visibilidad o si contienen datos.
 type PsiFullProfileDTO struct {
 	// Identidad Pública (Siempre visible)
-	ID             uuid.UUID `json:"id"`
-	FirstName      string    `json:"first_name"`
-	SecondName     string    `json:"second_name,omitempty"`
-	LastName       string    `json:"last_name"`
-	SecondLastName string    `json:"second_last_name,omitempty"`
-	FPV            int       `json:"fpv"`
-	CI             int       `json:"ci"`
-	Gender         string    `json:"gender"`
-	ProfilePicture string    `json:"profile_picture"`
-	Solvent        bool      `json:"solvent"`
+	// ID             uuid.UUID `json:"id"`
+	FirstName      string `json:"first_name"`
+	SecondName     string `json:"second_name,omitempty"`
+	LastName       string `json:"last_name"`
+	SecondLastName string `json:"second_last_name,omitempty"`
+	FPV            int    `json:"fpv"`
+	CI             int    `json:"ci"`
+	Gender         string `json:"gender"`
+	ProfilePicture string `json:"profile_picture"`
+	Solvent        bool   `json:"solvent"`
 
 	// Contacto (Visibilidad Condicional)
 	Email   string `json:"email,omitempty"`
@@ -128,8 +170,9 @@ type PsiFullProfileDTO struct {
 	} `json:"location"`
 
 	// Historial Académico y Profesional
-	Specialties []string `json:"specialties"`
-	MiniBio     string   `json:"mini_bio"`
+	Specialties    []string `json:"specialties"`
+	MiniBio        string   `json:"mini_bio"`
+	FullBioContent string   `json:"full_bio_content,omitempty"`
 
 	// Datos de Pregrado (Condicional)
 	Undergraduate UndergraduateDTO `json:"undergraduate"`
