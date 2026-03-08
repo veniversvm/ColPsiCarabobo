@@ -1,3 +1,4 @@
+// web/src/components/ui/RichTextEditor.tsx
 import { onMount, onCleanup, Show, createSignal, createEffect } from "solid-js";
 import { Editor } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";

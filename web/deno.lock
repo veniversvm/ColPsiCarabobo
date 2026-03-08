@@ -1,6 +1,7 @@
 {
   "version": "5",
   "specifiers": {
+    "npm:@solidjs/meta@~0.29.4": "0.29.4_solid-js@1.9.11__seroval@1.5.0",
     "npm:@solidjs/router@0.15": "0.15.4_solid-js@1.9.11__seroval@1.5.0",
     "npm:@solidjs/start@^1.1.0": "1.3.2_vinxi@0.5.11__@babel+core@7.29.0_seroval@1.5.0_solid-js@1.9.11__seroval@1.5.0",
     "npm:@tailwindcss/typography@~0.5.19": "0.5.19_tailwindcss@4.2.1",
@@ -927,6 +928,12 @@
     },
     "@sindresorhus/merge-streams@4.0.0": {
       "integrity": "sha512-tlqY9xq5ukxTUZBmoOp+m61cqwQD5pHJtFY3Mn8CA8ps6yghLH/Hw8UPdqg4OLmFW3IFlcXnQNmo/dh8HzXYIQ=="
+    },
+    "@solidjs/meta@0.29.4_solid-js@1.9.11__seroval@1.5.0": {
+      "integrity": "sha512-zdIWBGpR9zGx1p1bzIPqF5Gs+Ks/BH8R6fWhmUa/dcK1L2rUC8BAcZJzNRYBQv74kScf1TSOs0EY//Vd/I0V8g==",
+      "dependencies": [
+        "solid-js"
+      ]
     },
     "@solidjs/router@0.15.4_solid-js@1.9.11__seroval@1.5.0": {
       "integrity": "sha512-WOpgg9a9T638cR+5FGbFi/IV4l2FpmBs1GpIMSPa0Ce9vyJN7Wts+X2PqMf9IYn0zUj2MlSJtm1gp7/HI/n5TQ==",
@@ -4125,6 +4132,7 @@
   "workspace": {
     "packageJson": {
       "dependencies": [
+        "npm:@solidjs/meta@~0.29.4",
         "npm:@solidjs/router@0.15",
         "npm:@solidjs/start@^1.1.0",
         "npm:@tailwindcss/typography@~0.5.19",

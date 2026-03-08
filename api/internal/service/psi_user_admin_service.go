@@ -48,6 +48,7 @@ func (s *PsiService) GetPsiByIDAdmin(ctx context.Context, admin *domain.UserAdmi
 // CreatePsiByAdmin orquestador de la creación manual de un nuevo colegiado.
 // Realiza el hashing de credenciales, el parseo de fechas de registro y la vinculación
 // transaccional entre el perfil de usuario y sus datos de grado universitario.
+// CreatePsiByAdmin orquestador de la creación manual de un nuevo colegiado.
 func (s *PsiService) CreatePsiByAdmin(ctx context.Context, admin *domain.UserAdmin, req request_structs.CreatePsiAdminRequest) error {
 	// 1. Validar Permisos
 	if !admin.CanCreatePsi && !admin.Sudo {
@@ -55,49 +56,51 @@ func (s *PsiService) CreatePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 	}
 
 	// 2. Hash de Password
-	hashed, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return errors.New("error al procesar seguridad")
+	}
 
-	// 3. Parsear fechas (Helper de validación)
+	// 3. Parsear fechas
 	bornDate, _ := time.Parse("2006-01-02", req.BornDate)
 	gradDate, _ := time.Parse("2006-01-02", req.GraduateDate)
 	solvDate, _ := time.Parse("2006-01-02", req.DateOfLastSolvency)
 	regDate, _ := time.Parse("2006-01-02", req.RegisterTitleDate)
 
+	// 4. Mapeo de Identidades (UUIDs frescos)
 	psiID := uuid.New()
+	colDataID := uuid.New()
 
-	// 4. Mapeo Modelo Principal
 	psi := &domain.PsiUserModel{
-		ID:                 psiID,
-		Username:           req.Username,
-		Email:              req.Email,
-		Password:           string(hashed),
-		FirstName:          req.FirstName,
-		SecondName:         req.SecondName,
-		LastName:           req.LastName,
-		SecondLastName:     req.SecondLastName,
-		CI:                 req.CI,
-		FPV:                req.FPV,
-		BornDate:           bornDate,
-		Genre:              req.Genre,
-		Nationality:        req.Nationality,
-		Solvent:            req.Solvent,
-		ProofOfLife:        req.ProofOfLife,
-		IsActive:           req.IsActive,
-		ContactEmail:       req.ContactEmail,
-		PublicPhone:        req.PublicPhone,
-		ServiceAddress:     req.ServiceAddress,
-		PrimarySpecialty:   req.PrimarySpecialty,
-		SecondarySpecialty: req.SecondarySpecialty,
-		Key:                uuid.New().String(),
+		ID:             psiID,
+		Username:       req.Username,
+		Email:          req.Email,
+		Password:       string(hashed),
+		FirstName:      req.FirstName,
+		SecondName:     req.SecondName,
+		LastName:       req.LastName,
+		SecondLastName: req.SecondLastName,
+		CI:             req.CI,
+		FPV:            req.FPV,
+		BornDate:       bornDate,
+		Genre:          req.Genre,
+		Nationality:    req.Nationality,
+		Solvent:        req.Solvent,
+		ProofOfLife:    req.ProofOfLife,
+		IsActive:       req.IsActive,
+		ContactEmail:   req.ContactEmail,
+		PublicPhone:    req.PublicPhone,
+		ServiceAddress: req.ServiceAddress,
+		Key:            uuid.New().String(),
 		AuditModel: domain.AuditModel{
 			CreateBy: admin.Username, CreateById: &admin.ID,
 			UpdateBy: admin.Username, UpdateById: &admin.ID,
 		},
 	}
 
-	// 5. Mapeo ColData
 	colData := &domain.PsiUserColData{
-		PsiUserModelID:          psiID,
+		ID:                      colDataID,
+		PsiUserModelID:          psiID, // Vinculación obligatoria
 		UniversityUndergraduate: req.UniversityUndergraduate,
 		GraduateDate:            gradDate,
 		MentionUndergraduate:    req.MentionUndergraduate,
@@ -120,19 +123,24 @@ func (s *PsiService) CreatePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 		},
 	}
 
-	// 6. Notificación de Bienvenida (No bloqueante)
+	// 5. PERSISTENCIA (Una sola vez, retornando el error mapeado)
+	err = s.repo.CreateWithColData(ctx, psi, colData)
+	if err != nil {
+		return MapDBError(err)
+	}
+
+	// 6. NOTIFICACIÓN (Solo ocurre si la DB fue exitosa)
 	mailData := map[string]interface{}{
 		"Name":     psi.Username,
 		"Email":    psi.Email,
 		"Password": req.Password,
 	}
 
-	// Invocación dinámica y no-bloqueante
-	if err := s.mailService.SendEmail(psi.Email, "Bienvenido a la plataforma Colegio de Psicólogos", "welcome_psi", mailData); err != nil {
-		log.Printf("⚠️ Error al preparar el correo (pero el psi-user se creó): %v", err)
+	if err := s.mailService.SendEmail(psi.Email, "Bienvenido", "welcome_psi", mailData); err != nil {
+		log.Printf("⚠️ Error al enviar correo: %v", err)
 	}
 
-	return s.repo.CreateWithColData(ctx, psi, colData)
+	return nil // Fin exitoso: solo un return nil
 }
 
 // =========================================================================

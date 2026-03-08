@@ -1,3 +1,4 @@
+// web/src/lib/api.ts
 import Cookies from "js-cookie";
 import { isServer } from "solid-js/web";
 
@@ -20,6 +21,7 @@ export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): 
   // --- 1. Preparación (Fuera del try/catch de red) ---
   const url = `${API_BASE_URL}${endpoint}`;
   const headers = new Headers(options.headers || {});
+  console.log(url)
   
   if (!headers.has("Content-Type") && !(options.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
@@ -41,7 +43,11 @@ export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): 
 
   // --- 2. Ejecución y Captura de Fallos de Conexión ---
   try {
-    const response = await fetch(url, { ...options, headers });
+    const response = await fetch(url, { 
+      ...options, 
+      headers, 
+      // credentials: "include" 
+    });
 
     // Manejo de respuestas no exitosas (400, 401, 404, 500)
     if (!response.ok) {

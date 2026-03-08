@@ -2,6 +2,7 @@
 package handler
 
 import (
+	"log"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -42,6 +43,14 @@ func (h *PsiHandler) GetPsiByIDAdmin(c *fiber.Ctx) error {
 		}
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": err.Error()})
 	}
+
+	bio, err := h.service.GetPsiBioByID(c.UserContext(), profile.BioTextID)
+	if err != nil {
+		log.Printf("---- error al recuperar la BIO ----\n")
+		log.Printf("%v\n", err)
+	}
+
+	profile.FullBio.Content = bio
 
 	// 4. Retornar JSON (Password y Key se ocultan automáticamente por el json:"-" del struct)
 	return c.JSON(profile)
