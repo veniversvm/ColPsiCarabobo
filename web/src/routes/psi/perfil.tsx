@@ -77,6 +77,7 @@ const updateProfileServer = action(async (formData: FormData) => {
 });
 export default function ProfilePage() {
   const [profile, { refetch }] = createResource(() => apiGet<any>("/psi/me"));
+  const [specialties] = createResource(() => apiGet<any[]>("/specialties"));
 
   const [form, setForm] = createStore<ProfileFormData>({} as ProfileFormData);
   const [saving, setSaving] = createSignal(false);
@@ -317,6 +318,7 @@ export default function ProfilePage() {
               secondarySpecialty={form.secondary_specialty ?? ""}
               miniBio={form.mini_bio ?? ""}
               fullBio={form.full_bio ?? ""}
+              specialties={specialties()}           // ← nueva prop
               onFullBioChange={(v) => setForm("full_bio", v)}
               onPrimarySpecialtyChange={(v) => setForm("primary_specialty", v)}
               onSecondarySpecialtyChange={(v) => setForm("secondary_specialty", v)}

@@ -1,11 +1,16 @@
 // web/src/components/directory/SearchHeader.tsx
-import { For, Suspense } from "solid-js";
+import { For, Show } from "solid-js";
+
+interface Specialty {
+  id: number;
+  name: string;
+}
 
 interface SearchHeaderProps {
   query: string;
   specialty: string;
   location: string;
-  specialties: any[] | undefined;
+  specialties: Specialty[] | undefined;
   onQueryChange: (value: string) => void;
   onSpecialtyChange: (value: string) => void;
   onLocationChange: (value: string) => void;
@@ -19,10 +24,11 @@ export function SearchHeader(props: SearchHeaderProps) {
         <h1 class="text-white text-3xl md:text-5xl font-black tracking-tighter italic">
           DIRECTORIO PROFESIONAL
         </h1>
-        
+
         <form onSubmit={props.onSearch} class="space-y-4">
           {/* Fila 1: Input de texto y especialidad */}
           <div class="flex flex-col md:flex-row gap-3 max-w-4xl mx-auto">
+
             {/* Input de texto principal */}
             <div class="relative flex-1">
               <input
@@ -34,24 +40,31 @@ export function SearchHeader(props: SearchHeaderProps) {
               />
               <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
             </div>
-            
+
             {/* Select de Especialidad */}
-            <select 
+            <select
               value={props.specialty}
-              class="md:w-64 bg-white rounded-2xl py-4 px-6 shadow-xl outline-none focus:ring-4 focus:ring-colpsi-yellow/50 transition-all text-colpsi-text font-bold appearance-none cursor-pointer"
+              disabled={!props.specialties}
+              class="md:w-64 bg-white rounded-2xl py-4 px-6 shadow-xl outline-none focus:ring-4 focus:ring-colpsi-yellow/50 transition-all text-colpsi-text font-bold appearance-none cursor-pointer disabled:opacity-60 disabled:cursor-wait"
               onChange={(e) => props.onSpecialtyChange(e.currentTarget.value)}
             >
-              <option value="">Todas las áreas</option>
-              <Suspense fallback={<option>Cargando...</option>}>
+              <Show
+                when={props.specialties}
+                fallback={<option value="">Cargando especialidades...</option>}
+              >
+                <option value="">Todas las áreas</option>
                 <For each={props.specialties}>
-                  {(item) => <option value={item.name}>{item.name}</option>}
+                  {(item) => (
+                    <option value={String(item.id)}>{item.name}</option>
+                  )}
                 </For>
-              </Suspense>
+              </Show>
             </select>
           </div>
 
           {/* Fila 2: Input de ubicación y botón */}
           <div class="flex flex-col md:flex-row gap-3 max-w-4xl mx-auto">
+
             {/* Input de ubicación */}
             <div class="relative flex-1">
               <input
@@ -65,7 +78,7 @@ export function SearchHeader(props: SearchHeaderProps) {
             </div>
 
             {/* BOTÓN DE ACCIÓN */}
-            <button 
+            <button
               type="submit"
               class="md:w-48 bg-colpsi-yellow text-colpsi-blue px-8 py-4 rounded-2xl font-black shadow-lg shadow-yellow-500/20 hover:scale-105 active:scale-95 transition-all whitespace-nowrap flex items-center justify-center gap-2"
             >
@@ -74,7 +87,7 @@ export function SearchHeader(props: SearchHeaderProps) {
             </button>
           </div>
 
-          {/* Sugerencia de búsqueda opcional */}
+          {/* Sugerencia */}
           <p class="text-blue-200 text-xs mt-4 text-left md:text-center">
             💡 Puedes buscar por nombre, número de cédula, FPV, especialidad o ubicación
           </p>

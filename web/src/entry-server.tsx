@@ -1,3 +1,5 @@
+// web/src/entry-server.tsx
+
 // @refresh reload
 import { createHandler, StartServer } from "@solidjs/start/server";
 

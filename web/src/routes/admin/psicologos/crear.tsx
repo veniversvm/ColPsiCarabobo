@@ -48,6 +48,8 @@ export default function CreatePsychologistPage() {
 
   const handleSubmit = async (e: Event) => {
     e.preventDefault();
+
+    if (saving()) return; // 👈 Guarda adicional contra doble submit
     
     // 1. Validaciones Críticas en Frontend
     if (!isStrongPassword(form.password)) {
@@ -309,15 +311,16 @@ export default function CreatePsychologistPage() {
         </section>
 
         {/* BOTÓN FLOTANTE */}
-        <div class="sticky bottom-6 z-50 flex justify-end">
-          <button 
-            type="submit" 
-            disabled={saving()}
-            class="bg-colpsi-blue text-white px-10 py-4 rounded-2xl font-black shadow-2xl hover:scale-105 active:scale-95 transition-all disabled:opacity-70 flex items-center gap-3 border-2 border-white"
-          >
-            {saving() ? "PROCESANDO EN SERVIDOR..." : "✔️ REGISTRAR EXPEDIENTE"}
-          </button>
-        </div>
+        <button 
+          type="submit" 
+          disabled={saving()}
+          class="bg-colpsi-blue text-white px-10 py-4 rounded-2xl font-black shadow-2xl hover:scale-105 active:scale-95 transition-all disabled:opacity-70 disabled:pointer-events-none disabled:cursor-not-allowed flex items-center gap-3 border-2 border-white"  // 👈
+        >
+          {saving() 
+            ? <><span class="animate-spin">⏳</span> PROCESANDO...</> 
+            : "✔️ REGISTRAR EXPEDIENTE"
+          }
+        </button>
 
       </form>
     </div>

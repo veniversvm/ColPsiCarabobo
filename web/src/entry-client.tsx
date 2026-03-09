@@ -1,3 +1,5 @@
+// web/src/entry-client.tsx
+
 // @refresh reload
 import { mount, StartClient } from "@solidjs/start/client";
 

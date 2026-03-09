@@ -1,7 +1,7 @@
 // routes/admin/noticias/index.tsx
 import { createResource, createSignal, For, Show, Suspense, ErrorBoundary } from "solid-js";
 import { A, action, useAction } from "@solidjs/router";
-import { apiGet } from "~/lib/api";
+import { apiDelete, apiGet, apiPatch } from "~/lib/api";
 
 // ── Tipos locales ─────────────────────────────────────────────────────────────
 interface Post {
@@ -19,14 +19,12 @@ interface Post {
 // ── Acción de servidor: toggle is_active ──────────────────────────────────────
 const togglePostActive = action(async (params: { id: string; is_active: boolean }) => {
   "use server";
-  const { apiPatch } = await import("~/lib/api");
   return await apiPatch(`/admin/posts/${params.id}`, { is_active: params.is_active });
 });
 
 // ── Acción de servidor: borrar post ──────────────────────────────────────────
 const deletePost = action(async (id: string) => {
   "use server";
-  const { apiDelete } = await import("~/lib/api");
   return await apiDelete(`/admin/posts/${id}`);
 });
 
