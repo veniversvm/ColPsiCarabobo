@@ -10,7 +10,6 @@ interface ProfileHeaderProps {
   fpv: number;
   ci: number;
   profilePicture?: string;
-  solvent: boolean;
   specialties: string[];
 }
 

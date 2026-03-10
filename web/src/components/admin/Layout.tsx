@@ -1,7 +1,4 @@
-
-
-//web/src/routes/admin/index.tsx
-
+// web/src/components/admin/Layout.tsx
 import { JSX, createSignal, Show, createEffect } from "solid-js";
 import { A, useNavigate } from "@solidjs/router";
 import { useAuth } from "~/lib/auth";
@@ -10,11 +7,7 @@ export default function AdminLayout(props: { children: JSX.Element }) {
   const { role, isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
   
-  // Estado para el menú móvil (Overlay)
   const [isMobileOpen, setIsMobileOpen] = createSignal(false);
-  
-  // Estado para el menú de escritorio (Colapsado vs Expandido)
-  // Iniciamos expandido por defecto
   const [isCollapsed, setIsCollapsed] = createSignal(false);
 
   // PROTECCIÓN DE RUTA
@@ -36,9 +29,7 @@ export default function AdminLayout(props: { children: JSX.Element }) {
     <Show when={isAuthenticated() && role() === "admin"}>
       <div class="min-h-screen bg-[#f8fafc] flex font-sans overflow-hidden">
         
-        {/* ================================================================= */}
-        {/* SIDEBAR DE ESCRITORIO (Colapsable)                                */}
-        {/* ================================================================= */}
+        {/* SIDEBAR DE ESCRITORIO */}
         <aside 
           class={`hidden md:flex flex-col bg-colpsi-blue text-white shadow-2xl z-20 transition-all duration-300 ease-in-out relative ${
             isCollapsed() ? "w-20" : "w-72"
@@ -73,7 +64,7 @@ export default function AdminLayout(props: { children: JSX.Element }) {
               <A
                 href={item.path}
                 end={item.path === "/admin"}
-                title={isCollapsed() ? item.title : ""} // Tooltip nativo cuando está colapsado
+                title={isCollapsed() ? item.title : ""}
                 class="flex items-center px-3 py-3.5 rounded-xl text-blue-100 hover:bg-blue-800 hover:text-white transition-all group overflow-hidden"
                 activeClass="bg-colpsi-yellow !text-colpsi-blue font-black shadow-lg"
               >
@@ -89,7 +80,7 @@ export default function AdminLayout(props: { children: JSX.Element }) {
             ))}
           </nav>
 
-          {/* Perfil y Logout (Bottom) */}
+          {/* Perfil y Logout */}
           <div class="p-4 border-t border-blue-800/50 shrink-0">
             <Show 
               when={!isCollapsed()} 
@@ -120,9 +111,7 @@ export default function AdminLayout(props: { children: JSX.Element }) {
           </div>
         </aside>
 
-        {/* ================================================================= */}
-        {/* HEADER MÓVIL Y OVERLAY (Oculto en Desktop)                        */}
-        {/* ================================================================= */}
+        {/* HEADER MÓVIL */}
         <div class="md:hidden fixed top-0 left-0 right-0 h-16 bg-colpsi-blue text-white flex items-center justify-between px-4 z-50 shadow-lg">
           <div class="flex items-center gap-2">
              <span class="text-colpsi-yellow text-2xl font-black">Ψ</span>
@@ -133,6 +122,7 @@ export default function AdminLayout(props: { children: JSX.Element }) {
           </button>
         </div>
 
+        {/* MENÚ MÓVIL */}
         <Show when={isMobileOpen()}>
           <div class="md:hidden fixed inset-0 z-40 bg-colpsi-blue flex flex-col pt-16 animate-in slide-in-from-top-10 duration-200">
             <nav class="p-6 space-y-3 flex-grow overflow-y-auto">
@@ -166,12 +156,8 @@ export default function AdminLayout(props: { children: JSX.Element }) {
           </div>
         </Show>
 
-        {/* ================================================================= */}
-        {/* ÁREA DE CONTENIDO PRINCIPAL                                       */}
-        {/* ================================================================= */}
+        {/* ÁREA DE CONTENIDO */}
         <div class="flex-grow flex flex-col h-screen pt-16 md:pt-0 overflow-y-auto relative">
-          
-          {/* Header Superior Informativo (Desktop) */}
           <header class="hidden md:flex h-20 items-center justify-end px-10 bg-white border-b border-gray-100 shrink-0 sticky top-0 z-10 shadow-sm">
              <div class="flex items-center gap-4">
                 <span class="relative flex h-3 w-3">

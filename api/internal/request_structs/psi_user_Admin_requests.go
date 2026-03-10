@@ -11,76 +11,92 @@ import "github.com/google/uuid"
 // OPERACIONES ADMINISTRATIVAS (ADMIN ONLY)
 // =========================================================================
 
-// CreatePsiAdminRequest define el payload esperado cuando un Administrador registra
+// CreatePsiAdminRequest define el payload cuando un Administrador registra
 // manualmente a un nuevo psicólogo en el sistema.
-// Nota de Privacidad: Los campos booleanos de "Show..." (visibilidad pública) se omiten
-// deliberadamente aquí para que el sistema los inicialice en 'false' por defecto,
-// forzando al usuario a optar por mostrarlos (Opt-In).
+//
+// Nota de Privacidad: Los campos booleanos Show* (visibilidad pública) se omiten
+// deliberadamente para que el sistema los inicialice en 'false' por defecto,
+// forzando al psicólogo a optar activamente por exponerlos (Opt-In Privacy).
 type CreatePsiAdminRequest struct {
-	// --- Auth & Identidad ---
-	Username       string `json:"username" validate:"required"`
-	Email          string `json:"email" validate:"required,email"`
-	Password       string `json:"password" validate:"required,min=8"`
+
+	// ── Auth & Credenciales ───────────────────────────────────────────────
+	Username string `json:"username" validate:"required"`
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,min=8"`
+
+	// ── Identidad Legal ───────────────────────────────────────────────────
 	FirstName      string `json:"first_name" validate:"required"`
 	SecondName     string `json:"second_name"`
 	LastName       string `json:"last_name" validate:"required"`
-	SecondLastName string `json:"second_last_name" validate:"required"`
+	SecondLastName string `json:"second_last_name"`
+	CI             int    `json:"ci" validate:"required"`
+	FPV            int    `json:"fpv" validate:"required"` // Número de Federación de Psicólogos de Venezuela
+	Nationality    string `json:"nationality" validate:"required,oneof=V E"`
+	BornDate       string `json:"born_date" example:"1990-01-01" validate:"required,datetime=2006-01-02"`
+	Genre          string `json:"genre" validate:"required,oneof=M F"`
 
-	// --- Datos Filiatorios y Legales ---
-	CI          int    `json:"ci" validate:"required"`
-	BornDate    string `json:"born_date" example:"1990-01-01" validate:"required,datetime=2006-01-02"`
-	Genre       string `json:"genre" validate:"required,oneof=M F"`
-	Nationality string `json:"nationality" validate:"required,oneof=V E"`
-
-	// FPV es el Número de Federación de Psicólogos de Venezuela, obligatorio para registro administrativo.
-	FPV int `json:"fpv" validate:"required"`
-
-	// --- Estatus Administrativo (Exclusivo de Admins) ---
+	// ── Estatus Administrativo ────────────────────────────────────────────
+	// Campos exclusivos del admin — el psicólogo no puede auto-asignarse estos valores.
 	Solvent     bool `json:"solvent"`
 	ProofOfLife bool `json:"proof_of_life"`
 	IsActive    bool `json:"is_active"`
 
-	// --- Datos de Contacto ---
+	// ── Contacto Público ──────────────────────────────────────────────────
 	ContactEmail   string `json:"contact_email"`
 	PublicPhone    string `json:"public_phone"`
 	ServiceAddress string `json:"service_address"`
 
-	// --- Ubicación (Fuera del estado Carabobo) ---
-	StateOutside                string `json:"state_outside"`
-	MunicipalityOutSideCarabobo string `json:"municipality_outside_carabobo"`
-	PhoneOutSideCarabobo        string `json:"phone_outside_carabobo"`
-	CelPhoneOutSideCarabobo     string `json:"cel_phone_outside_carabobo"`
+	// ── Ubicación: Carabobo ───────────────────────────────────────────────
+	// Para miembros con consulta o residencia dentro del estado.
+	// MunicipalityCarabobo debe validarse contra el catálogo de municipios de Carabobo.
+	MunicipalityCarabobo string `json:"municipality_carabobo"`
+	PhoneCarabobo        string `json:"phone_carabobo"`
+	CelPhoneCarabobo     string `json:"cel_phone_carabobo"`
 
-	// --- Perfil Profesional ---
+	// ── Ubicación: Fuera de Carabobo (Venezuela) ─────────────────────────
+	// Para miembros en otros estados venezolanos.
+	// StateOutside debe validarse contra el catálogo de estados, excluyendo Carabobo.
+	StateOutside                  string `json:"state_outside"`
+	MunicipalityOutSideCarabobo   string `json:"municipality_outside_carabobo"`
+	PhoneOutSideCarabobo          string `json:"phone_outside_carabobo"`
+	CelPhoneOutSideCarabobo       string `json:"cel_phone_outside_carabobo"`
+	ServiceAddressOutSideCarabobo string `json:"service_address_outside_carabobo"`
+
+	// ── Ubicación: Fuera de Venezuela ─────────────────────────────────────
+	// Para miembros en el exterior. Country debe usar código ISO 3166-1 alpha-2.
+	Country                        string `json:"country"`
+	PhoneOutSideVenezuela          string `json:"phone_outside_venezuela"`
+	ServiceAddressOutSideVenezuela string `json:"service_address_outside_venezuela"`
+
+	// ── Perfil Profesional ────────────────────────────────────────────────
+	// Las especialidades deben corresponder a entradas activas en PsiSpecialtyModel.
+	// La biografía (MiniBio/FullBio) se delega al psicólogo para su autogestión.
 	PrimarySpecialty   string `json:"primary_specialty"`
 	SecondarySpecialty string `json:"secondary_specialty"`
-	// Nota: La biografía (MiniBio/FullBio) se delega al psicólogo en su autogestión.
 
-	// --- DATOS COLEGIALES (PsiUserColData) ---
-
-	// Información de Pregrado
+	// ── Datos Colegiales: Pregrado ────────────────────────────────────────
 	UniversityUndergraduate string `json:"university_undergraduate"`
 	GraduateDate            string `json:"graduate_date"`
 	MentionUndergraduate    string `json:"mention_undergraduate"`
 
-	// Registro de Título Estatal
-	RegisterNumber     int    `json:"register_number"`
+	// ── Datos Colegiales: Registro Legal del Título ───────────────────────
 	RegisterTitleState string `json:"register_title_state"`
 	RegisterTitleDate  string `json:"register_title_date"`
+	RegisterNumber     int    `json:"register_number"`
 	RegisterFolio      string `json:"register_folio"`
 	RegisterTome       string `json:"register_tome"`
 
-	// Banderas Profesionales / Gremiales
-	GuildDirector       bool `json:"guild_director"`
-	SixtyFiveOrPlus     bool `json:"sixty_five_or_plus"`
-	GuildCollaborator   bool `json:"guild_collaborator"`
-	PublicEmployee      bool `json:"public_employee"`
-	UniversityProfessor bool `json:"university_professor"`
+	// ── Datos Colegiales: Flags Gremiales ────────────────────────────────
+	GuildDirector       bool `json:"guild_director"`       // Miembro de la Junta Directiva
+	SixtyFiveOrPlus     bool `json:"sixty_five_or_plus"`   // Mayor de 65 años (tarifa diferenciada)
+	GuildCollaborator   bool `json:"guild_collaborator"`   // Colaborador activo del Colegio
+	PublicEmployee      bool `json:"public_employee"`      // Empleado público
+	UniversityProfessor bool `json:"university_professor"` // Docente universitario
 
-	// Historial de Gremio
-	DateOfLastSolvency string `json:"date_of_last_solvency"`
-	DoubleGuild        bool   `json:"double_guild"`
-	CPSM               bool   `json:"cpsm"`
+	// ── Datos Colegiales: Historial Gremial ──────────────────────────────
+	DateOfLastSolvency string `json:"date_of_last_solvency"` // Última cuota saldada
+	DoubleGuild        bool   `json:"double_guild"`          // Colegiado en más de un estado
+	CPSM               bool   `json:"cpsm"`                  // Miembro del Colegio de Psicólogos de Miranda
 }
 
 // UpdatePsiAdminRequest permite al administrador modificar CUALQUIER campo del psicólogo.

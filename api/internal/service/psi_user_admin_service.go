@@ -16,6 +16,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/request_structs"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/utils"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -45,37 +46,67 @@ func (s *PsiService) GetPsiByIDAdmin(ctx context.Context, admin *domain.UserAdmi
 // REGISTRO INDIVIDUAL (ESCRITURA ATÓMICA)
 // =========================================================================
 
-// CreatePsiByAdmin orquestador de la creación manual de un nuevo colegiado.
-// Realiza el hashing de credenciales, el parseo de fechas de registro y la vinculación
-// transaccional entre el perfil de usuario y sus datos de grado universitario.
-// CreatePsiByAdmin orquestador de la creación manual de un nuevo colegiado.
+// CreatePsiByAdmin orquesta la creación manual de un nuevo colegiado.
+// Realiza validación de permisos, geo-normalización, hashing de credenciales,
+// parseo de fechas y escritura transaccional atómica del perfil y datos colegiales.
 func (s *PsiService) CreatePsiByAdmin(ctx context.Context, admin *domain.UserAdmin, req request_structs.CreatePsiAdminRequest) error {
 	// 1. Validar Permisos
 	if !admin.CanCreatePsi && !admin.Sudo {
 		return errors.New("no tienes permiso para registrar psicólogos")
 	}
 
-	// 2. Hash de Password
+	// 2. Geo-validación y normalización
+	// Los campos opcionales solo se validan si vienen en el request.
+	var municipioCarabobo string
+	if req.MunicipalityCarabobo != "" {
+		mun, ok := utils.NormalizeMunicipioCarabobo(req.MunicipalityCarabobo)
+		if !ok {
+			return fmt.Errorf("municipio de Carabobo inválido: %q", req.MunicipalityCarabobo)
+		}
+		municipioCarabobo = mun
+	}
+
+	var estadoOutside string
+	if req.StateOutside != "" {
+		estado, ok := utils.NormalizeEstadoVenezuela(req.StateOutside)
+		if !ok {
+			return fmt.Errorf("estado venezolano inválido o no permitido: %q", req.StateOutside)
+		}
+		estadoOutside = estado
+	}
+
+	// 3. Hash de Password
 	hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return errors.New("error al procesar seguridad")
 	}
 
-	// 3. Parsear fechas
+	// 4. Parsear fechas
 	bornDate, _ := time.Parse("2006-01-02", req.BornDate)
 	gradDate, _ := time.Parse("2006-01-02", req.GraduateDate)
 	solvDate, _ := time.Parse("2006-01-02", req.DateOfLastSolvency)
 	regDate, _ := time.Parse("2006-01-02", req.RegisterTitleDate)
 
-	// 4. Mapeo de Identidades (UUIDs frescos)
+	// 5. Mapeo de Identidades (UUIDs frescos)
 	psiID := uuid.New()
 	colDataID := uuid.New()
 
 	psi := &domain.PsiUserModel{
-		ID:             psiID,
-		Username:       req.Username,
-		Email:          req.Email,
-		Password:       string(hashed),
+		ID:  psiID,
+		Key: uuid.New().String(),
+		AuditModel: domain.AuditModel{
+			CreateBy:   admin.Username,
+			CreateById: &admin.ID,
+			UpdateBy:   admin.Username,
+			UpdateById: &admin.ID,
+		},
+
+		// ── Credenciales ──────────────────────────────────────────────────
+		Username: req.Username,
+		Email:    req.Email,
+		Password: string(hashed),
+
+		// ── Identidad Legal ───────────────────────────────────────────────
 		FirstName:      req.FirstName,
 		SecondName:     req.SecondName,
 		LastName:       req.LastName,
@@ -85,62 +116,90 @@ func (s *PsiService) CreatePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 		BornDate:       bornDate,
 		Genre:          req.Genre,
 		Nationality:    req.Nationality,
-		Solvent:        req.Solvent,
-		ProofOfLife:    req.ProofOfLife,
-		IsActive:       req.IsActive,
+
+		// ── Estatus Administrativo ────────────────────────────────────────
+		Solvent:     req.Solvent,
+		ProofOfLife: req.ProofOfLife,
+		IsActive:    req.IsActive,
+
+		// ── Contacto Público ──────────────────────────────────────────────
 		ContactEmail:   req.ContactEmail,
 		PublicPhone:    req.PublicPhone,
 		ServiceAddress: req.ServiceAddress,
-		Key:            uuid.New().String(),
-		AuditModel: domain.AuditModel{
-			CreateBy: admin.Username, CreateById: &admin.ID,
-			UpdateBy: admin.Username, UpdateById: &admin.ID,
-		},
+
+		// ── Ubicación: Carabobo ───────────────────────────────────────────
+		MunicipalityCarabobo: municipioCarabobo, // normalizado
+		PhoneCarabobo:        req.PhoneCarabobo,
+		CelPhoneCarabobo:     req.CelPhoneCarabobo,
+
+		// ── Ubicación: Fuera de Carabobo (Venezuela) ─────────────────────
+		StateOutside:                  estadoOutside, // normalizado, sin Carabobo
+		MunicipalityOutSideCarabobo:   req.MunicipalityOutSideCarabobo,
+		PhoneOutSideCarabobo:          req.PhoneOutSideCarabobo,
+		CelPhoneOutSideCarabobo:       req.CelPhoneOutSideCarabobo,
+		ServiceAddressOutSideCarabobo: req.ServiceAddressOutSideCarabobo,
+
+		// ── Ubicación: Fuera de Venezuela ─────────────────────────────────
+		Country:                        req.Country,
+		PhoneOutSideVenezuela:          req.PhoneOutSideVenezuela,
+		ServiceAddressOutSideVenezuela: req.ServiceAddressOutSideVenezuela,
+
+		// ── Perfil Profesional ────────────────────────────────────────────
+		PrimarySpecialty:   req.PrimarySpecialty,
+		SecondarySpecialty: req.SecondarySpecialty,
 	}
 
 	colData := &domain.PsiUserColData{
-		ID:                      colDataID,
-		PsiUserModelID:          psiID, // Vinculación obligatoria
+		ID:             colDataID,
+		PsiUserModelID: psiID,
+		AuditModel: domain.AuditModel{
+			CreateBy:   admin.Username,
+			CreateById: &admin.ID,
+			UpdateBy:   admin.Username,
+			UpdateById: &admin.ID,
+		},
+
+		// ── Pregrado ──────────────────────────────────────────────────────
 		UniversityUndergraduate: req.UniversityUndergraduate,
 		GraduateDate:            gradDate,
 		MentionUndergraduate:    req.MentionUndergraduate,
-		RegisterNumber:          req.RegisterNumber,
-		RegisterTitleState:      req.RegisterTitleState,
-		RegisterTitleDate:       regDate,
-		RegisterFolio:           req.RegisterFolio,
-		RegisterTome:            req.RegisterTome,
-		GuildDirector:           req.GuildDirector,
-		SixtyFiveOrPlus:         req.SixtyFiveOrPlus,
-		GuildCollaborator:       req.GuildCollaborator,
-		PublicEmployee:          req.PublicEmployee,
-		UniversityProfessor:     req.UniversityProfessor,
-		DateOfLastSolvency:      solvDate,
-		DoubleGuild:             req.DoubleGuild,
-		CPSM:                    req.CPSM,
-		AuditModel: domain.AuditModel{
-			CreateBy: admin.Username, CreateById: &admin.ID,
-			UpdateBy: admin.Username, UpdateById: &admin.ID,
-		},
+
+		// ── Registro Legal del Título ─────────────────────────────────────
+		RegisterTitleState: req.RegisterTitleState,
+		RegisterTitleDate:  regDate,
+		RegisterNumber:     req.RegisterNumber,
+		RegisterFolio:      req.RegisterFolio,
+		RegisterTome:       req.RegisterTome,
+
+		// ── Flags Gremiales ───────────────────────────────────────────────
+		GuildDirector:       req.GuildDirector,
+		SixtyFiveOrPlus:     req.SixtyFiveOrPlus,
+		GuildCollaborator:   req.GuildCollaborator,
+		PublicEmployee:      req.PublicEmployee,
+		UniversityProfessor: req.UniversityProfessor,
+
+		// ── Historial Gremial ─────────────────────────────────────────────
+		DateOfLastSolvency: solvDate,
+		DoubleGuild:        req.DoubleGuild,
+		CPSM:               req.CPSM,
 	}
 
-	// 5. PERSISTENCIA (Una sola vez, retornando el error mapeado)
-	err = s.repo.CreateWithColData(ctx, psi, colData)
-	if err != nil {
+	// 6. Persistencia transaccional — un solo punto de fallo
+	if err := s.repo.CreateWithColData(ctx, psi, colData); err != nil {
 		return MapDBError(err)
 	}
 
-	// 6. NOTIFICACIÓN (Solo ocurre si la DB fue exitosa)
+	// 7. Notificación de bienvenida — no bloqueante, fallo silencioso intencional
 	mailData := map[string]interface{}{
 		"Name":     psi.Username,
 		"Email":    psi.Email,
 		"Password": req.Password,
 	}
-
 	if err := s.mailService.SendEmail(psi.Email, "Bienvenido", "welcome_psi", mailData); err != nil {
-		log.Printf("⚠️ Error al enviar correo: %v", err)
+		log.Printf("⚠️ Error al enviar correo de bienvenida (psi creado correctamente): %v", err)
 	}
 
-	return nil // Fin exitoso: solo un return nil
+	return nil
 }
 
 // =========================================================================

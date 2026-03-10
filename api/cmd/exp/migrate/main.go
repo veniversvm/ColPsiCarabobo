@@ -20,6 +20,8 @@ func main() {
 		&domain.Post{},
 		&domain.PsiSpecialtyModel{},
 		&domain.PsiUserSocialNetwork{},
+		&domain.PsiODeontologia{},
+		&domain.PsiObservations{},
 	)
 	if err != nil {
 		log.Fatalf("failed to load gorm schema: %v", err)

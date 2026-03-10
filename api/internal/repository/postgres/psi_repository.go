@@ -180,24 +180,29 @@ func (r *psiRepo) UpdatePublicProfile(
 		}
 
 		// 2. Actualizar perfil principal
-		// Usamos gorm.Expr() para los bool — garantiza que false se escriba en SQL.
-		// Para strings y otros tipos, el map normal funciona bien porque nunca
-		// queremos omitir un string vacío (sí es un valor válido a persistir).
 		updateMap := map[string]interface{}{
-			// Texto
+			// Texto Base
 			"username":        psi.Username,
 			"contact_email":   psi.ContactEmail,
 			"public_phone":    psi.PublicPhone,
 			"service_address": psi.ServiceAddress,
 
-			// Ubicación
-			"municipality_carabobo":          psi.MunicipalityCarabobo,
-			"phone_carabobo":                 psi.PhoneCarabobo,
-			"cel_phone_carabobo":             psi.CelPhoneCarabobo,
-			"state_outside":                  psi.StateOutside,
-			"municipality_out_side_carabobo": psi.MunicipalityOutSideCarabobo,
-			"phone_out_side_carabobo":        psi.PhoneOutSideCarabobo,
-			"cel_phone_out_side_carabobo":    psi.CelPhoneOutSideCarabobo,
+			// Ubicación: Carabobo
+			"municipality_carabobo": psi.MunicipalityCarabobo,
+			"phone_carabobo":        psi.PhoneCarabobo,
+			"cel_phone_carabobo":    psi.CelPhoneCarabobo,
+
+			// Ubicación: Fuera de Carabobo (Venezuela)
+			"state_outside":                     psi.StateOutside,
+			"municipality_out_side_carabobo":    psi.MunicipalityOutSideCarabobo,
+			"phone_out_side_carabobo":           psi.PhoneOutSideCarabobo,
+			"cel_phone_out_side_carabobo":       psi.CelPhoneOutSideCarabobo,
+			"service_address_out_side_carabobo": psi.ServiceAddressOutSideCarabobo, // Faltaba
+
+			// Ubicación: Exterior (Faltaban todos)
+			"country":                            psi.Country,
+			"phone_out_side_venezuela":           psi.PhoneOutSideVenezuela,
+			"service_address_out_side_venezuela": psi.ServiceAddressOutSideVenezuela,
 
 			// Profesional
 			"primary_specialty":      psi.PrimarySpecialty,
@@ -206,8 +211,7 @@ func (r *psiRepo) UpdatePublicProfile(
 			"bio_text_id":            psi.BioTextID,
 			"profile_picture_s3_key": psi.ProfilePictureS3Key,
 
-			// Password (solo cambia si el usuario lo solicitó, pero siempre lo incluimos
-			// porque el service ya mantuvo el valor anterior si no hubo cambio)
+			// Password & Key
 			"password": psi.Password,
 			"key":      psi.Key,
 
@@ -215,10 +219,21 @@ func (r *psiRepo) UpdatePublicProfile(
 			"update_by":    psi.UpdateBy,
 			"update_by_id": psi.UpdateById,
 
-			// FIX BOOL: gorm.Expr fuerza el valor literal — false NO se omite
+			// ── PRIVACIDAD (BOOLS) ──
+			// Contacto principal
 			"show_contact_email":          gorm.Expr("?", psi.ShowContactEmail),
 			"show_public_phone":           gorm.Expr("?", psi.ShowPublicPhone),
 			"show_public_service_address": gorm.Expr("?", psi.ShowPublicServiceAddress),
+
+			// Fuera de Carabobo (Faltaban)
+			"show_phone_out_side_carabobo":                  gorm.Expr("?", psi.ShowPhoneOutSideCarabobo),
+			"show_cell_phone_out_side_carabobo":             gorm.Expr("?", psi.ShowCellPhoneOutSideCarabobo),
+			"show_public_service_address_out_side_carabobo": gorm.Expr("?", psi.ShowPublicServiceAddressOutSideCarabobo),
+
+			// Exterior (Faltaban)
+			"show_phone_out_side_venezuela":                  gorm.Expr("?", psi.ShowPhoneOutSideVenezuela),
+			"show_cell_phone_out_side_venezuela":             gorm.Expr("?", psi.ShowCellPhoneOutSideVenezuela),
+			"show_public_service_address_out_side_venezuela": gorm.Expr("?", psi.ShowPublicServiceAddressOutSideVenezuela),
 		}
 
 		if err := tx.Model(psi).
@@ -228,10 +243,9 @@ func (r *psiRepo) UpdatePublicProfile(
 			return err
 		}
 
-		// 3. Actualizar Datos Colegiales
+		// 3. Actualizar Datos Colegiales (Esto estaba bien)
 		if colData != nil {
 			colDataMap := map[string]interface{}{
-				// FIX BOOL: igual
 				"show_university_undergraduate": gorm.Expr("?", colData.ShowUniversityUndergraduate),
 				"show_graduate_date":            gorm.Expr("?", colData.ShowGraduateDate),
 				"show_mention_undergraduate":    gorm.Expr("?", colData.ShowMentionUndergraduate),

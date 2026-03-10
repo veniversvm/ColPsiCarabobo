@@ -158,6 +158,8 @@ export default function PsiProfilePage() {
           {/* Perfil */}
           <Show when={profileData()}>
             {(psi) => {
+              console.log("🔍 DATOS COMPLETOS DEL FRONTEND:", psi());
+               console.log("🔍 UNDERGRADUATE EN FRONTEND:", psi().undergraduate);
               const sortedPostGrades = sortPostGradesByYear(psi().post_grades);
               return (
                 <div class="flex flex-col lg:grid lg:grid-cols-3 gap-6">
@@ -170,15 +172,15 @@ export default function PsiProfilePage() {
                       fpv={psi().fpv}
                       ci={psi().ci}
                       profilePicture={psi().profile_picture}
-                      solvent={psi().solvent}
                       specialties={psi().specialties}
                     />
+                    
                     <ContactCard
                       email={psi().email}
                       phone={psi().phone}
+                      address={psi().address}
                       location={psi().location}
                       socialNetworks={psi().social_networks}
-                      service_address={psi().address}
                     />
                   </div>
 
@@ -208,7 +210,7 @@ export default function PsiProfilePage() {
                     </Show>
 
                     <AcademicSection
-                      undergraduate={psi().undergraduate}
+                      undergraduate={psi().undergraduate} // 👈 Directamente así
                       postGrades={sortedPostGrades}
                       onPostGradeClick={setSelectedPostGrade}
                     />

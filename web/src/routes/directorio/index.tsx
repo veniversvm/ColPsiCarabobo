@@ -3,31 +3,97 @@
  * Página principal del directorio profesional.
  * SSR no aplica aquí: es búsqueda interactiva, no hay contenido estático que indexar.
  */
-import { createResource, createSignal, Suspense } from "solid-js";
+import { createSignal, onCleanup, onMount, Suspense } from "solid-js";
+import { createStore } from "solid-js/store";
 import { apiGet } from "~/lib/api";
 import { DirectoryPsychologist } from "~/types/psi";
 import { SearchHeader } from "~/components/directory/SearchHeader";
 import { ResultsGrid } from "~/components/directory/ResultsGrid";
 import { FlagFooter } from "~/components/ui/FlagFooter";
 import { Meta, Title } from "@solidjs/meta";
+import { createResource } from "solid-js";
+
+interface DirectoryResponse {
+  data: DirectoryPsychologist[];
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+}
+
+const LIMIT = 12;
 
 export default function DirectoryPage() {
+  // ── Filtros ──────────────────────────────────────────────────────────────
   const [query, setQuery] = createSignal("");
   const [specialty, setSpecialty] = createSignal("");
   const [location, setLocation] = createSignal("");
-  const [searchParams, setSearchParams] = createSignal({ q: "", spec: "", location: "" });
+  const [searchParams, setSearchParams] = createSignal({
+    q: "", spec: "", location: "",
+  });
 
+  // ── Estado de scroll infinito ────────────────────────────────────────────
+  const [page, setPage] = createSignal(1);
+  const [allItems, setAllItems] = createStore<DirectoryPsychologist[]>([]);
+  const [hasMore, setHasMore] = createSignal(true);
+  const [loadingMore, setLoadingMore] = createSignal(false);
+
+  // ── Especialidades ───────────────────────────────────────────────────────
   const [specialties] = createResource(() => apiGet<any[]>("/specialties"));
 
-  const [data] = createResource(
+  // ── Fetch inicial (página 1) — se dispara cuando cambian los filtros ─────
+  const [firstPage] = createResource(
     () => searchParams(),
     async (params) => {
-      return await apiGet<{ data: DirectoryPsychologist[] }>(
-        `/psi/directory?q=${params.q}&specialty=${params.spec}&limit=12&location=${params.location}`
+      // Reset al buscar
+      setPage(1);
+      setHasMore(true);
+      const res = await apiGet<DirectoryResponse>(
+        `/psi/directory?q=${encodeURIComponent(params.q)}&specialty=${encodeURIComponent(params.spec)}&limit=${LIMIT}&page=1&location=${encodeURIComponent(params.location)}`
       );
+      // Reemplaza la lista completa con los resultados frescos
+      setAllItems(res.data ?? []);
+      setHasMore((res.total_pages ?? 1) > 1);
+      return res;
     }
   );
 
+  // ── Carga de páginas adicionales ─────────────────────────────────────────
+  const loadMore = async () => {
+    if (loadingMore() || !hasMore()) return;
+    setLoadingMore(true);
+    try {
+      const params = searchParams();
+      const nextPage = page() + 1;
+      const res = await apiGet<DirectoryResponse>(
+        `/psi/directory?q=${encodeURIComponent(params.q)}&specialty=${encodeURIComponent(params.spec)}&limit=${LIMIT}&page=${nextPage}&location=${encodeURIComponent(params.location)}`
+      );
+      setAllItems((prev) => [...prev, ...(res.data ?? [])]);
+      setPage(nextPage);
+      setHasMore(nextPage < (res.total_pages ?? 1));
+    } catch (err) {
+      console.error("[directorio] error cargando más:", err);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  // ── IntersectionObserver — sentinel al final de la lista ─────────────────
+  let sentinel: HTMLDivElement | undefined;
+
+  onMount(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) loadMore();
+      },
+      { rootMargin: "200px" } // empieza a cargar 200px antes del final
+    );
+
+    if (sentinel) observer.observe(sentinel);
+    onCleanup(() => observer.disconnect());
+  });
+
+  // ── Búsqueda ─────────────────────────────────────────────────────────────
   const handleSearch = (e: Event) => {
     e.preventDefault();
     setSearchParams({ q: query(), spec: specialty(), location: location() });
@@ -57,10 +123,16 @@ export default function DirectoryPage() {
         <div class="max-w-7xl mx-auto px-6 -mt-10 relative z-20">
           <Suspense fallback={<div class="h-96 bg-white animate-pulse rounded-[2.5rem]" />}>
             <ResultsGrid
-              psychologists={data()?.data}
-              loading={data.loading}
+              psychologists={allItems}
+              loading={firstPage.loading}
+              loadingMore={loadingMore()}
+              hasMore={hasMore()}
+              total={firstPage()?.total}
             />
           </Suspense>
+
+          {/* Sentinel — el observer lo vigila para disparar loadMore */}
+          <div ref={sentinel} class="h-4" />
         </div>
 
         <FlagFooter />

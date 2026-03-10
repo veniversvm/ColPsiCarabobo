@@ -5,7 +5,10 @@
 // y la privacidad de la información según el rol del usuario.
 package request_structs
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/utils"
+)
 
 // =========================================================================
 // AUTENTICACIÓN
@@ -37,72 +40,104 @@ type PsiLoginRequest struct {
 //
 // BoolFromForm convierte los valores de formulario "1"/"0"/"true"/"false" a *bool.
 // Retorna nil si el valor está vacío (campo no enviado → semántica PATCH).
-func BoolFromForm(s string) *bool {
-	if s == "" {
-		return nil
-	}
-	v := s == "1" || s == "true" || s == "on"
-	return &v
-}
-
 // PsiUserUpdateRequestSelf define el contrato para que un psicólogo edite su propio perfil.
+// Los campos opcionales usan *string para distinguir "no enviado" de "enviado vacío".
+// Los booleanos de visibilidad usan string Raw + getter porque multipart/form-data
+// no puede representar *bool directamente.
 type PsiUserUpdateRequestSelf struct {
-	// --- Datos de Usuario Básicos ---
+
+	// ── Credenciales ──────────────────────────────────────────────────────
 	Username     *string `json:"username,omitempty" form:"username"`
 	Email        *string `json:"email,omitempty" form:"email"`
+	Password     string  `json:"password" form:"password" validate:"required"` // contraseña actual (siempre requerida)
 	NewPassword1 *string `json:"new_password_1,omitempty" form:"new_password_1"`
 	NewPassword2 *string `json:"new_password_2,omitempty" form:"new_password_2"`
-	Password     string  `json:"password,omitempty" form:"password" validate:"required"`
 
-	// --- Datos de Contacto y Privacidad ---
+	// ── Contacto y Privacidad ─────────────────────────────────────────────
 	ContactEmail   *string `json:"contact_email" form:"contact_email"`
 	PublicPhone    *string `json:"public_phone" form:"public_phone"`
 	ServiceAddress *string `json:"service_address" form:"service_address"`
 
-	// FIX: *bool → string para multipart. Usar BoolFromForm() en el handler.
+	// Raw bools: "0"/"1"/"true"/"false" — usar getters ShowContactEmail(), etc.
 	ShowContactEmailRaw         string `form:"show_contact_email"`
 	ShowPublicPhoneRaw          string `form:"show_public_phone"`
 	ShowPublicServiceAddressRaw string `form:"show_public_service_address"`
 
-	// --- Ubicación Geográfica ---
-	MunicipalityCarabobo        *string `json:"municipality_carabobo" form:"municipality_carabobo"`
-	PhoneCarabobo               *string `json:"phone_carabobo" form:"phone_carabobo"`
-	CelPhoneCarabobo            *string `json:"cel_phone_carabobo" form:"cel_phone_carabobo"`
-	StateOutside                *string `json:"state_outside" form:"state_outside"`
-	MunicipalityOutSideCarabobo *string `json:"municipality_outside_carabobo" form:"municipality_outside_carabobo"`
-	PhoneOutSideCarabobo        *string `json:"phone_outside_carabobo" form:"phone_outside_carabobo"`
-	CelPhoneOutSideCarabobo     *string `json:"cel_phone_outside_carabobo" form:"cel_phone_outside_carabobo"`
+	// ── Ubicación: Carabobo ───────────────────────────────────────────────
+	MunicipalityCarabobo *string `json:"municipality_carabobo" form:"municipality_carabobo"`
+	PhoneCarabobo        *string `json:"phone_carabobo" form:"phone_carabobo"`
+	CelPhoneCarabobo     *string `json:"cel_phone_carabobo" form:"cel_phone_carabobo"`
 
-	// --- Perfil Profesional y Biografía ---
+	// ── Ubicación: Fuera de Carabobo (Venezuela) ─────────────────────────
+	StateOutside                  *string `json:"state_outside" form:"state_outside"`
+	MunicipalityOutSideCarabobo   *string `json:"municipality_outside_carabobo" form:"municipality_outside_carabobo"`
+	PhoneOutSideCarabobo          *string `json:"phone_outside_carabobo" form:"phone_outside_carabobo"`
+	CelPhoneOutSideCarabobo       *string `json:"cel_phone_outside_carabobo" form:"cel_phone_outside_carabobo"`
+	ServiceAddressOutSideCarabobo *string `json:"service_address_outside_carabobo" form:"service_address_outside_carabobo"`
+
+	ShowPhoneOutSideCaraboboRaw                string `form:"show_phone_outside_carabobo"`
+	ShowCellPhoneOutSideCaraboboRaw            string `form:"show_cel_phone_outside_carabobo"`
+	ShowPublicServiceAddressOutSideCaraboboRaw string `form:"show_public_service_address_outside_carabobo"`
+
+	// ── Ubicación: Fuera de Venezuela ─────────────────────────────────────
+	Country                        *string `json:"country" form:"country"`
+	PhoneOutSideVenezuela          *string `json:"phone_outside_venezuela" form:"phone_outside_venezuela"`
+	ServiceAddressOutSideVenezuela *string `json:"service_address_outside_venezuela" form:"service_address_outside_venezuela"`
+
+	ShowPhoneOutSideVenezuelaRaw                string `form:"show_phone_outside_venezuela"`
+	ShowCellPhoneOutSideVenezuelaRaw            string `form:"show_cel_phone_outside_venezuela"`
+	ShowPublicServiceAddressOutSideVenezuelaRaw string `form:"show_public_service_address_outside_venezuela"`
+
+	// ── Perfil Profesional y Biografía ───────────────────────────────────
 	PrimarySpecialty   *string `json:"primary_specialty" form:"primary_specialty"`
 	SecondarySpecialty *string `json:"secondary_specialty" form:"secondary_specialty"`
 	MiniBio            *string `json:"mini_bio" form:"mini_bio"`
 	FullBio            *string `json:"full_bio" form:"full_bio"`
 
-	// FIX: igual que arriba — string para multipart
+	// ── Visibilidad de Datos Colegiales ──────────────────────────────────
 	ShowUniversityUndergraduateRaw string `form:"show_university_undergraduate"`
 	ShowGraduateDateRaw            string `form:"show_graduate_date"`
 	ShowMentionUndergraduateRaw    string `form:"show_mention_undergraduate"`
 }
 
-// Getters que devuelven *bool — úsalos en el Service en lugar de los campos directos.
+// ── Getters de booleanos de privacidad ────────────────────────────────────────
+// BoolFromForm convierte "1"/"true" → true, "0"/"false" → false, "" → nil.
+
 func (r *PsiUserUpdateRequestSelf) ShowContactEmail() *bool {
-	return BoolFromForm(r.ShowContactEmailRaw)
+	return utils.BoolFromForm(r.ShowContactEmailRaw)
 }
 func (r *PsiUserUpdateRequestSelf) ShowPublicPhone() *bool {
-	return BoolFromForm(r.ShowPublicPhoneRaw)
+	return utils.BoolFromForm(r.ShowPublicPhoneRaw)
 }
 func (r *PsiUserUpdateRequestSelf) ShowPublicServiceAddress() *bool {
-	return BoolFromForm(r.ShowPublicServiceAddressRaw)
+	return utils.BoolFromForm(r.ShowPublicServiceAddressRaw)
+}
+func (r *PsiUserUpdateRequestSelf) ShowPhoneOutSideCarabobo() *bool {
+	return utils.BoolFromForm(r.ShowPhoneOutSideCaraboboRaw)
+}
+func (r *PsiUserUpdateRequestSelf) ShowCellPhoneOutSideCarabobo() *bool {
+	return utils.BoolFromForm(r.ShowCellPhoneOutSideCaraboboRaw)
+}
+func (r *PsiUserUpdateRequestSelf) ShowPublicServiceAddressOutSideCarabobo() *bool {
+	return utils.BoolFromForm(r.ShowPublicServiceAddressOutSideCaraboboRaw)
+}
+func (r *PsiUserUpdateRequestSelf) ShowPhoneOutSideVenezuela() *bool {
+	return utils.BoolFromForm(r.ShowPhoneOutSideVenezuelaRaw)
+}
+func (r *PsiUserUpdateRequestSelf) ShowCellPhoneOutSideVenezuela() *bool {
+	return utils.BoolFromForm(r.ShowCellPhoneOutSideVenezuelaRaw)
+}
+func (r *PsiUserUpdateRequestSelf) ShowPublicServiceAddressOutSideVenezuela() *bool {
+	return utils.BoolFromForm(r.ShowPublicServiceAddressOutSideVenezuelaRaw)
 }
 func (r *PsiUserUpdateRequestSelf) ShowUniversityUndergraduate() *bool {
-	return BoolFromForm(r.ShowUniversityUndergraduateRaw)
+	return utils.BoolFromForm(r.ShowUniversityUndergraduateRaw)
 }
 func (r *PsiUserUpdateRequestSelf) ShowGraduateDate() *bool {
-	return BoolFromForm(r.ShowGraduateDateRaw)
+	return utils.BoolFromForm(r.ShowGraduateDateRaw)
 }
 func (r *PsiUserUpdateRequestSelf) ShowMentionUndergraduate() *bool {
-	return BoolFromForm(r.ShowMentionUndergraduateRaw)
+	return utils.BoolFromForm(r.ShowMentionUndergraduateRaw)
 }
 
 // =========================================================================
@@ -142,11 +177,10 @@ type UndergraduateDTO struct {
 }
 
 // PsiFullProfileDTO representa la ficha pública detallada de un psicólogo.
-// Implementa el "Privacy Shield": los campos marcados con 'omitempty' solo se renderizan
-// en el JSON si el usuario ha autorizado su visibilidad o si contienen datos.
+// Implementa el "Privacy Shield": los campos con omitempty solo se renderizan
+// si el usuario autorizó su visibilidad o si contienen datos.
 type PsiFullProfileDTO struct {
-	// Identidad Pública (Siempre visible)
-	// ID             uuid.UUID `json:"id"`
+	// ── Identidad Pública (siempre visible) ──────────────────────────────
 	FirstName      string `json:"first_name"`
 	SecondName     string `json:"second_name,omitempty"`
 	LastName       string `json:"last_name"`
@@ -157,29 +191,62 @@ type PsiFullProfileDTO struct {
 	ProfilePicture string `json:"profile_picture"`
 	Solvent        bool   `json:"solvent"`
 
-	// Contacto (Visibilidad Condicional)
+	// ── Contacto (visibilidad condicional) ───────────────────────────────
 	Email   string `json:"email,omitempty"`
 	Phone   string `json:"phone,omitempty"`
 	Address string `json:"address,omitempty"`
 
-	// Ubicación Estructurada
-	Location struct {
-		State        string `json:"state"`
-		Municipality string `json:"municipality"`
-		FullAddress  string `json:"full_address,omitempty"`
-	} `json:"location"`
+	// ── Ubicación Estructurada ────────────────────────────────────────────
+	// Un psicólogo puede tener presencia simultánea en Carabobo, en otro
+	// estado venezolano y/o en el exterior. Cada bloque es independiente
+	// y solo se incluye si tiene datos.
+	Location PsiLocationDTO `json:"location"`
 
-	// Historial Académico y Profesional
+	// ── Perfil Profesional ────────────────────────────────────────────────
 	Specialties    []string `json:"specialties"`
-	MiniBio        string   `json:"mini_bio"`
+	MiniBio        string   `json:"mini_bio,omitempty"`
 	FullBioContent string   `json:"full_bio_content,omitempty"`
 
-	// Datos de Pregrado (Condicional)
+	// ── Datos de Pregrado (condicional por privacidad) ───────────────────
 	Undergraduate UndergraduateDTO `json:"undergraduate"`
 
-	// Relaciones (Colecciones)
+	// ── Relaciones ────────────────────────────────────────────────────────
 	PostGrades     []PostGradeDTO     `json:"post_grades,omitempty"`
 	SocialNetworks []SocialNetworkDTO `json:"social_networks,omitempty"`
+}
+
+// PsiLocationDTO agrupa las tres zonas geográficas posibles de un psicólogo.
+// Cada bloque es opcional — solo se serializa si tiene al menos un campo no vacío.
+type PsiLocationDTO struct {
+	// Presencia en el estado Carabobo (jurisdicción principal del Colegio)
+	Carabobo *PsiLocationCaraboboDTO `json:"carabobo,omitempty"`
+
+	// Presencia en otro estado venezolano (excluye Carabobo)
+	Venezuela *PsiLocationVenezuelaDTO `json:"venezuela,omitempty"`
+
+	// Presencia en el exterior
+	Exterior *PsiLocationExteriorDTO `json:"exterior,omitempty"`
+}
+
+type PsiLocationCaraboboDTO struct {
+	Municipality string `json:"municipality"`
+	Phone        string `json:"phone,omitempty"`
+	CellPhone    string `json:"cell_phone,omitempty"`
+	Address      string `json:"address,omitempty"`
+}
+
+type PsiLocationVenezuelaDTO struct {
+	State        string `json:"state"`
+	Municipality string `json:"municipality,omitempty"`
+	Phone        string `json:"phone,omitempty"`
+	CellPhone    string `json:"cell_phone,omitempty"`
+	Address      string `json:"address,omitempty"`
+}
+
+type PsiLocationExteriorDTO struct {
+	Country string `json:"country"`
+	Phone   string `json:"phone,omitempty"`
+	Address string `json:"address,omitempty"`
 }
 
 // =========================================================================

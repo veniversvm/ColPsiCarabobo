@@ -19,6 +19,7 @@ import (
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/config"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/router"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/utils"
 	"github.com/veniversvm/ColPsiCarabobo/api/pkg/database"
 	"github.com/veniversvm/ColPsiCarabobo/api/pkg/s3"
 )
@@ -56,6 +57,8 @@ func main() {
 		&domain.Post{},
 		&domain.PsiSpecialtyModel{},
 		&domain.PsiUserSocialNetwork{},
+		&domain.PsiODeontologia{},
+		&domain.PsiObservations{},
 	)
 	if err != nil {
 		log.Fatalf("❌ Error: Falló la migración de GORM: %v", err)
@@ -147,6 +150,7 @@ func main() {
 
 	// 8. ARRANQUE
 	port := config.Envs.Port
+	utils.PrintColpsiASCII()
 	log.Printf("🚀 ColPsiCarabobo Backend listo en puerto: %s", port)
 	log.Fatal(app.Listen(":" + port))
 }

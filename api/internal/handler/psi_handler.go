@@ -66,11 +66,12 @@ func (h *PsiHandler) UploadCsv(c *fiber.Ctx) error {
 	defer src.Close()
 
 	// 4. USAR EL ID DEL ADMIN RECUPERADO DEL TOKEN
-	success, failed := h.service.ImportFromCSV(c.UserContext(), src, admin.ID)
+	success, failed_records := h.service.ImportFromCSV(c.UserContext(), src, admin.ID)
 
 	return c.JSON(fiber.Map{
-		"success_count": success,
-		"failed":        failed,
+		"imported": success,
+		"failed":   len(failed_records), // número, no el array
+		"errors":   failed_records,      // el array va aquí
 	})
 }
 
@@ -100,14 +101,15 @@ func (h *PsiHandler) UpdateOwnProfile(c *fiber.Ctx) error {
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Formato de datos inválido"})
 	}
-	log.Printf("---- ##################### ----\n")
-	var t string
-	if req.FullBio != nil {
-		t = *req.FullBio
-	} else {
-		t = ""
-	}
-	log.Printf("####FULLBIO %s\n", t)
+	// ---------------------------------------------------------
+	// 🐛 DEBUG: VER EL STRUCT COMPLETO PARSEADO
+	// ---------------------------------------------------------
+	// reqJSON, _ := json.MarshalIndent(req, "", "  ")
+	// log.Printf("\n=== DATOS RECIBIDOS EN EL STRUCT ===\n%s\n====================================\n", string(reqJSON))
+
+	// Si además quieres ver explícitamente cuáles son <nil> y cuáles son punteros de memoria:
+	// log.Printf("\n=== ESTRUCTURA RAW EN GO ===\n%+v\n============================\n", req)
+	// ---------------------------------------------------------
 
 	// 3. Capturar archivos de imagen (Opcionales)
 	profilePic, _ := c.FormFile("profile_picture")
@@ -192,6 +194,9 @@ func (h *PsiHandler) GetPublicProfile(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": err.Error()})
 	}
+
+	// log.Println("///////////////////////////")
+	// log.Printf("\n=====\n%s\n\n", profile)
 
 	return c.JSON(profile)
 }

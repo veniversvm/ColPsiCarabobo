@@ -1,90 +1,145 @@
+// web/src/components/psi/profile/LocationSection.tsx
 import { InputField } from "./InputField";
 
-// web/src/components/psi/profile/LocationSection.tsx
 interface LocationSectionProps {
   // Carabobo
   municipalityCarabobo: string;
   phoneCarabobo: string;
   celPhoneCarabobo: string;
-  
-  // Exterior
+
+  // Fuera de Carabobo (Venezuela)
   stateOutside: string;
   municipalityOutside: string;
   phoneOutside: string;
   celPhoneOutside: string;
-  
+  serviceAddressOutsideCarabobo: string;
+
+  // Exterior (fuera de Venezuela)
+  country: string;
+  phoneOutsideVenezuela: string;
+  serviceAddressOutsideVenezuela: string;
+
   onMunicipalityCaraboboChange: (value: string) => void;
   onPhoneCaraboboChange: (value: string) => void;
   onCelPhoneCaraboboChange: (value: string) => void;
-  
+
   onStateOutsideChange: (value: string) => void;
   onMunicipalityOutsideChange: (value: string) => void;
   onPhoneOutsideChange: (value: string) => void;
   onCelPhoneOutsideChange: (value: string) => void;
+  onServiceAddressOutsideCaraboboChange: (value: string) => void;
+
+  onCountryChange: (value: string) => void;
+  onPhoneOutsideVenezuelaChange: (value: string) => void;
+  onServiceAddressOutsideVenezuelaChange: (value: string) => void;
 }
 
 export function LocationSection(props: LocationSectionProps) {
   return (
-    <section class="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-premium border border-gray-100">
-      <h2 class="text-xl font-black text-colpsi-blue mb-6 border-l-4 border-colpsi-yellow pl-3">
-        Ubicación en Carabobo
-      </h2>
-      
-      <p class="text-sm text-gray-500 mb-8 bg-gray-50 p-4 rounded-2xl border border-gray-100 leading-relaxed italic">
-        Los teléfonos de esta sección son de carácter privado, cuya la finalidad de que el Colegio 
-        de Psicólogos del Estado Carabobo pueda contactar al psicólogo en caso de necesidad.
-        <br/>
-        El municipio es información pública.
-      </p>
+    <section class="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-premium border border-gray-100 space-y-10">
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <InputField
-          label="Municipio"
-          value={props.municipalityCarabobo}
-          onInput={props.onMunicipalityCaraboboChange}
-        />
-        <InputField
-          label="Teléfono Fijo"
-          type="tel"
-          value={props.phoneCarabobo}
-          onInput={props.onPhoneCaraboboChange}
-        />
-        <InputField
-          label="Celular Secundario"
-          type="tel"
-          value={props.celPhoneCarabobo}
-          onInput={props.onCelPhoneCaraboboChange}
-        />
+      {/* ── CARABOBO ───────────────────────────────────────────────────── */}
+      <div>
+        <h2 class="text-xl font-black text-colpsi-blue mb-2 border-l-4 border-colpsi-yellow pl-3">
+          Ubicación en Carabobo
+        </h2>
+        <p class="text-sm text-gray-500 mb-6 bg-gray-50 p-4 rounded-2xl border border-gray-100 leading-relaxed italic">
+          Los teléfonos de esta sección son de carácter privado — solo los utiliza el Colegio
+          para contactarte en caso de necesidad. El municipio es información pública.
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <InputField
+            label="Municipio"
+            value={props.municipalityCarabobo}
+            onInput={props.onMunicipalityCaraboboChange}
+          />
+          <InputField
+            label="Teléfono Fijo"
+            type="tel"
+            value={props.phoneCarabobo}
+            onInput={props.onPhoneCaraboboChange}
+          />
+          <InputField
+            label="Celular"
+            type="tel"
+            value={props.celPhoneCarabobo}
+            onInput={props.onCelPhoneCaraboboChange}
+          />
+        </div>
       </div>
 
-      <h2 class="text-xl font-black text-colpsi-blue mb-6 border-l-4 border-gray-300 pl-3 pt-4 border-t border-gray-50">
-        Exterior u Otros Estados
-      </h2>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <InputField
-          label="Estado / Región / País"
-          value={props.stateOutside}
-          onInput={props.onStateOutsideChange}
-        />
-        <InputField
-          label="Ciudad / Municipio"
-          value={props.municipalityOutside}
-          onInput={props.onMunicipalityOutsideChange}
-        />
-        <InputField
-          label="Teléfono Fijo (Internacional)"
-          type="tel"
-          value={props.phoneOutside}
-          onInput={props.onPhoneOutsideChange}
-        />
-        <InputField
-          label="Celular (Internacional)"
-          type="tel"
-          value={props.celPhoneOutside}
-          onInput={props.onCelPhoneOutsideChange}
-        />
+      {/* ── FUERA DE CARABOBO (VENEZUELA) ──────────────────────────────── */}
+      <div class="pt-6 border-t border-gray-100">
+        <h2 class="text-xl font-black text-colpsi-blue mb-2 border-l-4 border-gray-300 pl-3">
+          Otro Estado de Venezuela
+        </h2>
+        <p class="text-sm text-gray-500 mb-6 bg-gray-50 p-4 rounded-2xl border border-gray-100 leading-relaxed italic">
+          Si también ejerces en otro estado venezolano, completa estos datos.
+          La dirección y teléfonos son opcionales y su visibilidad se controla en el Centro de Privacidad.
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <InputField
+            label="Estado"
+            value={props.stateOutside}
+            onInput={props.onStateOutsideChange}
+          />
+          <InputField
+            label="Ciudad / Municipio"
+            value={props.municipalityOutside}
+            onInput={props.onMunicipalityOutsideChange}
+          />
+          <InputField
+            label="Teléfono Fijo"
+            type="tel"
+            value={props.phoneOutside}
+            onInput={props.onPhoneOutsideChange}
+          />
+          <InputField
+            label="Celular"
+            type="tel"
+            value={props.celPhoneOutside}
+            onInput={props.onCelPhoneOutsideChange}
+          />
+          <div class="md:col-span-2">
+            <InputField
+              label="Dirección de Consultorio"
+              value={props.serviceAddressOutsideCarabobo}
+              onInput={props.onServiceAddressOutsideCaraboboChange}
+            />
+          </div>
+        </div>
       </div>
+
+      {/* ── EXTERIOR (FUERA DE VENEZUELA) ──────────────────────────────── */}
+      <div class="pt-6 border-t border-gray-100">
+        <h2 class="text-xl font-black text-colpsi-blue mb-2 border-l-4 border-gray-300 pl-3">
+          Exterior
+        </h2>
+        <p class="text-sm text-gray-500 mb-6 bg-gray-50 p-4 rounded-2xl border border-gray-100 leading-relaxed italic">
+          Si resides o ejerces fuera de Venezuela, indica el país y tus datos de contacto en el exterior.
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <InputField
+            label="País"
+            value={props.country}
+            onInput={props.onCountryChange}
+          />
+          <InputField
+            label="Teléfono Internacional"
+            type="tel"
+            value={props.phoneOutsideVenezuela}
+            onInput={props.onPhoneOutsideVenezuelaChange}
+          />
+          <div class="md:col-span-2">
+            <InputField
+              label="Dirección en el Exterior"
+              value={props.serviceAddressOutsideVenezuela}
+              onInput={props.onServiceAddressOutsideVenezuelaChange}
+            />
+          </div>
+        </div>
+      </div>
+
     </section>
   );
 }
