@@ -2,6 +2,11 @@ MIGRACIONES
 Ver instrucciones en carpeta de migraciones
 
 
+DOCKERFILE incluir por libreria de imagenes
+RUN apt-get install -y libwebp-dev  # Debian/Ubuntu
+RUN dnf install -y libwebp-devel gcc  # o apt-get en Debian
+ENV CGO_ENABLED=1
+
 
 SAWGGER
 /home/fran/go/bin/linux_amd64/swag init -g cmd/api/main.go

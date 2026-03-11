@@ -161,11 +161,13 @@ func (h *PsiHandler) UpdateOwnProfile(c *fiber.Ctx) error {
 // @Success      200        {object}  map[string]interface{}
 // @Router       /psi/directory [get]
 func (h *PsiHandler) SearchDirectory(c *fiber.Ctx) error {
-	// Usamos QueryParser para llenar el DTO automáticamente
 	var filter request_structs.PsiDirectoryFilterDTO
 	if err := c.QueryParser(&filter); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Parámetros de consulta inválidos"})
 	}
+
+	// Sanitizar antes de pasar al servicio
+	filter = request_structs.SanitizeDirectoryFilter(filter)
 
 	result, err := h.service.GetPublicDirectory(c.UserContext(), filter)
 	if err != nil {
@@ -220,13 +222,16 @@ func (h *PsiHandler) GetMe(c *fiber.Ctx) error {
 		})
 	}
 
+	log.Printf("----- PSI Profile ----\n")
+	log.Printf("%v", psi)
+
 	bio, err := h.service.GetPsiBioByID(c.UserContext(), psi.BioTextID)
 	if err != nil {
 		log.Printf("---- error al recuperar la BIO ----\n")
 		log.Printf("%v\n", err)
 	}
-	log.Printf("----- BIO ----\n")
-	log.Printf("%v", bio)
+	// log.Printf("----- BIO ----\n")
+	// log.Printf("%v", bio)
 
 	psi.FullBio.Content = bio
 

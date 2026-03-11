@@ -330,7 +330,7 @@ func (s *PsiService) UpdateProfileSelf(
 	if profilePic != nil {
 		src, _ := profilePic.Open()
 		defer src.Close()
-		cleanBytes, ext, contentType, err := utils.SanitizeImage(src)
+		cleanBytes, ext, contentType, err := utils.SanitizeDocument(src)
 		if err != nil {
 			return nil, err
 		}
@@ -517,7 +517,7 @@ func (s *PsiService) UpdateProfileSelf(
 				return "", err
 			}
 			defer src.Close()
-			cleanBytes, ext, contentType, err := utils.SanitizeImage(src)
+			cleanBytes, ext, contentType, err := utils.SanitizeDocument(src)
 			if err != nil {
 				return "", err
 			}
@@ -725,7 +725,7 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 	}
 
 	// ── Ubicación: Fuera de Carabobo (Venezuela) ──────────────────────────
-	if psi.StateOutside != "" {
+	if psi.StateOutside != "" && (psi.ShowPublicServiceAddressOutSideCarabobo || psi.ShowCellPhoneOutSideCarabobo || psi.ShowPhoneOutSideCarabobo) {
 		loc := &request_structs.PsiLocationVenezuelaDTO{
 			State:        psi.StateOutside,
 			Municipality: psi.MunicipalityOutSideCarabobo,
@@ -743,7 +743,7 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 	}
 
 	// ── Ubicación: Exterior ───────────────────────────────────────────────
-	if psi.Country != "" {
+	if psi.Country != "" && (psi.ShowPublicServiceAddressOutSideVenezuela || psi.ShowPhoneOutSideVenezuela) {
 		loc := &request_structs.PsiLocationExteriorDTO{
 			Country: psi.Country,
 		}
@@ -911,7 +911,7 @@ func (s *PsiService) AddPostGrade(ctx context.Context, psi *domain.PsiUserModel,
 		}
 		defer src.Close()
 
-		cleanBytes, ext, contentType, err := utils.SanitizeImage(src)
+		cleanBytes, ext, contentType, err := utils.SanitizeDocument(src)
 		if err != nil {
 			return "", fmt.Errorf("error en imagen: %v", err)
 		}
@@ -996,7 +996,7 @@ func (s *PsiService) UpdatePostGrade(ctx context.Context, psi *domain.PsiUserMod
 		}
 		defer src.Close()
 
-		cleanBytes, ext, contentType, err := utils.SanitizeImage(src)
+		cleanBytes, ext, contentType, err := utils.SanitizeDocument(src)
 		if err != nil {
 			return "", err
 		}

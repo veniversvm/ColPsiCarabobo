@@ -60,7 +60,7 @@ func (s *PostService) CreatePost(ctx context.Context, admin *domain.UserAdmin, r
 
 		// RECIBIMOS 3 VALORES: bytes, extensión y mime-type
 		// Re-codificación para eliminar scripts ocultos y metadatos sensibles (GPS/EXIF)
-		cleanBytes, ext, contentType, err := utils.SanitizeImage(src)
+		cleanBytes, ext, contentType, err := utils.SanitizeDocument(src)
 		if err != nil {
 			return fmt.Errorf("error de seguridad en imagen: %v", err)
 		}
@@ -213,7 +213,7 @@ func (s *PostService) UpdatePost(ctx context.Context, admin *domain.UserAdmin, r
 			return errors.New("error leyendo imagen")
 		}
 
-		cleanBytes, ext, contentType, err := utils.SanitizeImage(src)
+		cleanBytes, ext, contentType, err := utils.SanitizeDocument(src)
 		if err != nil {
 			return fmt.Errorf("error de seguridad en imagen: %v", err)
 		}

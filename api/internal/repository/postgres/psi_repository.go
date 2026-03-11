@@ -333,7 +333,8 @@ func (r *psiRepo) SearchDirectory(ctx context.Context, filter request_structs.Ps
 				r.db.Where("municipality_carabobo ILIKE ?", loc).
 					Or("state_outside ILIKE ?", loc).
 					// FIX: Corregido el nombre exacto de la columna generada por GORM
-					Or("municipality_out_side_carabobo ILIKE ?", loc),
+					Or("municipality_out_side_carabobo ILIKE ?", loc).
+					Or("country ILIKE ? ", loc),
 			)
 		}
 
