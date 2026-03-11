@@ -40,9 +40,12 @@ export function RichTextEditor(props: RichTextEditorProps) {
     editor = new Editor({
       element: editorRef,
       extensions: [
-        StarterKit,
+        StarterKit.configure({
+          underline: false,
+          link: false,
+        }),
         Underline,
-        TextAlign.configure({ types:["heading", "paragraph"] }),
+        TextAlign.configure({ types:["heading", "paragraph"], }),
         Link.configure({ openOnClick: false }), // Importante: falso para poder editar el link sin abrirlo
       ],
       content: props.content,

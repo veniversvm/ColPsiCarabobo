@@ -15,7 +15,11 @@ export default function App() {
         root={(props) => (
           <AuthProvider>
             <Navbar />
-            <ErrorBoundary fallback={(err, reset) => <OfflineAlert error={err} reset={reset} />}>
+            <ErrorBoundary fallback={(err, reset) => {
+              console.error("[ErrorBoundary]", err)
+              return <OfflineAlert error={err} reset={reset} />
+              }
+            }>
               <Suspense>
                 {props.children}
               </Suspense>

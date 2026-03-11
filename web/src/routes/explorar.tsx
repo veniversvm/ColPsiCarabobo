@@ -9,9 +9,6 @@ export default function PublicPortal() {
           <div class="inline-block px-4 py-1 bg-colpsi-yellow text-colpsi-blue rounded-full text-[10px] font-black uppercase tracking-widest mb-2">
             Servicio a la comunidad
           </div>
-          <h2 class="text-3xl md:text-5xl font-black tracking-tight leading-none">
-            Bienvenido al Portal Público
-          </h2>
           <p class="text-blue-100 text-lg max-w-2xl mx-auto font-medium">
             Estamos aquí para orientarle y conectarle con profesionales certificados del estado Carabobo.
           </p>

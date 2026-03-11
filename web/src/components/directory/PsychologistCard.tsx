@@ -21,16 +21,16 @@ export function PsychologistCard(props: PsychologistCardProps) {
   });
 
   // Debug para ver qué slug se genera
-  console.log("Generando slug:", {
-    nombres: {
-      first_name: psychologist.first_name,
-      second_name: psychologist.second_name,
-      last_name: psychologist.last_name,
-      second_last_name: psychologist.second_last_name
-    },
-    slug: profileSlug,
-    fpv: psychologist.fpv
-  });
+  // console.log("Generando slug:", {
+  //   nombres: {
+  //     first_name: psychologist.first_name,
+  //     second_name: psychologist.second_name,
+  //     last_name: psychologist.last_name,
+  //     second_last_name: psychologist.second_last_name
+  //   },
+  //   slug: profileSlug,
+  //   fpv: psychologist.fpv
+  // });
 
   // Nombre completo para mostrar
   const fullName = [

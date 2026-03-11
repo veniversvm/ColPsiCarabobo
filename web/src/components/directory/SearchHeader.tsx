@@ -34,6 +34,7 @@ export function SearchHeader(props: SearchHeaderProps) {
               <input
                 type="text"
                 placeholder="Nombre, Cédula o FPV..."
+                name="nombre, cédula o fpv"
                 value={props.query}
                 class="w-full bg-white rounded-2xl py-4 px-6 shadow-xl outline-none focus:ring-4 focus:ring-colpsi-yellow/50 transition-all text-colpsi-text font-medium pr-12"
                 onInput={(e) => props.onQueryChange(e.currentTarget.value)}
@@ -47,6 +48,7 @@ export function SearchHeader(props: SearchHeaderProps) {
               disabled={!props.specialties}
               class="md:w-64 bg-white rounded-2xl py-4 px-6 shadow-xl outline-none focus:ring-4 focus:ring-colpsi-yellow/50 transition-all text-colpsi-text font-bold appearance-none cursor-pointer disabled:opacity-60 disabled:cursor-wait"
               onChange={(e) => props.onSpecialtyChange(e.currentTarget.value)}
+              name="especialidad"
             >
               <Show
                 when={props.specialties}
@@ -70,6 +72,7 @@ export function SearchHeader(props: SearchHeaderProps) {
               <input
                 type="text"
                 placeholder="Ubicación (Municipio, Ciudad o Estado)..."
+                name="ubicacion"
                 value={props.location}
                 class="w-full bg-white rounded-2xl py-4 px-6 shadow-xl outline-none focus:ring-4 focus:ring-colpsi-yellow/50 transition-all text-colpsi-text font-medium pr-12"
                 onInput={(e) => props.onLocationChange(e.currentTarget.value)}

@@ -67,15 +67,17 @@ export default function PublicNoticiaDetailPage() {
   const ogImage = () =>
     postData()?.image_url ? imgUrl(postData()!.image_url) : `${SITE_URL}/og-default.jpg`;
 
-  createEffect(() => {
-    if (postData())
-      console.log(postData())
-  })
+  // createEffect(() => {
+  //   if (postData())
+  //     console.log(postData())
+  // })
+
+  const title: string = postData() ? `${postData()!.title} | COLPSI Carabobo` : "Noticia | COLPSI Carabobo"
 
   return (
     <>
       <Title>
-        {postData() ? `${postData()!.title} | COLPSI Carabobo` : "Noticia | COLPSI Carabobo"}
+        {title}
       </Title>
       <Meta
         name="description"

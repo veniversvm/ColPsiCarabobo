@@ -247,6 +247,8 @@ export default function ProfilePage() {
     refetch();
   };
 
+  // console.log("Profile => ", profile())
+
   return (
     <main class="bg-[#f8fafc] min-h-screen pb-24 font-sans">
       <div class="bg-colpsi-blue pt-10 pb-24 px-4 md:px-8 shadow-inner">
@@ -287,8 +289,8 @@ export default function ProfilePage() {
             <AccountSection
               username={form.username}
               email={form.email}
-              newPassword1={form.new_password_1}
-              newPassword2={form.new_password_2}
+              newPassword1={form.new_password_1 || ""}
+              newPassword2={form.new_password_2 || ""}
               onUsernameChange={(v) => setForm("username", v)}
               onEmailChange={(v) => setForm("email", v)}
               onNewPassword1Change={(v) => setForm("new_password_1", v)}
@@ -304,26 +306,27 @@ export default function ProfilePage() {
               onServiceAddressChange={(v) => setForm("service_address", v)}
             />
 
-            <AcademicSection
-              undergraduateData={{
-                university_undergraduate: profile()?.university_undergraduate || "Universidad de Viena", // Este campo no existe en el JSON, necesitas agregarlo o usar un valor por defecto
-                graduate_date: profile()?.undergraduate?.date,
-                mention_undergraduate: profile()?.undergraduate?.mention,
-                title_image_one_url: profile()?.undergraduate?.title_image_one_url,
-                title_image_two_url: profile()?.undergraduate?.title_image_two_url,
-                title_image_three_url: profile()?.undergraduate?.title_image_three_url, // No existe en el JSON
-                register_number: profile()?.col_data?.register_number, // No existe en el JSON
-                register_folio: profile()?.col_data?.register_folio, // No existe en el JSON
-                register_tome: profile()?.col_data?.register_tome, // No existe en el JSON
-                register_title_date: profile()?.col_data?.register_title_date, // No existe en el JSON
-                register_title_state: profile()?.col_data?.register_title_state, // No existe en el JSON
-              }}
-              files={files()}
-              setFiles={setFiles}
-              showGraduateDate={Boolean(profile()?.undergraduate?.date)}
-              showMention={Boolean(profile()?.undergraduate?.mention)}
-              showUniversity={Boolean(profile()?.col_data?.university_undergraduate)}
-            />
+            
+              <AcademicSection
+                undergraduateData={{
+                  university_undergraduate: profile()?.col_data?.university_undergraduate,
+                  graduate_date:            profile()?.col_data?.graduate_date,
+                  mention_undergraduate:    profile()?.col_data?.mention_undergraduate,
+                  title_image_one_url:      profile()?.col_data?.title_image_one_url,
+                  title_image_two_url:      profile()?.col_data?.title_image_two_url,
+                  title_image_three_url:    profile()?.col_data?.title_image_three_url,
+                  register_number:          profile()?.col_data?.register_number,
+                  register_folio:           profile()?.col_data?.register_folio,
+                  register_tome:            profile()?.col_data?.register_tome,
+                  register_title_date:      profile()?.col_data?.register_title_date,
+                  register_title_state:     profile()?.col_data?.register_title_state,
+                }}
+                showUniversity={true}
+                showGraduateDate={true}
+                showMention={true}
+                files={files()}
+                setFiles={setFiles}
+              />
 
             <LocationSection
               // Carabobo

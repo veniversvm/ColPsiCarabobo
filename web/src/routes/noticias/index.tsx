@@ -158,7 +158,7 @@ export default function PublicNoticiasPage() {
           </p>
 
           {/* Búsqueda */}
-          <div class="relative mt-8 max-w-md">
+          {/* <div class="relative mt-8 max-w-md">
             <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
             </svg>
@@ -172,7 +172,7 @@ export default function PublicNoticiasPage() {
             <Show when={loading() && search()}>
               <div class="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-blue-300 border-t-white rounded-full animate-spin" />
             </Show>
-          </div>
+          </div> */}
         </div>
       </header>
 

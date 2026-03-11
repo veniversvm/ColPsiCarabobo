@@ -69,10 +69,12 @@ export default function PsiProfilePage() {
       ? imgUrl(profileData()!.profile_picture)
       : `${SITE_URL}/og-default.jpg`;
 
+  const title: string = `${fullName()} | COLPSI Carabobo`
+
   return (
     <>
       {/* ── SEO ──────────────────────────────────────────────────────────── */}
-      <Title>{fullName()} | COLPSI Carabobo</Title>
+      <Title>{title}</Title>
       <Meta
         name="description"
         content={
@@ -158,8 +160,8 @@ export default function PsiProfilePage() {
           {/* Perfil */}
           <Show when={profileData()}>
             {(psi) => {
-              console.log("🔍 DATOS COMPLETOS DEL FRONTEND:", psi());
-               console.log("🔍 UNDERGRADUATE EN FRONTEND:", psi().undergraduate);
+              // console.log("🔍 DATOS COMPLETOS DEL FRONTEND:", psi());
+              //  console.log("🔍 UNDERGRADUATE EN FRONTEND:", psi().undergraduate);
               const sortedPostGrades = sortPostGradesByYear(psi().post_grades);
               return (
                 <div class="flex flex-col lg:grid lg:grid-cols-3 gap-6">

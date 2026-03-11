@@ -22,10 +22,9 @@ export function ResultsGrid(props: ResultsGridProps) {
         </div>
       }
     >
-      {/* Contador de resultados */}
       <Show when={props.psychologists.length > 0 && props.total !== undefined}>
-        <p class="text-sm text-gray-400 font-bold mb-4 px-1">
-          Mostrando {props.psychologists.length} de {props.total} psicólogos
+        <p class="text-s text-gray-400 font-bold mb-4 px-10">
+          {props.total} psicólogos encontrados.
         </p>
       </Show>
 

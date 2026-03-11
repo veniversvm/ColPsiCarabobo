@@ -1,17 +1,23 @@
 // web/src/routes/directorio/index.tsx
-/**
- * Página principal del directorio profesional.
- * SSR no aplica aquí: es búsqueda interactiva, no hay contenido estático que indexar.
- */
-import { createSignal, onCleanup, onMount, Suspense } from "solid-js";
+import { createSignal, onCleanup, onMount, Suspense, lazy } from "solid-js";
 import { createStore } from "solid-js/store";
 import { apiGet } from "~/lib/api";
 import { DirectoryPsychologist } from "~/types/psi";
 import { SearchHeader } from "~/components/directory/SearchHeader";
-import { ResultsGrid } from "~/components/directory/ResultsGrid";
 import { FlagFooter } from "~/components/ui/FlagFooter";
 import { Meta, Title } from "@solidjs/meta";
+import { isServer } from "solid-js/web";
 import { createResource } from "solid-js";
+
+// clientOnly: este componente NUNCA se renderiza en el servidor.
+// Elimina el hydration mismatch porque el servidor no emite HTML para él.
+import { clientOnly } from "@solidjs/start";
+
+
+const ResultsGrid = clientOnly(
+  () => import("~/components/directory/ResultsGrid")
+    .then(m => ({ default: m.ResultsGrid }))
+);
 
 interface DirectoryResponse {
   data: DirectoryPsychologist[];
@@ -21,10 +27,10 @@ interface DirectoryResponse {
   total_pages: number;
 }
 
-const LIMIT = 12;
+const LIMIT = 10;
+export const ssr = false;
 
 export default function DirectoryPage() {
-  // ── Filtros ──────────────────────────────────────────────────────────────
   const [query, setQuery] = createSignal("");
   const [specialty, setSpecialty] = createSignal("");
   const [location, setLocation] = createSignal("");
@@ -32,33 +38,45 @@ export default function DirectoryPage() {
     q: "", spec: "", location: "",
   });
 
-  // ── Estado de scroll infinito ────────────────────────────────────────────
   const [page, setPage] = createSignal(1);
   const [allItems, setAllItems] = createStore<DirectoryPsychologist[]>([]);
   const [hasMore, setHasMore] = createSignal(true);
   const [loadingMore, setLoadingMore] = createSignal(false);
 
-  // ── Especialidades ───────────────────────────────────────────────────────
-  const [specialties] = createResource(() => apiGet<any[]>("/specialties"));
-
-  // ── Fetch inicial (página 1) — se dispara cuando cambian los filtros ─────
-  const [firstPage] = createResource(
-    () => searchParams(),
-    async (params) => {
-      // Reset al buscar
-      setPage(1);
-      setHasMore(true);
-      const res = await apiGet<DirectoryResponse>(
-        `/psi/directory?q=${encodeURIComponent(params.q)}&specialty=${encodeURIComponent(params.spec)}&limit=${LIMIT}&page=1&location=${encodeURIComponent(params.location)}`
-      );
-      // Reemplaza la lista completa con los resultados frescos
-      setAllItems(res.data ?? []);
-      setHasMore((res.total_pages ?? 1) > 1);
-      return res;
+  const [specialties] = createResource(
+    () => !isServer,
+    async (ready) => {
+      if (!ready) return [];
+      try {
+        return await apiGet<any[]>("/specialties");
+      } catch {
+        return [];
+      }
     }
   );
 
-  // ── Carga de páginas adicionales ─────────────────────────────────────────
+  const [firstPage] = createResource(
+    () => (!isServer ? searchParams() : null),
+    async (params) => {
+      if (!params) return null;
+      try {
+        setPage(1);
+        setHasMore(true);
+        const res = await apiGet<DirectoryResponse>(
+          `/psi/directory?q=${encodeURIComponent(params.q)}&specialty=${encodeURIComponent(params.spec)}&limit=${LIMIT}&page=1&location=${encodeURIComponent(params.location)}`
+        );
+        setAllItems(res.data ?? []);
+        setHasMore((res.total_pages ?? 1) > 1);
+        return res;
+      } catch (err) {
+        console.error("[directorio] error cargando página 1:", err);
+        setAllItems([]);
+        setHasMore(false);
+        return null;
+      }
+    }
+  );
+
   const loadMore = async () => {
     if (loadingMore() || !hasMore()) return;
     setLoadingMore(true);
@@ -78,22 +96,17 @@ export default function DirectoryPage() {
     }
   };
 
-  // ── IntersectionObserver — sentinel al final de la lista ─────────────────
   let sentinel: HTMLDivElement | undefined;
 
   onMount(() => {
     const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) loadMore();
-      },
-      { rootMargin: "200px" } // empieza a cargar 200px antes del final
+      (entries) => { if (entries[0].isIntersecting) loadMore(); },
+      { rootMargin: "200px" }
     );
-
     if (sentinel) observer.observe(sentinel);
     onCleanup(() => observer.disconnect());
   });
 
-  // ── Búsqueda ─────────────────────────────────────────────────────────────
   const handleSearch = (e: Event) => {
     e.preventDefault();
     setSearchParams({ q: query(), spec: specialty(), location: location() });
@@ -121,6 +134,7 @@ export default function DirectoryPage() {
         />
 
         <div class="max-w-7xl mx-auto px-6 -mt-10 relative z-20">
+          {/* Suspense necesario porque clientOnly es lazy */}
           <Suspense fallback={<div class="h-96 bg-white animate-pulse rounded-[2.5rem]" />}>
             <ResultsGrid
               psychologists={allItems}
@@ -131,7 +145,6 @@ export default function DirectoryPage() {
             />
           </Suspense>
 
-          {/* Sentinel — el observer lo vigila para disparar loadMore */}
           <div ref={sentinel} class="h-4" />
         </div>
 
