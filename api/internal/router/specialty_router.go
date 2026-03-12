@@ -12,7 +12,7 @@ import (
 
 // SetupSpecialtyRoutes inicializa las dependencias y registra los endpoints del catálogo de especialidades.
 // Aplica una arquitectura de capas inyectando Repositorios -> Servicios -> Handlers.
-func SetupSpecialtyRoutes(router fiber.Router, db *gorm.DB) {
+func SetupSpecialtyRoutes(router fiber.Router, db *gorm.DB, analyticsSvc *service.AnalyticsService) {
 	// 1. INYECCIÓN DE DEPENDENCIAS
 	// Inicializamos los repositorios necesarios para el dominio y la seguridad del middleware.
 	repo := postgres.NewPsiRepository(db)
@@ -24,7 +24,7 @@ func SetupSpecialtyRoutes(router fiber.Router, db *gorm.DB) {
 	h := handler.NewSpecialtyHandler(svc)
 
 	// Configuración del middleware de autenticación dinámica.
-	authMid := middleware.NewAuthMiddleware(adminRepo, repo)
+	authMid := middleware.NewAuthMiddleware(adminRepo, repo, analyticsSvc)
 
 	// =========================================================================
 	// GRUPO ADMINISTRATIVO (ALTA PRIORIDAD)

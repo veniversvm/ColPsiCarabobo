@@ -16,36 +16,55 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue>();
 
 export function AuthProvider(props: { children: JSX.Element }) {
-  // Estado inicial: Intentamos recuperar de la cookie si estamos en el cliente
   const [user, setUser] = createSignal<AuthUser | null>(null);
 
-  // Inicialización (Solo corre en el navegador al cargar)
   onMount(() => {
     const savedUser = Cookies.get("user_data");
     if (savedUser) {
       try {
         setUser(JSON.parse(savedUser));
       } catch (e) {
-        logout();
+        clearLocalSession();
       }
     }
   });
 
   const login = (token: string, userData: AuthUser) => {
-    // 1. Guardar JWT para la API (Seguridad)
-    Cookies.set("jwt", token, { expires: 1, secure: true, sameSite: 'strict' });
-    
-    // 2. Guardar perfil básico para la UI (No sensible)
+    Cookies.set("jwt", token, { expires: 1, secure: true, sameSite: "strict" });
     Cookies.set("user_data", JSON.stringify(userData), { expires: 1 });
-    
-    // 3. Actualizar estado reactivo
     setUser(userData);
   };
 
-  const logout = () => {
+  // Limpia el estado local sin redirigir — usado internamente
+  const clearLocalSession = () => {
     Cookies.remove("jwt");
     Cookies.remove("user_data");
     setUser(null);
+  };
+
+  const logout = async () => {
+    const token = Cookies.get("jwt");
+    const currentRole = user()?.role;
+
+    // ── Notificar al backend ANTES de borrar el token ────────────────────────
+    // Solo psicólogos tienen endpoint de logout (admins no tienen sesión activa trackeada)
+    // Fire-and-forget: si falla la red, igual limpiamos localmente
+    if (token && currentRole === "psi") {
+      console.log(`${import.meta.env.VITE_API_URL}/psi/me/logout`)
+      try {
+        await fetch(`${import.meta.env.VITE_API_URL}/psi/me/logout`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } catch {
+        // Silencioso — la rotación de key es best-effort desde el cliente
+        // El token expirará solo a las 24h de todas formas
+      }
+    }
+    // ────────────────────────────────────────────────────────────────────────
+
+    clearLocalSession();
+
     if (!isServer) window.location.href = "/";
   };
 
@@ -64,7 +83,6 @@ export function AuthProvider(props: { children: JSX.Element }) {
   );
 }
 
-// Hook personalizado para usar la autenticación en cualquier parte
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) throw new Error("useAuth debe ser usado dentro de un AuthProvider");

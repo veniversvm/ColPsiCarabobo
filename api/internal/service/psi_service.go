@@ -636,16 +636,16 @@ func (s *PsiService) GetPublicDirectory(ctx context.Context, filter request_stru
 // GetPublicProfile construye la ficha técnica del psicólogo aplicando el "Escudo de Privacidad"
 // y la "Restricción de Solvencia": si el psicólogo no está al día con sus cuotas, el perfil
 // público solo expone los datos esenciales de identidad y su universidad de pregrado.
-func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_structs.PsiFullProfileDTO, error) {
+func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_structs.PsiFullProfileDTO, uuid.UUID, error) {
 	// 1. Obtener datos crudos de la DB
 	psi, err := s.repo.GetByFPV(ctx, id)
 	if err != nil {
-		return nil, errors.New("psicólogo no encontrado")
+		return nil, uuid.Nil, errors.New("psicólogo no encontrado")
 	}
 
 	// 2. Verificar si está activo
 	if !psi.IsActive {
-		return nil, errors.New("perfil no disponible")
+		return nil, uuid.Nil, errors.New("perfil no disponible")
 	}
 
 	// 3. RESTRICCIÓN DE SOLVENCIA — early return con datos mínimos
@@ -666,7 +666,7 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 			Specialties:    make([]string, 0),
 			PostGrades:     make([]request_structs.PostGradeDTO, 0),
 			SocialNetworks: make([]request_structs.SocialNetworkDTO, 0),
-		}, nil
+		}, uuid.Nil, nil
 	}
 
 	// A partir de aquí: psicólogo solvente — perfil completo con Privacy Shield
@@ -810,7 +810,7 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 		dto.Undergraduate.TitleImageThreeURL,
 	)
 
-	return dto, nil
+	return dto, psi.ID, nil
 }
 
 // =========================================================================
@@ -820,21 +820,21 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 // Login gestiona el acceso de psicólogos implementando "Key Rotation".
 // Al iniciar sesión, se genera un nuevo secreto de firma que invalida físicamente
 // cualquier token previo del usuario en otros dispositivos.
-func (s *PsiService) Login(ctx context.Context, identifier, password string) (string, error) {
+func (s *PsiService) Login(ctx context.Context, identifier, password string) (string, *domain.PsiUserModel, error) {
 	// 1. Buscar usuario
 	psi, err := s.repo.GetByIdentifier(ctx, identifier)
 	if err != nil {
-		return "", errors.New("credenciales inválidas")
+		return "", nil, errors.New("credenciales inválidas")
 	}
 
 	// 2. Verificar si está activo (Soft delete o ban)
 	if !psi.IsActive {
-		return "", errors.New("cuenta inactiva o suspendida")
+		return "", nil, errors.New("cuenta inactiva o suspendida")
 	}
 
 	// 3. Verificar contraseña
 	if err := bcrypt.CompareHashAndPassword([]byte(psi.Password), []byte(password)); err != nil {
-		return "", errors.New("credenciales inválidas")
+		return "", nil, errors.New("credenciales inválidas")
 	}
 
 	// 4. ROTACIÓN DE SESIÓN (Seguridad Senior)
@@ -847,7 +847,7 @@ func (s *PsiService) Login(ctx context.Context, identifier, password string) (st
 	psi.UpdateById = &psi.ID
 
 	if err := s.repo.UpdateKey(ctx, psi); err != nil {
-		return "", errors.New("error de sistema al iniciar sesión")
+		return "", nil, errors.New("error de sistema al iniciar sesión")
 	}
 
 	// 5. Generar JWT
@@ -871,7 +871,18 @@ func (s *PsiService) Login(ctx context.Context, identifier, password string) (st
 	}
 
 	// Firmar con la llave personal del usuario
-	return token.SignedString([]byte(newKey))
+	signed, err := token.SignedString([]byte(newKey))
+	return signed, psi, err
+}
+
+// Logout
+func (s *PsiService) Logout(ctx context.Context, psi *domain.PsiUserModel) error {
+	// Rotar la key invalida físicamente el token actual
+	// — cualquier request posterior con el JWT viejo fallará en validateToken
+	psi.Key = uuid.New().String()
+	psi.UpdateBy = psi.Username
+	psi.UpdateById = &psi.ID
+	return s.repo.UpdateKey(ctx, psi)
 }
 
 // =========================================================================

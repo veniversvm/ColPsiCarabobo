@@ -1,0 +1,25 @@
+FROM denoland/deno:alpine-2.7.5
+
+# 1. Directorio de trabajo
+WORKDIR /app
+
+# 2. Usuario no-root por seguridad
+USER deno
+
+# 3. Cachear dependencias (esto acelera los builds muchísimo)
+# Copiamos primero solo los archivos de dependencias
+COPY deno.json deno.lock* ./
+RUN deno cache --frozen main.ts || true
+
+# 4. Copiar el resto del código
+COPY . .
+
+# 5. Compilar/Cachear el entrypoint real
+RUN deno cache main.ts
+
+# 6. Puerto que usa Solid SSR
+EXPOSE 3000
+
+# 7. Comando de ejecución
+# En prod quitamos el --watch y --unstable si no son necesarios
+CMD ["run", "-A", "--unstable", "main.ts"]

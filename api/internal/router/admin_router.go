@@ -12,43 +12,48 @@ import (
 	"gorm.io/gorm"
 )
 
-func SetupAdminRoutes(router fiber.Router, db *gorm.DB) {
-	// 1. Configuración de dependencias
+func SetupAdminRoutes(router fiber.Router, db *gorm.DB, analyticsSvc *service.AnalyticsService) {
 	repo := postgres.NewAdminRepository(db)
 	psiRepo := postgres.NewPsiRepository(db)
+
 	mailSvc, err := service.NewMailService()
 	if err != nil {
 		log.Printf("⚠️  Advertencia: No se pudo conectar al servidor SMTP: %v", err)
 	}
+
 	svc := service.NewAdminService(repo, mailSvc)
 	h := handler.NewAdminHandler(svc)
-	authMid := middleware.NewAuthMiddleware(repo, psiRepo)
+	authMid := middleware.NewAuthMiddleware(repo, psiRepo, analyticsSvc)
+
+	// Handler de analytics (solo lectura del dashboard)
+	analyticsHandler := handler.NewAnalyticsHandler(analyticsSvc)
 
 	// =========================================================================
-	// RUTAS DE DESARROLLO (DEBUGGING)
+	// RUTAS DE DESARROLLO
 	// =========================================================================
-
-	// [!] ELIMINAR O COMENTAR ESTA LÍNEA EN PRODUCCIÓN
-	// Permite acceso directo desde el navegador en: http://localhost:8080/api/v1/debug-monitor
 	router.Get("/debug-monitor", monitor.New(monitor.Config{Title: "DEV ONLY - Monitor"}))
 
 	// =========================================================================
 	// RUTAS PÚBLICAS
 	// =========================================================================
 	auth := router.Group("/auth")
-	auth.Post("/login", h.Login)
+	auth.Post("/login", h.Login) // Login de admin — sin analytics de login por ahora
 
 	// =========================================================================
 	// RUTAS PROTEGIDAS (Admin Staff Only)
 	// =========================================================================
 	admin := router.Group("/admin", authMid.ProtectedAdmin404())
 
-	// Versión profesional del monitor (Requiere JWT)
 	admin.Get("/metrics", monitor.New(monitor.Config{
 		Title: "ColPsiCarabobo - Panel de Control Administrativo",
 	}))
 
-	// CRUD de Administradores
+	// ── Dashboard de analytics ───────────────────────────────────────────────
+	// GET /api/v1/admin/dashboard/stats
+	// Devuelve el JSON completo con todos los contadores, tendencias y tops
+	admin.Get("/dashboard/stats", analyticsHandler.GetDashboardStats)
+
+	// CRUD de Administradores (sin cambios)
 	admin.Post("/create", h.CreateAdmin)
 	admin.Get("/list", h.GetAdmins)
 	admin.Patch("/update", h.UpdateAdmin)

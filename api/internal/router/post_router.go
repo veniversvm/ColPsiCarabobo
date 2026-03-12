@@ -13,7 +13,7 @@ import (
 
 // SetupPostRoutes inicializa las dependencias y registra los endpoints del módulo de noticias y publicaciones.
 // Implementa un sistema de visibilidad dual: público para visitantes y extendido para miembros autenticados.
-func SetupPostRoutes(router fiber.Router, db *gorm.DB, s3Client *s3.S3Client) {
+func SetupPostRoutes(router fiber.Router, db *gorm.DB, s3Client *s3.S3Client, analyticsSvc *service.AnalyticsService) {
 	// 1. INYECCIÓN DE DEPENDENCIAS
 	// Inicializamos repositorios necesarios para la lógica de negocio y la validación de seguridad.
 	adminRepo := postgres.NewAdminRepository(db)
@@ -25,7 +25,7 @@ func SetupPostRoutes(router fiber.Router, db *gorm.DB, s3Client *s3.S3Client) {
 	h := handler.NewPostHandler(svc)
 
 	// Configuración del middleware de autenticación que soporta múltiples roles (Admin/Psicólogo).
-	authMid := middleware.NewAuthMiddleware(adminRepo, psiRepo)
+	authMid := middleware.NewAuthMiddleware(adminRepo, psiRepo, analyticsSvc)
 
 	// =========================================================================
 	// GRUPO DE CONSULTA (ACCESO HÍBRIDO)

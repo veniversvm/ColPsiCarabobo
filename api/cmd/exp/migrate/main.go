@@ -22,6 +22,11 @@ func main() {
 		&domain.PsiUserSocialNetwork{},
 		&domain.PsiODeontologia{},
 		&domain.PsiObservations{},
+		&domain.LoginEvent{},
+		&domain.PageView{},
+		&domain.SearchEvent{},
+		&domain.ProfileView{},
+		&domain.ActiveSession{},
 	)
 	if err != nil {
 		log.Fatalf("failed to load gorm schema: %v", err)
