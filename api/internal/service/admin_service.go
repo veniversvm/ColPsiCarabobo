@@ -53,7 +53,9 @@ func NewAdminService(repo domain.UserAdminRepository, mailService *MailService) 
 // emitido con anterioridad para este usuario (Single Session Enforcement).
 func (s *AdminService) Login(ctx context.Context, identifier, password string) (string, error) {
 
-	admin, err := s.repo.GetByIdentifier(ctx, identifier)
+	lowercased := strings.ToLower(identifier)
+
+	admin, err := s.repo.GetByIdentifier(ctx, lowercased)
 	if err != nil {
 		return "", errors.New("credenciales inválidas")
 	}
@@ -109,6 +111,16 @@ func (s *AdminService) GetAdmins(
 	search string,
 	page, limit int,
 ) (interface{}, error) {
+
+	if limit < 1 || limit > 100 {
+		limit = 10
+	}
+
+	if page < 1 {
+		page = 1
+	}
+
+	search = utils.CleanAlphaNumeric(search)
 
 	// Generación de llave de caché determinística
 	cacheKey := fmt.Sprintf("admins_l:%d_p:%d_s:%s_a:%v", limit, page, search, active)
@@ -209,6 +221,11 @@ func (s *AdminService) CreateAdmin(
 		return errors.New("la contraseña no cumple con los estándares de seguridad")
 	}
 
+	validate_email, err := utils.ParseAndValidateEmail(req.Username)
+	if err != nil {
+		return errors.New("el email es invalido")
+	}
+
 	// Construcción de la entidad con trazabilidad de auditoría inicial
 	newAdmin := &domain.UserAdmin{
 		AuditModel: domain.AuditModel{
@@ -218,7 +235,7 @@ func (s *AdminService) CreateAdmin(
 			UpdateById: &creator.ID,
 		},
 		Username: req.Username,
-		Email:    req.Email,
+		Email:    validate_email,
 		IsActive: true,
 		Key:      uuid.New().String(),
 		Sudo:     false, // Forzado a false; la elevación a Sudo es una operación externa a la API
@@ -319,7 +336,11 @@ func (s *AdminService) UpdateAdmin(
 		target.Username = *req.Username
 	}
 	if req.Email != nil {
-		target.Email = *req.Email
+		validate_email, err := utils.ParseAndValidateEmail(*req.Email)
+		if err != nil {
+			return fmt.Errorf("emial invalido")
+		}
+		target.Email = validate_email
 	}
 	if req.IsActive != nil {
 		target.IsActive = *req.IsActive

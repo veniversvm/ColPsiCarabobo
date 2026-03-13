@@ -6,6 +6,7 @@ package postgres
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
@@ -64,8 +65,8 @@ func (r *postRepo) List(ctx context.Context, filter domain.PostFilter, page, lim
 	query := r.db.WithContext(ctx).Model(&domain.Post{})
 
 	// 1. Filtro de estado (Publicado / Borrador)
-	if filter.IsActive != nil {
-		query = query.Where("is_active = ?", *filter.IsActive)
+	if len(filter.Status) > 0 {
+		query = query.Where("status IN ?", filter.Status)
 	}
 
 	// 2. Filtro de visibilidad (RBAC de contenido)
@@ -117,4 +118,16 @@ func (r *postRepo) Update(ctx context.Context, post *domain.Post, text *domain.T
 // Nota: Debido a la herencia de AuditFields, GORM aplicará Soft-Delete automáticamente.
 func (r *postRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	return r.db.WithContext(ctx).Delete(&domain.Post{}, "id = ?", id).Error
+}
+
+func (r *postRepo) PublishScheduled(ctx context.Context) int64 {
+	result := r.db.WithContext(ctx).
+		Model(&domain.Post{}).
+		Where("status = ? AND publish_at <= ?", domain.PostStatusScheduled, time.Now()).
+		Updates(map[string]interface{}{
+			"status":     domain.PostStatusPublished,
+			"publish_at": nil,
+			"updated_at": time.Now(),
+		})
+	return result.RowsAffected
 }

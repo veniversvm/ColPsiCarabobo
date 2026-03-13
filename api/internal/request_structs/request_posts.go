@@ -4,6 +4,8 @@
 // la primera línea de defensa y validación de los datos que entran a la API.
 package request_structs
 
+import "time"
+
 // =========================================================================
 // MÓDULO DE PUBLICACIONES Y NOTICIAS (CMS)
 // =========================================================================
@@ -17,8 +19,10 @@ type CreatePostRequest struct {
 	ShortDescription string `form:"short_description" json:"short_description" validate:"max=250" example:"Resumen de los ajustes arancelarios para el nuevo trimestre."`
 	Content          string `form:"content" json:"content" validate:"required" example:"<p>Estimados colegas, adjunto el contenido completo...</p>"`
 	// Type restringe la visibilidad de la publicación a nivel de base de datos.
-	Type     string `form:"type" json:"type" validate:"required,oneof=public psi" example:"public"`
-	IsActive bool   `form:"is_active" json:"is_active" example:"true"`
+	Type string `form:"type" json:"type" validate:"required,oneof=public psi" example:"public"`
+
+	Status    string     `form:"status" json:"status" validate:"required,oneof=draft published archived scheduled"`
+	PublishAt *time.Time `form:"publish_at" json:"publish_at,omitempty"`
 }
 
 // UpdatePostRequest es el DTO para operaciones de actualización parcial (PATCH).
@@ -26,11 +30,13 @@ type CreatePostRequest struct {
 // que desea modificar.
 type UpdatePostRequest struct {
 	// 'omitempty' es crucial aquí: le dice al validador "si el puntero es nil, no apliques la regla max=100".
-	Title            *string `form:"title" json:"title" validate:"omitempty,max=100"`
-	ShortDescription *string `form:"short_description" json:"short_description" validate:"omitempty,max=250"`
-	Content          *string `form:"content" json:"content"`
-	Type             *string `form:"type" json:"type" validate:"omitempty,oneof=public psi"`
-	IsActive         *bool   `form:"is_active" json:"is_active"`
+	Title            *string    `form:"title" json:"title" validate:"omitempty,max=100"`
+	ShortDescription *string    `form:"short_description" json:"short_description" validate:"omitempty,max=250"`
+	Content          *string    `form:"content" json:"content"`
+	Type             *string    `form:"type" json:"type" validate:"omitempty,oneof=public psi"`
+	Status           *string    `form:"status" json:"status" validate:"omitempty,oneof=draft published archived scheduled"`
+	PublishAt        *time.Time `form:"publish_at" json:"publish_at,omitempty"`
+	// IsActive         *bool   `form:"is_active" json:"is_active"`
 
 	// Nota de Arquitectura: La imagen (file) se maneja intencionalmente fuera de este DTO.
 	// Se extrae directamente en el Handler con c.FormFile("image") porque los archivos

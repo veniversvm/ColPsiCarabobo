@@ -10,6 +10,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"mime/multipart"
 	"time"
 
@@ -47,6 +48,10 @@ func NewPostService(repo domain.PostRepository, s3 *s3.S3Client) *PostService {
 func (s *PostService) CreatePost(ctx context.Context, admin *domain.UserAdmin, req request_structs.CreatePostRequest, file *multipart.FileHeader) error {
 	if !admin.CanPublish && !admin.Sudo {
 		return errors.New("no tienes permiso para publicar")
+	}
+
+	if req.Status == "scheduled" && req.PublishAt == nil {
+		return errors.New("un post programado requiere publish_at")
 	}
 
 	// 1. Subir imagen a S3 (si existe + Sanitización)
@@ -98,7 +103,8 @@ func (s *PostService) CreatePost(ctx context.Context, admin *domain.UserAdmin, r
 		ShortDescription: req.ShortDescription,
 		Type:             req.Type,
 		ImageS3Key:       s3Key,
-		IsActive:         req.IsActive,
+		Status:           domain.PostStatus(req.Status),
+		PublishAt:        req.PublishAt,
 		TextID:           textID,
 	}
 
@@ -118,18 +124,11 @@ func (s *PostService) GetPostsList(ctx context.Context, page, limit int, userRol
 
 	switch userRole {
 	case "admin":
-		// Admin ve todo (incluso inactivos)
-		filter.IsActive = nil
-		filter.Type = "" // Todos los tipos
+		filter.Status = nil // ve todos los estados
 	case "psi":
-		// Psicólogo ve Public + Psi, pero solo activos
-		active := true
-		filter.IsActive = &active
-		filter.Type = "all_visible" // Lógica interna del repo para (public + psi)
-	default:
-		// Público ve solo Public y Activos
-		active := true
-		filter.IsActive = &active
+		filter.Status = []domain.PostStatus{domain.PostStatusPublished}
+	default: // público
+		filter.Status = []domain.PostStatus{domain.PostStatusPublished}
 		filter.Type = "public"
 	}
 
@@ -161,18 +160,16 @@ func (s *PostService) GetPostByID(ctx context.Context, id uuid.UUID, userRole st
 		return post, nil
 
 	case "psi":
-		// El psicólogo solo ve si está activo
-		if !post.IsActive {
-			return nil, errors.New("el post no está activo")
+		if post.Status != domain.PostStatusPublished {
+			return nil, errors.New("post no disponible")
 		}
-		// Y si el tipo es público o exclusivo de psicólogos
 		if post.Type != "public" && post.Type != "psi" {
 			return nil, errors.New("acceso denegado")
 		}
 
 	default: // "public"
 		// El público solo ve activos y de tipo "public"
-		if !post.IsActive || post.Type != "public" {
+		if post.Status != domain.PostStatusPublished || post.Type != "public" {
 			return nil, errors.New("post no encontrado o privado")
 		}
 	}
@@ -238,8 +235,15 @@ func (s *PostService) UpdatePost(ctx context.Context, admin *domain.UserAdmin, r
 	if req.Type != nil {
 		post.Type = *req.Type
 	}
-	if req.IsActive != nil {
-		post.IsActive = *req.IsActive
+	if req.Status != nil {
+		// Validar scheduled
+		if *req.Status == "scheduled" && req.PublishAt == nil && post.PublishAt == nil {
+			return errors.New("un post programado requiere publish_at")
+		}
+		post.Status = domain.PostStatus(*req.Status)
+	}
+	if req.PublishAt != nil {
+		post.PublishAt = req.PublishAt
 	}
 
 	// Actualización de texto (si viene en el request)
@@ -271,5 +275,15 @@ func (s *PostService) UpdatePost(ctx context.Context, admin *domain.UserAdmin, r
 		s.s3Client.DeleteFile(ctx, oldS3Key)
 	}
 
+	return nil
+}
+
+// PublishScheduled busca posts programados cuya fecha ya llegó y los publica.
+// Llamar desde un ticker en main.go cada minuto.
+func (s *PostService) PublishScheduled(ctx context.Context) error {
+	result := s.repo.PublishScheduled(ctx)
+	if result > 0 {
+		log.Printf("[CMS] %d post(s) programados publicados automáticamente", result)
+	}
 	return nil
 }

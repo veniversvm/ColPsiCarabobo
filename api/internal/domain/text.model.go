@@ -1,6 +1,10 @@
 package domain
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 // TextModel representa el almacenamiento de contenido extenso de forma aislada.
 // Se utiliza para guardar biografías detalladas, artículos de blog o descripciones
@@ -16,6 +20,15 @@ type TextModel struct {
 	// Se define como tipo 'text' en Postgres para permitir longitud ilimitada.
 	Content string `gorm:"type:text" json:"content"`
 }
+
+type PostStatus string
+
+const (
+	PostStatusDraft     PostStatus = "draft"
+	PostStatusPublished PostStatus = "published"
+	PostStatusArchived  PostStatus = "archived"
+	PostStatusScheduled PostStatus = "scheduled"
+)
 
 // Post representa una publicación o noticia dentro de la plataforma del Colegio.
 // Diseñado para soportar tanto anuncios públicos como contenido exclusivo para colegiados.
@@ -48,8 +61,14 @@ type Post struct {
 	// No guardamos la URL completa para mantener flexibilidad si cambia el dominio del bucket.
 	ImageS3Key string `gorm:"size:512" json:"image_url"`
 
-	// IsActive permite el control de visibilidad (Borrador/Publicado).
-	IsActive bool `gorm:"default:true" json:"is_active"`
+	// Status reemplaza is_active con ciclo de vida completo
+	Status PostStatus `gorm:"type:varchar(20);not null;default:draft" json:"status"`
+
+	// PublishAt solo aplica cuando Status == "scheduled"
+	PublishAt *time.Time `gorm:"type:timestamptz" json:"publish_at,omitempty"`
+
+	// // IsActive permite el control de visibilidad (Borrador/Publicado).
+	// IsActive bool `gorm:"default:true" json:"is_active"`
 }
 
 /*

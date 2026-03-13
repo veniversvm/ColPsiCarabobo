@@ -38,6 +38,9 @@ type PsiUserRepository interface {
 	// Biografia full
 	GetTextContentByID(ctx context.Context, id uuid.UUID) (string, error)
 
+	// Validacion de username o email
+	ValidateUniqueCredentials(ctx context.Context, username, email string) error
+
 	// =========================================================================
 	// ACTUALIZACIONES (MUTACIONES)
 	// =========================================================================

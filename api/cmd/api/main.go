@@ -2,6 +2,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"time"
@@ -18,6 +19,7 @@ import (
 	_ "github.com/veniversvm/ColPsiCarabobo/api/docs"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/config"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/repository/postgres"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/router"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/service"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/utils"
@@ -84,6 +86,10 @@ func main() {
 
 	// 5. ANALYTICS SERVICE — instancia necesaria para el ticker
 	analyticsSvc := service.NewAnalyticsService(db)
+	postSvc := service.NewPostService(
+		postgres.NewPostRepository(db),
+		s3Client,
+	)
 
 	// ── Limpieza periódica de sesiones expiradas ──────────────────────────────
 	// Corre cada hora en background — elimina ActiveSession con expires_at < now
@@ -95,12 +101,19 @@ func main() {
 			log.Println("[Analytics] Sesiones expiradas limpiadas")
 		}
 	}()
+	go func() {
+		ticker := time.NewTicker(5 * time.Minute)
+		defer ticker.Stop()
+		for range ticker.C {
+			postSvc.PublishScheduled(context.Background())
+		}
+	}()
 	// ─────────────────────────────────────────────────────────────────────────
 
 	// 6. INICIALIZACIÓN DE FIBER
 	app := fiber.New(fiber.Config{
 		AppName:           "ColPsiCarabobo API v1.0",
-		EnablePrintRoutes: true,
+		EnablePrintRoutes: false,
 		ErrorHandler: func(ctx *fiber.Ctx, err error) error {
 			code := fiber.StatusInternalServerError
 			if e, ok := err.(*fiber.Error); ok {

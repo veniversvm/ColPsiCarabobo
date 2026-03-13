@@ -538,3 +538,28 @@ func (r *psiRepo) GetTextContentByID(ctx context.Context, id uuid.UUID) (string,
 
 	return textModel.Content, nil
 }
+
+// ValidateUniqueCredentials comprueba ambos campos y retorna un error descriptivo si fallan.
+func (r *psiRepo) ValidateUniqueCredentials(ctx context.Context, username, email string) error {
+	var count int64
+
+	// Verificar Username
+	if username != "" {
+
+		r.db.WithContext(ctx).Model(&domain.PsiUserModel{}).Where("username = ?", username).Count(&count)
+		if count > 0 {
+			return errors.New("el nombre de usuario ya está en uso")
+		}
+	}
+
+	// Verificar Email
+	if email != "" {
+
+		r.db.WithContext(ctx).Model(&domain.PsiUserModel{}).Where("email ILIKE ?", email).Count(&count)
+		if count > 0 {
+			return errors.New("el correo electrónico ya está registrado")
+		}
+	}
+
+	return nil
+}

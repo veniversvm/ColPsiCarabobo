@@ -19,7 +19,7 @@ type PostFilter struct {
 	// - true: solo activos (publicados).
 	// - false: solo inactivos (borradores).
 	// - nil: todos los estados (usado por administradores).
-	IsActive *bool
+	Status []PostStatus // reemplaza IsActive *bool
 
 	// Search permite realizar búsquedas de texto parcial (fuzzy search) sobre el título.
 	Search string
@@ -48,4 +48,8 @@ type PostRepository interface {
 	// Optimización Senior: Este método normalmente no carga el 'TextModel' asociado
 	// para ahorrar ancho de banda y memoria en la base de datos durante el scroll.
 	List(ctx context.Context, filter PostFilter, page, limit int) ([]Post, int64, error)
+
+	// PublishScheduled actualiza a 'published' todos los posts programados cuya fecha ya pasó.
+	// Retorna el número de filas afectadas.
+	PublishScheduled(ctx context.Context) int64
 }

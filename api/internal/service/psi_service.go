@@ -352,16 +352,34 @@ func (s *PsiService) UpdateProfileSelf(
 
 	// 4a. Credenciales
 	if req.Username != nil {
+		validate_username := strings.ToLower(*req.Username)
+		err := s.repo.ValidateUniqueCredentials(ctx, validate_username, "")
+		if err != nil {
+			return nil, err
+		}
 		psi.Username = *req.Username
 	}
 	if req.Email != nil {
-		psi.Email = *req.Email
+		validate_email, err := utils.ParseAndValidateEmail(*req.Email)
+		if err != nil {
+			return nil, err
+		}
+		err = s.repo.ValidateUniqueCredentials(ctx, "", validate_email)
+		if err != nil {
+			return nil, err
+		}
+		psi.Email = validate_email
 	}
 
 	// 4b. Contacto
 	if req.ContactEmail != nil {
-		psi.ContactEmail = *req.ContactEmail
+		validate_email, err := utils.ParseAndValidateEmail(*req.ContactEmail)
+		if err != nil {
+			return nil, err
+		}
+		psi.ContactEmail = validate_email
 	}
+
 	if req.PublicPhone != nil {
 		psi.PublicPhone = *req.PublicPhone
 	}

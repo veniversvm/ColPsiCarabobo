@@ -2,6 +2,7 @@
 import { createSignal, For, Show, onMount, onCleanup } from "solid-js";
 import { A } from "@solidjs/router";
 import { apiGet } from "~/lib/api";
+import { LoadingScreen } from "~/components/ui/LoadingScreen";
 
 interface Post {
   id: string;
@@ -21,23 +22,17 @@ interface PaginatedPosts {
 const BUCKET_URL = import.meta.env.VITE_BUCKET_URL || "http://localhost:9000/colpsi-bucket";
 const imgUrl = (key: string) => key ? `${BUCKET_URL}/${key}` : "";
 
-// ── Slug helpers ─────────────────────────────────────────────────────────────
-// Genera: "primer-post-comunicado-8519350e"
-// Solo usa el PRIMER SEGMENTO del UUID (8 caracteres) en lugar del UUID completo
 const toSlug = (title: string, id: string) => {
   const slugTitle = title
     .toLowerCase()
-    .normalize("NFD")                        // descompone acentos
-    .replace(/[\u0300-\u036f]/g, "")         // elimina diacríticos
-    .replace(/[^a-z0-9\s]/g, "")            // solo alfanumérico y espacios
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, "")
     .trim()
-    .replace(/\s+/g, "-")                   // espacios → guion
-    .replace(/-+/g, "-")                    // guiones múltiples → uno
-    .slice(0, 55);                          // máx 55 chars para el título
-  
-  // Extraer SOLO el primer segmento del UUID (antes del primer guion)
-  const firstSegment = id.split('-')[0];     // toma "8519350e" de "8519350e-ed29-4f27-bb0b-1618c5808b65"
-  
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .slice(0, 55);
+  const firstSegment = id.split('-')[0];
   return `${slugTitle}-${firstSegment}`;
 };
 
@@ -45,46 +40,35 @@ const LIMIT = 10;
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString("es-VE", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
+    day: "numeric", month: "long", year: "numeric",
   });
 
 // ─────────────────────────────────────────────────────────────────────────────
 export default function PublicNoticiasPage() {
-  const [posts, setPosts] = createSignal<Post[]>([]);
-  const [page, setPage] = createSignal(1);
-  const [loading, setLoading] = createSignal(false);
-  const [hasMore, setHasMore] = createSignal(true);
-  const [initialDone, setInitialDone] = createSignal(false);
-  const [search, setSearch] = createSignal("");
+  const [posts,         setPosts]         = createSignal<Post[]>([]);
+  const [page,          setPage]          = createSignal(1);
+  const [loading,       setLoading]       = createSignal(false);
+  const [hasMore,       setHasMore]       = createSignal(true);
+  const [initialDone,   setInitialDone]   = createSignal(false);
+  const [search,        setSearch]        = createSignal("");
   const [searchTimeout, setSearchTimeout] = createSignal<ReturnType<typeof setTimeout> | null>(null);
 
-  // Ref del sentinel para IntersectionObserver
   let sentinelRef!: HTMLDivElement;
   let observer: IntersectionObserver | null = null;
 
-  // ── Carga de página ─────────────────────────────────────────────────────
   const loadPage = async (pageNum: number, q: string, replace = false) => {
     if (loading()) return;
     setLoading(true);
     try {
-      const params = new URLSearchParams({
-        page: String(pageNum),
-        limit: String(LIMIT),
-      });
+      const params = new URLSearchParams({ page: String(pageNum), limit: String(LIMIT) });
       if (q) params.set("search", q);
-
       const data = await apiGet<PaginatedPosts>(`/posts?${params.toString()}`);
       const result = data?.data ?? [];
-
       if (replace) {
         setPosts(result);
       } else {
         setPosts((prev) => [...prev, ...result]);
       }
-
-      // Si devolvió menos de LIMIT, no hay más páginas
       setHasMore(result.length === LIMIT);
     } catch (err) {
       console.error("Error cargando posts:", err);
@@ -95,7 +79,6 @@ export default function PublicNoticiasPage() {
     }
   };
 
-  // ── Carga inicial + IntersectionObserver ────────────────────────────────
   onMount(() => {
     loadPage(1, "");
 
@@ -107,7 +90,7 @@ export default function PublicNoticiasPage() {
           loadPage(next, search());
         }
       },
-      { rootMargin: "200px" } // empieza a cargar 200px antes del borde inferior
+      { rootMargin: "200px" }
     );
 
     if (sentinelRef) observer.observe(sentinelRef);
@@ -119,7 +102,6 @@ export default function PublicNoticiasPage() {
     if (t) clearTimeout(t);
   });
 
-  // ── Búsqueda con debounce ───────────────────────────────────────────────
   const handleSearch = (q: string) => {
     setSearch(q);
     const prev = searchTimeout();
@@ -127,7 +109,7 @@ export default function PublicNoticiasPage() {
     const t = setTimeout(() => {
       setPage(1);
       setHasMore(true);
-      loadPage(1, q, true); // replace=true: vacía la lista y arranca desde página 1
+      loadPage(1, q, true);
     }, 350);
     setSearchTimeout(t);
   };
@@ -135,16 +117,13 @@ export default function PublicNoticiasPage() {
   const hero = () => posts()[0];
   const rest = () => posts().slice(1);
 
-  // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <main class="min-h-screen bg-[#f7f5f0]">
-        
 
       {/* ── CABECERA ───────────────────────────────────────────────────────── */}
       <header class="bg-[#0d2b5e] text-white py-16 px-6 relative overflow-hidden">
         <div class="absolute inset-0 opacity-5"
           style="background-image: repeating-linear-gradient(45deg, #fff 0, #fff 1px, transparent 0, transparent 50%); background-size: 12px 12px;" />
-
         <div class="max-w-5xl mx-auto relative">
           <p class="text-xs font-black uppercase tracking-[0.3em] text-blue-300 mb-3">
             Colegio de Psicólogos de Carabobo
@@ -156,32 +135,21 @@ export default function PublicNoticiasPage() {
           <p class="text-blue-200 text-sm max-w-md leading-relaxed">
             Información institucional, convocatorias y novedades para la comunidad psicológica de Venezuela.
           </p>
-
-          {/* Búsqueda */}
-          {/* <div class="relative mt-8 max-w-md">
-            <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
-            </svg>
-            <input
-              type="text"
-              placeholder="Buscar publicación..."
-              value={search()}
-              onInput={(e) => handleSearch(e.currentTarget.value)}
-              class="w-full pl-11 pr-10 py-3 bg-white/10 backdrop-blur border border-white/20 rounded-2xl text-sm text-white placeholder-blue-300 outline-none focus:bg-white/20 focus:border-white/40 transition-all"
-            />
-            <Show when={loading() && search()}>
-              <div class="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-blue-300 border-t-white rounded-full animate-spin" />
-            </Show>
-          </div> */}
         </div>
       </header>
 
       {/* ── CONTENIDO ──────────────────────────────────────────────────────── */}
       <div class="max-w-5xl mx-auto px-4 py-12">
 
-        {/* Skeleton carga inicial */}
+        {/* ── Loading institucional — reemplaza el SkeletonLoader ─────────── */}
         <Show when={!initialDone()}>
-          <SkeletonLoader />
+          <LoadingScreen
+            image="/noticias.png"
+            imageAlt="Noticias COLPSI Carabobo"
+            message="Cargando publicaciones..."
+            submessage="Colegio de Psicólogos de Carabobo"
+            size={300}
+          />
         </Show>
 
         {/* Sin resultados */}
@@ -244,10 +212,9 @@ export default function PublicNoticiasPage() {
 
         </Show>
 
-        {/* ── SENTINEL (div invisible que dispara la carga) ──────────────── */}
         <div ref={sentinelRef} class="h-1" />
 
-        {/* Spinner "cargando más" */}
+        {/* Spinner "cargando más" — scroll infinito, no reemplaza el loading inicial */}
         <Show when={loading() && initialDone()}>
           <div class="flex justify-center py-10">
             <div class="flex items-center gap-3 text-gray-400 text-sm font-bold">
@@ -315,39 +282,6 @@ function PostCard(props: { post: Post }) {
         </div>
       </article>
     </A>
-  );
-}
-
-// ── Skeleton inicial ──────────────────────────────────────────────────────────
-function SkeletonLoader() {
-  return (
-    <div class="space-y-5">
-      <div class="bg-white rounded-3xl overflow-hidden border border-gray-100 grid md:grid-cols-2 h-64 animate-pulse">
-        <div class="bg-gray-100" />
-        <div class="p-8 space-y-4">
-          <div class="h-3 bg-gray-100 rounded w-1/3" />
-          <div class="h-6 bg-gray-100 rounded w-full" />
-          <div class="h-6 bg-gray-100 rounded w-4/5" />
-          <div class="h-4 bg-gray-100 rounded w-full" />
-          <div class="h-4 bg-gray-100 rounded w-3/4" />
-        </div>
-      </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        <For each={[1, 2, 3]}>
-          {() => (
-            <div class="bg-white rounded-2xl overflow-hidden border border-gray-100 animate-pulse">
-              <div class="h-44 bg-gray-100" />
-              <div class="p-5 space-y-3">
-                <div class="h-2.5 bg-gray-100 rounded w-1/4" />
-                <div class="h-4 bg-gray-100 rounded w-full" />
-                <div class="h-4 bg-gray-100 rounded w-3/4" />
-                <div class="h-3 bg-gray-100 rounded w-full" />
-              </div>
-            </div>
-          )}
-        </For>
-      </div>
-    </div>
   );
 }
 
