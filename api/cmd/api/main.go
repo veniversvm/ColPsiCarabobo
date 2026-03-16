@@ -131,9 +131,10 @@ func main() {
 
 	app.Use(requestid.New())
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: "http://localhost:3000, http://127.0.0.1:3000, http://127.0.0.1, https://1mk7kj1l-3000.use2.devtunnels.ms/",
-		AllowHeaders: "Origin, Content-Type, Accept, Authorization, X-Idempotency-Key",
-		AllowMethods: "GET, POST, PATCH, DELETE, OPTIONS",
+		AllowOrigins:     "http://localhost:3000,http://127.0.0.1:3000,http://127.0.0.1,https://1mk7kj1l-3000.use2.devtunnels.ms",
+		AllowHeaders:     "Origin, Content-Type, Accept, Authorization, X-Idempotency-Key",
+		AllowMethods:     "GET, POST, PATCH, DELETE, OPTIONS",
+		AllowCredentials: true,
 	}))
 
 	app.Use(healthcheck.New(healthcheck.Config{
@@ -175,6 +176,7 @@ func main() {
 	// 9. ARRANQUE
 	port := config.Envs.Port
 	utils.PrintColpsiASCII()
-	log.Printf("🚀 ColPsiCarabobo Backend listo en puerto: %s", port)
+	log.Println("¡Bendito Jesus el rey que viene en el nombre del Señor!")
+	log.Printf("Ψ ColPsiCarabobo Backend listo en puerto: %s Ψ", port)
 	log.Fatal(app.Listen(":" + port))
 }

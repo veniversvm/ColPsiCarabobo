@@ -5,7 +5,10 @@
 // Aísla los contratos de la API de los modelos de base de datos internos.
 package request_structs
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/utils"
+)
 
 // =========================================================================
 // OPERACIONES ADMINISTRATIVAS (ADMIN ONLY)
@@ -106,11 +109,12 @@ type CreatePsiAdminRequest struct {
 type UpdatePsiAdminRequest struct {
 	ID uuid.UUID `json:"id" validate:"required"`
 
-	// --- Identidad y Filiación (Solo Admin puede corregir esto) ---
+	// --- Identidad y Filiación ---
 	FirstName      *string `json:"first_name"`
 	SecondName     *string `json:"second_name"`
 	LastName       *string `json:"last_name"`
 	SecondLastName *string `json:"second_last_name"`
+	Username       *string `json:"username"`
 	Email          *string `json:"email"`
 	FPV            *int    `json:"fpv"`
 	CI             *int    `json:"ci"`
@@ -124,24 +128,44 @@ type UpdatePsiAdminRequest struct {
 	IsActive    *bool `json:"is_active"`
 
 	// --- Datos de Contacto y Visibilidad ---
-	ContactEmail       *string `json:"contact_email"`
-	ShowContactEmail   *bool   `json:"show_contact_email"`
-	PublicPhone        *string `json:"public_phone"`
-	ShowPublicPhone    *bool   `json:"show_public_phone"`
-	ServiceAddress     *string `json:"service_address"`
-	ShowServiceAddress *bool   `json:"show_service_address"`
+	ContactEmail   *string `json:"contact_email"`
+	PublicPhone    *string `json:"public_phone"`
+	ServiceAddress *string `json:"service_address"`
 
-	// --- Ubicación ---
-	StateOutside                *string `json:"state_outside"`
-	MunicipalityOutSideCarabobo *string `json:"municipality_outside_carabobo"`
-	PhoneOutSideCarabobo        *string `json:"phone_outside_carabobo"`
-	CelPhoneOutSideCarabobo     *string `json:"cel_phone_outside_carabobo"`
+	ShowContactEmailRaw         string `json:"show_contact_email"`
+	ShowPublicPhoneRaw          string `json:"show_public_phone"`
+	ShowPublicServiceAddressRaw string `json:"show_public_service_address"` // ← fix: form → json
+
+	// --- Ubicación: Carabobo ---
+	MunicipalityCarabobo *string `json:"municipality_carabobo"`
+	PhoneCarabobo        *string `json:"phone_carabobo"`
+	CelPhoneCarabobo     *string `json:"cel_phone_carabobo"`
+
+	// --- Ubicación: Fuera de Carabobo (Venezuela) ---
+	StateOutside                  *string `json:"state_outside"`
+	MunicipalityOutSideCarabobo   *string `json:"municipality_outside_carabobo"`
+	PhoneOutSideCarabobo          *string `json:"phone_outside_carabobo"`
+	CelPhoneOutSideCarabobo       *string `json:"cel_phone_outside_carabobo"`
+	ServiceAddressOutSideCarabobo *string `json:"service_address_outside_carabobo"`
+
+	ShowPhoneOutSideCaraboboRaw          string `json:"show_phone_outside_carabobo"`
+	ShowCellPhoneOutSideCaraboboRaw      string `json:"show_cel_phone_outside_carabobo"`
+	ShowServiceAddressOutSideCaraboboRaw string `json:"show_public_service_address_outside_carabobo"`
+
+	// --- Ubicación: Fuera de Venezuela ---
+	Country                        *string `json:"country"`
+	PhoneOutSideVenezuela          *string `json:"phone_outside_venezuela"`
+	ServiceAddressOutSideVenezuela *string `json:"service_address_outside_venezuela"`
+
+	ShowPhoneOutSideVenezuelaRaw          string `json:"show_phone_outside_venezuela"`
+	ShowCellPhoneOutSideVenezuelaRaw      string `json:"show_cel_phone_outside_venezuela"`
+	ShowServiceAddressOutSideVenezuelaRaw string `json:"show_public_service_address_outside_venezuela"`
 
 	// --- Perfil Profesional ---
 	PrimarySpecialty   *string `json:"primary_specialty"`
 	SecondarySpecialty *string `json:"secondary_specialty"`
 	MiniBio            *string `json:"mini_bio"`
-	FullBio            *string `json:"full_bio"` // Por si el admin necesita moderar el texto
+	FullBio            *string `json:"full_bio"`
 
 	// --- DATOS COLEGIALES (ColData) ---
 	UniversityUndergraduate *string `json:"university_undergraduate"`
@@ -153,6 +177,10 @@ type UpdatePsiAdminRequest struct {
 	RegisterFolio           *string `json:"register_folio"`
 	RegisterTome            *string `json:"register_tome"`
 
+	ShowUniversityUndergraduateRaw string `json:"show_university_undergraduate"`
+	ShowGraduateDateRaw            string `json:"show_graduate_date"`
+	ShowMentionUndergraduateRaw    string `json:"show_mention_undergraduate"`
+
 	// --- Banderas Profesionales ---
 	GuildDirector       *bool   `json:"guild_director"`
 	SixtyFiveOrPlus     *bool   `json:"sixty_five_or_plus"`
@@ -162,6 +190,54 @@ type UpdatePsiAdminRequest struct {
 	DateOfLastSolvency  *string `json:"date_of_last_solvency"`
 	DoubleGuild         *bool   `json:"double_guild"`
 	CPSM                *bool   `json:"cpsm"`
+}
+
+// ── Getters: Contacto y Visibilidad ──────────────────────────────────────────
+
+func (r *UpdatePsiAdminRequest) ShowContactEmail() *bool {
+	return utils.BoolFromForm(r.ShowContactEmailRaw)
+}
+func (r *UpdatePsiAdminRequest) ShowPublicPhone() *bool {
+	return utils.BoolFromForm(r.ShowPublicPhoneRaw)
+}
+func (r *UpdatePsiAdminRequest) ShowPublicServiceAddress() *bool {
+	return utils.BoolFromForm(r.ShowPublicServiceAddressRaw)
+}
+
+// ── Getters: Fuera de Carabobo ────────────────────────────────────────────────
+
+func (r *UpdatePsiAdminRequest) ShowPhoneOutSideCarabobo() *bool {
+	return utils.BoolFromForm(r.ShowPhoneOutSideCaraboboRaw)
+}
+func (r *UpdatePsiAdminRequest) ShowCellPhoneOutSideCarabobo() *bool {
+	return utils.BoolFromForm(r.ShowCellPhoneOutSideCaraboboRaw)
+}
+func (r *UpdatePsiAdminRequest) ShowPublicServiceAddressOutSideCarabobo() *bool { // ← fix: quitado Raw del nombre
+	return utils.BoolFromForm(r.ShowServiceAddressOutSideCaraboboRaw)
+}
+
+// ── Getters: Fuera de Venezuela ───────────────────────────────────────────────
+
+func (r *UpdatePsiAdminRequest) ShowPhoneOutSideVenezuela() *bool {
+	return utils.BoolFromForm(r.ShowPhoneOutSideVenezuelaRaw)
+}
+func (r *UpdatePsiAdminRequest) ShowCellPhoneOutSideVenezuela() *bool {
+	return utils.BoolFromForm(r.ShowCellPhoneOutSideVenezuelaRaw)
+}
+func (r *UpdatePsiAdminRequest) ShowPublicServiceAddressOutSideVenezuela() *bool { // ← fix: quitado Raw del nombre
+	return utils.BoolFromForm(r.ShowServiceAddressOutSideVenezuelaRaw)
+}
+
+// ── Getters: Datos Colegiales ─────────────────────────────────────────────────
+
+func (r *UpdatePsiAdminRequest) ShowUniversityUndergraduate() *bool {
+	return utils.BoolFromForm(r.ShowUniversityUndergraduateRaw)
+}
+func (r *UpdatePsiAdminRequest) ShowGraduateDate() *bool {
+	return utils.BoolFromForm(r.ShowGraduateDateRaw)
+}
+func (r *UpdatePsiAdminRequest) ShowMentionUndergraduate() *bool {
+	return utils.BoolFromForm(r.ShowMentionUndergraduateRaw)
 }
 
 // =========================================================================

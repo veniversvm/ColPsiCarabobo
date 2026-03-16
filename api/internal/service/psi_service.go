@@ -353,7 +353,7 @@ func (s *PsiService) UpdateProfileSelf(
 	// 4a. Credenciales
 	if req.Username != nil {
 		validate_username := strings.ToLower(*req.Username)
-		err := s.repo.ValidateUniqueCredentials(ctx, validate_username, "")
+		err := s.repo.ValidateUniqueCredentials(ctx, validate_username, "", psi.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -364,7 +364,7 @@ func (s *PsiService) UpdateProfileSelf(
 		if err != nil {
 			return nil, err
 		}
-		err = s.repo.ValidateUniqueCredentials(ctx, "", validate_email)
+		err = s.repo.ValidateUniqueCredentials(ctx, "", validate_email, psi.ID)
 		if err != nil {
 			return nil, err
 		}

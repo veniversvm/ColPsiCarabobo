@@ -138,14 +138,148 @@ func (r *psiRepo) Delete(ctx context.Context, id uuid.UUID) error {
 
 // Update actualiza tanto el perfil como los datos colegiales dentro de una transacción.
 // Generalmente utilizado por administradores para ediciones globales.
-func (r *psiRepo) Update(ctx context.Context, psi *domain.PsiUserModel, colData *domain.PsiUserColData) error {
+func (r *psiRepo) Update(
+	ctx context.Context,
+	psi *domain.PsiUserModel,
+	colData *domain.PsiUserColData,
+	bioText *domain.TextModel,
+) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Save(psi).Error; err != nil {
+
+		// 1. Guardar Bio Extensa
+		if bioText != nil {
+			if err := tx.Session(&gorm.Session{FullSaveAssociations: false}).Save(bioText).Error; err != nil {
+				return err
+			}
+			psi.BioTextID = bioText.ID
+		}
+
+		// 2. Actualizar perfil principal
+		updateMap := map[string]interface{}{
+			// ── Credenciales ──────────────────────────────────────────────
+			"username": psi.Username,
+			"email":    psi.Email,
+			"password": psi.Password,
+			"key":      psi.Key,
+
+			// ── Identidad y Filiación (solo admin) ───────────────────────
+			"first_name":       psi.FirstName,
+			"second_name":      psi.SecondName,
+			"last_name":        psi.LastName,
+			"second_last_name": psi.SecondLastName,
+			"ci":               psi.CI,
+			"fpv":              psi.FPV,
+			"born_date":        psi.BornDate,
+			"genre":            psi.Genre,
+			"nationality":      psi.Nationality,
+
+			// ── Estatus Administrativo (solo admin) ──────────────────────
+			"is_active":     gorm.Expr("?", psi.IsActive),
+			"solvent":       gorm.Expr("?", psi.Solvent),
+			"proof_of_life": gorm.Expr("?", psi.ProofOfLife),
+
+			// ── Contacto ─────────────────────────────────────────────────
+			"contact_email":   psi.ContactEmail,
+			"public_phone":    psi.PublicPhone,
+			"service_address": psi.ServiceAddress,
+
+			// ── Ubicación: Carabobo ───────────────────────────────────────
+			"municipality_carabobo": psi.MunicipalityCarabobo,
+			"phone_carabobo":        psi.PhoneCarabobo,
+			"cel_phone_carabobo":    psi.CelPhoneCarabobo,
+
+			// ── Ubicación: Fuera de Carabobo (Venezuela) ─────────────────
+			"state_outside":                     psi.StateOutside,
+			"municipality_out_side_carabobo":    psi.MunicipalityOutSideCarabobo,
+			"phone_out_side_carabobo":           psi.PhoneOutSideCarabobo,
+			"cel_phone_out_side_carabobo":       psi.CelPhoneOutSideCarabobo,
+			"service_address_out_side_carabobo": psi.ServiceAddressOutSideCarabobo,
+
+			// ── Ubicación: Fuera de Venezuela ─────────────────────────────
+			"country":                            psi.Country,
+			"phone_out_side_venezuela":           psi.PhoneOutSideVenezuela,
+			"service_address_out_side_venezuela": psi.ServiceAddressOutSideVenezuela,
+
+			// ── Perfil Profesional ────────────────────────────────────────
+			"primary_specialty":   psi.PrimarySpecialty,
+			"secondary_specialty": psi.SecondarySpecialty,
+			"mini_bio":            psi.MiniBio,
+			"bio_text_id":         psi.BioTextID,
+
+			// ── Imagen de perfil ──────────────────────────────────────────
+			"profile_picture_s3_key": psi.ProfilePictureS3Key,
+
+			// ── Auditoría ─────────────────────────────────────────────────
+			"update_by":    psi.UpdateBy,
+			"update_by_id": psi.UpdateById,
+
+			// ── Privacidad: Contacto principal ────────────────────────────
+			"show_contact_email":          gorm.Expr("?", psi.ShowContactEmail),
+			"show_public_phone":           gorm.Expr("?", psi.ShowPublicPhone),
+			"show_public_service_address": gorm.Expr("?", psi.ShowPublicServiceAddress),
+
+			// ── Privacidad: Fuera de Carabobo ────────────────────────────
+			"show_phone_out_side_carabobo":                  gorm.Expr("?", psi.ShowPhoneOutSideCarabobo),
+			"show_cell_phone_out_side_carabobo":             gorm.Expr("?", psi.ShowCellPhoneOutSideCarabobo),
+			"show_public_service_address_out_side_carabobo": gorm.Expr("?", psi.ShowPublicServiceAddressOutSideCarabobo),
+
+			// ── Privacidad: Fuera de Venezuela ────────────────────────────
+			"show_phone_out_side_venezuela":                  gorm.Expr("?", psi.ShowPhoneOutSideVenezuela),
+			"show_cell_phone_out_side_venezuela":             gorm.Expr("?", psi.ShowCellPhoneOutSideVenezuela),
+			"show_public_service_address_out_side_venezuela": gorm.Expr("?", psi.ShowPublicServiceAddressOutSideVenezuela),
+		}
+
+		if err := tx.Model(&domain.PsiUserModel{}).
+			Where("id = ?", psi.ID).
+			Omit("created_at", "create_by", "create_by_id").
+			Updates(updateMap).Error; err != nil {
 			return err
 		}
 
+		// 3. Actualizar Datos Colegiales
 		if colData != nil {
-			if err := tx.Save(colData).Error; err != nil {
+			colDataMap := map[string]interface{}{
+				// ── Visibilidad ───────────────────────────────────────────
+				"show_university_undergraduate": gorm.Expr("?", colData.ShowUniversityUndergraduate),
+				"show_graduate_date":            gorm.Expr("?", colData.ShowGraduateDate),
+				"show_mention_undergraduate":    gorm.Expr("?", colData.ShowMentionUndergraduate),
+
+				// ── Datos Académicos (solo admin) ─────────────────────────
+				"university_undergraduate": colData.UniversityUndergraduate,
+				"graduate_date":            colData.GraduateDate,
+				"mention_undergraduate":    colData.MentionUndergraduate,
+
+				// ── Registro de Título (solo admin) ───────────────────────
+				"register_number":      colData.RegisterNumber,
+				"register_title_state": colData.RegisterTitleState,
+				"register_title_date":  colData.RegisterTitleDate,
+				"register_folio":       colData.RegisterFolio,
+				"register_tome":        colData.RegisterTome,
+
+				// ── Banderas Profesionales (solo admin) ───────────────────
+				"guild_director":        gorm.Expr("?", colData.GuildDirector),
+				"sixty_five_or_plus":    gorm.Expr("?", colData.SixtyFiveOrPlus),
+				"guild_collaborator":    gorm.Expr("?", colData.GuildCollaborator),
+				"public_employee":       gorm.Expr("?", colData.PublicEmployee),
+				"university_professor":  gorm.Expr("?", colData.UniversityProfessor),
+				"double_guild":          gorm.Expr("?", colData.DoubleGuild),
+				"cpsm":                  gorm.Expr("?", colData.CPSM),
+				"date_of_last_solvency": colData.DateOfLastSolvency,
+
+				// ── Imágenes de Títulos ───────────────────────────────────
+				"title_image_one_s3_key":   colData.TitleImageOneS3Key,
+				"title_image_two_s3_key":   colData.TitleImageTwoS3Key,
+				"title_image_three_s3_key": colData.TitleImageThreeS3Key,
+
+				// ── Auditoría ─────────────────────────────────────────────
+				"update_by":    colData.UpdateBy,
+				"update_by_id": colData.UpdateById,
+			}
+
+			if err := tx.Model(&domain.PsiUserColData{}).
+				Where("id = ?", colData.ID).
+				Omit("created_at", "create_by", "create_by_id").
+				Updates(colDataMap).Error; err != nil {
 				return err
 			}
 		}
@@ -540,26 +674,24 @@ func (r *psiRepo) GetTextContentByID(ctx context.Context, id uuid.UUID) (string,
 }
 
 // ValidateUniqueCredentials comprueba ambos campos y retorna un error descriptivo si fallan.
-func (r *psiRepo) ValidateUniqueCredentials(ctx context.Context, username, email string) error {
-	var count int64
-
-	// Verificar Username
+func (r *psiRepo) ValidateUniqueCredentials(ctx context.Context, username, email string, excludeID uuid.UUID) error {
 	if username != "" {
-
-		r.db.WithContext(ctx).Model(&domain.PsiUserModel{}).Where("username = ?", username).Count(&count)
+		var count int64
+		r.db.WithContext(ctx).Model(&domain.PsiUserModel{}).
+			Where("username ILIKE ? AND id != ?", username, excludeID).
+			Count(&count)
 		if count > 0 {
 			return errors.New("el nombre de usuario ya está en uso")
 		}
 	}
-
-	// Verificar Email
 	if email != "" {
-
-		r.db.WithContext(ctx).Model(&domain.PsiUserModel{}).Where("email ILIKE ?", email).Count(&count)
+		var count int64
+		r.db.WithContext(ctx).Model(&domain.PsiUserModel{}).
+			Where("email ILIKE ? AND id != ?", email, excludeID).
+			Count(&count)
 		if count > 0 {
-			return errors.New("el correo electrónico ya está registrado")
+			return errors.New("el email ya está en uso")
 		}
 	}
-
 	return nil
 }

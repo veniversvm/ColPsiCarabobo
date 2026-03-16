@@ -115,7 +115,7 @@ export default function AdminEditPsiPage() {
       public_phone:           p.public_phone           ?? "",
       show_public_phone:      p.show_public_phone      ?? false,
       service_address:        p.service_address        ?? "",
-      show_service_address:   p.show_public_service_address ?? false,
+      show_public_service_address: p.show_public_service_address ?? false,
 
       // Ubicación Carabobo
       municipality_carabobo:  p.municipality_carabobo  ?? "",
@@ -175,31 +175,58 @@ export default function AdminEditPsiPage() {
 
   // ── Submit principal ────────────────────────────────────────────────────
   const handleSave = async (e: Event) => {
-    e.preventDefault();
-    if (saving()) return;
-    setSaving(true);
-    setMessage(null);
+  e.preventDefault();
+  if (saving()) return;
+  setSaving(true);
+  setMessage(null);
 
-    const payload = {
-      ...unwrap(form),
-      ci:              parseInt(form.ci)              || null,
-      fpv:             parseInt(form.fpv)             || null,
-      register_number: parseInt(form.register_number) || null,
-    };
+  const RAW_BOOL_FIELDS = [
+    "show_contact_email",
+    "show_public_phone",
+    "show_public_service_address",
+    "show_phone_outside_carabobo",
+    "show_cel_phone_outside_carabobo",
+    "show_public_service_address_outside_carabobo",
+    "show_phone_outside_venezuela",
+    "show_cel_phone_outside_venezuela",
+    "show_public_service_address_outside_venezuela",
+    "show_university_undergraduate",
+    "show_graduate_date",
+    "show_mention_undergraduate",
+  ];
 
-    try {
-      await runUpdateAction({ id: params.id ?? "", payload });
-      setMessage({ type: "success", text: "Expediente actualizado exitosamente." });
-      refetch();
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    } catch (err: any) {
-      const raw = err?.message || String(err);
-      setMessage({ type: "error", text: raw.replace(/^.*?ApiError:\s*/i, "") || "Error al actualizar." });
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    } finally {
-      setSaving(false);
+  const rawForm = unwrap(form);
+  const payload: Record<string, any> = {};
+
+  for (const [key, value] of Object.entries(rawForm)) {
+    if (RAW_BOOL_FIELDS.includes(key)) {
+      payload[key] = value === true ? "1" : "0";
+    } else if (value === "") {
+      payload[key] = null;
+    } else {
+      payload[key] = value;
     }
-  };
+  }
+
+  payload.ci              = parseInt(rawForm.ci)              || null;
+  payload.fpv             = parseInt(rawForm.fpv)             || null;
+  payload.register_number = parseInt(rawForm.register_number) || null;
+
+  console.log(payload);
+
+  try {
+    await runUpdateAction({ id: params.id ?? "", payload });
+    setMessage({ type: "success", text: "Expediente actualizado exitosamente." });
+    refetch();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  } catch (err: any) {
+    const msg = err?.message || String(err);
+    setMessage({ type: "error", text: msg.replace(/^.*?ApiError:\s*/i, "") || "Error al actualizar." });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  } finally {
+    setSaving(false);
+  }
+};
 
   // ── CRUD redes sociales ─────────────────────────────────────────────────
   const handleAddSocial = async (e: Event) => {
@@ -414,7 +441,11 @@ export default function AdminEditPsiPage() {
                 <Field label="Dirección de Consultorio (Principal)">
                   <input type="text" value={form.service_address} onInput={(e) => setForm("service_address", e.currentTarget.value)} class={IC2} />
                 </Field>
-                <ToggleSwitch label="Mostrar dirección de consultorio" checked={form.show_service_address} onChange={(v) => setForm("show_service_address", v)} />
+                <ToggleSwitch 
+                  label="Mostrar dirección de consultorio" 
+                  checked={form.show_public_service_address} 
+                  onChange={(v) => setForm("show_public_service_address", v)} 
+                />
               </div>
             </div>
           </SectionCard>
@@ -470,7 +501,9 @@ export default function AdminEditPsiPage() {
                 <div class="mt-4 bg-yellow-50/50 p-4 rounded-2xl border border-yellow-100 grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <ToggleSwitch label="Mostrar Teléfono Fijo"      checked={form.show_phone_outside_carabobo}           onChange={(v) => setForm("show_phone_outside_carabobo",           v)} />
                   <ToggleSwitch label="Mostrar Celular"             checked={form.show_cel_phone_outside_carabobo}       onChange={(v) => setForm("show_cel_phone_outside_carabobo",       v)} />
-                  <ToggleSwitch label="Mostrar Dirección"           checked={form.show_service_address_outside_carabobo} onChange={(v) => setForm("show_service_address_outside_carabobo", v)} />
+                  <ToggleSwitch label="Mostrar Dirección" 
+                    checked={form.show_public_service_address_outside_carabobo} 
+                    onChange={(v) => setForm("show_public_service_address_outside_carabobo", v)} />
                 </div>
               </div>
 
@@ -496,7 +529,9 @@ export default function AdminEditPsiPage() {
                 <div class="mt-4 bg-green-50/50 p-4 rounded-2xl border border-green-100 grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <ToggleSwitch label="Mostrar Teléfono Internacional"  checked={form.show_phone_outside_venezuela}           onChange={(v) => setForm("show_phone_outside_venezuela",           v)} />
                   <ToggleSwitch label="Mostrar Celular Internacional"    checked={form.show_cel_phone_outside_venezuela}       onChange={(v) => setForm("show_cel_phone_outside_venezuela",       v)} />
-                  <ToggleSwitch label="Mostrar Dirección en Exterior"    checked={form.show_service_address_outside_venezuela} onChange={(v) => setForm("show_service_address_outside_venezuela", v)} />
+                  <ToggleSwitch label="Mostrar Dirección en Exterior" 
+                    checked={form.show_public_service_address_outside_venezuela} 
+                    onChange={(v) => setForm("show_public_service_address_outside_venezuela", v)} />
                 </div>
               </div>
             </div>

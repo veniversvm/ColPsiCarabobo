@@ -18,7 +18,7 @@ import { FullBioModal } from "~/components/directory/FullBioModal";
 
 export const ssr = true;
 
-const SITE_URL = import.meta.env.VITE_SITE_URL || "https://colpsi-carabobo.org";
+const SITE_URL = import.meta.env.VITE_SITE_URL || "http://localhost:8080/api/v1";
 const BUCKET_URL = import.meta.env.VITE_BUCKET_URL || "http://localhost:9000/colpsi-bucket";
 const imgUrl = (key: string) => (key ? `${BUCKET_URL}/${key}` : "");
 

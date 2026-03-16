@@ -1,5 +1,5 @@
 // web/src/app.tsx
-import { ErrorBoundary, Suspense } from "solid-js";
+import { ErrorBoundary, onMount, Suspense } from "solid-js";
 import { Router } from "@solidjs/router";
 import { FileRoutes } from "@solidjs/start/router";
 import { MetaProvider } from "@solidjs/meta";
@@ -9,6 +9,42 @@ import Navbar from "~/components/layaout/Navbar";
 import "./app.css";
 
 export default function App() {
+
+  /**
+   * Se imrpime correctamente, se ve desproporcionado solo en el editor
+   */
+  onMount(() => {
+    const logo = `
+       * * *
+     *       *
+    *  ,;;;,  *
+     */;;-;;\\*
+     /;/   \\;\\
+    /);|)-(|;;\\
+   ;;;/ \`"  \\;(;
+   |(|\\_/|\\_/|;|
+   |;|_|/^\\|_|;|
+   |;;\\=:=:=/;)|
+   |:;| : : |;:|
+   |);\\ : : /;;|
+   ;;;| _:_ |;(;
+   \\;;\\  |  /;;/
+    |(;\\   /;;|
+     \\;;| |;;/
+      |;| |;|
+     .'\`-.-''.
+    /   .-.  (\\
+   |   Q   \\__)|
+   '-.__   __.-'
+        \`\`\`
+
+     SANCTA MARIA 
+         ORA
+      PRO NOBIS
+    `;
+    console.log(logo);
+  });
+
   return (
     <MetaProvider>
       <Router

@@ -39,7 +39,7 @@ type PsiUserRepository interface {
 	GetTextContentByID(ctx context.Context, id uuid.UUID) (string, error)
 
 	// Validacion de username o email
-	ValidateUniqueCredentials(ctx context.Context, username, email string) error
+	ValidateUniqueCredentials(ctx context.Context, username, email string, excludeID uuid.UUID) error
 
 	// =========================================================================
 	// ACTUALIZACIONES (MUTACIONES)
@@ -47,7 +47,12 @@ type PsiUserRepository interface {
 
 	// Update guarda cambios en el modelo principal y/o los datos colegiales asociados.
 	// Se utiliza principalmente en operaciones de edición administrativa total.
-	Update(ctx context.Context, psi *PsiUserModel, colData *PsiUserColData) error
+	Update(
+		ctx context.Context,
+		psi *PsiUserModel,
+		colData *PsiUserColData,
+		bioText *TextModel,
+	) error
 
 	// UpdatePublicProfile actualiza la información que el psicólogo gestiona de sí mismo,
 	// como datos de contacto, biografía y preferencias de visibilidad.

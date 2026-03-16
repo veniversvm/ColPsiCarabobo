@@ -110,12 +110,26 @@ func (h *PsiHandler) UpdatePsiByAdmin(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "JSON inválido"})
 	}
 
+	profilePic, _ := c.FormFile("profile_picture")
+	titleImgOne, _ := c.FormFile("title_image_one")
+	titleImgTwo, _ := c.FormFile("title_image_two")
+	titleImgThree, _ := c.FormFile("title_image_three")
+
 	// Validación de "Request Vacío" para evitar llamadas innecesarias al servicio
-	if utils.IsEmptyReq(req) {
+	if utils.IsEmptyReq(req) && (profilePic == nil && titleImgOne == nil && titleImgTwo == nil && titleImgThree == nil) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "No se proporcionaron campos para actualizar"})
 	}
 
-	if err := h.service.UpdatePsiByAdmin(c.UserContext(), admin, targetID, req); err != nil {
+	if err := h.service.UpdatePsiByAdmin(
+		c.UserContext(),
+		admin,
+		targetID,
+		req,
+		profilePic,
+		titleImgOne,
+		titleImgTwo,
+		titleImgThree,
+	); err != nil {
 		return c.Status(403).JSON(fiber.Map{"error": err.Error()})
 	}
 	return c.JSON(fiber.Map{"message": "Perfil actualizado por administración"})

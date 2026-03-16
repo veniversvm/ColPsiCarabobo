@@ -6,10 +6,13 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"log"
+	"mime/multipart"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -209,20 +212,28 @@ func (s *PsiService) CreatePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 // UpdatePsiByAdmin permite a un administrador modificar íntegramente el expediente.
 // Soporta actualizaciones parciales (PATCH) mediante el uso de punteros en el DTO,
 // garantizando que solo los campos enviados en el JSON sean alterados en la base de datos.
-func (s *PsiService) UpdatePsiByAdmin(ctx context.Context, admin *domain.UserAdmin, targetID uuid.UUID, req request_structs.UpdatePsiAdminRequest) error {
+func (s *PsiService) UpdatePsiByAdmin(
+	ctx context.Context,
+	admin *domain.UserAdmin,
+	targetID uuid.UUID,
+	req request_structs.UpdatePsiAdminRequest,
+	profilePic *multipart.FileHeader,
+	titleImgOne *multipart.FileHeader,
+	titleImgTwo *multipart.FileHeader,
+	titleImgThree *multipart.FileHeader,
+) error {
 	// 1. VALIDACIÓN DE PERMISOS (RBAC)
 	if !admin.CanUpdatePsi && !admin.Sudo {
 		return errors.New("no tienes permiso para editar registros de psicólogos")
 	}
 
 	// 2. OBTENER REGISTRO ACTUAL
-	// El repositorio GetByID ya debe incluir el Preload("ColData")
 	psi, err := s.repo.GetByID(ctx, targetID)
 	if err != nil {
 		return fmt.Errorf("error al recuperar el psicólogo: %w", err)
 	}
 
-	// Helper local para parsear fechas de forma segura durante el mapeo
+	// Helper local para parsear fechas
 	parseDate := func(dateStr *string) time.Time {
 		if dateStr == nil || *dateStr == "" {
 			return time.Time{}
@@ -231,9 +242,44 @@ func (s *PsiService) UpdatePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 		return t
 	}
 
-	// 3. MAPEO DE TABLA PRINCIPAL (PsiUserModel)
+	fmt.Printf("DEBUG MunicipalityCarabobo: %v\n", *req.MunicipalityCarabobo)
+	fmt.Printf("DEBUG StateOutside: %v\n", *req.StateOutside)
+	if req.StateOutside != nil {
+		fmt.Printf("DEBUG StateOutside value: %q\n", *req.StateOutside)
+		estado, ok := utils.NormalizeEstadoVenezuela(*req.StateOutside)
+		fmt.Printf("DEBUG NormalizeEstadoVenezuela result: %q, ok: %v\n", estado, ok)
+		if !ok {
+			return fmt.Errorf("estado venezolano inválido o no permitido: %q", *req.StateOutside)
+		}
+		psi.StateOutside = estado
+	}
 
-	// Identidad y Filiación
+	var uploadedS3Keys []string
+	var oldS3KeysToDelete []string
+
+	// 3. IMAGEN DE PERFIL
+	if profilePic != nil {
+		src, _ := profilePic.Open()
+		defer src.Close()
+		cleanBytes, ext, contentType, err := utils.SanitizeDocument(src)
+		if err != nil {
+			return err
+		}
+		filename := fmt.Sprintf("%s%s", psi.ID.String(), ext)
+		newKey, err := s.s3Client.UploadStream(ctx, bytes.NewReader(cleanBytes), "avatars", filename, contentType)
+		if err != nil {
+			return err
+		}
+		uploadedS3Keys = append(uploadedS3Keys, newKey)
+		if psi.ProfilePictureS3Key != "" && psi.ProfilePictureS3Key != newKey {
+			oldS3KeysToDelete = append(oldS3KeysToDelete, psi.ProfilePictureS3Key)
+		}
+		psi.ProfilePictureS3Key = newKey
+	}
+
+	// 4. MAPEO DE TABLA PRINCIPAL (PsiUserModel)
+
+	// 4a. Identidad y Filiación (solo admin)
 	if req.FirstName != nil {
 		psi.FirstName = *req.FirstName
 	}
@@ -247,7 +293,23 @@ func (s *PsiService) UpdatePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 		psi.SecondLastName = *req.SecondLastName
 	}
 	if req.Email != nil {
-		psi.Email = *req.Email
+		validate_email, err := utils.ParseAndValidateEmail(*req.Email)
+		if err != nil {
+			return err
+		}
+		err = s.repo.ValidateUniqueCredentials(ctx, "", validate_email, psi.ID)
+		if err != nil {
+			return err
+		}
+		psi.Email = validate_email
+	}
+	if req.Username != nil {
+		validate_username := strings.ToLower(*req.Username)
+		err := s.repo.ValidateUniqueCredentials(ctx, validate_username, "", psi.ID)
+		if err != nil {
+			return err
+		}
+		psi.Username = validate_username
 	}
 	if req.CI != nil {
 		psi.CI = *req.CI
@@ -265,7 +327,7 @@ func (s *PsiService) UpdatePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 		psi.BornDate = parseDate(req.BornDate)
 	}
 
-	// Estatus Administrativo
+	// 4b. Estatus Administrativo (solo admin)
 	if req.Solvent != nil {
 		psi.Solvent = *req.Solvent
 	}
@@ -276,32 +338,52 @@ func (s *PsiService) UpdatePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 		psi.IsActive = *req.IsActive
 	}
 
-	// Datos de Contacto y Privacidad
+	// 4c. Contacto y Privacidad
 	if req.ContactEmail != nil {
-		psi.ContactEmail = *req.ContactEmail
-	}
-	if req.ShowContactEmail != nil {
-		psi.ShowContactEmail = *req.ShowContactEmail
+		validate_email, err := utils.ParseAndValidateEmail(*req.ContactEmail)
+		if err != nil {
+			return err
+		}
+		psi.ContactEmail = validate_email
 	}
 	if req.PublicPhone != nil {
 		psi.PublicPhone = *req.PublicPhone
 	}
-	if req.ShowPublicPhone != nil {
-		psi.ShowPublicPhone = *req.ShowPublicPhone
-	}
 	if req.ServiceAddress != nil {
 		psi.ServiceAddress = *req.ServiceAddress
 	}
-	if req.ShowServiceAddress != nil {
-		psi.ShowPublicServiceAddress = *req.ShowServiceAddress
+	if v := req.ShowContactEmail(); v != nil {
+		psi.ShowContactEmail = *v
+	}
+	if v := req.ShowPublicPhone(); v != nil {
+		psi.ShowPublicPhone = *v
+	}
+	if v := req.ShowPublicServiceAddress(); v != nil {
+		psi.ShowPublicServiceAddress = *v
 	}
 
-	// Ubicación (Carabobo / Exterior)
-	if req.MunicipalityOutSideCarabobo != nil {
-		psi.MunicipalityOutSideCarabobo = *req.MunicipalityOutSideCarabobo
+	// 4d. Ubicación: Carabobo
+	if req.MunicipalityCarabobo != nil {
+		mun, ok := utils.NormalizeMunicipioCarabobo(*req.MunicipalityCarabobo)
+		if !ok {
+			return fmt.Errorf("municipio de Carabobo inválido: %q", *req.MunicipalityCarabobo)
+		}
+		psi.MunicipalityCarabobo = mun
 	}
+	if req.PhoneCarabobo != nil {
+		psi.PhoneCarabobo = *req.PhoneCarabobo
+	}
+	if req.CelPhoneCarabobo != nil {
+		psi.CelPhoneCarabobo = *req.CelPhoneCarabobo
+	}
+
+	// 4e. Ubicación: Fuera de Carabobo (Venezuela)
 	if req.StateOutside != nil {
-		psi.StateOutside = *req.StateOutside
+		estado, ok := utils.NormalizeEstadoVenezuela(*req.StateOutside)
+		if !ok {
+			return fmt.Errorf("estado venezolano inválido o no permitido: %q", *req.StateOutside)
+		}
+		psi.StateOutside = estado
 	}
 	if req.MunicipalityOutSideCarabobo != nil {
 		psi.MunicipalityOutSideCarabobo = *req.MunicipalityOutSideCarabobo
@@ -312,8 +394,40 @@ func (s *PsiService) UpdatePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 	if req.CelPhoneOutSideCarabobo != nil {
 		psi.CelPhoneOutSideCarabobo = *req.CelPhoneOutSideCarabobo
 	}
+	if req.ServiceAddressOutSideCarabobo != nil {
+		psi.ServiceAddressOutSideCarabobo = *req.ServiceAddressOutSideCarabobo
+	}
+	if v := req.ShowPhoneOutSideCarabobo(); v != nil {
+		psi.ShowPhoneOutSideCarabobo = *v
+	}
+	if v := req.ShowCellPhoneOutSideCarabobo(); v != nil {
+		psi.ShowCellPhoneOutSideCarabobo = *v
+	}
+	if v := req.ShowPublicServiceAddressOutSideCarabobo(); v != nil {
+		psi.ShowPublicServiceAddressOutSideCarabobo = *v
+	}
 
-	// Especialidades y Bio
+	// 4f. Ubicación: Fuera de Venezuela
+	if req.Country != nil {
+		psi.Country = *req.Country
+	}
+	if req.PhoneOutSideVenezuela != nil {
+		psi.PhoneOutSideVenezuela = *req.PhoneOutSideVenezuela
+	}
+	if req.ServiceAddressOutSideVenezuela != nil {
+		psi.ServiceAddressOutSideVenezuela = *req.ServiceAddressOutSideVenezuela
+	}
+	if v := req.ShowPhoneOutSideVenezuela(); v != nil {
+		psi.ShowPhoneOutSideVenezuela = *v
+	}
+	if v := req.ShowCellPhoneOutSideVenezuela(); v != nil {
+		psi.ShowCellPhoneOutSideVenezuela = *v
+	}
+	if v := req.ShowPublicServiceAddressOutSideVenezuela(); v != nil {
+		psi.ShowPublicServiceAddressOutSideVenezuela = *v
+	}
+
+	// 4g. Perfil Profesional
 	if req.PrimarySpecialty != nil {
 		psi.PrimarySpecialty = *req.PrimarySpecialty
 	}
@@ -321,84 +435,193 @@ func (s *PsiService) UpdatePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 		psi.SecondarySpecialty = *req.SecondarySpecialty
 	}
 	if req.MiniBio != nil {
-		psi.MiniBio = *req.MiniBio
+		runes := []rune(*req.MiniBio)
+		if len(runes) > 250 {
+			psi.MiniBio = string(runes[:250])
+		} else {
+			psi.MiniBio = *req.MiniBio
+		}
 	}
+
+	// 4h. Biografía extensa (sanitización XSS)
+	var bioTextToUpdate *domain.TextModel
 	if req.FullBio != nil {
-		// Aquí se podría implementar la lógica para actualizar el TextModel si fuera necesario
+		cleanHTML := s.sanitizer.Sanitize(*req.FullBio)
+		if psi.BioTextID != uuid.Nil {
+			psi.FullBio.Content = cleanHTML
+			psi.FullBio.UpdateBy = admin.Username
+			psi.FullBio.UpdateById = &admin.ID
+		} else {
+			psi.FullBio = domain.TextModel{
+				ID:      uuid.New(),
+				Content: cleanHTML,
+				AuditModel: domain.AuditModel{
+					CreateBy: admin.Username, CreateById: &admin.ID,
+					UpdateBy: admin.Username, UpdateById: &admin.ID,
+				},
+			}
+			psi.BioTextID = psi.FullBio.ID
+		}
+		bioTextToUpdate = &psi.FullBio
 	}
 
-	// 4. MAPEO DE TABLA RELACIONADA (PsiUserColData)
+	// 5. MAPEO DE TABLA RELACIONADA (PsiUserColData)
+	hasColDataChanges := req.ShowUniversityUndergraduateRaw != "" ||
+		req.ShowGraduateDateRaw != "" ||
+		req.ShowMentionUndergraduateRaw != "" ||
+		req.UniversityUndergraduate != nil ||
+		req.GraduateDate != nil ||
+		req.MentionUndergraduate != nil ||
+		req.RegisterNumber != nil ||
+		req.RegisterTitleState != nil ||
+		req.RegisterTitleDate != nil ||
+		req.RegisterFolio != nil ||
+		req.RegisterTome != nil ||
+		req.GuildDirector != nil ||
+		req.SixtyFiveOrPlus != nil ||
+		req.GuildCollaborator != nil ||
+		req.PublicEmployee != nil ||
+		req.UniversityProfessor != nil ||
+		req.DoubleGuild != nil ||
+		req.CPSM != nil ||
+		req.DateOfLastSolvency != nil ||
+		titleImgOne != nil || titleImgTwo != nil || titleImgThree != nil
 
-	// Información Académica de Pregrado
-	if req.UniversityUndergraduate != nil {
-		psi.ColData.UniversityUndergraduate = *req.UniversityUndergraduate
-	}
-	if req.GraduateDate != nil {
-		psi.ColData.GraduateDate = parseDate(req.GraduateDate)
-	}
-	if req.MentionUndergraduate != nil {
-		psi.ColData.MentionUndergraduate = *req.MentionUndergraduate
+	var colDataToUpdate *domain.PsiUserColData
+	if hasColDataChanges {
+		currentColData, err := s.repo.GetPsiUserColData(ctx, psi.ID)
+		if err != nil {
+			return err
+		}
+
+		// Visibilidad colegial
+		if v := req.ShowUniversityUndergraduate(); v != nil {
+			currentColData.ShowUniversityUndergraduate = *v
+		}
+		if v := req.ShowGraduateDate(); v != nil {
+			currentColData.ShowGraduateDate = *v
+		}
+		if v := req.ShowMentionUndergraduate(); v != nil {
+			currentColData.ShowMentionUndergraduate = *v
+		}
+
+		// Datos académicos (solo admin)
+		if req.UniversityUndergraduate != nil {
+			currentColData.UniversityUndergraduate = *req.UniversityUndergraduate
+		}
+		if req.GraduateDate != nil {
+			currentColData.GraduateDate = parseDate(req.GraduateDate)
+		}
+		if req.MentionUndergraduate != nil {
+			currentColData.MentionUndergraduate = *req.MentionUndergraduate
+		}
+
+		// Registro de título (solo admin)
+		if req.RegisterNumber != nil {
+			currentColData.RegisterNumber = *req.RegisterNumber
+		}
+		if req.RegisterTitleState != nil {
+			currentColData.RegisterTitleState = *req.RegisterTitleState
+		}
+		if req.RegisterTitleDate != nil {
+			currentColData.RegisterTitleDate = parseDate(req.RegisterTitleDate)
+		}
+		if req.RegisterFolio != nil {
+			currentColData.RegisterFolio = *req.RegisterFolio
+		}
+		if req.RegisterTome != nil {
+			currentColData.RegisterTome = *req.RegisterTome
+		}
+
+		// Banderas profesionales (solo admin)
+		if req.GuildDirector != nil {
+			currentColData.GuildDirector = *req.GuildDirector
+		}
+		if req.SixtyFiveOrPlus != nil {
+			currentColData.SixtyFiveOrPlus = *req.SixtyFiveOrPlus
+		}
+		if req.GuildCollaborator != nil {
+			currentColData.GuildCollaborator = *req.GuildCollaborator
+		}
+		if req.PublicEmployee != nil {
+			currentColData.PublicEmployee = *req.PublicEmployee
+		}
+		if req.UniversityProfessor != nil {
+			currentColData.UniversityProfessor = *req.UniversityProfessor
+		}
+		if req.DoubleGuild != nil {
+			currentColData.DoubleGuild = *req.DoubleGuild
+		}
+		if req.CPSM != nil {
+			currentColData.CPSM = *req.CPSM
+		}
+		if req.DateOfLastSolvency != nil {
+			currentColData.DateOfLastSolvency = parseDate(req.DateOfLastSolvency)
+		}
+
+		// Imágenes de títulos
+		processTitleImage := func(file *multipart.FileHeader, orderNum string, oldKey string) (string, error) {
+			if file == nil {
+				return oldKey, nil
+			}
+			src, err := file.Open()
+			if err != nil {
+				return "", err
+			}
+			defer src.Close()
+			cleanBytes, ext, contentType, err := utils.SanitizeDocument(src)
+			if err != nil {
+				return "", err
+			}
+			shortUUID := uuid.New().String()[:6]
+			filename := fmt.Sprintf("%s_title_%s_%s%s", psi.ID.String(), orderNum, shortUUID, ext)
+			newKey, err := s.s3Client.UploadStream(ctx, bytes.NewReader(cleanBytes), "titles", filename, contentType)
+			if err != nil {
+				return "", err
+			}
+			uploadedS3Keys = append(uploadedS3Keys, newKey)
+			if oldKey != "" && oldKey != newKey {
+				oldS3KeysToDelete = append(oldS3KeysToDelete, oldKey)
+			}
+			return newKey, nil
+		}
+
+		if newKey, err := processTitleImage(titleImgOne, "1", currentColData.TitleImageOneS3Key); err == nil {
+			currentColData.TitleImageOneS3Key = newKey
+		} else {
+			return err
+		}
+		if newKey, err := processTitleImage(titleImgTwo, "2", currentColData.TitleImageTwoS3Key); err == nil {
+			currentColData.TitleImageTwoS3Key = newKey
+		} else {
+			return err
+		}
+		if newKey, err := processTitleImage(titleImgThree, "3", currentColData.TitleImageThreeS3Key); err == nil {
+			currentColData.TitleImageThreeS3Key = newKey
+		} else {
+			return err
+		}
+
+		currentColData.UpdateBy = admin.Username
+		currentColData.UpdateById = &admin.ID
+		colDataToUpdate = currentColData
 	}
 
-	// Registro de Título
-	if req.RegisterNumber != nil {
-		psi.ColData.RegisterNumber = *req.RegisterNumber
-	}
-	if req.RegisterTitleState != nil {
-		psi.ColData.RegisterTitleState = *req.RegisterTitleState
-	}
-	if req.RegisterTitleDate != nil {
-		psi.ColData.RegisterTitleDate = parseDate(req.RegisterTitleDate)
-	}
-	if req.RegisterFolio != nil {
-		psi.ColData.RegisterFolio = *req.RegisterFolio
-	}
-	if req.RegisterTome != nil {
-		psi.ColData.RegisterTome = *req.RegisterTome
-	}
-
-	// Flags Profesionales y Gremiales
-	if req.GuildDirector != nil {
-		psi.ColData.GuildDirector = *req.GuildDirector
-	}
-	if req.SixtyFiveOrPlus != nil {
-		psi.ColData.SixtyFiveOrPlus = *req.SixtyFiveOrPlus
-	}
-	if req.GuildCollaborator != nil {
-		psi.ColData.GuildCollaborator = *req.GuildCollaborator
-	}
-	if req.PublicEmployee != nil {
-		psi.ColData.PublicEmployee = *req.PublicEmployee
-	}
-	if req.UniversityProfessor != nil {
-		psi.ColData.UniversityProfessor = *req.UniversityProfessor
-	}
-	if req.DoubleGuild != nil {
-		psi.ColData.DoubleGuild = *req.DoubleGuild
-	}
-	if req.CPSM != nil {
-		psi.ColData.CPSM = *req.CPSM
-	}
-	if req.DateOfLastSolvency != nil {
-		psi.ColData.DateOfLastSolvency = parseDate(req.DateOfLastSolvency)
-	}
-
-	// 5. ACTUALIZACIÓN DE AUDITORÍA
-	// Marcamos ambas entidades con la identidad del administrador que realiza el cambio.
-	now := time.Now()
-
+	// 6. AUDITORÍA
 	psi.UpdateBy = admin.Username
 	psi.UpdateById = &admin.ID
-	psi.UpdatedAt = now
 
-	psi.ColData.UpdateBy = admin.Username
-	psi.ColData.UpdateById = &admin.ID
-	psi.ColData.UpdatedAt = now
-
-	// 6. PERSISTENCIA
-	// Llamamos al repositorio para guardar ambas estructuras dentro de una transacción.
-	if err := s.repo.Update(ctx, psi, &psi.ColData); err != nil {
+	// 7. PERSISTENCIA — rollback S3 si falla la DB
+	if err := s.repo.Update(ctx, psi, colDataToUpdate, bioTextToUpdate); err != nil {
+		for _, key := range uploadedS3Keys {
+			_ = s.s3Client.DeleteFile(context.Background(), key)
+		}
 		return fmt.Errorf("error al persistir los cambios: %w", err)
+	}
+
+	// Limpiar S3 reemplazados solo tras confirmar persistencia
+	for _, oldKey := range oldS3KeysToDelete {
+		_ = s.s3Client.DeleteFile(context.Background(), oldKey)
 	}
 
 	return nil

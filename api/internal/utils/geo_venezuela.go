@@ -1,13 +1,32 @@
 // api/internal/utils/geo_venezuela.go
 package utils
 
-import "strings"
+import (
+	"strings"
+	"unicode"
+
+	"golang.org/x/text/transform"
+	"golang.org/x/text/unicode/norm"
+)
+
+// removeDiacritics elimina tildes y diacríticos para comparación flexible.
+func removeDiacritics(s string) string {
+	t := transform.Chain(norm.NFD, transform.RemoveFunc(func(r rune) bool {
+		return unicode.Is(unicode.Mn, r)
+	}), norm.NFC)
+	result, _, _ := transform.String(t, s)
+	return result
+}
+
+// foldCompare compara dos strings ignorando mayúsculas/minúsculas y tildes.
+func foldCompare(a, b string) bool {
+	return strings.EqualFold(removeDiacritics(a), removeDiacritics(b))
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MUNICIPIOS DE CARABOBO
 // ─────────────────────────────────────────────────────────────────────────────
 
-// municipiosCarabobo es el catálogo oficial de los 14 municipios del estado Carabobo.
 var municipiosCarabobo = []string{
 	"Bejuma",
 	"Carlos Arvelo",
@@ -25,13 +44,10 @@ var municipiosCarabobo = []string{
 	"Valencia",
 }
 
-// NormalizeMunicipioCarabobo valida que el municipio pertenezca al estado Carabobo.
-// Es indiferente a mayúsculas/minúsculas y retorna el nombre normalizado del catálogo.
-// Retorna ("", false) si no encuentra coincidencia.
 func NormalizeMunicipioCarabobo(input string) (string, bool) {
 	normalized := strings.TrimSpace(input)
 	for _, m := range municipiosCarabobo {
-		if strings.EqualFold(normalized, m) {
+		if foldCompare(normalized, m) {
 			return m, true
 		}
 	}
@@ -42,8 +58,6 @@ func NormalizeMunicipioCarabobo(input string) (string, bool) {
 // ESTADOS DE VENEZUELA (EXCLUYENDO CARABOBO)
 // ─────────────────────────────────────────────────────────────────────────────
 
-// estadosVenezuela es el catálogo de los 23 estados de Venezuela más el
-// Distrito Capital, excluyendo Carabobo (jurisdicción propia del Colegio).
 var estadosVenezuela = []string{
 	"Amazonas",
 	"Anzoátegui",
@@ -71,22 +85,20 @@ var estadosVenezuela = []string{
 	"Zulia",
 }
 
-// NormalizeEstadoVenezuela valida que el estado pertenezca a Venezuela y no sea Carabobo.
-// Es indiferente a mayúsculas/minúsculas y retorna el nombre normalizado del catálogo.
-// Retorna ("", false) si no encuentra coincidencia o si el input es "Carabobo".
 func NormalizeEstadoVenezuela(input string) (string, bool) {
 	normalized := strings.TrimSpace(input)
 	for _, e := range estadosVenezuela {
-		if strings.EqualFold(normalized, e) {
+		if foldCompare(normalized, e) {
 			return e, true
 		}
 	}
 	return "", false
 }
 
-// BoolFromForm convierte un valor de campo multipart/form-data a *bool.
-// Retorna nil si el string está vacío (campo no enviado).
-// Acepta: "1", "true", "yes" → true | "0", "false", "no" → false
+// ─────────────────────────────────────────────────────────────────────────────
+// BOOL FROM FORM
+// ─────────────────────────────────────────────────────────────────────────────
+
 func BoolFromForm(s string) *bool {
 	switch strings.ToLower(strings.TrimSpace(s)) {
 	case "1", "true", "yes":
