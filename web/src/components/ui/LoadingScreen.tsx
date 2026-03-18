@@ -14,6 +14,8 @@ interface LoadingScreenProps {
   fullscreen?: boolean;
   /** Tamaño del círculo de imagen en px. Default: 140 */
   size?: number;
+  /** Tamaño interno de la imagen como porcentaje del círculo. Default: 75 */
+  imageScale?: number;
 }
 
 /**
@@ -32,6 +34,7 @@ export function LoadingScreen(props: LoadingScreenProps) {
   const message    = () => props.message    ?? "Cargando...";
   const submessage = () => props.submessage ?? "";
   const fullscreen = () => props.fullscreen ?? false;
+  const scale      = () => props.imageScale ?? 75;
 
   return (
     <div
@@ -61,13 +64,13 @@ export function LoadingScreen(props: LoadingScreenProps) {
 
           {/* Imagen o símbolo Ψ */}
           <div
-              class="relative rounded-full bg-colpsi-blue flex items-center justify-center shadow-lg overflow-hidden"
-              style={`width:${props.size ?? 140}px; height:${props.size ?? 140}px`}
-            >
+            class="relative rounded-full bg-white flex items-center justify-center shadow-lg overflow-hidden"
+            style={`width:${props.size ?? 140}px; height:${props.size ?? 140}px`}
+          >
             <Show
               when={props.image}
               fallback={
-                <span class="text-white font-black text-4xl leading-none" style="font-family: serif">
+                <span class="text-colpsi-blue font-black text-4xl leading-none" style="font-family: serif">
                   Ψ
                 </span>
               }
@@ -75,7 +78,8 @@ export function LoadingScreen(props: LoadingScreenProps) {
               <img
                 src={props.image}
                 alt={props.imageAlt ?? "Cargando"}
-                class="w-full h-full object-cover"
+                style={`width:${scale()}%; height:${scale()}%`}
+                class="object-contain"
               />
             </Show>
           </div>

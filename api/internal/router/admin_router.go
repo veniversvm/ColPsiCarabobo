@@ -1,3 +1,4 @@
+// api/internal/router/admin.go
 package router
 
 import (
@@ -24,8 +25,6 @@ func SetupAdminRoutes(router fiber.Router, db *gorm.DB, analyticsSvc *service.An
 	svc := service.NewAdminService(repo, mailSvc)
 	h := handler.NewAdminHandler(svc)
 	authMid := middleware.NewAuthMiddleware(repo, psiRepo, analyticsSvc)
-
-	// Handler de analytics (solo lectura del dashboard)
 	analyticsHandler := handler.NewAnalyticsHandler(analyticsSvc)
 
 	// =========================================================================
@@ -37,23 +36,20 @@ func SetupAdminRoutes(router fiber.Router, db *gorm.DB, analyticsSvc *service.An
 	// RUTAS PÚBLICAS
 	// =========================================================================
 	auth := router.Group("/auth")
-	auth.Post("/login", h.Login) // Login de admin — sin analytics de login por ahora
+
+	// Login de admin con rate limiting — 5 intentos por IP cada 30 minutos
+	auth.Post("/login", middleware.AdminAuthRateLimiter(), h.Login)
 
 	// =========================================================================
-	// RUTAS PROTEGIDAS (Admin Staff Only)
+	// RUTAS PROTEGIDAS
 	// =========================================================================
 	admin := router.Group("/admin", authMid.ProtectedAdmin404())
 
 	admin.Get("/metrics", monitor.New(monitor.Config{
 		Title: "ColPsiCarabobo - Panel de Control Administrativo",
 	}))
-
-	// ── Dashboard de analytics ───────────────────────────────────────────────
-	// GET /api/v1/admin/dashboard/stats
-	// Devuelve el JSON completo con todos los contadores, tendencias y tops
 	admin.Get("/dashboard/stats", analyticsHandler.GetDashboardStats)
 
-	// CRUD de Administradores (sin cambios)
 	admin.Post("/create", h.CreateAdmin)
 	admin.Get("/list", h.GetAdmins)
 	admin.Patch("/update", h.UpdateAdmin)

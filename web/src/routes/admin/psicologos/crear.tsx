@@ -15,18 +15,30 @@ import {
 } from "~/components/admin/psicologos/create";
 import { PsicologoForm } from "~/types/admin";
 
-const createPsiServer = action(async (payload: any) => {
+const createPsiServer = action(async (payload: any, idempotencyKey: string) => {
   "use server";
   const { apiPost } = await import("~/lib/api");
-  return await apiPost("/admin/psi/create", payload);
+  return await apiPost("/admin/psi/create", payload, {
+    headers: { "X-Idempotency-Key": idempotencyKey },
+  });
 });
 
+// Genera una key única por intento: adminId se incluye en el servidor,
+// aquí usamos crypto.randomUUID() como nonce del lado cliente.
+function generateIdempotencyKey(): string {
+  return crypto.randomUUID();
+}
+
 export default function CreatePsychologistPage() {
-  const navigate = useNavigate();
+  const navigate        = useNavigate();
   const runCreateAction = useAction(createPsiServer);
 
-  const [saving, setSaving] = createSignal(false);
+  const [saving,  setSaving]  = createSignal(false);
   const [message, setMessage] = createSignal<{ type: "success" | "error"; text: string; details?: any } | null>(null);
+
+  // Una key por montaje del componente — se regenera si el admin navega
+  // fuera y vuelve, pero se mantiene si solo reintenta el mismo form.
+  const [idempotencyKey] = createSignal(generateIdempotencyKey());
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -53,17 +65,16 @@ export default function CreatePsychologistPage() {
   });
 
   const updateField = <K extends keyof PsicologoForm>(field: K, value: PsicologoForm[K]) => {
-  setForm(field, value);
-};
+    setForm(field, value);
+  };
 
   const handleSubmit = async (e: Event) => {
     e.preventDefault();
-
     if (saving()) return;
     
     if (!isStrongPassword(form.password)) {
       setMessage({ type: "error", text: "La contraseña no cumple con los requisitos de seguridad (Mín. 8 caracteres, mayúscula, minúscula, número y símbolo especial)." });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
@@ -72,31 +83,27 @@ export default function CreatePsychologistPage() {
 
     const payload = {
       ...form,
-      ci: parseInt(form.ci) || 0,
-      fpv: parseInt(form.fpv) || 0,
+      ci:              parseInt(form.ci)              || 0,
+      fpv:             parseInt(form.fpv)             || 0,
       register_number: parseInt(form.register_number) || 0,
     };
 
     try {
-      await runCreateAction(payload);
+      await runCreateAction(payload, idempotencyKey());
       setMessage({ type: "success", text: "Psicólogo registrado exitosamente. Volviendo al listado..." });
-      
-      setTimeout(() => {
-        navigate("/admin/psicologos");
-      }, 2000);
+      setTimeout(() => navigate("/admin/psicologos"), 2000);
 
     } catch (err: any) {
       const errorString = err?.message || String(err);
-      const isApiError = errorString.includes("ApiError") || err?.name === "ApiError";
+      const isApiError  = errorString.includes("ApiError") || err?.name === "ApiError";
 
       if (isApiError) {
-        const cleanMessage = errorString.replace(/^.*?ApiError:\s*/i, "");
-        setMessage({ type: "error", text: cleanMessage });
+        setMessage({ type: "error", text: errorString.replace(/^.*?ApiError:\s*/i, "") });
       } else {
         setMessage({ type: "error", text: "Error crítico de conexión o el servidor está caído." });
       }
-      
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setSaving(false);
     }
@@ -104,21 +111,15 @@ export default function CreatePsychologistPage() {
 
   return (
     <div class="space-y-6 animate-in fade-in duration-500 pb-24 max-w-5xl mx-auto">
-      
       <FormHeader />
-
       <FormMessage type={message()?.type} text={message()?.text || ""} details={message()?.details} />
-
       <form onSubmit={handleSubmit} class="space-y-8">
-        
-        <AccountSection form={form} setForm={updateField} />
-        <LegalIdentitySection form={form} setForm={updateField} />
+        <AccountSection            form={form} setForm={updateField} />
+        <LegalIdentitySection      form={form} setForm={updateField} />
         <AcademicRegistrationSection form={form} setForm={updateField} />
-        <ContactSection form={form} setForm={updateField} />
+        <ContactSection            form={form} setForm={updateField} />
         <InstitutionalStatusSection form={form} setForm={updateField} today={today} />
-        
         <FormActions saving={saving()} />
-
       </form>
     </div>
   );

@@ -1,5 +1,5 @@
 // web/src/components/psi/profile/SocialNetworksSection.tsx
-import { Show, For } from "solid-js";
+import { Show, For, createSignal } from "solid-js";
 import { SocialNetwork } from "~/types/psi";
 
 interface SocialNetworksSectionProps {
@@ -14,12 +14,50 @@ interface SocialNetworksSectionProps {
 }
 
 export function SocialNetworksSection(props: SocialNetworksSectionProps) {
+  // Estado local del modal — no sube a perfil.tsx
+  const [pendingId, setPendingId] = createSignal<string | null>(null);
+
+  const handleConfirmDelete = () => {
+    const id = pendingId();
+    if (!id) return;
+    props.onDeleteNetwork(id);
+    setPendingId(null);
+  };
+
   return (
     <section class="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-premium border border-gray-100 mt-12 mb-20">
+
+      {/* ── Modal de confirmación ────────────────────────────────────────── */}
+      <Show when={pendingId()}>
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div class="bg-white rounded-3xl p-8 shadow-2xl max-w-sm w-full mx-4 border border-gray-100">
+            <div class="text-center mb-6">
+              <span class="text-4xl">🔗</span>
+              <h3 class="text-lg font-black text-gray-800 mt-3">¿Eliminar esta red social?</h3>
+              <p class="text-sm text-gray-500 mt-1">Se quitará de tu perfil público.</p>
+            </div>
+            <div class="flex gap-3">
+              <button
+                onClick={() => setPendingId(null)}
+                class="flex-1 bg-gray-100 text-gray-700 py-3 rounded-2xl font-black hover:bg-gray-200 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                class="flex-1 bg-red-500 text-white py-3 rounded-2xl font-black hover:bg-red-600 active:scale-95 transition-all"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      </Show>
+
       <div class="mb-6 border-l-4 border-colpsi-yellow pl-3">
         <h2 class="text-xl font-black text-colpsi-blue leading-tight">Presencia Digital</h2>
       </div>
-      
+
       <Show when={props.networks && props.networks.length > 0}>
         <div class="mb-8 space-y-3">
           <For each={props.networks}>
@@ -29,17 +67,17 @@ export function SocialNetworksSection(props: SocialNetworksSectionProps) {
                   <span class="bg-white px-3 py-1 rounded-xl text-xs font-black text-colpsi-blue shadow-sm border border-gray-100">
                     {net.name}
                   </span>
-                  <a 
-                    href={net.url} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
+                  <a
+                    href={net.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     class="text-sm text-colpsi-muted hover:text-colpsi-blue truncate max-w-[150px] sm:max-w-md transition-colors"
                   >
                     {net.url}
                   </a>
                 </div>
-                <button 
-                  onClick={() => net.id && props.onDeleteNetwork(net.id)} 
+                <button
+                  onClick={() => net.id && setPendingId(net.id)}
                   class="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-xl transition-colors"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -54,25 +92,25 @@ export function SocialNetworksSection(props: SocialNetworksSectionProps) {
 
       <form onSubmit={props.onAddNetwork} class="bg-blue-50/50 p-6 md:p-8 rounded-[2rem] border border-blue-100 shadow-inner">
         <div class="flex flex-col md:flex-row gap-4">
-          <input 
-            type="text" 
-            placeholder="Red (Ej: Instagram)" 
-            required 
-            value={props.newNetworkName} 
-            onInput={(e) => props.onNetworkNameChange(e.currentTarget.value)} 
-            class="flex-1 bg-white border-2 border-transparent focus:border-colpsi-blue rounded-xl px-5 py-3 outline-none text-sm text-colpsi-text shadow-sm transition-all" 
+          <input
+            type="text"
+            placeholder="Red (Ej: Instagram)"
+            required
+            value={props.newNetworkName}
+            onInput={(e) => props.onNetworkNameChange(e.currentTarget.value)}
+            class="flex-1 bg-white border-2 border-transparent focus:border-colpsi-blue rounded-xl px-5 py-3 outline-none text-sm text-colpsi-text shadow-sm transition-all"
           />
-          <input 
-            type="url" 
-            placeholder="Enlace completo" 
-            required 
-            value={props.newNetworkUrl} 
-            onInput={(e) => props.onNetworkUrlChange(e.currentTarget.value)} 
-            class="flex-[2] bg-white border-2 border-transparent focus:border-colpsi-blue rounded-xl px-5 py-3 outline-none text-sm text-colpsi-text shadow-sm transition-all" 
+          <input
+            type="url"
+            placeholder="Enlace completo"
+            required
+            value={props.newNetworkUrl}
+            onInput={(e) => props.onNetworkUrlChange(e.currentTarget.value)}
+            class="flex-[2] bg-white border-2 border-transparent focus:border-colpsi-blue rounded-xl px-5 py-3 outline-none text-sm text-colpsi-text shadow-sm transition-all"
           />
-          <button 
-            type="submit" 
-            disabled={props.saving} 
+          <button
+            type="submit"
+            disabled={props.saving}
             class="bg-colpsi-blue text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-800 active:scale-95 transition-all shadow-md disabled:opacity-70"
           >
             {props.saving ? "..." : "AÑADIR"}

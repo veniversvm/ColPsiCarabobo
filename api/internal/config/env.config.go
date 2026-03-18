@@ -43,6 +43,9 @@ type Config struct {
 	SMTPFrom     string
 	SMTPReplyTo  string
 	SMTPFromName string
+
+	// Origins
+	AllowedOrigins string
 }
 
 // Envs es una instancia global (Singleton) que contiene la configuración cargada.
@@ -95,6 +98,9 @@ func InitConfig() {
 		SMTPFrom:     getEnv("SMTP_FROM", "info@colpsicarabobo.com"),
 		SMTPReplyTo:  getEnv("SMTP_REPLY_TO", ""),
 		SMTPFromName: getEnv("SMTP_FROM_NAME", "Colegio de Psicólogos de Carabobo"),
+
+		// Origins
+		AllowedOrigins: getEnv("ALLOWED_ORIGINS", "http://127.0.0.1:3000, http://localhost:3000"),
 	}
 }
 

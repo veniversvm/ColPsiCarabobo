@@ -38,9 +38,9 @@ export default function App() {
    '-.__   __.-'
         \`\`\`
 
-     SANCTA MARIA 
-         ORA
-      PRO NOBIS
+    SANCTA MARIA 
+        ORA
+     PRO NOBIS
     `;
     console.log(logo);
   });

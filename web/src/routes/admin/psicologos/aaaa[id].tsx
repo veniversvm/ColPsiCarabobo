@@ -2,7 +2,7 @@
 import { createResource, createEffect, Show, Suspense, createSignal, For } from "solid-js";
 import { createStore, unwrap } from "solid-js/store";
 import { useParams, useNavigate, action, useAction } from "@solidjs/router";
-import { apiGet, apiPost, apiDelete } from "~/lib/api";
+import { apiGet } from "~/lib/api";
 import { ToggleSwitch } from "~/components/ui/ToggleSwitch";
 import { RichTextEditor } from "~/components/ui/RichTextEditor";
 

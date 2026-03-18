@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"runtime"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -40,6 +41,8 @@ import (
 // @bearerFormat                JWT
 func main() {
 	// 1. CONFIGURACIÓN
+	runtime.GOMAXPROCS(2)
+
 	println("Intentando cargar configuración...")
 	config.InitConfig()
 	println("Configuración cargada. Intentando conectar a DB...")
@@ -130,8 +133,10 @@ func main() {
 	app.Use(fiberRecover.New())
 
 	app.Use(requestid.New())
+	var origins string = config.Envs.AllowedOrigins
+	log.Printf("Allowed origins: %v", origins)
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     "http://localhost:3000,http://127.0.0.1:3000,http://127.0.0.1,https://1mk7kj1l-3000.use2.devtunnels.ms",
+		AllowOrigins:     origins, // desde .env
 		AllowHeaders:     "Origin, Content-Type, Accept, Authorization, X-Idempotency-Key",
 		AllowMethods:     "GET, POST, PATCH, DELETE, OPTIONS",
 		AllowCredentials: true,

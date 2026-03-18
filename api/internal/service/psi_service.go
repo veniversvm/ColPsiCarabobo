@@ -718,23 +718,20 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 	if psi.ShowContactEmail {
 		dto.Email = psi.ContactEmail
 	}
-	if psi.ShowPublicPhone {
-		dto.Phone = psi.PublicPhone
-	}
-	if psi.ShowPublicServiceAddress {
-		dto.Address = psi.ServiceAddress
-	}
+	// if psi.ShowPublicPhone {
+	// 	dto.Phone = psi.PublicPhone
+	// }
+	// if psi.ShowPublicServiceAddress {
+	// 	dto.Address = psi.ServiceAddress
+	// }
 
 	// ── Ubicación: Carabobo ───────────────────────────────────────────────
-	if psi.MunicipalityCarabobo != "" {
+	if psi.MunicipalityCarabobo != "" && (psi.ShowPublicPhone || psi.ShowPublicServiceAddress) {
 		loc := &request_structs.PsiLocationCaraboboDTO{
 			Municipality: psi.MunicipalityCarabobo,
 		}
-		if psi.ShowPhoneOutSideCarabobo {
-			loc.Phone = psi.PhoneCarabobo
-		}
-		if psi.ShowCellPhoneOutSideCarabobo {
-			loc.CellPhone = psi.CelPhoneCarabobo
+		if psi.ShowPublicPhone {
+			loc.Phone = psi.PublicPhone
 		}
 		if psi.ShowPublicServiceAddress {
 			loc.Address = psi.ServiceAddress
@@ -757,6 +754,11 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 		if psi.ShowPublicServiceAddressOutSideCarabobo {
 			loc.Address = psi.ServiceAddressOutSideCarabobo
 		}
+
+		if psi.ShowCellPhoneOutSideCarabobo {
+			loc.CellPhone = psi.CelPhoneCarabobo
+		}
+
 		dto.Location.Venezuela = loc
 	}
 

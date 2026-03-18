@@ -1,4 +1,4 @@
-// routes/admin/noticias/crear.tsx
+// web/src/routes/admin/noticias/crear/index.tsx
 import { createSignal } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import { RichTextEditor } from "~/components/ui/RichTextEditor";
@@ -14,6 +14,9 @@ const labelClass = "block text-[10px] font-black text-gray-500 uppercase trackin
 // ─────────────────────────────────────────────────────────────────────────────
 export default function AdminCrearNoticiaPage() {
   const navigate = useNavigate();
+
+  // Una key por montaje — se regenera si el admin navega fuera y vuelve
+  const idempotencyKey = crypto.randomUUID();
 
   // ── Estado del formulario ─────────────────────────────────────────────────
   const [title, setTitle] = createSignal("");
@@ -64,7 +67,11 @@ export default function AdminCrearNoticiaPage() {
       if (imageFile()) fd.append("image", imageFile()!);
 
       const { apiPost } = await import("~/lib/api");
-      await apiPost("/admin/posts", fd);
+
+      // La key va en el header — el middleware de Go la valida contra el user ID
+      await apiPost("/admin/posts", fd, {
+        headers: { "X-Idempotency-Key": idempotencyKey },
+      });
 
       navigate("/admin/noticias");
     } catch (err: any) {

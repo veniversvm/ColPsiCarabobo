@@ -1,9 +1,12 @@
+// api/internal/router/psi.go
 package router
 
 import (
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/handler"
-	"github.com/veniversvm/ColPsiCarabobo/api/internal/middleware" // Importante para el auth
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/middleware"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/repository/postgres"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/service"
 	"github.com/veniversvm/ColPsiCarabobo/api/pkg/s3"
@@ -20,32 +23,33 @@ func SetupPsiRoutes(router fiber.Router, db *gorm.DB, s3Client *s3.S3Client, ana
 	}
 
 	svc := service.NewPsiService(repo, s3Client, mailService)
-
-	// ── PsiHandler ahora recibe analyticsSvc ─────────────────────────────────
-	// Ver siguiente paso: actualizar NewPsiHandler y los métodos Login,
-	// SearchDirectory y GetPublicProfile para llamar al servicio de analytics
 	h := handler.NewPsiHandler(svc, analyticsSvc)
-
 	authMid := middleware.NewAuthMiddleware(adminRepo, repo, analyticsSvc)
 
+	// Store de idempotencia — compartido solo para las rutas que lo necesitan
+	idempotencyStore := middleware.NewIdempotencyStore()
+
 	// =========================================================================
-	// ZONA 1: ADMINISTRACIÓN (sin cambios)
+	// ZONA 1: ADMINISTRACIÓN
 	// =========================================================================
 	adminGroup := router.Group("/admin/psi", authMid.ProtectedAdmin404())
 
 	adminGroup.Get("/list", h.ListAllPsis)
-	adminGroup.Post("/create", h.CreatePsiByAdmin)
+
+	// Idempotencia en crear — evita duplicados por doble click o reintento
+	adminGroup.Post(
+		"/create",
+		middleware.UserScopedIdempotency(idempotencyStore, 30*time.Minute),
+		h.CreatePsiByAdmin,
+	)
+
 	adminGroup.Post("/upload-csv", h.UploadCsv)
 	adminGroup.Get("/:id<uuid>", h.GetPsiByIDAdmin)
 	adminGroup.Patch("/:id", h.UpdatePsiByAdmin)
 	adminGroup.Delete("/:id", h.DeletePsiByAdmin)
 
-	// Rutas de social media para admin
-	// adminGroup.Post("/:id/social", h.AdminAddSocialNetwork)
-	// adminGroup.Delete("/:id/social/:socialId", h.AdminDeleteSocialNetwork)
-
 	// =========================================================================
-	// ZONA 2: AUTOGESTIÓN (sin cambios)
+	// ZONA 2: AUTOGESTIÓN
 	// =========================================================================
 	meGroup := router.Group("/psi/me", authMid.ProtectedPsiUser())
 
@@ -59,16 +63,12 @@ func SetupPsiRoutes(router fiber.Router, db *gorm.DB, s3Client *s3.S3Client, ana
 	meGroup.Post("/logout", h.Logout)
 
 	// =========================================================================
-	// ZONA 3: PÚBLICO — aquí viven los 3 puntos de analytics del psicólogo
+	// ZONA 3: PÚBLICO
 	// =========================================================================
 	psiGroup := router.Group("/psi")
 
-	// RecordLogin se llama dentro de h.Login tras autenticar exitosamente
-	psiGroup.Post("/login", h.Login)
-
-	// RecordSearch se llama dentro de h.SearchDirectory tras ejecutar la query
+	// Login con rate limiting — 10 intentos por IP cada 15 minutos
+	psiGroup.Post("/login", middleware.AuthRateLimiter(), h.Login)
 	psiGroup.Get("/directory", h.SearchDirectory)
-
-	// RecordProfileView se llama dentro de h.GetPublicProfile tras obtener el perfil
 	psiGroup.Get("/:id", h.GetPublicProfile)
 }

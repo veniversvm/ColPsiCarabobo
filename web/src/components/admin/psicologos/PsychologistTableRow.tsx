@@ -13,7 +13,7 @@ export function PsychologistTableRow(props: Props) {
   return (
     <tr class="hover:bg-blue-50/30 transition-colors group">
       <td class="px-6 py-4">
-        <A href={`/admin/psicologos/${psi().id}`} class="flex items-center gap-3 group/link">
+        <A href={`/admin/psicologos/${psi().id}/detalle`} class="flex items-center gap-3 group/link">
           <div class="w-10 h-10 rounded-xl bg-colpsi-blue text-white flex items-center justify-center font-bold shadow-sm group-hover/link:bg-colpsi-yellow group-hover/link:text-colpsi-blue transition-colors flex-shrink-0">
             {psi().first_name.charAt(0)}{psi().last_name.charAt(0)}
           </div>
@@ -59,7 +59,7 @@ export function PsychologistTableRow(props: Props) {
       </td>
       <td class="px-6 py-4 text-right">
         <A
-          href={`/admin/psicologos/${psi().id}`}
+          href={`/admin/psicologos/${psi().id}/detalle`}
           class="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-colpsi-blue hover:bg-colpsi-yellow transition-colors rounded-lg text-xs font-bold"
         >
           Detalle ✏️
