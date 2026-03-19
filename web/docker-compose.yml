@@ -1,0 +1,20 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: colpsi_web
+    env_file: .env
+    environment:
+      # IMPORTANTE: Al ser SSR/Server Actions, Deno llama a la API por la red interna
+      - VITE_API_URL=http://colpsi_api:5555/api/v1
+      - PORT=3000
+    ports:
+      - "3000:3000"
+    networks:
+      - colpsi_network
+    restart: unless-stopped
+
+networks:
+  colpsi_network:
+    external: true

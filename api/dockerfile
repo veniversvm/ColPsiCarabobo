@@ -1,22 +1,36 @@
-FROM golang:latest AS builder
+# ── ETAPA DE CONSTRUCCIÓN ──────────────────────────────────────────────────
+FROM golang:1.26-alpine AS builder
 
-# Establecer el directorio de trabajo
+# Instalamos dependencias para CGO y libwebp
+RUN apk add --no-cache \
+    gcc \
+    musl-dev \
+    libwebp-dev \
+    pkgconfig
+
 WORKDIR /app
 
-# 1. Copiar solo los archivos necesarios para descargar dependencias (evita rebuilds innecesarios)
 COPY go.mod go.sum ./
 RUN go mod download
 
-# 2. Copiar el resto del código y compilar
 COPY . .
 
-ARG DB_HOST
-ARG DB_USER
+# CGO_ENABLED=1 es necesario para librerías de imágenes que dependen de C
+RUN CGO_ENABLED=1 GOOS=linux go build -ldflags="-s -w" -o main ./cmd/api
 
-RUN go build -o main .
+# ── ETAPA FINAL (Imagen ligera) ─────────────────────────────────────────────
+FROM alpine:3.19
 
-# Exponer el puerto en el que la aplicación escucha
+# Instalamos certificados para TLS (SMTP/S3) y la librería de ejecución de webp
+RUN apk --no-cache add \
+    ca-certificates \
+    tzdata \
+    libwebp
+
+WORKDIR /app
+COPY --from=builder /app/main .
+# Copiamos la carpeta de templates si el binario la necesita en runtime
+COPY --from=builder /app/internal/templates ./internal/templates
+
 EXPOSE 5555
-
-# Comando para ejecutar la aplicación
 CMD ["./main"]

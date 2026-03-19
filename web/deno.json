@@ -1,7 +1,7 @@
 {
   "tasks": {
-    "dev": "deno run -A npm:vinxi dev",
-    "build": "deno run -A npm:vinxi build",
+    "dev": "deno run -A --node-modules-dir npm:vinxi dev",
+    "build": "deno run -A --node-modules-dir npm:vinxi build",
     "start": "deno run -A .output/server/index.mjs"
   },
   "compilerOptions": {

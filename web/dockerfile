@@ -1,25 +1,40 @@
-FROM denoland/deno:alpine-2.7.5
+# ── ETAPA DE CONSTRUCCIÓN (Builder) ────────────────────────────────────────
+# Usamos Debian para construir porque es más robusto con Node y dependencias nativas
+FROM denoland/deno:debian-2.7.5 AS builder
 
-# 1. Directorio de trabajo
+# Instalamos Node.js (necesario para que Vinxi/Vite empaqueten los assets)
+RUN apt-get update && apt-get install -y nodejs npm
+
 WORKDIR /app
 
-# 2. Usuario no-root por seguridad
-USER deno
-
-# 3. Cachear dependencias (esto acelera los builds muchísimo)
-# Copiamos primero solo los archivos de dependencias
+# 1. Copiar archivos de dependencias y descargar
 COPY deno.json deno.lock* ./
-RUN deno cache --frozen main.ts || true
+RUN deno install --frozen=false
 
-# 4. Copiar el resto del código
+# 2. Copiar el código fuente y construir la app para producción (SSR)
 COPY . .
 
-# 5. Compilar/Cachear el entrypoint real
-RUN deno cache main.ts
+# Esto genera la carpeta .output con el servidor compilado
+RUN deno task build
 
-# 6. Puerto que usa Solid SSR
+# ── ETAPA DE EJECUCIÓN (Final) ─────────────────────────────────────────────
+# Volvemos a Alpine para la imagen final para que sea ligera (aprox 80MB)
+FROM denoland/deno:alpine-2.7.5
+
+WORKDIR /app
+
+# 3. Copiamos solo los resultados del build y los estáticos
+# SolidStart/Vinxi coloca todo lo necesario para el servidor en .output
+COPY --from=builder /app/.output ./.output
+COPY --from=builder /app/public ./public
+
+# 4. Aseguramos permisos de ejecución
+RUN chmod +x .output/server/index.mjs
+
 EXPOSE 3000
 
-# 7. Comando de ejecución
-# En prod quitamos el --watch y --unstable si no son necesarios
-CMD ["run", "-A", "--unstable", "main.ts"]
+# Variables de entorno por defecto (Docker Compose las sobreescribirá)
+ENV PORT=3000
+
+# Permisos: -A permite red y lectura de archivos necesarios para SSR
+CMD ["run", "-A", ".output/server/index.mjs"]
