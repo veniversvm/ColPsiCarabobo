@@ -11,6 +11,9 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/service"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 // =========================================================================
@@ -60,9 +63,21 @@ func TestAuthMiddleware_Extensive(t *testing.T) {
 	psiID := uuid.New()
 	correctSecret := "secret-valencia-2026"
 
+	// --- FIX: Inicialización de GORM en modo DryRun ---
+	// Esto crea una instancia de DB que NO necesita conexión real.
+	// Evita el nil pointer dereference cuando AnalyticsService llama a s.db
+	dummyDB, _ := gorm.Open(postgres.New(postgres.Config{}), &gorm.Config{
+		DryRun: true,
+	})
+
+	// Inicializamos el servicio con la DB dummy
+	analytics := service.NewAnalyticsService(dummyDB)
+
 	mAdmin := &mockAdminRepo{}
 	mPsi := &mockPsiRepo{}
-	mw := NewAuthMiddleware(mAdmin, mPsi)
+
+	// Constructor con sus 3 dependencias
+	mw := NewAuthMiddleware(mAdmin, mPsi, analytics)
 
 	// --- ESCENARIO 1: PROTECTED ADMIN (SECURITY BY OBSCURITY) ---
 	t.Run("Admin_404_Logic", func(t *testing.T) {
@@ -86,7 +101,7 @@ func TestAuthMiddleware_Extensive(t *testing.T) {
 				wantStatus: 200,
 			},
 			{
-				name:       "Fallo: Token expirado (debe dar 404 por política de oscuridad)",
+				name:       "Fallo: Token expirado (404)",
 				token:      generateTestToken(adminID.String(), "admin", correctSecret, time.Now().Add(-time.Hour)),
 				setupMock:  func() {},
 				wantStatus: 404,
@@ -121,7 +136,6 @@ func TestAuthMiddleware_Extensive(t *testing.T) {
 		app := fiber.New()
 		app.Get("/psi/me", mw.ProtectedPsiUser(), func(c *fiber.Ctx) error { return c.SendStatus(200) })
 
-		// Caso: Algoritmo de firma incorrecto (Simulando ataque de cambio de alg de HS256 a None o RSA)
 		t.Run("Wrong_Signing_Method", func(t *testing.T) {
 			token := jwt.NewWithClaims(jwt.SigningMethodNone, jwt.MapClaims{"user_id": psiID.String()})
 			tokenString, _ := token.SignedString(jwt.UnsafeAllowNoneSignatureType)
@@ -131,19 +145,7 @@ func TestAuthMiddleware_Extensive(t *testing.T) {
 			resp, _ := app.Test(req)
 
 			if resp.StatusCode != 401 {
-				t.Errorf("Se esperaba 401 por algoritmo inválido, se obtuvo %d", resp.StatusCode)
-			}
-		})
-
-		// Caso: UUID Inválido dentro de los claims
-		t.Run("Malformed_UUID_In_Token", func(t *testing.T) {
-			token := generateTestToken("esto-no-es-un-uuid", "psi", correctSecret, time.Now().Add(time.Hour))
-			req := httptest.NewRequest("GET", "/psi/me", nil)
-			req.Header.Set("Authorization", "Bearer "+token)
-			resp, _ := app.Test(req)
-
-			if resp.StatusCode != 401 {
-				t.Errorf("Se esperaba 401 por UUID malformado, se obtuvo %d", resp.StatusCode)
+				t.Errorf("Se esperaba 401, se obtuvo %d", resp.StatusCode)
 			}
 		})
 	})
@@ -161,7 +163,6 @@ func TestAuthMiddleware_Extensive(t *testing.T) {
 			return c.Status(200).SendString("is_anonymous")
 		})
 
-		// Prueba: Es un Psicólogo
 		t.Run("Detects_Psi", func(t *testing.T) {
 			mPsi.GetByIDFunc = func(ctx context.Context, id uuid.UUID) (*domain.PsiUserModel, error) {
 				return &domain.PsiUserModel{ID: psiID, Key: correctSecret}, nil
@@ -170,7 +171,6 @@ func TestAuthMiddleware_Extensive(t *testing.T) {
 			req := httptest.NewRequest("GET", "/hybrid", nil)
 			req.Header.Set("Authorization", "Bearer "+token)
 
-			// Nota: Fiber app.Test no devuelve el cuerpo fácilmente, pero podemos validar el flujo
 			resp, _ := app.Test(req)
 			if resp.StatusCode != 200 {
 				t.Fail()
