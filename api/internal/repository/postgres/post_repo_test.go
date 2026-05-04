@@ -58,13 +58,31 @@ func TestPostRepo_FullLifecycle(t *testing.T) {
 		dummyText := &domain.TextModel{ID: uuid.New(), Content: "Contenido"}
 		tx.Create(dummyText)
 
-		// 2. Seed de datos con el TextID válido
-		active := true
-		tx.Create(&domain.Post{ID: uuid.New(), Title: "Aviso Publico", Type: "public", IsActive: active, TextID: dummyText.ID})
-		tx.Create(&domain.Post{ID: uuid.New(), Title: "Aviso Gremial", Type: "psi", IsActive: active, TextID: dummyText.ID})
+		// 2. Seed de datos con el Status en lugar de IsActive
+		// Asumimos "published" como el estado activo para el test
+		publishedStatus := domain.PostStatus("published")
 
-		// 3. Validar filtros
-		res, total, err := repo.List(ctx, domain.PostFilter{Type: "public", IsActive: &active}, 1, 10)
+		tx.Create(&domain.Post{
+			ID:     uuid.New(),
+			Title:  "Aviso Publico",
+			Type:   "public",
+			Status: publishedStatus, // Cambiado IsActive -> Status
+			TextID: dummyText.ID,
+		})
+		tx.Create(&domain.Post{
+			ID:     uuid.New(),
+			Title:  "Aviso Gremial",
+			Type:   "psi",
+			Status: publishedStatus, // Cambiado IsActive -> Status
+			TextID: dummyText.ID,
+		})
+
+		// 3. Validar filtros (asumiendo que PostFilter ahora usa Status)
+		res, total, err := repo.List(ctx, domain.PostFilter{
+			Type:   "public",
+			Status: []domain.PostStatus{publishedStatus}, // Cambiado IsActive -> Status
+		}, 1, 10)
+
 		require.NoError(t, err)
 		require.Equal(t, int64(1), total)
 		require.Equal(t, "Aviso Publico", res[0].Title)
