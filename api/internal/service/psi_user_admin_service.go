@@ -242,8 +242,8 @@ func (s *PsiService) UpdatePsiByAdmin(
 		return t
 	}
 
-	fmt.Printf("DEBUG MunicipalityCarabobo: %v\n", *req.MunicipalityCarabobo)
-	fmt.Printf("DEBUG StateOutside: %v\n", *req.StateOutside)
+	// fmt.Printf("DEBUG MunicipalityCarabobo: %v\n", *req.MunicipalityCarabobo)
+	// fmt.Printf("DEBUG StateOutside: %v\n", *req.StateOutside)
 	if req.StateOutside != nil {
 		fmt.Printf("DEBUG StateOutside value: %q\n", *req.StateOutside)
 		estado, ok := utils.NormalizeEstadoVenezuela(*req.StateOutside)

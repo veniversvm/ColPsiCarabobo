@@ -24,6 +24,7 @@ type AuthMiddleware struct {
 
 // ── Constructor: acepta el tercer parámetro ───────────────────────────────────
 func NewAuthMiddleware(a domain.UserAdminRepository, p domain.PsiUserRepository, analytics *service.AnalyticsService) *AuthMiddleware {
+
 	return &AuthMiddleware{
 		adminRepo: a,
 		psiRepo:   p,
