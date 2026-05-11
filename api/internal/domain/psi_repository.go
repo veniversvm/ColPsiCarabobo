@@ -94,6 +94,14 @@ type PsiUserRepository interface {
 	UpdatePostGrade(ctx context.Context, pg *PsiUserPostGrade) error
 
 	// =========================================================================
+	// GESTIÓN ACADÉMICA (POSTGRADOS)
+	// =========================================================================
+
+	CreateSolvency(ctx context.Context, pg *PsiUSerSolvency) error
+
+	GetSolvencies(ctx context.Context) ([]*PsiUSerSolvency, error)
+
+	// =========================================================================
 	// PRESENCIA DIGITAL (REDES SOCIALES)
 	// =========================================================================
 
