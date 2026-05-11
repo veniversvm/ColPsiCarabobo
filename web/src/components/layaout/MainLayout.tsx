@@ -19,32 +19,62 @@ export default function MainLayout(props: { children: JSX.Element }) {
                 Ψ
               </div>
               <span class="text-colpsi-blue font-bold text-lg leading-tight hidden sm:block">
-                ColPsi <span class="text-gray-400">Carabobo</span>
+                Colegio de Psicólogos
+                <span class="text-gray-400">del Estado Carabobo</span>
               </span>
             </div>
 
             {/* Desktop Navigation */}
             <nav class="hidden md:flex space-x-8 items-center">
-              <a href="/directorio" class="text-gray-600 hover:text-colpsi-blue font-medium">Directorio</a>
-              <a href="/noticias" class="text-gray-600 hover:text-colpsi-blue font-medium">Noticias</a>
+              <a
+                href="/directorio"
+                class="text-gray-600 hover:text-colpsi-blue font-medium"
+              >
+                Directorio
+              </a>
+              <a
+                href="/noticias"
+                class="text-gray-600 hover:text-colpsi-blue font-medium"
+              >
+                Noticias
+              </a>
               <Show when={!isAuthenticated()}>
-                <a href="/login" class="bg-colpsi-blue text-white px-4 py-2 rounded-lg font-semibold hover:bg-opacity-90 transition-all">
+                <a
+                  href="/login"
+                  class="bg-colpsi-blue text-white px-4 py-2 rounded-lg font-semibold hover:bg-opacity-90 transition-all"
+                >
                   Ingresar
                 </a>
               </Show>
               <Show when={isAuthenticated()}>
-                <button onClick={logout} class="text-colpsi-red font-medium">Salir</button>
+                <button onClick={logout} class="text-colpsi-red font-medium">
+                  Salir
+                </button>
               </Show>
             </nav>
 
             {/* Mobile Menu Button */}
             <div class="md:hidden flex items-center">
-              <button 
+              <button
                 onClick={() => setIsMenuOpen(!isMenuOpen())}
                 class="text-colpsi-blue p-2"
               >
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={isMenuOpen() ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
+                <svg
+                  class="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d={
+                      isMenuOpen()
+                        ? "M6 18L18 6M6 6l12 12"
+                        : "M4 6h16M4 12h16M4 18h16"
+                    }
+                  />
                 </svg>
               </button>
             </div>
@@ -54,23 +84,40 @@ export default function MainLayout(props: { children: JSX.Element }) {
         {/* Mobile Menu Overlay */}
         <Show when={isMenuOpen()}>
           <div class="md:hidden bg-white border-b border-gray-100 px-4 pt-2 pb-6 space-y-2 shadow-xl">
-            <a href="/directorio" class="block py-3 text-gray-700 font-medium border-b border-gray-50">Directorio</a>
-            <a href="/noticias" class="block py-3 text-gray-700 font-medium border-b border-gray-50">Noticias</a>
+            <a
+              href="/directorio"
+              class="block py-3 text-gray-700 font-medium border-b border-gray-50"
+            >
+              Directorio
+            </a>
+            <a
+              href="/noticias"
+              class="block py-3 text-gray-700 font-medium border-b border-gray-50"
+            >
+              Noticias
+            </a>
             <Show when={!isAuthenticated()}>
-              <a href="/login" class="block py-3 text-colpsi-blue font-bold">Iniciar Sesión</a>
+              <a href="/login" class="block py-3 text-colpsi-blue font-bold">
+                Iniciar Sesión
+              </a>
             </Show>
             <Show when={isAuthenticated()}>
-              <a href="/psi/me" class="block py-3 text-colpsi-blue font-bold">Mi Perfil</a>
-              <button onClick={logout} class="block py-3 text-colpsi-red font-bold">Cerrar Sesión</button>
+              <a href="/psi/me" class="block py-3 text-colpsi-blue font-bold">
+                Mi Perfil
+              </a>
+              <button
+                onClick={logout}
+                class="block py-3 text-colpsi-red font-bold"
+              >
+                Cerrar Sesión
+              </button>
             </Show>
           </div>
         </Show>
       </header>
 
       {/* MAIN CONTENT AREA */}
-      <main class="flex-grow">
-        {props.children}
-      </main>
+      <main class="flex-grow">{props.children}</main>
 
       {/* FOOTER SIMPLE */}
       <footer class="bg-gray-50 py-8 border-t border-gray-100">

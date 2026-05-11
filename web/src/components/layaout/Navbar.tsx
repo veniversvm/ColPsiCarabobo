@@ -21,8 +21,8 @@ export default function Navbar() {
                 Ψ
               </div>
               <div class="flex flex-col leading-none">
-                <span class="text-[#1e3a8a] font-extrabold text-lg tracking-tight">COLPSI</span>
-                <span class="text-gray-400 text-[10px] font-bold tracking-widest uppercase">Carabobo</span>
+                <span class="text-[#1e3a8a] font-extrabold text-lg tracking-tight"> Colegio de Psicólogos</span>
+                <span class="text-gray-400 text-[14px] font-bold tracking-widest uppercase">del Estado Carabobo</span>
               </div>
             </A>
           </div>
