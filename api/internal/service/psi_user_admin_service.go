@@ -42,6 +42,10 @@ func (s *PsiService) GetPsiByIDAdmin(ctx context.Context, admin *domain.UserAdmi
 		return nil, errors.New("psicólogo no encontrado")
 	}
 
+	solvencies, err := s.repo.GetSolvencies(ctx, targetID)
+
+	psi.Solvencies = solvencies
+
 	return psi, nil
 }
 
@@ -94,101 +98,25 @@ func (s *PsiService) CreatePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 	psiID := uuid.New()
 	colDataID := uuid.New()
 
-	psi := &domain.PsiUserModel{
-		ID:  psiID,
-		Key: uuid.New().String(),
-		AuditModel: domain.AuditModel{
-			CreateBy:   admin.Username,
-			CreateById: &admin.ID,
-			UpdateBy:   admin.Username,
-			UpdateById: &admin.ID,
-		},
-
-		// ── Credenciales ──────────────────────────────────────────────────
-		Username: req.Username,
-		Email:    req.Email,
-		Password: string(hashed),
-
-		// ── Identidad Legal ───────────────────────────────────────────────
-		FirstName:      req.FirstName,
-		SecondName:     req.SecondName,
-		LastName:       req.LastName,
-		SecondLastName: req.SecondLastName,
-		CI:             req.CI,
-		FPV:            req.FPV,
-		BornDate:       bornDate,
-		Genre:          req.Genre,
-		Nationality:    req.Nationality,
-
-		// ── Estatus Administrativo ────────────────────────────────────────
-		Solvent:     req.Solvent,
-		ProofOfLife: req.ProofOfLife,
-		IsActive:    req.IsActive,
-
-		// ── Contacto Público ──────────────────────────────────────────────
-		ContactEmail:   req.ContactEmail,
-		PublicPhone:    req.PublicPhone,
-		ServiceAddress: req.ServiceAddress,
-
-		// ── Ubicación: Carabobo ───────────────────────────────────────────
-		MunicipalityCarabobo: municipioCarabobo, // normalizado
-		PhoneCarabobo:        req.PhoneCarabobo,
-		CelPhoneCarabobo:     req.CelPhoneCarabobo,
-
-		// ── Ubicación: Fuera de Carabobo (Venezuela) ─────────────────────
-		StateOutside:                  estadoOutside, // normalizado, sin Carabobo
-		MunicipalityOutSideCarabobo:   req.MunicipalityOutSideCarabobo,
-		PhoneOutSideCarabobo:          req.PhoneOutSideCarabobo,
-		CelPhoneOutSideCarabobo:       req.CelPhoneOutSideCarabobo,
-		ServiceAddressOutSideCarabobo: req.ServiceAddressOutSideCarabobo,
-
-		// ── Ubicación: Fuera de Venezuela ─────────────────────────────────
-		Country:                        req.Country,
-		PhoneOutSideVenezuela:          req.PhoneOutSideVenezuela,
-		ServiceAddressOutSideVenezuela: req.ServiceAddressOutSideVenezuela,
-
-		// ── Perfil Profesional ────────────────────────────────────────────
-		PrimarySpecialty:   req.PrimarySpecialty,
-		SecondarySpecialty: req.SecondarySpecialty,
+	// 6. Crear un audit model
+	audit_moodel := domain.AuditModel{
+		CreateBy:   admin.Username,
+		CreateById: &admin.ID,
+		UpdateBy:   admin.Username,
+		UpdateById: &admin.ID,
 	}
 
-	colData := &domain.PsiUserColData{
-		ID:             colDataID,
-		PsiUserModelID: psiID,
-		AuditModel: domain.AuditModel{
-			CreateBy:   admin.Username,
-			CreateById: &admin.ID,
-			UpdateBy:   admin.Username,
-			UpdateById: &admin.ID,
-		},
+	psi := createPsiUSerModel(req, psiID, audit_moodel, hashed, municipioCarabobo, estadoOutside, bornDate)
+	//── Solvencias ────────────────────────────────────────────
 
-		// ── Pregrado ──────────────────────────────────────────────────────
-		UniversityUndergraduate: req.UniversityUndergraduate,
-		GraduateDate:            gradDate,
-		MentionUndergraduate:    req.MentionUndergraduate,
+	solvencies := createSolvencieModel(solvDate, psi.ID, audit_moodel)
 
-		// ── Registro Legal del Título ─────────────────────────────────────
-		RegisterTitleState: req.RegisterTitleState,
-		RegisterTitleDate:  regDate,
-		RegisterNumber:     req.RegisterNumber,
-		RegisterFolio:      req.RegisterFolio,
-		RegisterTome:       req.RegisterTome,
+	//── Datos colegiales ────────────────────────────────────────────
 
-		// ── Flags Gremiales ───────────────────────────────────────────────
-		GuildDirector:       req.GuildDirector,
-		SixtyFiveOrPlus:     req.SixtyFiveOrPlus,
-		GuildCollaborator:   req.GuildCollaborator,
-		PublicEmployee:      req.PublicEmployee,
-		UniversityProfessor: req.UniversityProfessor,
-
-		// ── Historial Gremial ─────────────────────────────────────────────
-		DateOfLastSolvency: solvDate,
-		DoubleGuild:        req.DoubleGuild,
-		CPSM:               req.CPSM,
-	}
+	colData := createColdata(req, psiID, colDataID, audit_moodel, gradDate, regDate, solvDate)
 
 	// 6. Persistencia transaccional — un solo punto de fallo
-	if err := s.repo.CreateWithColData(ctx, psi, colData); err != nil {
+	if err := s.repo.CreateWithColData(ctx, psi, colData, solvencies); err != nil {
 		return MapDBError(err)
 	}
 
@@ -696,4 +624,128 @@ func (s *PsiService) GetAdminDirectory(ctx context.Context, admin *domain.UserAd
 		"limit":       filter.Limit,
 		"total_pages": (total + int64(filter.Limit) - 1) / int64(filter.Limit),
 	}, nil
+}
+
+// =========================================================================
+// =========================================================================
+// AUXILIARY FUNCTIONS
+// =========================================================================
+// =========================================================================
+func createSolvencieModel(date time.Time, userId uuid.UUID, audit_moodel domain.AuditModel) []*domain.PsiUSerSolvency {
+	// Inicializamos como un slice vacío (longitud 0) en lugar de nil
+	solvencies := []*domain.PsiUSerSolvency{}
+
+	currentYear := date.Year()
+	nowYear := time.Now().Year()
+
+	// Validaciones
+	if currentYear > nowYear {
+		fmt.Printf("Error: solvency year %d is in the future\n", currentYear)
+		return solvencies
+	}
+
+	if currentYear < 2024 {
+		fmt.Printf("Error: solvency year %d is before the 2024 limit\n", currentYear)
+		return solvencies
+	}
+
+	// Si pasa las validaciones, llenamos el slice
+	for year := currentYear; year <= nowYear; year++ {
+		s := &domain.PsiUSerSolvency{
+			ID:             uuid.New(),
+			PsiUserModelID: userId,
+			AuditModel:     audit_moodel,
+			Date:           time.Date(year, time.December, 31, 0, 0, 0, 0, time.UTC),
+		}
+		solvencies = append(solvencies, s)
+	}
+
+	return solvencies
+}
+
+func createPsiUSerModel(req request_structs.CreatePsiAdminRequest, psiID uuid.UUID, audit_moodel domain.AuditModel, hashed []byte, municipioCarabobo, estadoOutside string, bornDate time.Time) *domain.PsiUserModel {
+
+	return &domain.PsiUserModel{
+		ID:         psiID,
+		Key:        uuid.New().String(),
+		AuditModel: audit_moodel,
+
+		// ── Credenciales ──────────────────────────────────────────────────
+		Username: req.Username,
+		Email:    req.Email,
+		Password: string(hashed),
+
+		// ── Identidad Legal ───────────────────────────────────────────────
+		FirstName:      req.FirstName,
+		SecondName:     req.SecondName,
+		LastName:       req.LastName,
+		SecondLastName: req.SecondLastName,
+		CI:             req.CI,
+		FPV:            req.FPV,
+		BornDate:       bornDate,
+		Genre:          req.Genre,
+		Nationality:    req.Nationality,
+
+		// ── Estatus Administrativo ────────────────────────────────────────
+		Solvent:     req.Solvent,
+		ProofOfLife: req.ProofOfLife,
+		IsActive:    req.IsActive,
+
+		// ── Contacto Público ──────────────────────────────────────────────
+		ContactEmail:   req.ContactEmail,
+		PublicPhone:    req.PublicPhone,
+		ServiceAddress: req.ServiceAddress,
+
+		// ── Ubicación: Carabobo ───────────────────────────────────────────
+		MunicipalityCarabobo: municipioCarabobo, // normalizado
+		PhoneCarabobo:        req.PhoneCarabobo,
+		CelPhoneCarabobo:     req.CelPhoneCarabobo,
+
+		// ── Ubicación: Fuera de Carabobo (Venezuela) ─────────────────────
+		StateOutside:                  estadoOutside, // normalizado, sin Carabobo
+		MunicipalityOutSideCarabobo:   req.MunicipalityOutSideCarabobo,
+		PhoneOutSideCarabobo:          req.PhoneOutSideCarabobo,
+		CelPhoneOutSideCarabobo:       req.CelPhoneOutSideCarabobo,
+		ServiceAddressOutSideCarabobo: req.ServiceAddressOutSideCarabobo,
+
+		// ── Ubicación: Fuera de Venezuela ─────────────────────────────────
+		Country:                        req.Country,
+		PhoneOutSideVenezuela:          req.PhoneOutSideVenezuela,
+		ServiceAddressOutSideVenezuela: req.ServiceAddressOutSideVenezuela,
+
+		// ── Perfil Profesional ────────────────────────────────────────────
+		PrimarySpecialty:   req.PrimarySpecialty,
+		SecondarySpecialty: req.SecondarySpecialty,
+	}
+}
+
+func createColdata(req request_structs.CreatePsiAdminRequest, psiID, colDataID uuid.UUID, audit_moodel domain.AuditModel, gradDate, regDate, solvDate time.Time) *domain.PsiUserColData {
+	return &domain.PsiUserColData{
+		ID:             colDataID,
+		PsiUserModelID: psiID,
+		AuditModel:     audit_moodel,
+		// ── Pregrado ──────────────────────────────────────────────────────
+		UniversityUndergraduate: req.UniversityUndergraduate,
+		GraduateDate:            gradDate,
+		MentionUndergraduate:    req.MentionUndergraduate,
+
+		// ── Registro Legal del Título ─────────────────────────────────────
+		RegisterTitleState: req.RegisterTitleState,
+		RegisterTitleDate:  regDate,
+		RegisterNumber:     req.RegisterNumber,
+		RegisterFolio:      req.RegisterFolio,
+		RegisterTome:       req.RegisterTome,
+
+		// ── Flags Gremiales ───────────────────────────────────────────────
+		GuildDirector:       req.GuildDirector,
+		SixtyFiveOrPlus:     req.SixtyFiveOrPlus,
+		GuildCollaborator:   req.GuildCollaborator,
+		PublicEmployee:      req.PublicEmployee,
+		UniversityProfessor: req.UniversityProfessor,
+
+		// ── Historial Gremial ─────────────────────────────────────────────
+		DateOfLastSolvency: solvDate,
+		DoubleGuild:        req.DoubleGuild,
+		CPSM:               req.CPSM,
+	}
 }

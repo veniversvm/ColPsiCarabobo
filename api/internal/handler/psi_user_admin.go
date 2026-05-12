@@ -50,7 +50,14 @@ func (h *PsiHandler) GetPsiByIDAdmin(c *fiber.Ctx) error {
 		log.Printf("%v\n", err)
 	}
 
+	solvencies, err := h.service.GetPsiSOlvency(c.UserContext(), targetID)
+	if err != nil {
+		log.Printf("---- error al recuperar la BIO ----\n")
+		log.Printf("%v\n", err)
+	}
+
 	profile.FullBio.Content = bio
+	profile.Solvencies = solvencies
 
 	// 4. Retornar JSON (Password y Key se ocultan automáticamente por el json:"-" del struct)
 	return c.JSON(profile)

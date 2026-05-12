@@ -32,7 +32,7 @@ func NewPsiRepository(db *gorm.DB) domain.PsiUserRepository {
 
 // CreateWithColData realiza una inserción atómica de usuario y sus datos colegiales.
 // Utiliza una transacción para asegurar que no se cree un usuario sin sus datos base asociados.
-func (r *psiRepo) CreateWithColData(ctx context.Context, psi *domain.PsiUserModel, colData *domain.PsiUserColData) error {
+func (r *psiRepo) CreateWithColData(ctx context.Context, psi *domain.PsiUserModel, colData *domain.PsiUserColData, solvencies []*domain.PsiUSerSolvency) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		// 1. Crear una bio vacía para satisfacer la FK (siempre requerida)
 		emptyBio := &domain.TextModel{
@@ -55,6 +55,19 @@ func (r *psiRepo) CreateWithColData(ctx context.Context, psi *domain.PsiUserMode
 		colData.PsiUserModelID = psi.ID
 		if err := tx.Create(colData).Error; err != nil {
 			return fmt.Errorf("error creating col data: %w", err)
+		}
+
+		// 5. Crear solvencias
+		if len(solvencies) > 0 {
+			// Importante: vinculamos las solvencias al ID del usuario recién creado
+			for i := range solvencies {
+				solvencies[i].PsiUserModelID = psi.ID
+			}
+
+			// GORM detecta que es un slice y hace un solo INSERT con todos los datos
+			if err := tx.Create(&solvencies).Error; err != nil {
+				return fmt.Errorf("error creating solvency data: %w", err)
+			}
 		}
 
 		return nil
@@ -612,6 +625,20 @@ func (r *psiRepo) GetPostGradeByID(ctx context.Context, id uuid.UUID) (*domain.P
 // UpdatePostGrade actualiza los datos de un registro académico existente.
 func (r *psiRepo) UpdatePostGrade(ctx context.Context, pg *domain.PsiUserPostGrade) error {
 	return r.db.WithContext(ctx).Save(pg).Error
+}
+
+// =========================================================================
+// GESTION DE SOLVENCIAS
+// =========================================================================
+
+func (r *psiRepo) CreateSolvency(ctx context.Context, pg *domain.PsiUSerSolvency) error {
+	return r.db.WithContext(ctx).Save(pg).Error
+}
+
+func (r *psiRepo) GetSolvencies(ctx context.Context, id uuid.UUID) ([]domain.PsiUSerSolvency, error) {
+	var pg []domain.PsiUSerSolvency
+	err := r.db.WithContext(ctx).First(&pg, "psi_user_model_id = ?", id).Error
+	return pg, err
 }
 
 // =========================================================================
