@@ -101,6 +101,8 @@ type PsiUserRepository interface {
 
 	GetSolvencies(ctx context.Context, id uuid.UUID) ([]PsiUSerSolvency, error)
 
+	CreateOrUpdateSolvencies(ctx context.Context, solvencies []PsiUSerSolvency) error
+
 	// =========================================================================
 	// PRESENCIA DIGITAL (REDES SOCIALES)
 	// =========================================================================

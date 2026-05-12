@@ -12,6 +12,7 @@ import (
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/request_structs"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // psiRepo implementa la interfaz domain.PsiUserRepository.
@@ -639,6 +640,21 @@ func (r *psiRepo) GetSolvencies(ctx context.Context, id uuid.UUID) ([]domain.Psi
 	var pg []domain.PsiUSerSolvency
 	err := r.db.WithContext(ctx).First(&pg, "psi_user_model_id = ?", id).Error
 	return pg, err
+}
+
+func (r *psiRepo) CreateOrUpdateSolvencies(ctx context.Context, solvencies []domain.PsiUSerSolvency) error {
+	if len(solvencies) == 0 {
+		return nil
+	}
+
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		return tx.Clauses(clause.OnConflict{
+			// Columnas que determinan el conflicto
+			Columns: []clause.Column{{Name: "psi_user_model_id"}, {Name: "date"}},
+			// Qué hacer cuando hay conflicto: actualizar todo excepto el ID original
+			DoUpdates: clause.AssignmentColumns([]string{"updated_at", "update_by"}),
+		}).Create(&solvencies).Error
+	})
 }
 
 // =========================================================================

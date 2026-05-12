@@ -20,6 +20,7 @@ import {
   AcademicSection,
 } from "~/components/admin/psicologos/edit";
 import type { EditFormState } from "~/components/admin/psicologos/edit";
+import { SolvenciesSection } from "~/components/admin/psicologos/edit/SolvenciesSection";
 
 // ─── Server Actions ───────────────────────────────────────────────────────────
 
@@ -83,6 +84,7 @@ export default function AdminEditPsiPage() {
   // ── Sync DB → Store ─────────────────────────────────────────────────────────
   createEffect(() => {
     const p = profile();
+    console.log(p)
     if (!p) return;
     setForm({
       username:  p.username  ?? "",
@@ -155,6 +157,7 @@ export default function AdminEditPsiPage() {
       double_guild:         p.col_data?.double_guild         ?? false,
       cpsm:                 p.col_data?.cpsm                 ?? false,
       date_of_last_solvency: formatDate(p.col_data?.date_of_last_solvency),
+      solvencies: p.solvencies ?? [],
     });
   });
 
@@ -211,6 +214,29 @@ export default function AdminEditPsiPage() {
   // ─── Convenience setter typed to keyof EditFormState ────────────────────────
   const set = (key: keyof EditFormState, value: any) => setForm(key as any, value);
 
+  // ─── Manejo de solvencias ────────────────────────
+  const handleAddLocalSolvency = (year: number) => {
+    // 1. Verificamos que el año no esté ya en la lista para evitar duplicados visuales
+    const exists = form.solvencies.some((s: any) => {
+      const sYear = new Date(s.date || s.Date).getFullYear();
+      return sYear === year;
+    });
+
+    if (exists) {
+      alert(`El año ${year} ya está en la lista de solvencias.`);
+      return;
+    }
+
+    // 2. Creamos el objeto con la fecha requerida (31 de Diciembre a medianoche UTC)
+    // Nota: El backend de Go creará el ID y los campos de auditoría
+    const newSolvency = {
+      date: `${year}-12-31T00:00:00Z`,
+      // psi_user_model_id: params.id // (Opcional, GORM suele inferirlo si mandas el array anidado)
+    };
+
+    // 3. Actualizamos el store agregando el nuevo objeto al arreglo existente
+    set("solvencies", [...form.solvencies, newSolvency]);
+  };
   // ────────────────────────────────────────────────────────────────────────────
   return (
     <main class="pb-28 animate-in fade-in duration-500">
@@ -224,6 +250,7 @@ export default function AdminEditPsiPage() {
         <form onSubmit={handleSave} class="space-y-8">
           <AccountSection          form={form} setForm={set} />
           <AdminStatusSection      form={form} setForm={set} />
+          <SolvenciesSection solvencies={form.solvencies} onAddLocalSolvency={handleAddLocalSolvency} />
           <LegalIdentitySection    form={form} setForm={set} />
           <ContactVisibilitySection form={form} setForm={set} />
           <LocationSection         form={form} setForm={set} />

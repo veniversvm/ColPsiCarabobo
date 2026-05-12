@@ -82,6 +82,19 @@ export interface EditFormState {
   double_guild: boolean;
   cpsm: boolean;
   date_of_last_solvency: string;
+  solvencies: Solvency[];
+}
+
+export interface Solvency {
+  Date: string;
+  PsiUserModelID: string;
+  create_by: string;
+  create_by_id: string;
+  created_at: string;
+  id: string;
+  update_by: string;
+  update_by_id: string;
+  updated_at: string;
 }
 
 export interface SocialNetwork {
