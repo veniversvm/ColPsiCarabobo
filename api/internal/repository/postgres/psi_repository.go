@@ -33,7 +33,7 @@ func NewPsiRepository(db *gorm.DB) domain.PsiUserRepository {
 
 // CreateWithColData realiza una inserción atómica de usuario y sus datos colegiales.
 // Utiliza una transacción para asegurar que no se cree un usuario sin sus datos base asociados.
-func (r *psiRepo) CreateWithColData(ctx context.Context, psi *domain.PsiUserModel, colData *domain.PsiUserColData, solvencies []*domain.PsiUSerSolvency) error {
+func (r *psiRepo) CreateWithColData(ctx context.Context, psi *domain.PsiUserModel, colData *domain.PsiUserColData, solvencies domain.PsiUSerSolvency) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		// 1. Crear una bio vacía para satisfacer la FK (siempre requerida)
 		emptyBio := &domain.TextModel{
@@ -59,16 +59,10 @@ func (r *psiRepo) CreateWithColData(ctx context.Context, psi *domain.PsiUserMode
 		}
 
 		// 5. Crear solvencias
-		if len(solvencies) > 0 {
-			// Importante: vinculamos las solvencias al ID del usuario recién creado
-			for i := range solvencies {
-				solvencies[i].PsiUserModelID = psi.ID
-			}
 
-			// GORM detecta que es un slice y hace un solo INSERT con todos los datos
-			if err := tx.Create(&solvencies).Error; err != nil {
-				return fmt.Errorf("error creating solvency data: %w", err)
-			}
+		solvencies.PsiUserModelID = psi.ID
+		if err := tx.Create(&solvencies).Error; err != nil {
+			return fmt.Errorf("error creating solvency data: %w", err)
 		}
 
 		return nil

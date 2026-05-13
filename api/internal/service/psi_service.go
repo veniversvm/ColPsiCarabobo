@@ -238,10 +238,7 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 			CPSM:               parseBool(record[42]),
 		}
 
-		fmt.Println("############ SOLVENCIAS   ")
-		fmt.Println(record[40])
 		solvencies := createSolvencieModel(parseDate(record[40]), psi.ID, audit)
-		fmt.Println(solvencies)
 		// ── Persistencia transaccional ────────────────────────────────────
 		if err := s.repo.CreateWithColData(ctx, psi, colData, solvencies); err != nil {
 			failedRecords = append(failedRecords, map[string]string{

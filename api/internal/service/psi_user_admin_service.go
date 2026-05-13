@@ -396,6 +396,7 @@ func (s *PsiService) UpdatePsiByAdmin(
 	// 4i. Procesamiento de Solvencias (evitar duplicados)
 	// --- PROCESAMIENTO DE SOLVENCIAS ---
 	var solvenciesToCreate []domain.PsiUSerSolvency
+	currentYear := time.Now().Year()
 
 	if req.Solvencies != nil && len(*req.Solvencies) > 0 {
 		// 1. Obtener solvencias actuales para comparar por fecha y evitar duplicados
@@ -451,6 +452,18 @@ func (s *PsiService) UpdatePsiByAdmin(
 
 				// Marcamos como registrada para evitar duplicados en el mismo request
 				existingDates[dateKey] = true
+
+				// si la solvencia es del anno en curso, se activa al usuario
+				receivedYear := newSolvency.Date.Year()
+
+				if currentYear == receivedYear {
+					psi.Solvent = true
+				}
+
+				if newSolvency.Date.After(psi.ColData.DateOfLastSolvency) {
+					s := newSolvency.Date.Format("2006-01-02")
+					req.DateOfLastSolvency = &s
+				}
 
 				fmt.Printf("✅ Preparada y añadida al slice: %s\n", dateKey)
 			} else {
@@ -698,9 +711,8 @@ func (s *PsiService) GetAdminDirectory(ctx context.Context, admin *domain.UserAd
 // AUXILIARY FUNCTIONS
 // =========================================================================
 // =========================================================================
-func createSolvencieModel(date time.Time, userId uuid.UUID, audit_moodel domain.AuditModel) []*domain.PsiUSerSolvency {
+func createSolvencieModel(date time.Time, userId uuid.UUID, audit_moodel domain.AuditModel) domain.PsiUSerSolvency {
 	// Inicializamos como un slice vacío (longitud 0) en lugar de nil
-	solvencies := []*domain.PsiUSerSolvency{}
 
 	currentYear := date.Year()
 	nowYear := time.Now().Year()
@@ -708,26 +720,23 @@ func createSolvencieModel(date time.Time, userId uuid.UUID, audit_moodel domain.
 	// Validaciones
 	if currentYear > nowYear {
 		fmt.Printf("Error: solvency year %d is in the future\n", currentYear)
-		return solvencies
+		return domain.PsiUSerSolvency{}
 	}
 
 	if currentYear < 2024 {
 		fmt.Printf("Error: solvency year %d is before the 2024 limit\n", currentYear)
-		return solvencies
+		return domain.PsiUSerSolvency{}
 	}
 
 	// Si pasa las validaciones, llenamos el slice
-	for year := currentYear; year <= nowYear; year++ {
-		s := &domain.PsiUSerSolvency{
-			ID:             uuid.New(),
-			PsiUserModelID: userId,
-			AuditModel:     audit_moodel,
-			Date:           time.Date(year, time.December, 31, 0, 0, 0, 0, time.UTC),
-		}
-		solvencies = append(solvencies, s)
+
+	return domain.PsiUSerSolvency{
+		ID:             uuid.New(),
+		PsiUserModelID: userId,
+		AuditModel:     audit_moodel,
+		Date:           time.Date(currentYear, time.December, 31, 0, 0, 0, 0, time.UTC),
 	}
 
-	return solvencies
 }
 
 func createPsiUSerModel(req request_structs.CreatePsiAdminRequest, psiID uuid.UUID, audit_moodel domain.AuditModel, hashed []byte, municipioCarabobo, estadoOutside string, bornDate time.Time) *domain.PsiUserModel {
