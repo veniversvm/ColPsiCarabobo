@@ -52,6 +52,7 @@ type PsiUserRepository interface {
 		psi *PsiUserModel,
 		colData *PsiUserColData,
 		bioText *TextModel,
+		solvencies []PsiUSerSolvency,
 	) error
 
 	// UpdatePublicProfile actualiza la información que el psicólogo gestiona de sí mismo,

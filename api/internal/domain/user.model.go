@@ -200,10 +200,11 @@ func (PsiUserColData) TableName() string { return "psi_user_col_data" }
 // PsiUSerSolvency es un registro de las solvencia que posee el psicologo.
 // Relación N-a-1 con PsiUserModel.
 type PsiUSerSolvency struct {
-	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	ID uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
 	AuditModel
-	PsiUserModelID uuid.UUID `gorm:"type:uuid;not null;index:idx_psi_user_solvency_user_id"`
-	Date           time.Time `gorm:"not null"`
+	// El nombre del índice debe ser el mismo en ambos campos para crear una clave compuesta
+	PsiUserModelID uuid.UUID `gorm:"type:uuid;not null;uniqueIndex:idx_psi_solvency_unique" json:"psi_user_model_id"`
+	Date           time.Time `gorm:"type:date;not null;uniqueIndex:idx_psi_solvency_unique" json:"date"`
 }
 
 func (PsiUSerSolvency) TableName() string { return "psi_user_solvency" }

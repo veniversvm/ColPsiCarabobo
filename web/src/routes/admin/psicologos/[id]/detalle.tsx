@@ -84,7 +84,7 @@ export default function AdminEditPsiPage() {
   // ── Sync DB → Store ─────────────────────────────────────────────────────────
   createEffect(() => {
     const p = profile();
-    console.log(p)
+    // console.log(p)
     if (!p) return;
     setForm({
       username:  p.username  ?? "",

@@ -157,6 +157,7 @@ func (r *psiRepo) Update(
 	psi *domain.PsiUserModel,
 	colData *domain.PsiUserColData,
 	bioText *domain.TextModel,
+	solvencies []domain.PsiUSerSolvency,
 ) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 
@@ -296,6 +297,24 @@ func (r *psiRepo) Update(
 				Updates(colDataMap).Error; err != nil {
 				return err
 			}
+		}
+
+		fmt.Printf("### REPO DEBUG: Recibidas %d solvencias para procesar\n", len(solvencies))
+
+		if len(solvencies) > 0 {
+			// Usamos tx.Create pasándole el PUNTERO al slice
+			err := tx.Clauses(clause.OnConflict{
+				// Columnas de conflicto (deben tener un UNIQUE INDEX en la DB)
+				Columns: []clause.Column{{Name: "psi_user_model_id"}, {Name: "date"}},
+				// Si hay conflicto, actualizamos estos campos
+				DoUpdates: clause.AssignmentColumns([]string{"updated_at", "update_by", "update_by_id"}),
+			}).Create(&solvencies).Error
+
+			if err != nil {
+				// Si esto falla, toda la transacción (incluyendo psi y colData) hará Rollback
+				return fmt.Errorf("error en on-conflict solvencias: %w", err)
+			}
+			fmt.Println("### REPO DEBUG: Solvencias insertadas/actualizadas con éxito")
 		}
 
 		return nil
@@ -638,7 +657,8 @@ func (r *psiRepo) CreateSolvency(ctx context.Context, pg *domain.PsiUSerSolvency
 
 func (r *psiRepo) GetSolvencies(ctx context.Context, id uuid.UUID) ([]domain.PsiUSerSolvency, error) {
 	var pg []domain.PsiUSerSolvency
-	err := r.db.WithContext(ctx).First(&pg, "psi_user_model_id = ?", id).Error
+
+	err := r.db.WithContext(ctx).Where("psi_user_model_id = ?", id).Find(&pg).Error
 	return pg, err
 }
 

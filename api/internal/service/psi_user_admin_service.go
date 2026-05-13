@@ -393,6 +393,72 @@ func (s *PsiService) UpdatePsiByAdmin(
 		bioTextToUpdate = &psi.FullBio
 	}
 
+	// 4i. Procesamiento de Solvencias (evitar duplicados)
+	// --- PROCESAMIENTO DE SOLVENCIAS ---
+	var solvenciesToCreate []domain.PsiUSerSolvency
+
+	if req.Solvencies != nil && len(*req.Solvencies) > 0 {
+		// 1. Obtener solvencias actuales para comparar por fecha y evitar duplicados
+		currentSolvencies, err := s.repo.GetSolvencies(ctx, psi.ID)
+		if err != nil {
+			return fmt.Errorf("error al obtener historial de solvencias: %w", err)
+		}
+
+		// Mapa de fechas existentes (formato YYYY-MM-DD) para búsqueda O(1)
+		existingDates := make(map[string]bool)
+		for _, s := range currentSolvencies {
+			existingDates[s.Date.Format("2006-01-02")] = true
+		}
+
+		for _, incoming := range *req.Solvencies {
+			// Ignorar entradas sin fecha
+			if incoming.Date == "" {
+				fmt.Printf("⚠️ Error: Fecha de solvencia vacía en request (ID: %v)\n", incoming.ID)
+				continue
+			}
+
+			// Intentar parsear la fecha (RFC3339 es el estándar de JS/JSON)
+			t, err := time.Parse(time.RFC3339, incoming.Date)
+			if err != nil {
+				// Fallback a formato simple YYYY-MM-DD
+				t, err = time.Parse("2006-01-02", incoming.Date)
+			}
+
+			if err != nil {
+				fmt.Printf("❌ Error al parsear fecha '%s': %v\n", incoming.Date, err)
+				continue
+			}
+
+			dateKey := t.Format("2006-01-02")
+
+			// 2. Solo añadir si NO existe ya en la DB
+			if !existingDates[dateKey] {
+				// Construcción del modelo para la base de datos
+				newSolvency := domain.PsiUSerSolvency{
+					ID:             uuid.New(),
+					PsiUserModelID: psi.ID,
+					Date:           t,
+					AuditModel: domain.AuditModel{
+						CreateBy:   admin.Username,
+						CreateById: &admin.ID,
+						UpdateBy:   admin.Username,
+						UpdateById: &admin.ID,
+					},
+				}
+
+				// ASIGNACIÓN CRÍTICA: Guardamos en el slice que irá al repo
+				solvenciesToCreate = append(solvenciesToCreate, newSolvency)
+
+				// Marcamos como registrada para evitar duplicados en el mismo request
+				existingDates[dateKey] = true
+
+				fmt.Printf("✅ Preparada y añadida al slice: %s\n", dateKey)
+			} else {
+				fmt.Printf("ℹ️ Solvencia para %s ya existe en DB, omitiendo...\n", dateKey)
+			}
+		}
+	}
+
 	// 5. MAPEO DE TABLA RELACIONADA (PsiUserColData)
 	hasColDataChanges := req.ShowUniversityUndergraduateRaw != "" ||
 		req.ShowGraduateDateRaw != "" ||
@@ -540,7 +606,8 @@ func (s *PsiService) UpdatePsiByAdmin(
 	psi.UpdateById = &admin.ID
 
 	// 7. PERSISTENCIA — rollback S3 si falla la DB
-	if err := s.repo.Update(ctx, psi, colDataToUpdate, bioTextToUpdate); err != nil {
+	err = s.repo.Update(ctx, psi, colDataToUpdate, bioTextToUpdate, solvenciesToCreate)
+	if err != nil {
 		for _, key := range uploadedS3Keys {
 			_ = s.s3Client.DeleteFile(context.Background(), key)
 		}
