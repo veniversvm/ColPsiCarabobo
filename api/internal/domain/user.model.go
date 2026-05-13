@@ -141,6 +141,7 @@ type PsiUserModel struct {
 	ColData        PsiUserColData         `gorm:"foreignKey:PsiUserModelID" json:"col_data"`
 	PostGrades     []PsiUserPostGrade     `gorm:"foreignKey:PsiUserID" json:"post_grades"`
 	SocialNetworks []PsiUserSocialNetwork `gorm:"foreignKey:PsiUserID" json:"social_networks"`
+	Solvencies     []PsiUSerSolvency      `gorm:"foreignKey:PsiUserModelID" json:"solvencies"`
 }
 
 func (PsiUserModel) TableName() string { return "psi_users" }
@@ -191,6 +192,22 @@ type PsiUserColData struct {
 }
 
 func (PsiUserColData) TableName() string { return "psi_user_col_data" }
+
+// =============================================================================
+// SOLVENCIA
+// =============================================================================
+
+// PsiUSerSolvency es un registro de las solvencia que posee el psicologo.
+// Relación N-a-1 con PsiUserModel.
+type PsiUSerSolvency struct {
+	ID uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
+	AuditModel
+	// El nombre del índice debe ser el mismo en ambos campos para crear una clave compuesta
+	PsiUserModelID uuid.UUID `gorm:"type:uuid;not null;uniqueIndex:idx_psi_solvency_unique" json:"psi_user_model_id"`
+	Date           time.Time `gorm:"type:date;not null;uniqueIndex:idx_psi_solvency_unique" json:"date"`
+}
+
+func (PsiUSerSolvency) TableName() string { return "psi_user_solvency" }
 
 // =============================================================================
 // POSTGRADOS

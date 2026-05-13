@@ -18,7 +18,7 @@ type PsiUserRepository interface {
 
 	// CreateWithColData realiza una inserción atómica (transaccional) de un nuevo psicólogo
 	// junto a sus datos colegiales iniciales. Garantiza que no existan registros huérfanos.
-	CreateWithColData(ctx context.Context, psi *PsiUserModel, colData *PsiUserColData) error
+	CreateWithColData(ctx context.Context, psi *PsiUserModel, colData *PsiUserColData, solvency PsiUSerSolvency) error
 
 	// GetByID recupera un psicólogo mediante su UUID, realizando un Eager Loading
 	// de sus relaciones: ColData, PostGrades y SocialNetworks.
@@ -52,6 +52,7 @@ type PsiUserRepository interface {
 		psi *PsiUserModel,
 		colData *PsiUserColData,
 		bioText *TextModel,
+		solvencies []PsiUSerSolvency,
 	) error
 
 	// UpdatePublicProfile actualiza la información que el psicólogo gestiona de sí mismo,
@@ -92,6 +93,16 @@ type PsiUserRepository interface {
 
 	// UpdatePostGrade modifica los datos de un título existente (Título, Universidad, Soportes).
 	UpdatePostGrade(ctx context.Context, pg *PsiUserPostGrade) error
+
+	// =========================================================================
+	// GESTION DE SOLVENCIAS
+	// =========================================================================
+
+	CreateSolvency(ctx context.Context, pg *PsiUSerSolvency) error
+
+	GetSolvencies(ctx context.Context, id uuid.UUID) ([]PsiUSerSolvency, error)
+
+	CreateOrUpdateSolvencies(ctx context.Context, solvencies []PsiUSerSolvency) error
 
 	// =========================================================================
 	// PRESENCIA DIGITAL (REDES SOCIALES)

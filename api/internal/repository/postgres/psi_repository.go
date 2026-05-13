@@ -12,6 +12,7 @@ import (
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/request_structs"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // psiRepo implementa la interfaz domain.PsiUserRepository.
@@ -32,7 +33,7 @@ func NewPsiRepository(db *gorm.DB) domain.PsiUserRepository {
 
 // CreateWithColData realiza una inserción atómica de usuario y sus datos colegiales.
 // Utiliza una transacción para asegurar que no se cree un usuario sin sus datos base asociados.
-func (r *psiRepo) CreateWithColData(ctx context.Context, psi *domain.PsiUserModel, colData *domain.PsiUserColData) error {
+func (r *psiRepo) CreateWithColData(ctx context.Context, psi *domain.PsiUserModel, colData *domain.PsiUserColData, solvencies domain.PsiUSerSolvency) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		// 1. Crear una bio vacía para satisfacer la FK (siempre requerida)
 		emptyBio := &domain.TextModel{
@@ -55,6 +56,13 @@ func (r *psiRepo) CreateWithColData(ctx context.Context, psi *domain.PsiUserMode
 		colData.PsiUserModelID = psi.ID
 		if err := tx.Create(colData).Error; err != nil {
 			return fmt.Errorf("error creating col data: %w", err)
+		}
+
+		// 5. Crear solvencias
+
+		solvencies.PsiUserModelID = psi.ID
+		if err := tx.Create(&solvencies).Error; err != nil {
+			return fmt.Errorf("error creating solvency data: %w", err)
 		}
 
 		return nil
@@ -143,6 +151,7 @@ func (r *psiRepo) Update(
 	psi *domain.PsiUserModel,
 	colData *domain.PsiUserColData,
 	bioText *domain.TextModel,
+	solvencies []domain.PsiUSerSolvency,
 ) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 
@@ -282,6 +291,24 @@ func (r *psiRepo) Update(
 				Updates(colDataMap).Error; err != nil {
 				return err
 			}
+		}
+
+		fmt.Printf("### REPO DEBUG: Recibidas %d solvencias para procesar\n", len(solvencies))
+
+		if len(solvencies) > 0 {
+			// Usamos tx.Create pasándole el PUNTERO al slice
+			err := tx.Clauses(clause.OnConflict{
+				// Columnas de conflicto (deben tener un UNIQUE INDEX en la DB)
+				Columns: []clause.Column{{Name: "psi_user_model_id"}, {Name: "date"}},
+				// Si hay conflicto, actualizamos estos campos
+				DoUpdates: clause.AssignmentColumns([]string{"updated_at", "update_by", "update_by_id"}),
+			}).Create(&solvencies).Error
+
+			if err != nil {
+				// Si esto falla, toda la transacción (incluyendo psi y colData) hará Rollback
+				return fmt.Errorf("error en on-conflict solvencias: %w", err)
+			}
+			fmt.Println("### REPO DEBUG: Solvencias insertadas/actualizadas con éxito")
 		}
 
 		return nil
@@ -612,6 +639,36 @@ func (r *psiRepo) GetPostGradeByID(ctx context.Context, id uuid.UUID) (*domain.P
 // UpdatePostGrade actualiza los datos de un registro académico existente.
 func (r *psiRepo) UpdatePostGrade(ctx context.Context, pg *domain.PsiUserPostGrade) error {
 	return r.db.WithContext(ctx).Save(pg).Error
+}
+
+// =========================================================================
+// GESTION DE SOLVENCIAS
+// =========================================================================
+
+func (r *psiRepo) CreateSolvency(ctx context.Context, pg *domain.PsiUSerSolvency) error {
+	return r.db.WithContext(ctx).Save(pg).Error
+}
+
+func (r *psiRepo) GetSolvencies(ctx context.Context, id uuid.UUID) ([]domain.PsiUSerSolvency, error) {
+	var pg []domain.PsiUSerSolvency
+
+	err := r.db.WithContext(ctx).Where("psi_user_model_id = ?", id).Find(&pg).Error
+	return pg, err
+}
+
+func (r *psiRepo) CreateOrUpdateSolvencies(ctx context.Context, solvencies []domain.PsiUSerSolvency) error {
+	if len(solvencies) == 0 {
+		return nil
+	}
+
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		return tx.Clauses(clause.OnConflict{
+			// Columnas que determinan el conflicto
+			Columns: []clause.Column{{Name: "psi_user_model_id"}, {Name: "date"}},
+			// Qué hacer cuando hay conflicto: actualizar todo excepto el ID original
+			DoUpdates: clause.AssignmentColumns([]string{"updated_at", "update_by"}),
+		}).Create(&solvencies).Error
+	})
 }
 
 // =========================================================================

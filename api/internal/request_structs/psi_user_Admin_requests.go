@@ -123,9 +123,10 @@ type UpdatePsiAdminRequest struct {
 	Nationality    *string `json:"nationality"`
 
 	// --- Estatus Administrativo ---
-	Solvent     *bool `json:"solvent"`
-	ProofOfLife *bool `json:"proof_of_life"`
-	IsActive    *bool `json:"is_active"`
+	Solvent     *bool               `json:"solvent"`
+	Solvencies  *[]SolvenciesUpdate `json:"solvencies"`
+	ProofOfLife *bool               `json:"proof_of_life"`
+	IsActive    *bool               `json:"is_active"`
 
 	// --- Datos de Contacto y Visibilidad ---
 	ContactEmail   *string `json:"contact_email"`
@@ -190,6 +191,12 @@ type UpdatePsiAdminRequest struct {
 	DateOfLastSolvency  *string `json:"date_of_last_solvency"`
 	DoubleGuild         *bool   `json:"double_guild"`
 	CPSM                *bool   `json:"cpsm"`
+}
+
+type SolvenciesUpdate struct {
+	ID             uuid.UUID `json:"id" validate:"required"`
+	PsiUserModelID uuid.UUID `json:"psi_user_model_id"`
+	Date           string    `json:"date"`
 }
 
 // ── Getters: Contacto y Visibilidad ──────────────────────────────────────────

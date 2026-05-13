@@ -238,8 +238,9 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 			CPSM:               parseBool(record[42]),
 		}
 
+		solvencies := createSolvencieModel(parseDate(record[40]), psi.ID, audit)
 		// ── Persistencia transaccional ────────────────────────────────────
-		if err := s.repo.CreateWithColData(ctx, psi, colData); err != nil {
+		if err := s.repo.CreateWithColData(ctx, psi, colData, solvencies); err != nil {
 			failedRecords = append(failedRecords, map[string]string{
 				"fila":   record[0],
 				"nombre": record[3] + " " + record[5],
@@ -1097,6 +1098,14 @@ func (s *PsiService) GetPsiBioByID(ctx context.Context, id uuid.UUID) (string, e
 	bio, err := s.repo.GetTextContentByID(ctx, id)
 	if err != nil {
 		return "", err
+	}
+	return bio, nil
+}
+
+func (s *PsiService) GetPsiSOlvency(ctx context.Context, id uuid.UUID) ([]domain.PsiUSerSolvency, error) {
+	bio, err := s.repo.GetSolvencies(ctx, id)
+	if err != nil {
+		return []domain.PsiUSerSolvency{}, err
 	}
 	return bio, nil
 }
