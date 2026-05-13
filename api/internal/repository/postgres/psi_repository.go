@@ -60,9 +60,12 @@ func (r *psiRepo) CreateWithColData(ctx context.Context, psi *domain.PsiUserMode
 
 		// 5. Crear solvencias
 
-		solvencies.PsiUserModelID = psi.ID
-		if err := tx.Create(&solvencies).Error; err != nil {
-			return fmt.Errorf("error creating solvency data: %w", err)
+		if solvencies.ID != uuid.Nil {
+			solvencies.PsiUserModelID = psi.ID
+			if err := tx.Create(&solvencies).Error; err != nil {
+				return fmt.Errorf("error creating solvency data: %w", err)
+			}
+
 		}
 
 		return nil
