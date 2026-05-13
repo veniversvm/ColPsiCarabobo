@@ -1,7 +1,9 @@
 // web/src/components/psi/profile/AvatarUploader.tsx
 import { Show } from "solid-js";
+import QRCodeGenerator from "./QrCode"; // Importamos el componente
 
 interface AvatarUploaderProps {
+  url: string;
   currentAvatarUrl?: string;
   avatarFile: File | null;
   firstName: string;
@@ -11,10 +13,10 @@ interface AvatarUploaderProps {
   FPV: number;
   CI: number;
   onFileChange: (file: File | null) => void;
-  onError?: (message: string) => void; // Callback opcional para manejar errores
+  onError?: (message: string) => void;
 }
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB en bytes
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/jpg'];
 
 export function AvatarUploader(props: AvatarUploaderProps) {
@@ -36,7 +38,6 @@ export function AvatarUploader(props: AvatarUploaderProps) {
       : null;
   };
 
-  // Limpiar URL objeto cuando se desmonte o cambie el archivo
   const cleanupPreview = () => {
     if (props.avatarFile && previewUrl()) {
       URL.revokeObjectURL(previewUrl()!);
@@ -44,48 +45,34 @@ export function AvatarUploader(props: AvatarUploaderProps) {
   };
 
   const validateFile = (file: File): string | null => {
-    // Validar tipo
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      return 'Formato no permitido. Usa JPG o PNG.';
-    }
-
-    // Validar tamaño
+    if (!ALLOWED_TYPES.includes(file.type)) return 'Formato no permitido. Usa JPG o PNG.';
     if (file.size > MAX_FILE_SIZE) {
       const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
       return `La imagen es demasiado grande (${sizeMB}MB). Máximo 5MB.`;
     }
-
     return null;
   };
 
   const handleFileChange = (file: File | null) => {
-    // Limpiar preview anterior
     cleanupPreview();
-
     if (!file) {
       props.onFileChange(null);
       return;
     }
-
     const error = validateFile(file);
     if (error) {
-      // Mostrar error
-      if (props.onError) {
-        props.onError(error);
-      } else {
-        alert(error); // Fallback si no hay callback
-      }
+      if (props.onError) props.onError(error);
+      else alert(error);
       props.onFileChange(null);
       return;
     }
-
-    // Archivo válido
     props.onFileChange(file);
   };
 
   return (
     <section class="bg-white rounded-[2.5rem] p-8 shadow-premium border border-gray-100">
       <div class="flex flex-col md:flex-row items-center gap-8">
+        
         {/* Columna izquierda: Avatar */}
         <div class="flex flex-col items-center">
           <div class="relative group">
@@ -106,7 +93,6 @@ export function AvatarUploader(props: AvatarUploaderProps) {
               </Show>
             </div>
             
-            {/* Botón de carga con tooltip */}
             <label class="absolute bottom-0 right-0 bg-colpsi-blue text-white p-3 rounded-full cursor-pointer shadow-lg hover:bg-colpsi-yellow hover:text-colpsi-blue transition-all group-hover:scale-110 border-2 border-white" 
                    title="Cambiar foto de perfil (máx 5MB)">
               <input 
@@ -116,7 +102,6 @@ export function AvatarUploader(props: AvatarUploaderProps) {
                 onChange={(e) => {
                   const file = e.currentTarget.files?.[0];
                   handleFileChange(file || null);
-                  // Resetear el input para permitir seleccionar el mismo archivo nuevamente
                   e.currentTarget.value = '';
                 }} 
               />
@@ -132,10 +117,9 @@ export function AvatarUploader(props: AvatarUploaderProps) {
           </div>
         </div>
 
-        {/* Columna derecha: Información personal */}
+        {/* Columna central: Información personal */}
         <div class="flex-1 text-center md:text-left">
           <div class="space-y-3">
-            {/* Nombre completo */}
             <div>
               <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Nombre Completo</p>
               <h2 class="text-xl md:text-2xl font-black text-colpsi-blue leading-tight">
@@ -143,7 +127,6 @@ export function AvatarUploader(props: AvatarUploaderProps) {
               </h2>
             </div>
 
-            {/* FPV y CI en cards */}
             <div class="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
               <div class="bg-gradient-to-br from-colpsi-blue/5 to-blue-50 px-4 py-2 rounded-xl border border-blue-100">
                 <p class="text-[10px] font-bold text-colpsi-blue uppercase tracking-wider">FPV</p>
@@ -156,15 +139,11 @@ export function AvatarUploader(props: AvatarUploaderProps) {
               </div>
             </div>
 
-            {/* Estado de la foto */}
             <Show when={props.avatarFile}>
               <div class="mt-2 text-xs text-green-600 bg-green-50 px-3 py-2 rounded-lg inline-flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
                 <span class="text-lg">✅</span>
                 <div>
                   <p class="font-bold">Nueva foto lista para guardar</p>
-                  <p class="text-[10px] text-green-500">
-                    {(props.avatarFile?.size ? (props.avatarFile.size / 1024).toFixed(1) : '')}KB • {props.avatarFile?.name ?? ''}
-                  </p>
                 </div>
                 <button 
                   type="button"
@@ -172,8 +151,7 @@ export function AvatarUploader(props: AvatarUploaderProps) {
                     cleanupPreview();
                     props.onFileChange(null);
                   }}
-                  class="ml-2 text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded-full transition-colors"
-                  title="Cancelar"
+                  class="ml-2 text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded-full"
                 >
                   ✕
                 </button>
@@ -181,6 +159,12 @@ export function AvatarUploader(props: AvatarUploaderProps) {
             </Show>
           </div>
         </div>
+
+        {/* Columna derecha: QR Code (Centrado en móvil, a la derecha en MD) */}
+        <div class="w-full md:w-auto flex justify-center border-t md:border-t-0 md:border-l border-gray-100 pt-6 md:pt-0 md:pl-8">
+          <QRCodeGenerator url={props.url} />
+        </div>
+
       </div>
     </section>
   );

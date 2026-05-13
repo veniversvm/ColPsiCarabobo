@@ -63,6 +63,7 @@ export default function PsiProfilePage() {
       .filter(Boolean)
       .join(" ");
   };
+  //* DIRECION DEL PERFIL DEL USUARIO  *//
   const canonicalUrl = `${SITE_URL}/directorio/${params.slug}`;
   const ogImage = () =>
     profileData()?.profile_picture
@@ -167,6 +168,7 @@ export default function PsiProfilePage() {
                 <div class="flex flex-col lg:grid lg:grid-cols-3 gap-6">
                   <div class="space-y-4">
                     <ProfileHeader
+                      url={canonicalUrl}
                       firstName={psi().first_name}
                       secondName={psi().second_name}
                       lastName={psi().last_name}

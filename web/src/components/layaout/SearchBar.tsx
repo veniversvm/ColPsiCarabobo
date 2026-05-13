@@ -3,7 +3,7 @@ import { createSignal, onCleanup } from "solid-js";
 
 export function SearchBar(props: { onSearch: (query: string) => void }) {
   const [searchTerm, setSearchTerm] = createSignal("");
-  let timeoutId: number | undefined;
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);

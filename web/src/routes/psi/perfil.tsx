@@ -90,6 +90,10 @@ export default function ProfilePage() {
 
   const runUpdateAction = useAction(updateProfileServer);
 
+  const SITE_URL = import.meta.env.VITE_SITE_URL || "http://localhost:8080/api/v1";
+
+  const canonicalUrl = `${SITE_URL}/directorio/${profile()?.first_name}-${profile()?.last_name}-fpv${profile()?.fpv}`;
+
   createEffect(() => {
     const p = profile();
     if (p) {
@@ -270,6 +274,7 @@ export default function ProfilePage() {
         <Suspense fallback={<div class="h-96 bg-white animate-pulse rounded-[2.5rem] shadow-premium border border-gray-100" />}>
 
           <AvatarUploader
+            url={canonicalUrl}
             currentAvatarUrl={profile()?.profile_picture_url}
             avatarFile={avatarFile()}
             onFileChange={setAvatarFile}

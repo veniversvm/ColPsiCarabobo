@@ -81,6 +81,10 @@ export default function AdminEditPsiPage() {
   const [saving,  setSaving]  = createSignal(false);
   const [message, setMessage] = createSignal<{ type: "success" | "error"; text: string } | null>(null);
 
+  const SITE_URL = import.meta.env.VITE_SITE_URL || "http://localhost:8080/api/v1";
+
+  const canonicalUrl = `${SITE_URL}/directorio/${profile()?.first_name}-${profile()?.last_name}-fpv${profile()?.fpv}`;
+
   // ── Sync DB → Store ─────────────────────────────────────────────────────────
   createEffect(() => {
     const p = profile();
@@ -248,7 +252,7 @@ export default function AdminEditPsiPage() {
         <EditAlert message={message()} />
 
         <form onSubmit={handleSave} class="space-y-8">
-          <AccountSection          form={form} setForm={set} />
+          <AccountSection          form={form} setForm={set} url={canonicalUrl}/>
           <AdminStatusSection      form={form} setForm={set} />
           <SolvenciesSection solvencies={form.solvencies} onAddLocalSolvency={handleAddLocalSolvency} />
           <LegalIdentitySection    form={form} setForm={set} />
