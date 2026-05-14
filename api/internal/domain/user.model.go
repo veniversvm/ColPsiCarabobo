@@ -83,33 +83,40 @@ type PsiUserModel struct {
 	BornDate       time.Time `gorm:"type:date;not null" json:"born_date"`
 	Genre          string    `gorm:"size:1;not null" json:"genre"` // M = masculino, F = femenino
 
+	// ── Estado gremial y multimedia ───────────────────────────────────────
+	Solvent             bool   `gorm:"default:false" json:"solvent"`        // Solvencia con el Colegio
+	ProofOfLife         bool   `gorm:"default:true" json:"proof_of_life"`   // Fe de vida presentada
+	ProfilePictureS3Key string `gorm:"size:512" json:"profile_picture_url"` // S3 key de la foto de perfil
+
+	// ── Contacto interno del gremio ────────────────────────────────────
+	ContactPhone     string `gorm:"size:255;not null" json:"contact_phone"`
+	ContactCellPhone string `gorm:"size:255;not null" json:"contact_cell_phone"`
+
 	// ── Contacto público y privacidad ────────────────────────────────────
 	// Cada campo sensible tiene un flag show_* que controla su visibilidad
 	// en el directorio público. El psicólogo gestiona estos desde su perfil.
 	ContactEmail             string `gorm:"size:255;not null" json:"contact_email"`
 	ShowContactEmail         bool   `gorm:"default:false" json:"show_contact_email"`
-	PublicPhone              string `gorm:"size:20" json:"public_phone"`
-	ShowPublicPhone          bool   `gorm:"default:false" json:"show_public_phone"`
 	ServiceAddress           string `gorm:"size:255" json:"service_address"`
 	ShowPublicServiceAddress bool   `gorm:"default:false" json:"show_public_service_address"`
-
-	// ── Estado gremial y multimedia ───────────────────────────────────────
-	Solvent             bool   `gorm:"default:false" json:"solvent"`        // Solvencia con el Colegio
-	ProofOfLife         bool   `gorm:"default:false" json:"proof_of_life"`  // Fe de vida presentada
-	ProfilePictureS3Key string `gorm:"size:512" json:"profile_picture_url"` // S3 key de la foto de perfil
 
 	// ── Ubicación: Carabobo ───────────────────────────────────────────────
 	// Para miembros residentes o con consulta dentro del estado Carabobo.
 	// MunicipalityCarabobo debe restringirse al catálogo de municipios del estado.
-	MunicipalityCarabobo string `gorm:"size:255" json:"municipality_carabobo"`
-	PhoneCarabobo        string `gorm:"size:20" json:"phone_carabobo"`
-	CelPhoneCarabobo     string `gorm:"size:20" json:"cel_phone_carabobo"`
+	MunicipalityCarabobo     string `gorm:"size:255" json:"municipality_carabobo"`
+	ShowMunicipalityCarabobo bool   `gorm:"size:255" json:"show_municipality_carabobo"`
+	PhoneCarabobo            string `gorm:"default:false" json:"phone_carabobo"`
+	ShowPhoneCarabobo        bool   `gorm:"default:false" json:"show_phone_carabobo"`
+	CelPhoneCarabobo         string `gorm:"size:20" json:"cel_phone_carabobo"`
+	ShowCelPhoneCarabobo     bool   `gorm:"default:false" json:"show_cel_phone_carabobo"`
 
 	// ── Ubicación: Fuera de Carabobo (Venezuela) ─────────────────────────
 	// Para miembros en otros estados venezolanos.
 	// StateOutside debe restringirse al catálogo de estados de Venezuela, excluyendo Carabobo.
 	StateOutside                            string `gorm:"size:255" json:"state_outside"`
+	ShowStateOutside                        bool   `gorm:"default:false" json:"show_state_outside"`
 	MunicipalityOutSideCarabobo             string `gorm:"size:255" json:"municipality_outside_carabobo"`
+	ShowMunicipalityOutSideCarabobo         bool   `gorm:"default:false" json:"show_municipality_outside_carabobo"`
 	PhoneOutSideCarabobo                    string `gorm:"size:20" json:"phone_outside_carabobo"`
 	ShowPhoneOutSideCarabobo                bool   `gorm:"default:false" json:"show_phone_outside_carabobo"`
 	CelPhoneOutSideCarabobo                 string `gorm:"size:20" json:"cel_phone_outside_carabobo"`
@@ -122,15 +129,16 @@ type PsiUserModel struct {
 	Country                                  string `gorm:"size:255" json:"country"`
 	PhoneOutSideVenezuela                    string `gorm:"size:20" json:"phone_outside_venezuela"`
 	ShowPhoneOutSideVenezuela                bool   `gorm:"default:false" json:"show_phone_outside_venezuela"`
-	ServiceAddressOutSideVenezuela           string `gorm:"size:255" json:"service_address_outside_venezuela"`
+	CellPhoneOutSideVenezuela                string `gorm:"size:20" json:"cell_phone_outside_venezuela"`
 	ShowCellPhoneOutSideVenezuela            bool   `gorm:"default:false" json:"show_cel_phone_outside_venezuela"`
+	ServiceAddressOutSideVenezuela           string `gorm:"size:255" json:"service_address_outside_venezuela"`
 	ShowPublicServiceAddressOutSideVenezuela bool   `gorm:"default:false" json:"show_public_service_address_outside_venezuela"`
 
 	// ── Especialidades profesionales ──────────────────────────────────────
 	// Almacenadas como strings para búsqueda directa en el directorio.
 	// Deben corresponder a entradas activas en el catálogo PsiSpecialtyModel.
-	PrimarySpecialty   string `gorm:"size:50" json:"primary_specialty"`
-	SecondarySpecialty string `gorm:"size:50" json:"secondary_specialty"`
+	PrimaryWorkArea   string `gorm:"size:50" json:"primary_work_area"`
+	SecondaryWorkArea string `gorm:"size:50" json:"secondary_work_area"`
 
 	// ── Biografía profesional ─────────────────────────────────────────────
 	MiniBio   string    `json:"mini_bio"`              // Resumen corto (max 250 chars) para el directorio
@@ -155,7 +163,8 @@ func (PsiUserModel) TableName() string { return "psi_users" }
 type PsiUserColData struct {
 	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	AuditModel
-	PsiUserModelID uuid.UUID `gorm:"type:uuid;uniqueIndex" json:"psi_user_model_id"`
+	PsiUserModelID       uuid.UUID `gorm:"type:uuid;uniqueIndex" json:"psi_user_model_id"`
+	GuildInscriptionDate time.Time `gorm:"type:date" json:"guild_inscription_date"`
 
 	// ── Pregrado ──────────────────────────────────────────────────────────
 	UniversityUndergraduate     string    `gorm:"size:255" json:"university_undergraduate"`
@@ -183,12 +192,14 @@ type PsiUserColData struct {
 	SixtyFiveOrPlus     bool `gorm:"default:false" json:"sixty_five_or_plus"`   // Mayor de 65 años (tarifa diferenciada)
 	GuildCollaborator   bool `gorm:"default:false" json:"guild_collaborator"`   // Colaborador activo del Colegio
 	PublicEmployee      bool `gorm:"default:false" json:"public_employee"`      // Empleado público
+	Discapacity         bool `gorm:"default:false" json:"discapacity"`          // Empleado público
 	UniversityProfessor bool `gorm:"default:false" json:"university_professor"` // Docente universitario
 
 	// ── Solvencia y membresías ────────────────────────────────────────────
-	DateOfLastSolvency time.Time `gorm:"type:date" json:"date_of_last_solvency"` // Última fecha de pago de cuota
-	DoubleGuild        bool      `gorm:"default:false" json:"double_guild"`      // Colegiado en más de un estado
-	CPSM               bool      `gorm:"default:false" json:"cpsm"`              // Miembro del Colegio de Psicólogos de Miranda
+	DateOfLastSolvency  time.Time `gorm:"type:date" json:"date_of_last_solvency"` // Última fecha de pago de cuota
+	DoubleGuild         bool      `gorm:"default:false" json:"double_guild"`      // Colegiado en más de un estado
+	DoubleGuildLocation string    `gorm:"size:255" json:"double_guild_location"`  // Colegiado en más de un estado
+	CPSM                bool      `gorm:"default:false" json:"cpsm"`              // Miembro del Colegio de Psicólogos de Miranda
 }
 
 func (PsiUserColData) TableName() string { return "psi_user_col_data" }
