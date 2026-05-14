@@ -33,7 +33,13 @@ func NewPsiRepository(db *gorm.DB) domain.PsiUserRepository {
 
 // CreateWithColData realiza una inserción atómica de usuario y sus datos colegiales.
 // Utiliza una transacción para asegurar que no se cree un usuario sin sus datos base asociados.
-func (r *psiRepo) CreateWithColData(ctx context.Context, psi *domain.PsiUserModel, colData *domain.PsiUserColData, solvencies domain.PsiUSerSolvency) error {
+func (r *psiRepo) CreateWithColData(
+	ctx context.Context,
+	psi *domain.PsiUserModel,
+	colData *domain.PsiUserColData,
+	solvencies domain.PsiUSerSolvency,
+	postgrades []domain.PsiUserPostGrade, // 👈 1. Nuevo parámetro agregado
+) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		// 1. Crear una bio vacía para satisfacer la FK (siempre requerida)
 		emptyBio := &domain.TextModel{
@@ -59,13 +65,24 @@ func (r *psiRepo) CreateWithColData(ctx context.Context, psi *domain.PsiUserMode
 		}
 
 		// 5. Crear solvencias
-
 		if solvencies.ID != uuid.Nil {
 			solvencies.PsiUserModelID = psi.ID
 			if err := tx.Create(&solvencies).Error; err != nil {
 				return fmt.Errorf("error creating solvency data: %w", err)
 			}
+		}
 
+		// ── 6. Crear los postgrados (NUEVO) ───────────────────────────
+		if len(postgrades) > 0 {
+			// Nos aseguramos de que todos los postgrados tengan el ID del usuario recién creado
+			for i := range postgrades {
+				postgrades[i].PsiUserID = psi.ID
+			}
+
+			// GORM hará un Bulk Insert (inserción múltiple) automáticamente
+			if err := tx.Create(&postgrades).Error; err != nil {
+				return fmt.Errorf("error creating postgrades: %w", err)
+			}
 		}
 
 		return nil
@@ -191,9 +208,10 @@ func (r *psiRepo) Update(
 			"proof_of_life": gorm.Expr("?", psi.ProofOfLife),
 
 			// ── Contacto ─────────────────────────────────────────────────
-			"contact_email":   psi.ContactEmail,
-			"public_phone":    psi.PublicPhone,
-			"service_address": psi.ServiceAddress,
+			"contact_email":      psi.ContactEmail,
+			"contact_phone":      psi.ContactPhone,     // Reemplaza a public_phone
+			"contact_cell_phone": psi.ContactCellPhone, // Nuevo
+			"service_address":    psi.ServiceAddress,
 
 			// ── Ubicación: Carabobo ───────────────────────────────────────
 			"municipality_carabobo": psi.MunicipalityCarabobo,
@@ -210,11 +228,12 @@ func (r *psiRepo) Update(
 			// ── Ubicación: Fuera de Venezuela ─────────────────────────────
 			"country":                            psi.Country,
 			"phone_out_side_venezuela":           psi.PhoneOutSideVenezuela,
+			"cell_phone_out_side_venezuela":      psi.CellPhoneOutSideVenezuela, // Nuevo
 			"service_address_out_side_venezuela": psi.ServiceAddressOutSideVenezuela,
 
 			// ── Perfil Profesional ────────────────────────────────────────
-			"primary_specialty":   psi.PrimarySpecialty,
-			"secondary_specialty": psi.SecondarySpecialty,
+			"primary_work_area":   psi.PrimaryWorkArea,   // Reemplaza a specialty
+			"secondary_work_area": psi.SecondaryWorkArea, // Reemplaza a specialty
 			"mini_bio":            psi.MiniBio,
 			"bio_text_id":         psi.BioTextID,
 
@@ -227,10 +246,16 @@ func (r *psiRepo) Update(
 
 			// ── Privacidad: Contacto principal ────────────────────────────
 			"show_contact_email":          gorm.Expr("?", psi.ShowContactEmail),
-			"show_public_phone":           gorm.Expr("?", psi.ShowPublicPhone),
 			"show_public_service_address": gorm.Expr("?", psi.ShowPublicServiceAddress),
 
+			// ── Privacidad: Carabobo ─────────────────────────────────────
+			"show_municipality_carabobo": gorm.Expr("?", psi.ShowMunicipalityCarabobo),
+			"show_phone_carabobo":        gorm.Expr("?", psi.ShowPhoneCarabobo),
+			"show_cel_phone_carabobo":    gorm.Expr("?", psi.ShowCelPhoneCarabobo),
+
 			// ── Privacidad: Fuera de Carabobo ────────────────────────────
+			"show_state_outside":                            gorm.Expr("?", psi.ShowStateOutside),
+			"show_municipality_out_side_carabobo":           gorm.Expr("?", psi.ShowMunicipalityOutSideCarabobo),
 			"show_phone_out_side_carabobo":                  gorm.Expr("?", psi.ShowPhoneOutSideCarabobo),
 			"show_cell_phone_out_side_carabobo":             gorm.Expr("?", psi.ShowCellPhoneOutSideCarabobo),
 			"show_public_service_address_out_side_carabobo": gorm.Expr("?", psi.ShowPublicServiceAddressOutSideCarabobo),
@@ -257,6 +282,7 @@ func (r *psiRepo) Update(
 				"show_mention_undergraduate":    gorm.Expr("?", colData.ShowMentionUndergraduate),
 
 				// ── Datos Académicos (solo admin) ─────────────────────────
+				"guild_inscription_date":   colData.GuildInscriptionDate, // Nuevo
 				"university_undergraduate": colData.UniversityUndergraduate,
 				"graduate_date":            colData.GraduateDate,
 				"mention_undergraduate":    colData.MentionUndergraduate,
@@ -273,8 +299,10 @@ func (r *psiRepo) Update(
 				"sixty_five_or_plus":    gorm.Expr("?", colData.SixtyFiveOrPlus),
 				"guild_collaborator":    gorm.Expr("?", colData.GuildCollaborator),
 				"public_employee":       gorm.Expr("?", colData.PublicEmployee),
+				"discapacity":           gorm.Expr("?", colData.Discapacity), // Nuevo
 				"university_professor":  gorm.Expr("?", colData.UniversityProfessor),
 				"double_guild":          gorm.Expr("?", colData.DoubleGuild),
+				"double_guild_location": colData.DoubleGuildLocation, // Nuevo
 				"cpsm":                  gorm.Expr("?", colData.CPSM),
 				"date_of_last_solvency": colData.DateOfLastSolvency,
 
@@ -346,10 +374,11 @@ func (r *psiRepo) UpdatePublicProfile(
 		// 2. Actualizar perfil principal
 		updateMap := map[string]interface{}{
 			// Texto Base
-			"username":        psi.Username,
-			"contact_email":   psi.ContactEmail,
-			"public_phone":    psi.PublicPhone,
-			"service_address": psi.ServiceAddress,
+			"username":           psi.Username,
+			"contact_email":      psi.ContactEmail,
+			"contact_phone":      psi.ContactPhone,     // Reemplaza a public_phone
+			"contact_cell_phone": psi.ContactCellPhone, // Nuevo campo
+			"service_address":    psi.ServiceAddress,
 
 			// Ubicación: Carabobo
 			"municipality_carabobo": psi.MunicipalityCarabobo,
@@ -361,16 +390,17 @@ func (r *psiRepo) UpdatePublicProfile(
 			"municipality_out_side_carabobo":    psi.MunicipalityOutSideCarabobo,
 			"phone_out_side_carabobo":           psi.PhoneOutSideCarabobo,
 			"cel_phone_out_side_carabobo":       psi.CelPhoneOutSideCarabobo,
-			"service_address_out_side_carabobo": psi.ServiceAddressOutSideCarabobo, // Faltaba
+			"service_address_out_side_carabobo": psi.ServiceAddressOutSideCarabobo,
 
-			// Ubicación: Exterior (Faltaban todos)
+			// Ubicación: Exterior
 			"country":                            psi.Country,
 			"phone_out_side_venezuela":           psi.PhoneOutSideVenezuela,
+			"cell_phone_out_side_venezuela":      psi.CellPhoneOutSideVenezuela, // Nuevo
 			"service_address_out_side_venezuela": psi.ServiceAddressOutSideVenezuela,
 
 			// Profesional
-			"primary_specialty":      psi.PrimarySpecialty,
-			"secondary_specialty":    psi.SecondarySpecialty,
+			"primary_work_area":      psi.PrimaryWorkArea,   // Reemplaza a primary_specialty
+			"secondary_work_area":    psi.SecondaryWorkArea, // Reemplaza a secondary_specialty
 			"mini_bio":               psi.MiniBio,
 			"bio_text_id":            psi.BioTextID,
 			"profile_picture_s3_key": psi.ProfilePictureS3Key,
@@ -386,15 +416,22 @@ func (r *psiRepo) UpdatePublicProfile(
 			// ── PRIVACIDAD (BOOLS) ──
 			// Contacto principal
 			"show_contact_email":          gorm.Expr("?", psi.ShowContactEmail),
-			"show_public_phone":           gorm.Expr("?", psi.ShowPublicPhone),
 			"show_public_service_address": gorm.Expr("?", psi.ShowPublicServiceAddress),
+			// Nota: show_public_phone se eliminó, la privacidad telefónica ahora es por zona
 
-			// Fuera de Carabobo (Faltaban)
+			// Privacidad: Carabobo
+			"show_municipality_carabobo": gorm.Expr("?", psi.ShowMunicipalityCarabobo),
+			"show_phone_carabobo":        gorm.Expr("?", psi.ShowPhoneCarabobo),
+			"show_cel_phone_carabobo":    gorm.Expr("?", psi.ShowCelPhoneCarabobo),
+
+			// Privacidad: Fuera de Carabobo
+			"show_state_outside":                            gorm.Expr("?", psi.ShowStateOutside),
+			"show_municipality_out_side_carabobo":           gorm.Expr("?", psi.ShowMunicipalityOutSideCarabobo),
 			"show_phone_out_side_carabobo":                  gorm.Expr("?", psi.ShowPhoneOutSideCarabobo),
 			"show_cell_phone_out_side_carabobo":             gorm.Expr("?", psi.ShowCellPhoneOutSideCarabobo),
 			"show_public_service_address_out_side_carabobo": gorm.Expr("?", psi.ShowPublicServiceAddressOutSideCarabobo),
 
-			// Exterior (Faltaban)
+			// Privacidad: Exterior
 			"show_phone_out_side_venezuela":                  gorm.Expr("?", psi.ShowPhoneOutSideVenezuela),
 			"show_cell_phone_out_side_venezuela":             gorm.Expr("?", psi.ShowCellPhoneOutSideVenezuela),
 			"show_public_service_address_out_side_venezuela": gorm.Expr("?", psi.ShowPublicServiceAddressOutSideVenezuela),
@@ -407,7 +444,7 @@ func (r *psiRepo) UpdatePublicProfile(
 			return err
 		}
 
-		// 3. Actualizar Datos Colegiales (Esto estaba bien)
+		// 3. Actualizar Datos Colegiales
 		if colData != nil {
 			colDataMap := map[string]interface{}{
 				"show_university_undergraduate": gorm.Expr("?", colData.ShowUniversityUndergraduate),
@@ -465,8 +502,9 @@ func (r *psiRepo) SearchDirectory(ctx context.Context, filter request_structs.Ps
 	var users []domain.PsiUserModel
 	var total int64
 
+	// 1. Actualizado: Se cambian las especialidades por primary_work_area y secondary_work_area
 	query := r.db.WithContext(ctx).Model(&domain.PsiUserModel{}).
-		Select("id, first_name, last_name, ci, fpv, profile_picture_s3_key, mini_bio, solvent, primary_specialty, secondary_specialty").
+		Select("id, first_name, last_name, ci, fpv, profile_picture_s3_key, mini_bio, solvent, primary_work_area, secondary_work_area").
 		Where("is_active = ?", true)
 
 	if filter.SearchTerm != "" {
@@ -482,23 +520,27 @@ func (r *psiRepo) SearchDirectory(ctx context.Context, filter request_structs.Ps
 		// CASO NAVEGACIÓN: Restringe a usuarios solventes y aplica filtros de catálogo.
 		query = query.Where("solvent = ?", true)
 
+		// 2. Actualizado: Ahora se busca por work_area en la base de datos
 		if filter.SpecialtyID > 0 {
 			var specName string
+			// Asumiendo que PsiSpecialtyModel cambió a PsiWorkAreaModel, ajusta el modelo aquí si es necesario:
 			r.db.Model(&domain.PsiSpecialtyModel{}).Select("name").Where("id = ?", filter.SpecialtyID).Scan(&specName)
 
 			if specName != "" {
-				query = query.Where("primary_specialty = ? OR secondary_specialty = ?", specName, specName)
+				query = query.Where("primary_work_area = ? OR secondary_work_area = ?", specName, specName)
 			}
 		}
 
+		// 3. NUEVO FILTRO DE UBICACIÓN RESPETANDO LA PRIVACIDAD
 		if filter.Location != "" {
 			loc := "%" + filter.Location + "%"
+
+			// Se evalúa si el texto coincide con la ubicación Y, a la vez, si el psicólogo permite mostrarla
 			query = query.Where(
-				r.db.Where("municipality_carabobo ILIKE ?", loc).
-					Or("state_outside ILIKE ?", loc).
-					// FIX: Corregido el nombre exacto de la columna generada por GORM
-					Or("municipality_out_side_carabobo ILIKE ?", loc).
-					Or("country ILIKE ? ", loc),
+				r.db.Where("municipality_carabobo ILIKE ? AND show_municipality_carabobo = ?", loc, true).
+					Or("state_outside ILIKE ? AND show_state_outside = ?", loc, true).
+					Or("municipality_outside_carabobo ILIKE ? AND show_municipality_outside_carabobo = ?", loc, true).
+					Or("country ILIKE ?", loc), // El país no tiene bandera de privacidad en el modelo actual
 			)
 		}
 

@@ -129,18 +129,22 @@ type UpdatePsiAdminRequest struct {
 	IsActive    *bool               `json:"is_active"`
 
 	// --- Datos de Contacto y Visibilidad ---
-	ContactEmail   *string `json:"contact_email"`
-	PublicPhone    *string `json:"public_phone"`
-	ServiceAddress *string `json:"service_address"`
+	ContactEmail     *string `json:"contact_email"`
+	ContactPhone     *string `json:"contact_phone"`
+	ContactCellPhone *string `json:"contact_cell_phone"`
+	ServiceAddress   *string `json:"service_address"`
 
 	ShowContactEmailRaw         string `json:"show_contact_email"`
 	ShowPublicPhoneRaw          string `json:"show_public_phone"`
 	ShowPublicServiceAddressRaw string `json:"show_public_service_address"` // ← fix: form → json
 
 	// --- Ubicación: Carabobo ---
-	MunicipalityCarabobo *string `json:"municipality_carabobo"`
-	PhoneCarabobo        *string `json:"phone_carabobo"`
-	CelPhoneCarabobo     *string `json:"cel_phone_carabobo"`
+	MunicipalityCarabobo     *string `json:"municipality_carabobo"`
+	ShowMunicipalityCarabobo *bool   `json:"show_municipality_carabobo"`
+	PhoneCarabobo            *string `json:"phone_carabobo"`
+	ShowPhoneCarabobo        *bool   `json:"show_phone_carabobo"`
+	CellPhoneCarabobo        *string `json:"cell_phone_carabobo"`
+	ShowCelPhoneCarabobo     *bool   `json:"show_cel_phone_carabobo"`
 
 	// --- Ubicación: Fuera de Carabobo (Venezuela) ---
 	StateOutside                  *string `json:"state_outside"`

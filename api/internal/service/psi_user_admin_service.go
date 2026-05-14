@@ -274,17 +274,15 @@ func (s *PsiService) UpdatePsiByAdmin(
 		}
 		psi.ContactEmail = validate_email
 	}
-	if req.PublicPhone != nil {
-		psi.PublicPhone = *req.PublicPhone
-	}
-	if req.ServiceAddress != nil {
-		psi.ServiceAddress = *req.ServiceAddress
-	}
+
 	if v := req.ShowContactEmail(); v != nil {
 		psi.ShowContactEmail = *v
 	}
 	if v := req.ShowPublicPhone(); v != nil {
-		psi.ShowPublicPhone = *v
+		psi.ShowPhoneCarabobo = *v
+	}
+	if v := req.ShowCelPhoneCarabobo; v != nil {
+		psi.ShowCelPhoneCarabobo = *v
 	}
 	if v := req.ShowPublicServiceAddress(); v != nil {
 		psi.ShowPublicServiceAddress = *v
@@ -298,11 +296,14 @@ func (s *PsiService) UpdatePsiByAdmin(
 		}
 		psi.MunicipalityCarabobo = mun
 	}
+	if req.ServiceAddress != nil {
+		psi.ServiceAddress = *req.ServiceAddress
+	}
 	if req.PhoneCarabobo != nil {
 		psi.PhoneCarabobo = *req.PhoneCarabobo
 	}
-	if req.CelPhoneCarabobo != nil {
-		psi.CelPhoneCarabobo = *req.CelPhoneCarabobo
+	if req.CellPhoneCarabobo != nil {
+		psi.CelPhoneCarabobo = *req.CellPhoneCarabobo
 	}
 
 	// 4e. Ubicación: Fuera de Carabobo (Venezuela)

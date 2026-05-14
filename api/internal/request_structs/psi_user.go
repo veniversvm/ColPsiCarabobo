@@ -7,7 +7,6 @@ package request_structs
 
 import (
 	"github.com/google/uuid"
-	"github.com/veniversvm/ColPsiCarabobo/api/internal/utils"
 )
 
 // =========================================================================
@@ -44,6 +43,9 @@ type PsiLoginRequest struct {
 // Los campos opcionales usan *string para distinguir "no enviado" de "enviado vacío".
 // Los booleanos de visibilidad usan string Raw + getter porque multipart/form-data
 // no puede representar *bool directamente.
+// Los campos opcionales usan *string para distinguir "no enviado" de "enviado vacío".
+// Los booleanos de visibilidad usan string Raw + getter porque multipart/form-data
+// no puede representar *bool directamente.
 type PsiUserUpdateRequestSelf struct {
 
 	// ── Credenciales ──────────────────────────────────────────────────────
@@ -53,20 +55,24 @@ type PsiUserUpdateRequestSelf struct {
 	NewPassword1 *string `json:"new_password_1,omitempty" form:"new_password_1"`
 	NewPassword2 *string `json:"new_password_2,omitempty" form:"new_password_2"`
 
-	// ── Contacto y Privacidad ─────────────────────────────────────────────
-	ContactEmail   *string `json:"contact_email" form:"contact_email"`
-	PublicPhone    *string `json:"public_phone" form:"public_phone"`
-	ServiceAddress *string `json:"service_address" form:"service_address"`
+	// ── Contacto Gremial y Privacidad ─────────────────────────────────────
+	ContactEmail     *string `json:"contact_email" form:"contact_email"`
+	ContactPhone     *string `json:"contact_phone" form:"contact_phone"`           // Reemplaza a public_phone
+	ContactCellPhone *string `json:"contact_cell_phone" form:"contact_cell_phone"` // Nuevo
+	ServiceAddress   *string `json:"service_address" form:"service_address"`
 
-	// Raw bools: "0"/"1"/"true"/"false" — usar getters ShowContactEmail(), etc.
+	// Raw bools: "0"/"1"/"true"/"false" — usar getters Show...()
 	ShowContactEmailRaw         string `form:"show_contact_email"`
-	ShowPublicPhoneRaw          string `form:"show_public_phone"`
 	ShowPublicServiceAddressRaw string `form:"show_public_service_address"`
 
 	// ── Ubicación: Carabobo ───────────────────────────────────────────────
 	MunicipalityCarabobo *string `json:"municipality_carabobo" form:"municipality_carabobo"`
 	PhoneCarabobo        *string `json:"phone_carabobo" form:"phone_carabobo"`
 	CelPhoneCarabobo     *string `json:"cel_phone_carabobo" form:"cel_phone_carabobo"`
+
+	ShowMunicipalityCaraboboRaw string `form:"show_municipality_carabobo"`
+	ShowPhoneCaraboboRaw        string `form:"show_phone_carabobo"`
+	ShowCelPhoneCaraboboRaw     string `form:"show_cel_phone_carabobo"`
 
 	// ── Ubicación: Fuera de Carabobo (Venezuela) ─────────────────────────
 	StateOutside                  *string `json:"state_outside" form:"state_outside"`
@@ -75,6 +81,8 @@ type PsiUserUpdateRequestSelf struct {
 	CelPhoneOutSideCarabobo       *string `json:"cel_phone_outside_carabobo" form:"cel_phone_outside_carabobo"`
 	ServiceAddressOutSideCarabobo *string `json:"service_address_outside_carabobo" form:"service_address_outside_carabobo"`
 
+	ShowStateOutsideRaw                        string `form:"show_state_outside"`
+	ShowMunicipalityOutSideCaraboboRaw         string `form:"show_municipality_outside_carabobo"`
 	ShowPhoneOutSideCaraboboRaw                string `form:"show_phone_outside_carabobo"`
 	ShowCellPhoneOutSideCaraboboRaw            string `form:"show_cel_phone_outside_carabobo"`
 	ShowPublicServiceAddressOutSideCaraboboRaw string `form:"show_public_service_address_outside_carabobo"`
@@ -82,17 +90,18 @@ type PsiUserUpdateRequestSelf struct {
 	// ── Ubicación: Fuera de Venezuela ─────────────────────────────────────
 	Country                        *string `json:"country" form:"country"`
 	PhoneOutSideVenezuela          *string `json:"phone_outside_venezuela" form:"phone_outside_venezuela"`
+	CellPhoneOutSideVenezuela      *string `json:"cell_phone_outside_venezuela" form:"cell_phone_outside_venezuela"` // Añadido
 	ServiceAddressOutSideVenezuela *string `json:"service_address_outside_venezuela" form:"service_address_outside_venezuela"`
 
 	ShowPhoneOutSideVenezuelaRaw                string `form:"show_phone_outside_venezuela"`
-	ShowCellPhoneOutSideVenezuelaRaw            string `form:"show_cel_phone_outside_venezuela"`
+	ShowCellPhoneOutSideVenezuelaRaw            string `form:"show_cell_phone_outside_venezuela"` // Añadido
 	ShowPublicServiceAddressOutSideVenezuelaRaw string `form:"show_public_service_address_outside_venezuela"`
 
 	// ── Perfil Profesional y Biografía ───────────────────────────────────
-	PrimarySpecialty   *string `json:"primary_specialty" form:"primary_specialty"`
-	SecondarySpecialty *string `json:"secondary_specialty" form:"secondary_specialty"`
-	MiniBio            *string `json:"mini_bio" form:"mini_bio"`
-	FullBio            *string `json:"full_bio" form:"full_bio"`
+	PrimaryWorkArea   *string `json:"primary_work_area" form:"primary_work_area"`     // Cambiado de specialty a work_area
+	SecondaryWorkArea *string `json:"secondary_work_area" form:"secondary_work_area"` // Cambiado de specialty a work_area
+	MiniBio           *string `json:"mini_bio" form:"mini_bio"`
+	FullBio           *string `json:"full_bio" form:"full_bio"`
 
 	// ── Visibilidad de Datos Colegiales ──────────────────────────────────
 	ShowUniversityUndergraduateRaw string `form:"show_university_undergraduate"`
@@ -103,41 +112,72 @@ type PsiUserUpdateRequestSelf struct {
 // ── Getters de booleanos de privacidad ────────────────────────────────────────
 // BoolFromForm convierte "1"/"true" → true, "0"/"false" → false, "" → nil.
 
-func (r *PsiUserUpdateRequestSelf) ShowContactEmail() *bool {
-	return utils.BoolFromForm(r.ShowContactEmailRaw)
+// BoolFromForm convierte los valores de formulario "1"/"0"/"true"/"false" a *bool.
+// Retorna nil si el valor está vacío (campo no enviado → semántica PATCH).
+func BoolFromForm(val string) *bool {
+	if val == "" {
+		return nil
+	}
+	b := (val == "1" || val == "true")
+	return &b
 }
-func (r *PsiUserUpdateRequestSelf) ShowPublicPhone() *bool {
-	return utils.BoolFromForm(r.ShowPublicPhoneRaw)
+
+// ── Contacto Público ──
+func (r *PsiUserUpdateRequestSelf) ShowContactEmail() *bool {
+	return BoolFromForm(r.ShowContactEmailRaw)
 }
 func (r *PsiUserUpdateRequestSelf) ShowPublicServiceAddress() *bool {
-	return utils.BoolFromForm(r.ShowPublicServiceAddressRaw)
+	return BoolFromForm(r.ShowPublicServiceAddressRaw)
+}
+
+// ── Carabobo ──
+func (r *PsiUserUpdateRequestSelf) ShowMunicipalityCarabobo() *bool {
+	return BoolFromForm(r.ShowMunicipalityCaraboboRaw)
+}
+func (r *PsiUserUpdateRequestSelf) ShowPhoneCarabobo() *bool {
+	return BoolFromForm(r.ShowPhoneCaraboboRaw)
+}
+func (r *PsiUserUpdateRequestSelf) ShowCelPhoneCarabobo() *bool {
+	return BoolFromForm(r.ShowCelPhoneCaraboboRaw)
+}
+
+// ── Fuera de Carabobo (Venezuela) ──
+func (r *PsiUserUpdateRequestSelf) ShowStateOutside() *bool {
+	return BoolFromForm(r.ShowStateOutsideRaw)
+}
+func (r *PsiUserUpdateRequestSelf) ShowMunicipalityOutSideCarabobo() *bool {
+	return BoolFromForm(r.ShowMunicipalityOutSideCaraboboRaw)
 }
 func (r *PsiUserUpdateRequestSelf) ShowPhoneOutSideCarabobo() *bool {
-	return utils.BoolFromForm(r.ShowPhoneOutSideCaraboboRaw)
+	return BoolFromForm(r.ShowPhoneOutSideCaraboboRaw)
 }
 func (r *PsiUserUpdateRequestSelf) ShowCellPhoneOutSideCarabobo() *bool {
-	return utils.BoolFromForm(r.ShowCellPhoneOutSideCaraboboRaw)
+	return BoolFromForm(r.ShowCellPhoneOutSideCaraboboRaw)
 }
 func (r *PsiUserUpdateRequestSelf) ShowPublicServiceAddressOutSideCarabobo() *bool {
-	return utils.BoolFromForm(r.ShowPublicServiceAddressOutSideCaraboboRaw)
+	return BoolFromForm(r.ShowPublicServiceAddressOutSideCaraboboRaw)
 }
+
+// ── Fuera de Venezuela ──
 func (r *PsiUserUpdateRequestSelf) ShowPhoneOutSideVenezuela() *bool {
-	return utils.BoolFromForm(r.ShowPhoneOutSideVenezuelaRaw)
+	return BoolFromForm(r.ShowPhoneOutSideVenezuelaRaw)
 }
 func (r *PsiUserUpdateRequestSelf) ShowCellPhoneOutSideVenezuela() *bool {
-	return utils.BoolFromForm(r.ShowCellPhoneOutSideVenezuelaRaw)
+	return BoolFromForm(r.ShowCellPhoneOutSideVenezuelaRaw)
 }
 func (r *PsiUserUpdateRequestSelf) ShowPublicServiceAddressOutSideVenezuela() *bool {
-	return utils.BoolFromForm(r.ShowPublicServiceAddressOutSideVenezuelaRaw)
+	return BoolFromForm(r.ShowPublicServiceAddressOutSideVenezuelaRaw)
 }
+
+// ── Datos Colegiales ──
 func (r *PsiUserUpdateRequestSelf) ShowUniversityUndergraduate() *bool {
-	return utils.BoolFromForm(r.ShowUniversityUndergraduateRaw)
+	return BoolFromForm(r.ShowUniversityUndergraduateRaw)
 }
 func (r *PsiUserUpdateRequestSelf) ShowGraduateDate() *bool {
-	return utils.BoolFromForm(r.ShowGraduateDateRaw)
+	return BoolFromForm(r.ShowGraduateDateRaw)
 }
 func (r *PsiUserUpdateRequestSelf) ShowMentionUndergraduate() *bool {
-	return utils.BoolFromForm(r.ShowMentionUndergraduateRaw)
+	return BoolFromForm(r.ShowMentionUndergraduateRaw)
 }
 
 // =========================================================================
@@ -203,7 +243,7 @@ type PsiFullProfileDTO struct {
 	Location PsiLocationDTO `json:"location"`
 
 	// ── Perfil Profesional ────────────────────────────────────────────────
-	Specialties    []string `json:"specialties"`
+	WorkAreas      []string `json:"work_areas"`
 	MiniBio        string   `json:"mini_bio,omitempty"`
 	FullBioContent string   `json:"full_bio_content,omitempty"`
 

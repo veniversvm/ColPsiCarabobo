@@ -18,7 +18,7 @@ type PsiUserRepository interface {
 
 	// CreateWithColData realiza una inserción atómica (transaccional) de un nuevo psicólogo
 	// junto a sus datos colegiales iniciales. Garantiza que no existan registros huérfanos.
-	CreateWithColData(ctx context.Context, psi *PsiUserModel, colData *PsiUserColData, solvency PsiUSerSolvency) error
+	CreateWithColData(ctx context.Context, psi *PsiUserModel, colData *PsiUserColData, solvency PsiUSerSolvency, postgrades []PsiUserPostGrade) error
 
 	// GetByID recupera un psicólogo mediante su UUID, realizando un Eager Loading
 	// de sus relaciones: ColData, PostGrades y SocialNetworks.

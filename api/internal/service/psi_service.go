@@ -9,7 +9,6 @@ package service
 import (
 	"bytes"
 	"context"
-	"encoding/csv"
 	"errors"
 	"fmt"
 	"io"
@@ -27,6 +26,7 @@ import (
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/request_structs"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/utils"
 	"github.com/veniversvm/ColPsiCarabobo/api/pkg/s3"
+	"github.com/xuri/excelize/v2"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -84,44 +84,60 @@ func NewPsiService(repo domain.PsiUserRepository, s3Client *s3.S3Client, mailSer
 //	[35] GuildDirector             [42] CPSM
 //	[36] SixtyFiveOrPlus
 func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminID uuid.UUID) (int, []map[string]string) {
-	csvReader := csv.NewReader(reader)
-	csvReader.Comma = '\t'
-	csvReader.LazyQuotes = true
-	_, _ = csvReader.Read() // saltar cabeceras
+	f, err := excelize.OpenReader(reader)
+	if err != nil {
+		return 0, []map[string]string{
+			{"error": "no se pudo abrir el archivo Excel: " + err.Error()},
+		}
+	}
+	defer f.Close()
+
+	// Asumiendo que la hoja se llama "BD ColPsiCarabobo 2026"
+	rows, err := f.GetRows("BD ColPsiCarabobo 2026")
+	if err != nil {
+		return 0, []map[string]string{
+			{"error": "no se pudo leer la hoja especificada: " + err.Error()},
+		}
+	}
 
 	successCount := 0
 	var failedRecords []map[string]string
 
-	for {
-		record, err := csvReader.Read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
+	// OPTIMIZACIÓN: Como todos tendrán la misma clave inicial, generamos el hash UNA SOLA VEZ fuera del bucle.
+	defaultPassword := utils.GenerateSecureRandomString(12)
+	hashedPasswordBytes, _ := bcrypt.GenerateFromPassword([]byte(defaultPassword), bcrypt.DefaultCost)
+	hashedPassword := string(hashedPasswordBytes)
+
+	for i, row := range rows {
+		// Omitir fila 0 y fila 1 (si la 2 es el encabezado)
+		if i < 2 {
 			continue
 		}
-		if len(record) < 43 {
-			failedRecords = append(failedRecords, map[string]string{
-				"fila":   safeGet(record, 0),
-				"nombre": safeGet(record, 3) + " " + safeGet(record, 5),
-				"ci":     safeGet(record, 8),
-				"fpv":    safeGet(record, 7),
-				"error":  fmt.Sprintf("columnas insuficientes: se esperaban 43, se recibieron %d", len(record)),
-			})
+
+		// Row num real en Excel (i + 1) para los reportes de error
+		excelRow := fmt.Sprintf("%d", i+1)
+
+		numFPV := getValorSeguro(row, 3)
+		ciStr := getValorSeguro(row, 6)
+		firstName := getValorSeguro(row, 7)
+		lastName := getValorSeguro(row, 9)
+		fullName := firstName + " " + lastName
+
+		if numFPV == "" && ciStr == "" {
+			// Probablemente una fila vacía al final del Excel, la ignoramos.
 			continue
 		}
 
 		// ── Geo-normalización ─────────────────────────────────────────────
-		// Los valores "-" o vacíos se omiten para no disparar error de validación.
 		var municipioCarabobo string
-		if raw := strings.TrimSpace(record[20]); raw != "" && raw != "-" {
+		if raw := getValorSeguro(row, 16); raw != "" && raw != "-" {
 			mun, ok := utils.NormalizeMunicipioCarabobo(raw)
 			if !ok {
 				failedRecords = append(failedRecords, map[string]string{
-					"fila":   record[0],
-					"nombre": record[3] + " " + record[5],
-					"ci":     record[8],
-					"fpv":    record[7],
+					"fila":   excelRow,
+					"nombre": fullName,
+					"ci":     ciStr,
+					"fpv":    numFPV,
 					"error":  fmt.Sprintf("municipio de Carabobo inválido: %q", raw),
 				})
 				continue
@@ -130,135 +146,182 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 		}
 
 		var estadoOutside string
-		if raw := strings.TrimSpace(record[23]); raw != "" && raw != "-" {
+		if raw := getValorSeguro(row, 19); raw != "" && raw != "-" {
 			estado, ok := utils.NormalizeEstadoVenezuela(raw)
 			if !ok {
-				// Si no es estado venezolano, se trata como país extranjero (exterior)
-				// Se guarda tal cual sin validación de catálogo.
 				estadoOutside = raw
 			} else {
 				estadoOutside = estado
 			}
 		}
 
-		// ── Hash de contraseña ────────────────────────────────────────────
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(record[2]), bcrypt.DefaultCost)
-		if err != nil {
-			failedRecords = append(failedRecords, map[string]string{
-				"fila":   record[0],
-				"nombre": record[3] + " " + record[5],
-				"ci":     record[8],
-				"fpv":    record[7],
-				"error":  "error al procesar seguridad: " + err.Error(),
-			})
-			continue
-		}
-
 		psiID := uuid.New()
 		audit := domain.AuditModel{
 			CreateById: &adminID,
-			CreateBy:   "Admin_CSV_Import",
+			CreateBy:   "Admin_XLSX_Import",
 			UpdateById: &adminID,
-			UpdateBy:   "Admin_CSV_Import",
+			UpdateBy:   "Admin_XLSX_Import",
 		}
 
-		// ── Modelo Principal ──────────────────────────────────────────────
+		// ── Generación de Username ─────────────────────────────────────────
+		email := getValorSeguro(row, 15)
+		var username string
+		if strings.Contains(email, "@") {
+			email_split := strings.Split(email, "@")
+			username = email_split[0] + numFPV
+		} else {
+			// Fallback si no hay email o no tiene @
+			username = "psi" + numFPV + ciStr
+		}
+
+		// ── Modelo Principal (PsiUserModel) ────────────────────────────────
 		psi := &domain.PsiUserModel{
 			ID:         psiID,
 			Key:        uuid.New().String(),
 			AuditModel: audit,
 
-			// Credenciales
-			Username: record[0],
-			Email:    record[1],
-			Password: string(hashedPassword),
+			// Credenciales de acceso
+			IsActive: getValorSeguro(row, 45) == "Activo",
+			Username: username,
+			Email:    email,
+			Password: hashedPassword,
 
-			// Identidad Legal
-			FirstName:      record[3],
-			SecondName:     cleanDash(record[4]),
-			LastName:       record[5],
-			SecondLastName: cleanDash(record[6]),
-			FPV:            parseInt(record[7]),
-			CI:             parseInt(record[8]),
-			Nationality:    record[10],
-			BornDate:       parseDate(record[11]),
-			Genre:          record[12],
+			// Identidad legal
+			FirstName:      firstName,
+			SecondName:     cleanDash(getValorSeguro(row, 8)),
+			LastName:       lastName,
+			SecondLastName: cleanDash(getValorSeguro(row, 10)),
+			FPV:            parseInt(numFPV),
+			CI:             parseInt(ciStr),
+			Nationality:    getValorSeguro(row, 5),
+			BornDate:       parseDate(getValorSeguro(row, 11)),
+			Genre:          getValorSeguro(row, 13),
 
-			// Contacto
-			ContactEmail:             record[13],
-			ShowContactEmail:         parseBool(record[14]),
-			PublicPhone:              cleanDash(record[15]),
-			ShowPublicPhone:          parseBool(record[16]),
-			ServiceAddress:           cleanDash(record[17]),
-			ShowPublicServiceAddress: parseBool(record[18]),
+			// Estado gremial
+			ProofOfLife: strings.ToLower(getValorSeguro(row, 14)) != "fallecido",
+			Solvent:     getValorSeguro(row, 45) == "Activo",
 
-			// Estatus
-			Solvent: parseBool(record[19]),
+			// Contacto interno del gremio
+			ContactPhone:     cleanDash(getValorSeguro(row, 17)),
+			ContactCellPhone: cleanDash(getValorSeguro(row, 18)),
+
+			// Contacto público y privacidad
+			ContactEmail:     "",
+			ShowContactEmail: false,
 
 			// Ubicación: Carabobo
-			MunicipalityCarabobo: municipioCarabobo,
-			PhoneCarabobo:        cleanDash(record[21]),
-			CelPhoneCarabobo:     cleanDash(record[22]),
+			MunicipalityCarabobo:     municipioCarabobo,
+			ShowMunicipalityCarabobo: false,
+			PhoneCarabobo:            "",
+			ShowPhoneCarabobo:        false,
+			CelPhoneCarabobo:         "",
+			ShowCelPhoneCarabobo:     false,
 
-			// Ubicación: Fuera de Carabobo / Venezuela / Exterior
+			// Ubicación: Fuera de Carabobo
 			StateOutside:                cleanDash(estadoOutside),
-			MunicipalityOutSideCarabobo: cleanDash(record[24]),
-			PhoneOutSideCarabobo:        cleanDash(record[25]),
-			CelPhoneOutSideCarabobo:     cleanDash(record[26]),
+			MunicipalityOutSideCarabobo: cleanDash(getValorSeguro(row, 20)),
+			PhoneOutSideCarabobo:        cleanDash(getValorSeguro(row, 21)),
+			CelPhoneOutSideCarabobo:     cleanDash(getValorSeguro(row, 22)),
+
+			// Ubicación: Fuera del país
+			Country:                   cleanDash(getValorSeguro(row, 23)),
+			PhoneOutSideVenezuela:     cleanDash(getValorSeguro(row, 24)),
+			ShowPhoneOutSideVenezuela: false,
 		}
 
-		// ── Datos Colegiales ──────────────────────────────────────────────
+		// ── Datos Colegiales (PsiUserColData) ──────────────────────────────
 		colData := &domain.PsiUserColData{
-			ID:             uuid.New(),
-			PsiUserModelID: psiID,
-			AuditModel:     audit,
+			ID:                   uuid.New(),
+			PsiUserModelID:       psiID,
+			AuditModel:           audit,
+			GuildInscriptionDate: parseDate(getValorSeguro(row, 4)),
 
 			// Pregrado
-			UniversityUndergraduate: record[27],
-			GraduateDate:            parseDate(record[28]),
-			MentionUndergraduate:    record[29],
+			UniversityUndergraduate: getValorSeguro(row, 25),
+			GraduateDate:            parseDate(getValorSeguro(row, 26)),
+			MentionUndergraduate:    getValorSeguro(row, 27),
 
 			// Registro legal del título
-			RegisterTitleState: record[30],
-			RegisterTitleDate:  parseDate(record[31]),
-			RegisterNumber:     parseInt(record[32]),
-			RegisterFolio:      cleanDash(record[33]),
-			RegisterTome:       cleanDash(record[34]),
+			RegisterTitleState: getValorSeguro(row, 28),
+			RegisterTitleDate:  parseDate(getValorSeguro(row, 29)),
+			RegisterNumber:     parseInt(getValorSeguro(row, 30)),
+			RegisterFolio:      cleanDash(getValorSeguro(row, 31)),
+			RegisterTome:       cleanDash(getValorSeguro(row, 32)),
 
 			// Flags gremiales
-			GuildDirector:       parseBool(record[35]),
-			SixtyFiveOrPlus:     parseBool(record[36]),
-			GuildCollaborator:   parseBool(record[37]),
-			PublicEmployee:      parseBool(record[38]),
-			UniversityProfessor: parseBool(record[39]),
+			GuildDirector:       len(getValorSeguro(row, 38)) > 0,
+			SixtyFiveOrPlus:     len(getValorSeguro(row, 39)) > 0,
+			GuildCollaborator:   len(getValorSeguro(row, 40)) > 0,
+			PublicEmployee:      len(getValorSeguro(row, 41)) > 0,
+			Discapacity:         len(getValorSeguro(row, 42)) > 0,
+			UniversityProfessor: len(getValorSeguro(row, 43)) > 0,
 
-			// Historial gremial
-			DateOfLastSolvency: parseDate(record[40]),
-			DoubleGuild:        parseBool(record[41]),
-			CPSM:               parseBool(record[42]),
+			// Solvencia y membresías
+			DateOfLastSolvency:  parseDate(getValorSeguro(row, 44)),
+			DoubleGuild:         len(getValorSeguro(row, 46)) > 0,
+			DoubleGuildLocation: getValorSeguro(row, 46),
+			CPSM:                strings.ToLower(getValorSeguro(row, 47)) == "aprobado",
 		}
 
-		solvencies := createSolvencieModel(parseDate(record[40]), psi.ID, audit)
-		// ── Persistencia transaccional ────────────────────────────────────
-		if err := s.repo.CreateWithColData(ctx, psi, colData, solvencies); err != nil {
-			failedRecords = append(failedRecords, map[string]string{
-				"fila":   record[0],
-				"nombre": record[3] + " " + record[5],
-				"ci":     record[8],
-				"fpv":    record[7],
-				"error":  MapDBError(err).Error(),
+		// ── Postgrados (PsiUserPostGrade) ──────────────────────────────────
+		var postgrades []domain.PsiUserPostGrade // Nota: usando valores o punteros según tu ORM
+
+		if val := getValorSeguro(row, 33); len(val) > 0 && val != "-" {
+			postgrades = append(postgrades, domain.PsiUserPostGrade{
+				PsiUserID: psiID,
+				Type:      domain.Diplomado,
+				Title:     val,
 			})
-			continue
+		}
+		if val := getValorSeguro(row, 34); len(val) > 0 && val != "-" {
+			postgrades = append(postgrades, domain.PsiUserPostGrade{
+				PsiUserID: psiID,
+				Type:      domain.Especializacion,
+				Title:     val,
+			})
+		}
+		if val := getValorSeguro(row, 35); len(val) > 0 && val != "-" {
+			postgrades = append(postgrades, domain.PsiUserPostGrade{
+				PsiUserID: psiID,
+				Type:      domain.Maestria,
+				Title:     val,
+			})
+		}
+		if val := getValorSeguro(row, 36); len(val) > 0 && val != "-" { // Columna 36 = Doctorado
+			postgrades = append(postgrades, domain.PsiUserPostGrade{
+				PsiUserID: psiID,
+				Type:      domain.Doctorado,
+				Title:     val,
+			})
+		}
+
+		// ── Solvencias (Mantenido de tu código anterior) ───────────────────
+		solvencies := createSolvencieModel(parseDate(getValorSeguro(row, 44)), psi.ID, audit)
+
+		// ── Persistencia transaccional ─────────────────────────────────────
+		// IMPORTANTE: Asegúrate de que este método en tu Repositorio ahora acepte 'postgrades'
+		// Ej: CreateFullProfile(ctx, psi, colData, solvencies, postgrades)
+		if err := s.repo.CreateWithColData(ctx, psi, colData, solvencies, postgrades); err != nil {
+			failedRecords = append(failedRecords, map[string]string{
+				"fila":   excelRow,
+				"nombre": fullName,
+				"ci":     ciStr,
+				"fpv":    numFPV,
+				"error":  MapDBError(err).Error(), // asumiendo que MapDBError existe en tu código
+			})
+			continue // Saltamos al siguiente registro
 		}
 
 		// ── Notificación de bienvenida (no bloqueante) ────────────────────
-		mailData := map[string]interface{}{
-			"Name":     psi.Username,
-			"Email":    psi.Email,
-			"Password": record[2], // contraseña en claro — solo en el correo inicial
-		}
-		if err := s.mailService.SendEmail(psi.Email, "Bienvenido a la plataforma Colegio de Psicólogos", "welcome_psi", mailData); err != nil {
-			log.Printf("⚠️ Error al enviar correo de bienvenida [%s]: %v", psi.Username, err)
+		if email != "" && strings.Contains(email, "@") {
+			mailData := map[string]interface{}{
+				"Name":     psi.FirstName,
+				"Email":    psi.Email,
+				"Password": defaultPassword, // Se envía la clave temporal limpia al correo
+			}
+			if err := s.mailService.SendEmail(psi.Email, "Bienvenido a la plataforma Colegio de Psicólogos", "welcome_psi", mailData); err != nil {
+				log.Printf("⚠️ Error al enviar correo de bienvenida a %s [%s]: %v", psi.Email, psi.Username, err)
+			}
 		}
 
 		successCount++
@@ -295,11 +358,12 @@ func cleanDash(s string) string {
 // UpdateProfileSelf permite al psicólogo actualizar sus datos de contacto y visibilidad.
 // UpdateProfileSelf procesa la autogestión del perfil del psicólogo.
 // Implementa actualizaciones parciales, manejo seguro de binarios y sanitización XSS.
+
 func (s *PsiService) UpdateProfileSelf(
 	ctx context.Context,
 	psi *domain.PsiUserModel,
 	id uuid.UUID,
-	req request_structs.PsiUserUpdateRequestSelf,
+	req request_structs.PsiUserUpdateRequestSelf, // Asegúrate de actualizar este struct con los nuevos campos
 	profilePic *multipart.FileHeader,
 	titleImgOne *multipart.FileHeader,
 	titleImgTwo *multipart.FileHeader,
@@ -372,7 +436,7 @@ func (s *PsiService) UpdateProfileSelf(
 		psi.Email = validate_email
 	}
 
-	// 4b. Contacto
+	// 4b. Contacto (Se actualiza a ContactPhone/ContactCellPhone en lugar del antiguo PublicPhone)
 	if req.ContactEmail != nil {
 		validate_email, err := utils.ParseAndValidateEmail(*req.ContactEmail)
 		if err != nil {
@@ -380,9 +444,11 @@ func (s *PsiService) UpdateProfileSelf(
 		}
 		psi.ContactEmail = validate_email
 	}
-
-	if req.PublicPhone != nil {
-		psi.PublicPhone = *req.PublicPhone
+	if req.ContactPhone != nil {
+		psi.ContactPhone = *req.ContactPhone
+	}
+	if req.ContactCellPhone != nil {
+		psi.ContactCellPhone = *req.ContactCellPhone
 	}
 	if req.ServiceAddress != nil {
 		psi.ServiceAddress = *req.ServiceAddress
@@ -391,14 +457,11 @@ func (s *PsiService) UpdateProfileSelf(
 	if v := req.ShowContactEmail(); v != nil {
 		psi.ShowContactEmail = *v
 	}
-	if v := req.ShowPublicPhone(); v != nil {
-		psi.ShowPublicPhone = *v
-	}
 	if v := req.ShowPublicServiceAddress(); v != nil {
 		psi.ShowPublicServiceAddress = *v
 	}
 
-	// 4c. Ubicación: Carabobo — geo-validación antes de asignar
+	// 4c. Ubicación: Carabobo
 	if req.MunicipalityCarabobo != nil {
 		mun, ok := utils.NormalizeMunicipioCarabobo(*req.MunicipalityCarabobo)
 		if !ok {
@@ -406,11 +469,23 @@ func (s *PsiService) UpdateProfileSelf(
 		}
 		psi.MunicipalityCarabobo = mun
 	}
+	// (Recuerda arreglar tu modelo en DB para que ShowMunicipalityCarabobo sea bool)
+	if v := req.ShowMunicipalityCarabobo(); v != nil {
+		// Ajusta este casting dependiendo de si arreglas el modelo en string o bool
+		// Si lo dejas como string en BD, debes guardar *v convertido a string. Si lo pasas a bool, déjalo como *v
+		psi.ShowMunicipalityCarabobo = *v
+	}
 	if req.PhoneCarabobo != nil {
 		psi.PhoneCarabobo = *req.PhoneCarabobo
 	}
 	if req.CelPhoneCarabobo != nil {
 		psi.CelPhoneCarabobo = *req.CelPhoneCarabobo
+	}
+	if v := req.ShowPhoneCarabobo(); v != nil {
+		psi.ShowPhoneCarabobo = *v
+	}
+	if v := req.ShowCelPhoneCarabobo(); v != nil {
+		psi.ShowCelPhoneCarabobo = *v
 	}
 
 	// 4d. Ubicación: Fuera de Carabobo (Venezuela)
@@ -421,8 +496,14 @@ func (s *PsiService) UpdateProfileSelf(
 		}
 		psi.StateOutside = estado
 	}
+	if v := req.ShowStateOutside(); v != nil {
+		psi.ShowStateOutside = *v
+	}
 	if req.MunicipalityOutSideCarabobo != nil {
 		psi.MunicipalityOutSideCarabobo = *req.MunicipalityOutSideCarabobo
+	}
+	if v := req.ShowMunicipalityOutSideCarabobo(); v != nil {
+		psi.ShowMunicipalityOutSideCarabobo = *v
 	}
 	if req.PhoneOutSideCarabobo != nil {
 		psi.PhoneOutSideCarabobo = *req.PhoneOutSideCarabobo
@@ -445,12 +526,14 @@ func (s *PsiService) UpdateProfileSelf(
 	}
 
 	// 4e. Ubicación: Fuera de Venezuela
-	// Country no tiene catálogo restringido — se acepta cualquier valor (ISO libre)
 	if req.Country != nil {
 		psi.Country = *req.Country
 	}
 	if req.PhoneOutSideVenezuela != nil {
 		psi.PhoneOutSideVenezuela = *req.PhoneOutSideVenezuela
+	}
+	if req.CellPhoneOutSideVenezuela != nil {
+		psi.CellPhoneOutSideVenezuela = *req.CellPhoneOutSideVenezuela
 	}
 	if req.ServiceAddressOutSideVenezuela != nil {
 		psi.ServiceAddressOutSideVenezuela = *req.ServiceAddressOutSideVenezuela
@@ -466,12 +549,12 @@ func (s *PsiService) UpdateProfileSelf(
 		psi.ShowPublicServiceAddressOutSideVenezuela = *v
 	}
 
-	// 4f. Perfil profesional
-	if req.PrimarySpecialty != nil {
-		psi.PrimarySpecialty = *req.PrimarySpecialty
+	// 4f. Perfil profesional (ahora usando WorkArea en lugar de Specialty)
+	if req.PrimaryWorkArea != nil {
+		psi.PrimaryWorkArea = *req.PrimaryWorkArea
 	}
-	if req.SecondarySpecialty != nil {
-		psi.SecondarySpecialty = *req.SecondarySpecialty
+	if req.SecondaryWorkArea != nil {
+		psi.SecondaryWorkArea = *req.SecondaryWorkArea
 	}
 	if req.MiniBio != nil {
 		runes := []rune(*req.MiniBio)
@@ -630,11 +713,11 @@ func (s *PsiService) GetPublicDirectory(ctx context.Context, filter request_stru
 
 		// Añadimos las especialidades al mini perfil para que aparezcan en las "cards"
 		mini.Specialties = []string{}
-		if u.PrimarySpecialty != "" {
-			mini.Specialties = append(mini.Specialties, u.PrimarySpecialty)
+		if u.PrimaryWorkArea != "" {
+			mini.Specialties = append(mini.Specialties, u.PrimaryWorkArea)
 		}
-		if u.SecondarySpecialty != "" {
-			mini.Specialties = append(mini.Specialties, u.SecondarySpecialty)
+		if u.SecondaryWorkArea != "" {
+			mini.Specialties = append(mini.Specialties, u.SecondaryWorkArea)
 		}
 
 		list = append(list, mini)
@@ -682,7 +765,7 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 			Undergraduate: request_structs.UndergraduateDTO{
 				University: psi.ColData.UniversityUndergraduate,
 			},
-			Specialties:    make([]string, 0),
+			WorkAreas:      make([]string, 0),
 			PostGrades:     make([]request_structs.PostGradeDTO, 0),
 			SocialNetworks: make([]request_structs.SocialNetworkDTO, 0),
 		}, uuid.Nil, nil
@@ -709,7 +792,7 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 		Solvent:        true,
 		MiniBio:        psi.MiniBio,
 		FullBioContent: fullBio,
-		Specialties:    make([]string, 0),
+		WorkAreas:      make([]string, 0),
 		PostGrades:     make([]request_structs.PostGradeDTO, 0),
 		SocialNetworks: make([]request_structs.SocialNetworkDTO, 0),
 		Undergraduate:  request_structs.UndergraduateDTO{},
@@ -727,12 +810,12 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 	// }
 
 	// ── Ubicación: Carabobo ───────────────────────────────────────────────
-	if psi.MunicipalityCarabobo != "" && (psi.ShowPublicPhone || psi.ShowPublicServiceAddress) {
+	if psi.MunicipalityCarabobo != "" && (psi.ShowPhoneCarabobo || psi.ShowPublicServiceAddress) {
 		loc := &request_structs.PsiLocationCaraboboDTO{
 			Municipality: psi.MunicipalityCarabobo,
 		}
-		if psi.ShowPublicPhone {
-			loc.Phone = psi.PublicPhone
+		if psi.ShowPhoneCarabobo {
+			loc.Phone = psi.PhoneCarabobo
 		}
 		if psi.ShowPublicServiceAddress {
 			loc.Address = psi.ServiceAddress
@@ -778,11 +861,11 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 	}
 
 	// ── Especialidades ────────────────────────────────────────────────────
-	if psi.PrimarySpecialty != "" {
-		dto.Specialties = append(dto.Specialties, psi.PrimarySpecialty)
+	if psi.PrimaryWorkArea != "" {
+		dto.WorkAreas = append(dto.WorkAreas, psi.PrimaryWorkArea)
 	}
-	if psi.SecondarySpecialty != "" {
-		dto.Specialties = append(dto.Specialties, psi.SecondarySpecialty)
+	if psi.SecondaryWorkArea != "" {
+		dto.WorkAreas = append(dto.WorkAreas, psi.SecondaryWorkArea)
 	}
 
 	// ── Privacy Shield: Pregrado ──────────────────────────────────────────

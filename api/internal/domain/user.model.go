@@ -224,16 +224,28 @@ func (PsiUSerSolvency) TableName() string { return "psi_user_solvency" }
 // POSTGRADOS
 // =============================================================================
 
+// PostGradeType define el tipo de estudio de postgrado
+type PostGradeType string
+
+// Constantes que representan los valores permitidos del enum
+const (
+	Diplomado       PostGradeType = "diplomado"
+	Especializacion PostGradeType = "especializacion"
+	Maestria        PostGradeType = "maestria"
+	Doctorado       PostGradeType = "doctorado"
+)
+
 // PsiUserPostGrade representa títulos académicos adicionales del psicólogo:
 // Especializaciones, Maestrías, Doctorados, Diplomados, etc.
 // Relación N-a-1 con PsiUserModel.
 type PsiUserPostGrade struct {
 	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	AuditModel
-	PsiUserID uuid.UUID `gorm:"type:uuid;index" json:"psi_user_id"`
+	PsiUserID uuid.UUID     `gorm:"type:uuid;index" json:"psi_user_id"`
+	Type      PostGradeType `gorm:"type:varchar(50);not null" json:"post_grade_type"`
 
 	Title          string `gorm:"size:255;not null" json:"post_grade_title"`
-	University     string `gorm:"size:255;not null" json:"post_grade_university"`
+	University     string `gorm:"size:255" json:"post_grade_university"`
 	GraduationYear string `gorm:"size:50" json:"post_grade_graduation_year"`
 	Description    string `gorm:"type:text" json:"post_grade_description"`
 	Active         bool   `gorm:"default:true" json:"is_active"`
@@ -242,6 +254,16 @@ type PsiUserPostGrade struct {
 	PicOneS3Key   string `gorm:"size:512" json:"pic_one_url"`
 	PicTwoS3Key   string `gorm:"size:512" json:"pic_two_url"`
 	PicThreeS3Key string `gorm:"size:512" json:"pic_three_url"`
+}
+
+// IsValid es un método de ayuda (opcional) para validar que el string entrante sea correcto
+// Es muy útil validarlo antes de guardarlo en la base de datos.
+func (p PostGradeType) IsValid() bool {
+	switch p {
+	case Diplomado, Especializacion, Maestria, Doctorado:
+		return true
+	}
+	return false
 }
 
 func (PsiUserPostGrade) TableName() string { return "psi_user_post_grades" }
