@@ -17,6 +17,7 @@ interface LocationSectionProps {
   // Exterior (fuera de Venezuela)
   country: string;
   phoneOutsideVenezuela: string;
+  cellPhoneOutsideVenezuela: string; // NUEVO
   serviceAddressOutsideVenezuela: string;
 
   onMunicipalityCaraboboChange: (value: string) => void;
@@ -31,6 +32,7 @@ interface LocationSectionProps {
 
   onCountryChange: (value: string) => void;
   onPhoneOutsideVenezuelaChange: (value: string) => void;
+  onCellPhoneOutsideVenezuelaChange: (value: string) => void; // NUEVO
   onServiceAddressOutsideVenezuelaChange: (value: string) => void;
 }
 
@@ -44,8 +46,7 @@ export function LocationSection(props: LocationSectionProps) {
           Ubicación en Carabobo
         </h2>
         <p class="text-sm text-gray-500 mb-6 bg-gray-50 p-4 rounded-2xl border border-gray-100 leading-relaxed italic">
-          Los teléfonos de esta sección son de carácter privado — solo los utiliza el Colegio
-          para contactarte en caso de necesidad. El municipio es información pública.
+          El municipio es información pública. Los teléfonos son privados y solo los utiliza el Colegio internamente.
         </p>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <InputField
@@ -74,8 +75,7 @@ export function LocationSection(props: LocationSectionProps) {
           Otro Estado de Venezuela
         </h2>
         <p class="text-sm text-gray-500 mb-6 bg-gray-50 p-4 rounded-2xl border border-gray-100 leading-relaxed italic">
-          Si también ejerces en otro estado venezolano, completa estos datos.
-          La dirección y teléfonos son opcionales y su visibilidad se controla en el Centro de Privacidad.
+          Si también ejerces en otro estado venezolano. La visibilidad de estos datos se controla en el Centro de Privacidad.
         </p>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <InputField
@@ -116,21 +116,27 @@ export function LocationSection(props: LocationSectionProps) {
           Exterior
         </h2>
         <p class="text-sm text-gray-500 mb-6 bg-gray-50 p-4 rounded-2xl border border-gray-100 leading-relaxed italic">
-          Si resides o ejerces fuera de Venezuela, indica el país y tus datos de contacto en el exterior.
+          Si resides o ejerces fuera de Venezuela. Indica país y contactos internacionales.
         </p>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <InputField
             label="País"
             value={props.country}
             onInput={props.onCountryChange}
           />
           <InputField
-            label="Teléfono Internacional"
+            label="Teléfono Fijo"
             type="tel"
             value={props.phoneOutsideVenezuela}
             onInput={props.onPhoneOutsideVenezuelaChange}
           />
-          <div class="md:col-span-2">
+          <InputField
+            label="Celular / Móvil"
+            type="tel"
+            value={props.cellPhoneOutsideVenezuela}
+            onInput={props.onCellPhoneOutsideVenezuelaChange}
+          />
+          <div class="md:col-span-3">
             <InputField
               label="Dirección en el Exterior"
               value={props.serviceAddressOutsideVenezuela}

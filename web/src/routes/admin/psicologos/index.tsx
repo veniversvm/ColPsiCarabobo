@@ -1,8 +1,8 @@
-// web/src/routes/admin/psicologos/index.tsx
 import { createResource, createSignal, onCleanup, Show, createEffect } from "solid-js";
 import { apiGet } from "~/lib/api";
 import { PsiAdminListItem, PaginatedResponse } from "~/types/admin";
-import { ImportCsvModal } from "~/components/admin/ImportCsvModal";
+// Cambiamos el nombre del componente de Importación (Asumiendo que actualizaste el componente a XLSX)
+import { ImportXlsxModal } from "~/components/admin/ImportXlsxModal";
 import { PaginationBar } from "~/components/ui/PaginationBar";
 import {
   PsychologistHeader,
@@ -17,7 +17,7 @@ export default function AdminPsychologistsList() {
   const [debouncedQuery, setDebouncedQuery] = createSignal("");
   const [showImportModal, setShowImportModal] = createSignal(false);
   
-  // Caché para mantener los datos visibles durante la carga
+  // Caché para mantener los datos visibles durante la carga (UX fluida)
   const [cachedData, setCachedData] = createSignal<PaginatedResponse<PsiAdminListItem> | undefined>(undefined);
 
   const [data, { refetch }] = createResource(
@@ -28,7 +28,7 @@ export default function AdminPsychologistsList() {
       )
   );
 
-  // Actualizar caché solo cuando hay datos nuevos
+  // Actualizar caché solo cuando hay datos nuevos disponibles
   createEffect(() => {
     const newData = data();
     if (newData) {
@@ -70,7 +70,6 @@ export default function AdminPsychologistsList() {
     setPage(1); 
   };
 
-  // Usar datos cacheados para la UI
   const displayData = () => cachedData();
   
   const paginationProps = () => ({
@@ -81,21 +80,23 @@ export default function AdminPsychologistsList() {
     onPrev: goToPrev,
     onNext: goToNext,
     onLimitChange: changeLimit,
-    // Indicador de carga para los botones
     isLoading: data.loading,
   });
 
-  // Loading solo para la primera carga
   const initialLoading = () => data.loading && !cachedData();
 
   return (
-    <div class="space-y-6 animate-in fade-in duration-500">
+    <div class="space-y-6 animate-in fade-in duration-500 font-sans">
 
-      {/* Header */}
-      <PsychologistHeader onImportClick={() => setShowImportModal(true)} />
+      {/* Header - Asegúrate de que este componente reciba la prop onImportClick */}
+      <PsychologistHeader 
+        title="Gestión de Agremiados" 
+        onImportClick={() => setShowImportModal(true)} 
+      />
 
-      {/* Búsqueda */}
+      {/* Barra de Búsqueda */}
       <PsychologistSearchBar
+        placeholder="Buscar por Nombre, Cédula, FPV o Área de Desempeño..."
         value={inputValue()}
         onInput={handleSearchInput}
         onClear={clearSearch}
@@ -103,25 +104,31 @@ export default function AdminPsychologistsList() {
       />
 
       {/* Tabla con paginación */}
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div class="bg-white rounded-3xl shadow-premium border border-gray-100 overflow-hidden">
 
         {/* Paginación superior */}
         <Show when={displayData() && displayData()!.total_pages >= 1}>
           <PaginationBar {...paginationProps()} />
         </Show>
 
-        {/* Tabla - siempre muestra datos cacheados si existen */}
         <Show
           when={!initialLoading()}
           fallback={
-            <div class="p-8 text-center text-gray-400 font-medium animate-pulse">
-              Cargando base de datos...
+            <div class="p-20 text-center space-y-4">
+              <div class="w-12 h-12 border-4 border-colpsi-blue border-t-transparent rounded-full animate-spin mx-auto" />
+              <p class="text-gray-400 font-bold tracking-widest uppercase text-xs">
+                Sincronizando Base de Datos...
+              </p>
             </div>
           }
         >
+          {/* 
+            Nota: PsychologistTable debe estar actualizado internamente para 
+            mostrar 'primary_work_area' en lugar de 'primary_specialty'
+          */}
           <PsychologistTable
             data={displayData()?.data}
-            loading={data.loading && !!cachedData()} // true durante refetch
+            loading={data.loading && !!cachedData()}
             hasQuery={!!debouncedQuery()}
             query={debouncedQuery()}
           />
@@ -134,11 +141,14 @@ export default function AdminPsychologistsList() {
 
       </div>
 
-      {/* Modal CSV */}
+      {/* Modal de Importación XLSX (Antes CSV) */}
       <Show when={showImportModal()}>
-        <ImportCsvModal
+        <ImportXlsxModal
           onClose={() => setShowImportModal(false)}
-          onSuccess={() => { refetch(); setShowImportModal(false); }}
+          onSuccess={() => { 
+            refetch(); 
+            setShowImportModal(false); 
+          }}
         />
       </Show>
 

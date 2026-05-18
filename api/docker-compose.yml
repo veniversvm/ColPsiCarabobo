@@ -46,28 +46,28 @@ services:
         condition: service_healthy
 
   # 3. API Go
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: colpsi_api
-    env_file: .env
-    ports:
-      - "8080:8080" 
-    environment:
-      # Sobrescribimos localhost para que apunte a los contenedores internos
-      - DB_HOST=pgbouncer
-      - DB_PORT=5432
-      - S3_ENDPOINT=http://s3:9000
-      - PORT=8080
-    networks:
-      - colpsi_network
-    depends_on:
-      pgbouncer:
-        condition: service_started
-      s3:
-        condition: service_started
-    restart: unless-stopped
+  # api:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: colpsi_api
+  #   env_file: .env
+  #   ports:
+  #     - "8080:8080" 
+  #   environment:
+  #     # Sobrescribimos localhost para que apunte a los contenedores internos
+  #     - DB_HOST=pgbouncer
+  #     - DB_PORT=5432
+  #     - S3_ENDPOINT=http://s3:9000
+  #     - PORT=8080
+  #   networks:
+  #     - colpsi_network
+  #   depends_on:
+  #     pgbouncer:
+  #       condition: service_started
+  #     s3:
+  #       condition: service_started
+  #   restart: unless-stopped
     # Descomenta la siguiente línea si necesitas probar la API desde afuera sin Deno
     # ports:
     #   - "5555:5555"
