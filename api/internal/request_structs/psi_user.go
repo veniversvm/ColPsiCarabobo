@@ -243,9 +243,11 @@ type PsiFullProfileDTO struct {
 	Location PsiLocationDTO `json:"location"`
 
 	// ── Perfil Profesional ────────────────────────────────────────────────
-	WorkAreas      []string `json:"work_areas"`
-	MiniBio        string   `json:"mini_bio,omitempty"`
-	FullBioContent string   `json:"full_bio_content,omitempty"`
+	WorkAreas         []string `json:"work_areas"`
+	MiniBio           string   `json:"mini_bio,omitempty"`
+	FullBioContent    string   `json:"full_bio_content,omitempty"`
+	PrimaryWorkArea   string   `json:"primary_work_area"`
+	SecondaryWorkArea string   `json:"secondary_work_area"`
 
 	// ── Datos de Pregrado (condicional por privacidad) ───────────────────
 	Undergraduate UndergraduateDTO `json:"undergraduate"`
@@ -284,9 +286,10 @@ type PsiLocationVenezuelaDTO struct {
 }
 
 type PsiLocationExteriorDTO struct {
-	Country string `json:"country"`
-	Phone   string `json:"phone,omitempty"`
-	Address string `json:"address,omitempty"`
+	Country   string `json:"country"`
+	Phone     string `json:"phone,omitempty"`
+	CellPhone string `json:"cell_phone,omitempty"`
+	Address   string `json:"address,omitempty"`
 }
 
 // =========================================================================
@@ -312,6 +315,7 @@ type UpdatePostGradeRequest struct {
 
 // PostGradeDTO es la proyección pública de un postgrado para la ficha del psicólogo.
 type PostGradeDTO struct {
+	Type        string `json:"type"`
 	Title       string `json:"title"`
 	University  string `json:"university"`
 	Year        string `json:"year"`

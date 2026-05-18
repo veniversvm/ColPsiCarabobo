@@ -26,20 +26,30 @@ func (m *mockMailService) SendEmail(to, subject, template string, data interface
 
 type mockPsiRepoAdmin struct {
 	domain.PsiUserRepository
-	CreateWithColDataFunc func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData) error
+	CreateWithColDataFunc func(ctx context.Context, psi *domain.PsiUserModel, colData *domain.PsiUserColData, solvencies domain.PsiUSerSolvency, postgrades []domain.PsiUserPostGrade) error
 	GetByIDFunc           func(ctx context.Context, id uuid.UUID) (*domain.PsiUserModel, error)
-	// Ajustado a 4 argumentos
-	UpdateFunc func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, text *domain.TextModel) error
+	// Ajustado para coincidir con la nueva firma de Update (añadido solvencies slice)
+	UpdateFunc func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, text *domain.TextModel, solvencies []domain.PsiUSerSolvency) error
 }
 
-func (m *mockPsiRepoAdmin) CreateWithColData(ctx context.Context, p *domain.PsiUserModel, c *domain.PsiUserColData) error {
-	return m.CreateWithColDataFunc(ctx, p, c)
+// FIX: La firma del método debe coincidir EXACTAMENTE con domain.PsiUserRepository
+func (m *mockPsiRepoAdmin) CreateWithColData(ctx context.Context, p *domain.PsiUserModel, c *domain.PsiUserColData, s domain.PsiUSerSolvency, pg []domain.PsiUserPostGrade) error {
+	if m.CreateWithColDataFunc != nil {
+		return m.CreateWithColDataFunc(ctx, p, c, s, pg)
+	}
+	return nil
 }
+
 func (m *mockPsiRepoAdmin) GetByID(ctx context.Context, id uuid.UUID) (*domain.PsiUserModel, error) {
 	return m.GetByIDFunc(ctx, id)
 }
-func (m *mockPsiRepoAdmin) Update(ctx context.Context, p *domain.PsiUserModel, c *domain.PsiUserColData, t *domain.TextModel) error {
-	return m.UpdateFunc(ctx, p, c, t)
+
+// FIX: La firma del método debe coincidir EXACTAMENTE con domain.PsiUserRepository (añadido solvencies slice)
+func (m *mockPsiRepoAdmin) Update(ctx context.Context, p *domain.PsiUserModel, c *domain.PsiUserColData, t *domain.TextModel, s []domain.PsiUSerSolvency) error {
+	if m.UpdateFunc != nil {
+		return m.UpdateFunc(ctx, p, c, t, s)
+	}
+	return nil
 }
 
 // =========================================================================
@@ -57,7 +67,8 @@ func TestPsiService_CreateByAdmin(t *testing.T) {
 	admin := &domain.UserAdmin{ID: uuid.New(), Username: "admin_tester", CanCreatePsi: true}
 
 	t.Run("Éxito: Registro completo", func(t *testing.T) {
-		repo.CreateWithColDataFunc = func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData) error {
+		// FIX: La función anónima mockeada debe recibir los 5 parámetros
+		repo.CreateWithColDataFunc = func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, solvencies domain.PsiUSerSolvency, postgrades []domain.PsiUserPostGrade) error {
 			return nil
 		}
 
@@ -95,7 +106,8 @@ func TestPsiService_UpdateByAdmin_Patch(t *testing.T) {
 			return currentPsi, nil
 		}
 
-		repo.UpdateFunc = func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, text *domain.TextModel) error {
+		// FIX: La función anónima mockeada debe recibir los 5 parámetros (añadido solvencies slice)
+		repo.UpdateFunc = func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, text *domain.TextModel, solvencies []domain.PsiUSerSolvency) error {
 			return nil
 		}
 

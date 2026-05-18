@@ -44,10 +44,11 @@ type CreatePsiAdminRequest struct {
 	ProofOfLife bool `json:"proof_of_life"`
 	IsActive    bool `json:"is_active"`
 
-	// ── Contacto Público ──────────────────────────────────────────────────
-	ContactEmail   string `json:"contact_email"`
-	PublicPhone    string `json:"public_phone"`
-	ServiceAddress string `json:"service_address"`
+	// ── Contacto Gremial y Público ────────────────────────────────────────
+	ContactEmail     string `json:"contact_email"`
+	ContactPhone     string `json:"contact_phone"`      // Reemplaza a public_phone
+	ContactCellPhone string `json:"contact_cell_phone"` // Nuevo
+	ServiceAddress   string `json:"service_address"`
 
 	// ── Ubicación: Carabobo ───────────────────────────────────────────────
 	// Para miembros con consulta o residencia dentro del estado.
@@ -69,15 +70,17 @@ type CreatePsiAdminRequest struct {
 	// Para miembros en el exterior. Country debe usar código ISO 3166-1 alpha-2.
 	Country                        string `json:"country"`
 	PhoneOutSideVenezuela          string `json:"phone_outside_venezuela"`
+	CellPhoneOutSideVenezuela      string `json:"cell_phone_outside_venezuela"` // Nuevo
 	ServiceAddressOutSideVenezuela string `json:"service_address_outside_venezuela"`
 
 	// ── Perfil Profesional ────────────────────────────────────────────────
-	// Las especialidades deben corresponder a entradas activas en PsiSpecialtyModel.
+	// Las áreas de trabajo deben corresponder a entradas activas en el catálogo (WorkArea).
 	// La biografía (MiniBio/FullBio) se delega al psicólogo para su autogestión.
-	PrimarySpecialty   string `json:"primary_specialty"`
-	SecondarySpecialty string `json:"secondary_specialty"`
+	PrimaryWorkArea   string `json:"primary_work_area"`   // Reemplaza a primary_specialty
+	SecondaryWorkArea string `json:"secondary_work_area"` // Reemplaza a secondary_specialty
 
-	// ── Datos Colegiales: Pregrado ────────────────────────────────────────
+	// ── Datos Colegiales: Pregrado e Inscripción ──────────────────────────
+	GuildInscriptionDate    string `json:"guild_inscription_date"` // Nuevo
 	UniversityUndergraduate string `json:"university_undergraduate"`
 	GraduateDate            string `json:"graduate_date"`
 	MentionUndergraduate    string `json:"mention_undergraduate"`
@@ -94,12 +97,14 @@ type CreatePsiAdminRequest struct {
 	SixtyFiveOrPlus     bool `json:"sixty_five_or_plus"`   // Mayor de 65 años (tarifa diferenciada)
 	GuildCollaborator   bool `json:"guild_collaborator"`   // Colaborador activo del Colegio
 	PublicEmployee      bool `json:"public_employee"`      // Empleado público
+	Discapacity         bool `json:"discapacity"`          // Nuevo: Posee alguna discapacidad
 	UniversityProfessor bool `json:"university_professor"` // Docente universitario
 
 	// ── Datos Colegiales: Historial Gremial ──────────────────────────────
-	DateOfLastSolvency string `json:"date_of_last_solvency"` // Última cuota saldada
-	DoubleGuild        bool   `json:"double_guild"`          // Colegiado en más de un estado
-	CPSM               bool   `json:"cpsm"`                  // Miembro del Colegio de Psicólogos de Miranda
+	DateOfLastSolvency  string `json:"date_of_last_solvency"` // Última cuota saldada
+	DoubleGuild         bool   `json:"double_guild"`          // Colegiado en más de un estado
+	DoubleGuildLocation string `json:"double_guild_location"` // Nuevo: Dónde tiene la doble colegiatura
+	CPSM                bool   `json:"cpsm"`                  // Miembro del Colegio de Psicólogos de Miranda
 }
 
 // UpdatePsiAdminRequest permite al administrador modificar CUALQUIER campo del psicólogo.
@@ -167,10 +172,10 @@ type UpdatePsiAdminRequest struct {
 	ShowServiceAddressOutSideVenezuelaRaw string `json:"show_public_service_address_outside_venezuela"`
 
 	// --- Perfil Profesional ---
-	PrimarySpecialty   *string `json:"primary_specialty"`
-	SecondarySpecialty *string `json:"secondary_specialty"`
-	MiniBio            *string `json:"mini_bio"`
-	FullBio            *string `json:"full_bio"`
+	PrimaryWorkArea   *string `json:"primary_work_area"`
+	SecondaryWorkArea *string `json:"secondary_work_area"`
+	MiniBio           *string `json:"mini_bio"`
+	FullBio           *string `json:"full_bio"`
 
 	// --- DATOS COLEGIALES (ColData) ---
 	UniversityUndergraduate *string `json:"university_undergraduate"`

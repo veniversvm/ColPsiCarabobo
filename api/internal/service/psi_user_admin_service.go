@@ -116,7 +116,7 @@ func (s *PsiService) CreatePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 	colData := createColdata(req, psiID, colDataID, audit_moodel, gradDate, regDate, solvDate)
 
 	// 6. Persistencia transaccional — un solo punto de fallo
-	if err := s.repo.CreateWithColData(ctx, psi, colData, solvencies); err != nil {
+	if err := s.repo.CreateWithColData(ctx, psi, colData, solvencies, []domain.PsiUserPostGrade{}); err != nil {
 		return MapDBError(err)
 	}
 
@@ -357,11 +357,11 @@ func (s *PsiService) UpdatePsiByAdmin(
 	}
 
 	// 4g. Perfil Profesional
-	if req.PrimarySpecialty != nil {
-		psi.PrimarySpecialty = *req.PrimarySpecialty
+	if req.PrimaryWorkArea != nil {
+		psi.PrimaryWorkArea = *req.PrimaryWorkArea
 	}
-	if req.SecondarySpecialty != nil {
-		psi.SecondarySpecialty = *req.SecondarySpecialty
+	if req.PrimaryWorkArea != nil {
+		psi.PrimaryWorkArea = *req.PrimaryWorkArea
 	}
 	if req.MiniBio != nil {
 		runes := []rune(*req.MiniBio)
@@ -768,10 +768,11 @@ func createPsiUSerModel(req request_structs.CreatePsiAdminRequest, psiID uuid.UU
 		ProofOfLife: req.ProofOfLife,
 		IsActive:    req.IsActive,
 
-		// ── Contacto Público ──────────────────────────────────────────────
-		ContactEmail:   req.ContactEmail,
-		PublicPhone:    req.PublicPhone,
-		ServiceAddress: req.ServiceAddress,
+		// ── Contacto Gremial y Público ────────────────────────────────────
+		ContactEmail:     req.ContactEmail,
+		ContactPhone:     req.ContactPhone,     // Reemplaza a PublicPhone
+		ContactCellPhone: req.ContactCellPhone, // Nuevo campo
+		ServiceAddress:   req.ServiceAddress,
 
 		// ── Ubicación: Carabobo ───────────────────────────────────────────
 		MunicipalityCarabobo: municipioCarabobo, // normalizado
@@ -788,11 +789,12 @@ func createPsiUSerModel(req request_structs.CreatePsiAdminRequest, psiID uuid.UU
 		// ── Ubicación: Fuera de Venezuela ─────────────────────────────────
 		Country:                        req.Country,
 		PhoneOutSideVenezuela:          req.PhoneOutSideVenezuela,
+		CellPhoneOutSideVenezuela:      req.CellPhoneOutSideVenezuela, // Nuevo campo
 		ServiceAddressOutSideVenezuela: req.ServiceAddressOutSideVenezuela,
 
 		// ── Perfil Profesional ────────────────────────────────────────────
-		PrimarySpecialty:   req.PrimarySpecialty,
-		SecondarySpecialty: req.SecondarySpecialty,
+		PrimaryWorkArea:   req.PrimaryWorkArea,   // Reemplaza a PrimarySpecialty
+		SecondaryWorkArea: req.SecondaryWorkArea, // Reemplaza a SecondarySpecialty
 	}
 }
 

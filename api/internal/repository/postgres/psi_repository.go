@@ -399,8 +399,8 @@ func (r *psiRepo) UpdatePublicProfile(
 			"service_address_out_side_venezuela": psi.ServiceAddressOutSideVenezuela,
 
 			// Profesional
-			"primary_work_area":      psi.PrimaryWorkArea,   // Reemplaza a primary_specialty
-			"secondary_work_area":    psi.SecondaryWorkArea, // Reemplaza a secondary_specialty
+			"primary_work_area":      psi.PrimaryWorkArea,   // Reemplaza a primary_work_area
+			"secondary_work_area":    psi.SecondaryWorkArea, // Reemplaza a secondary_work_area
 			"mini_bio":               psi.MiniBio,
 			"bio_text_id":            psi.BioTextID,
 			"profile_picture_s3_key": psi.ProfilePictureS3Key,
@@ -539,8 +539,9 @@ func (r *psiRepo) SearchDirectory(ctx context.Context, filter request_structs.Ps
 			query = query.Where(
 				r.db.Where("municipality_carabobo ILIKE ? AND show_municipality_carabobo = ?", loc, true).
 					Or("state_outside ILIKE ? AND show_state_outside = ?", loc, true).
-					Or("municipality_outside_carabobo ILIKE ? AND show_municipality_outside_carabobo = ?", loc, true).
-					Or("country ILIKE ?", loc), // El país no tiene bandera de privacidad en el modelo actual
+					// FIX: Corregido el nombre a out_side para que coincida con la DB de GORM
+					Or("municipality_out_side_carabobo ILIKE ? AND show_municipality_out_side_carabobo = ?", loc, true).
+					Or("country ILIKE ?", loc),
 			)
 		}
 
@@ -567,7 +568,7 @@ func (r *psiRepo) SearchAdmin(ctx context.Context, filter request_structs.PsiDir
 	var total int64
 
 	query := r.db.WithContext(ctx).Model(&domain.PsiUserModel{}).
-		Select("id, first_name, last_name, ci, fpv, email, solvent, is_active, primary_specialty, secondary_specialty")
+		Select("id, first_name, last_name, ci, fpv, email, solvent, is_active, primary_work_area, secondary_work_area")
 
 	if filter.SearchTerm != "" {
 		term := "%" + filter.SearchTerm + "%"
@@ -583,7 +584,7 @@ func (r *psiRepo) SearchAdmin(ctx context.Context, filter request_structs.PsiDir
 		var specName string
 		r.db.Model(&domain.PsiSpecialtyModel{}).Select("name").Where("id = ?", filter.SpecialtyID).Scan(&specName)
 		if specName != "" {
-			query = query.Where("primary_specialty = ? OR secondary_specialty = ?", specName, specName)
+			query = query.Where("primary_work_area = ? OR secondary_work_area = ?", specName, specName)
 		}
 	}
 

@@ -738,6 +738,9 @@ func (s *PsiService) GetPublicDirectory(ctx context.Context, filter request_stru
 // GetPublicProfile construye la ficha técnica del psicólogo aplicando el "Escudo de Privacidad"
 // y la "Restricción de Solvencia": si el psicólogo no está al día con sus cuotas, el perfil
 // público solo expone los datos esenciales de identidad y su universidad de pregrado.
+// GetPublicProfile construye la ficha técnica del psicólogo aplicando el "Escudo de Privacidad"
+// y la "Restricción de Solvencia": si el psicólogo no está al día con sus cuotas, el perfil
+// público solo expone los datos esenciales de identidad y su universidad de pregrado.
 func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_structs.PsiFullProfileDTO, uuid.UUID, error) {
 	// 1. Obtener datos crudos de la DB
 	psi, err := s.repo.GetByFPV(ctx, id)
@@ -765,7 +768,7 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 			Undergraduate: request_structs.UndergraduateDTO{
 				University: psi.ColData.UniversityUndergraduate,
 			},
-			WorkAreas:      make([]string, 0),
+			// Specialties:    make([]string, 0),
 			PostGrades:     make([]request_structs.PostGradeDTO, 0),
 			SocialNetworks: make([]request_structs.SocialNetworkDTO, 0),
 		}, uuid.Nil, nil
@@ -792,87 +795,108 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 		Solvent:        true,
 		MiniBio:        psi.MiniBio,
 		FullBioContent: fullBio,
-		WorkAreas:      make([]string, 0),
-		PostGrades:     make([]request_structs.PostGradeDTO, 0),
-		SocialNetworks: make([]request_structs.SocialNetworkDTO, 0),
-		Undergraduate:  request_structs.UndergraduateDTO{},
+		// Specialties:    make([]string, 0), // Llenado dinámicamente más abajo con WorkAreas
+		PrimaryWorkArea:   psi.PrimaryWorkArea,
+		SecondaryWorkArea: psi.SecondaryWorkArea,
+		PostGrades:        make([]request_structs.PostGradeDTO, 0),
+		SocialNetworks:    make([]request_structs.SocialNetworkDTO, 0),
+		Undergraduate:     request_structs.UndergraduateDTO{},
 	}
 
 	// ── Privacy Shield: Contacto principal ───────────────────────────────
 	if psi.ShowContactEmail {
 		dto.Email = psi.ContactEmail
 	}
-	// if psi.ShowPublicPhone {
-	// 	dto.Phone = psi.PublicPhone
-	// }
-	// if psi.ShowPublicServiceAddress {
-	// 	dto.Address = psi.ServiceAddress
-	// }
 
 	// ── Ubicación: Carabobo ───────────────────────────────────────────────
-	if psi.MunicipalityCarabobo != "" && (psi.ShowPhoneCarabobo || psi.ShowPublicServiceAddress) {
-		loc := &request_structs.PsiLocationCaraboboDTO{
-			Municipality: psi.MunicipalityCarabobo,
-		}
-		if psi.ShowPhoneCarabobo {
-			loc.Phone = psi.PhoneCarabobo
-		}
-		if psi.ShowPublicServiceAddress {
-			loc.Address = psi.ServiceAddress
-		}
-		dto.Location.Carabobo = loc
+	hasCaraboboData := false
+	locCarabobo := &request_structs.PsiLocationCaraboboDTO{}
+
+	if psi.ShowMunicipalityCarabobo && psi.MunicipalityCarabobo != "" {
+		locCarabobo.Municipality = psi.MunicipalityCarabobo
+		hasCaraboboData = true
+	}
+	if psi.ShowPhoneCarabobo && psi.PhoneCarabobo != "" {
+		locCarabobo.Phone = psi.PhoneCarabobo
+		hasCaraboboData = true
+	}
+	if psi.ShowCelPhoneCarabobo && psi.CelPhoneCarabobo != "" {
+		locCarabobo.CellPhone = psi.CelPhoneCarabobo
+		hasCaraboboData = true
+	}
+	if psi.ShowPublicServiceAddress && psi.ServiceAddress != "" {
+		locCarabobo.Address = psi.ServiceAddress
+		hasCaraboboData = true
+	}
+	if hasCaraboboData {
+		dto.Location.Carabobo = locCarabobo
 	}
 
 	// ── Ubicación: Fuera de Carabobo (Venezuela) ──────────────────────────
-	if psi.StateOutside != "" && (psi.ShowPublicServiceAddressOutSideCarabobo || psi.ShowCellPhoneOutSideCarabobo || psi.ShowPhoneOutSideCarabobo) {
-		loc := &request_structs.PsiLocationVenezuelaDTO{
-			State:        psi.StateOutside,
-			Municipality: psi.MunicipalityOutSideCarabobo,
-		}
-		if psi.ShowPhoneOutSideCarabobo {
-			loc.Phone = psi.PhoneOutSideCarabobo
-		}
-		if psi.ShowCellPhoneOutSideCarabobo {
-			loc.CellPhone = psi.CelPhoneOutSideCarabobo
-		}
-		if psi.ShowPublicServiceAddressOutSideCarabobo {
-			loc.Address = psi.ServiceAddressOutSideCarabobo
-		}
+	hasVenezuelaData := false
+	locVenezuela := &request_structs.PsiLocationVenezuelaDTO{}
 
-		if psi.ShowCellPhoneOutSideCarabobo {
-			loc.CellPhone = psi.CelPhoneCarabobo
-		}
-
-		dto.Location.Venezuela = loc
+	if psi.ShowStateOutside && psi.StateOutside != "" {
+		locVenezuela.State = psi.StateOutside
+		hasVenezuelaData = true
+	}
+	if psi.ShowMunicipalityOutSideCarabobo && psi.MunicipalityOutSideCarabobo != "" {
+		locVenezuela.Municipality = psi.MunicipalityOutSideCarabobo
+		hasVenezuelaData = true
+	}
+	if psi.ShowPhoneOutSideCarabobo && psi.PhoneOutSideCarabobo != "" {
+		locVenezuela.Phone = psi.PhoneOutSideCarabobo
+		hasVenezuelaData = true
+	}
+	if psi.ShowCellPhoneOutSideCarabobo && psi.CelPhoneOutSideCarabobo != "" {
+		locVenezuela.CellPhone = psi.CelPhoneOutSideCarabobo
+		hasVenezuelaData = true
+	}
+	if psi.ShowPublicServiceAddressOutSideCarabobo && psi.ServiceAddressOutSideCarabobo != "" {
+		locVenezuela.Address = psi.ServiceAddressOutSideCarabobo
+		hasVenezuelaData = true
+	}
+	if hasVenezuelaData {
+		dto.Location.Venezuela = locVenezuela
 	}
 
 	// ── Ubicación: Exterior ───────────────────────────────────────────────
-	if psi.Country != "" && (psi.ShowPublicServiceAddressOutSideVenezuela || psi.ShowPhoneOutSideVenezuela) {
-		loc := &request_structs.PsiLocationExteriorDTO{
-			Country: psi.Country,
-		}
-		if psi.ShowPhoneOutSideVenezuela {
-			loc.Phone = psi.PhoneOutSideVenezuela
-		}
-		if psi.ShowPublicServiceAddressOutSideVenezuela {
-			loc.Address = psi.ServiceAddressOutSideVenezuela
-		}
-		dto.Location.Exterior = loc
+	hasExteriorData := false
+	locExterior := &request_structs.PsiLocationExteriorDTO{}
+
+	if psi.Country != "" {
+		locExterior.Country = psi.Country
+		hasExteriorData = true
+	}
+	if psi.ShowPhoneOutSideVenezuela && psi.PhoneOutSideVenezuela != "" {
+		locExterior.Phone = psi.PhoneOutSideVenezuela
+		hasExteriorData = true
+	}
+	if psi.ShowCellPhoneOutSideVenezuela && psi.CellPhoneOutSideVenezuela != "" {
+		locExterior.CellPhone = psi.CellPhoneOutSideVenezuela
+		hasExteriorData = true
+	}
+	if psi.ShowPublicServiceAddressOutSideVenezuela && psi.ServiceAddressOutSideVenezuela != "" {
+		locExterior.Address = psi.ServiceAddressOutSideVenezuela
+		hasExteriorData = true
+	}
+	if hasExteriorData {
+		dto.Location.Exterior = locExterior
 	}
 
-	// ── Especialidades ────────────────────────────────────────────────────
-	if psi.PrimaryWorkArea != "" {
-		dto.WorkAreas = append(dto.WorkAreas, psi.PrimaryWorkArea)
-	}
-	if psi.SecondaryWorkArea != "" {
-		dto.WorkAreas = append(dto.WorkAreas, psi.SecondaryWorkArea)
-	}
+	// // ── Áreas de Trabajo (Mapeadas al DTO Specialties) ────────────────────
+	// if psi.PrimaryWorkArea != "" {
+	// 	dto.Specialties = append(dto.Specialties, psi.PrimaryWorkArea)
+	// }
+	// if psi.SecondaryWorkArea != "" {
+	// 	dto.Specialties = append(dto.Specialties, psi.SecondaryWorkArea)
+	// }
 
 	// ── Privacy Shield: Pregrado ──────────────────────────────────────────
 	if psi.ColData.ShowUniversityUndergraduate {
 		dto.Undergraduate.University = psi.ColData.UniversityUndergraduate
 	}
-	if psi.ColData.ShowGraduateDate {
+	if psi.ColData.ShowGraduateDate && !psi.ColData.GraduateDate.IsZero() {
 		dto.Undergraduate.Date = psi.ColData.GraduateDate.Format("2006-01-02")
 	}
 	if psi.ColData.ShowMentionUndergraduate {
@@ -894,6 +918,7 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 	for _, pg := range psi.PostGrades {
 		if pg.Active {
 			dto.PostGrades = append(dto.PostGrades, request_structs.PostGradeDTO{
+				Type:        string(pg.Type), // 👈 Añadido el tipo (Especialización, Doctorado, etc)
 				Title:       pg.Title,
 				University:  pg.University,
 				Year:        pg.GraduationYear,
