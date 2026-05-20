@@ -70,7 +70,7 @@ type PsiUserModel struct {
 	Email    string `gorm:"size:255;unique;not null" json:"email"` // Email institucional del gremio (login)
 	Password string `gorm:"size:512;not null" json:"-"`
 	Key      string `gorm:"size:512;" json:"-"`
-	IsActive bool   `gorm:"default:true" json:"is_active"`
+	IsActive bool   `gorm:"column:is_active" json:"is_active"`
 
 	// ── Identidad legal ───────────────────────────────────────────────────
 	FirstName      string    `gorm:"size:255;not null" json:"first_name"`
@@ -84,9 +84,9 @@ type PsiUserModel struct {
 	Genre          string    `gorm:"size:1;not null" json:"genre"` // M = masculino, F = femenino
 
 	// ── Estado gremial y multimedia ───────────────────────────────────────
-	Solvent             bool   `gorm:"default:false" json:"solvent"`        // Solvencia con el Colegio
-	ProofOfLife         bool   `gorm:"default:true" json:"proof_of_life"`   // Fe de vida presentada
-	ProfilePictureS3Key string `gorm:"size:512" json:"profile_picture_url"` // S3 key de la foto de perfil
+	Solvent             bool   `gorm:"default:false" json:"solvent"`              // Solvencia con el Colegio
+	ProofOfLife         bool   `gorm:"column:proof_of_life" json:"proof_of_life"` // Fe de vida presentada
+	ProfilePictureS3Key string `gorm:"size:512" json:"profile_picture_url"`       // S3 key de la foto de perfil
 
 	// ── Contacto interno del gremio ────────────────────────────────────
 	ContactPhone     string `gorm:"size:255;not null" json:"contact_phone"`

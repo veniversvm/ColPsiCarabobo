@@ -14,6 +14,7 @@ import (
 	"io"
 	"log"
 	"mime/multipart"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -84,124 +85,168 @@ func NewPsiService(repo domain.PsiUserRepository, s3Client *s3.S3Client, mailSer
 //	[35] GuildDirector             [42] CPSM
 //	[36] SixtyFiveOrPlus
 func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminID uuid.UUID) (int, []map[string]string) {
+	// 1. CONFIGURACIÓN DE LOG AISLADO
+	_ = os.Mkdir("logs", 0755)
+	logFileName := fmt.Sprintf("logs/import_%s.log", time.Now().Format("2006-01-02_15-04-05"))
+	logFile, err := os.OpenFile(logFileName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		log.Printf("⚠️ No se pudo crear el archivo de log: %v", err)
+	}
+	defer logFile.Close()
+
+	auditLogger := log.New(logFile, "", log.LstdFlags)
+	auditLogger.Println("=== INICIO DE IMPORTACIÓN MASIVA ===")
+
+	// 2. ABRIR EXCEL
 	f, err := excelize.OpenReader(reader)
 	if err != nil {
-		return 0, []map[string]string{{"error": "no se pudo abrir el archivo Excel: " + err.Error()}}
+		auditLogger.Printf("ERROR CRÍTICO: No se pudo abrir el archivo: %v", err)
+		return 0, []map[string]string{{"error": "archivo inválido"}}
 	}
 	defer f.Close()
 
 	sheetName := "BD ColPsiCarabobo 2026"
 	rows, err := f.Rows(sheetName)
 	if err != nil {
-		return 0, []map[string]string{{"error": "no se pudo acceder a la hoja: " + err.Error()}}
+		auditLogger.Printf("ERROR CRÍTICO: Hoja '%s' no encontrada", sheetName)
+		return 0, []map[string]string{{"error": "hoja no encontrada"}}
 	}
 
+	// 3. PREPARACIÓN
 	successCount := 0
 	var failedRecords []map[string]string
-
-	defaultPassword := "Colpsi2025!"
+	defaultPassword := "Colpsi2025!" // Clave temporal para todos
 	hashedPasswordBytes, _ := bcrypt.GenerateFromPassword([]byte(defaultPassword), bcrypt.DefaultCost)
 	hashedPassword := string(hashedPasswordBytes)
+
+	audit := domain.AuditModel{
+		CreateById: &adminID, CreateBy: "Admin_XLSX_Import",
+		UpdateById: &adminID, UpdateBy: "Admin_XLSX_Import",
+	}
 
 	rowIdx := 0
 	for rows.Next() {
 		rowIdx++
-		row, err := rows.Columns()
-		if err != nil || rowIdx <= 2 {
+		row, _ := rows.Columns()
+		if rowIdx <= 2 {
 			continue
 		}
 
-		numFPVStr := getValorSeguro(row, 3)
-		ciStr := getValorSeguro(row, 6)
+		rawFPV := getValorSeguro(row, 3)
+		rawCI := getValorSeguro(row, 6)
 		firstName := getValorSeguro(row, 7)
 		lastName := getValorSeguro(row, 9)
 		fullName := firstName + " " + lastName
 
-		// 1. PARSING DE NÚMEROS (CORREGIDO: Eliminar comas de miles)
-		fpvInt := parseInt(numFPVStr)
-		ciInt := parseInt(ciStr)
+		fpvInt := parseInt(rawFPV)
+		ciInt := parseInt(rawCI)
 
-		// LOG DE SEGURIDAD: Verifica que los números se lean completos (Ej: 20493 y no 20)
-		if rowIdx < 50 || rowIdx%100 == 0 {
-			log.Printf("[DEBUG] Fila %d: FPV_RAW=%s -> INT=%d | CI_RAW=%s -> INT=%d", rowIdx, numFPVStr, fpvInt, ciStr, ciInt)
-		}
-
-		if fpvInt == 0 || ciInt == 0 {
-			failedRecords = append(failedRecords, map[string]string{
-				"fila": strconv.Itoa(rowIdx), "nombre": fullName, "error": "Datos numéricos incompletos o en cero",
-			})
+		// Validación mínima
+		if fpvInt == 0 || ciInt == 0 || firstName == "" {
+			msg := "Faltan datos críticos (FPV, CI o Nombre)"
+			auditLogger.Printf("❌ FILA %d | %s | %s", rowIdx, fullName, msg)
+			failedRecords = append(failedRecords, map[string]string{"fila": strconv.Itoa(rowIdx), "nombre": fullName, "error": msg})
 			continue
 		}
 
-		// 2. GENERACIÓN DE USERNAME (CORREGIDO: Límite 25 caracteres)
+		// ── FAILSAFE DE CORREO ──────────────────────────────────────────
 		email := getValorSeguro(row, 15)
-		username := generateSecureUsername(email, strconv.Itoa(fpvInt), strconv.Itoa(ciInt), firstName)
+		isPlaceholderEmail := false
 
-		psiID := uuid.New()
-		audit := domain.AuditModel{
-			CreateById: &adminID, CreateBy: "Admin_XLSX_Import",
-			UpdateById: &adminID, UpdateBy: "Admin_XLSX_Import",
+		if email == "" || email == "-" || !strings.Contains(email, "@") {
+			// Generamos un correo único basado en FPV para no romper la restricción UNIQUE de la DB
+			email = fmt.Sprintf("%d.sincorreo@colpsi.com", fpvInt)
+			isPlaceholderEmail = true
+			auditLogger.Printf("⚠️ FILA %d | %s | Sin correo. Usando failsafe: %s", rowIdx, fullName, email)
 		}
 
+		// ── GENERACIÓN DE USERNAME SEGURO ──
+		// Si es failsafe, usamos un formato corto para no pasarnos de 25 caracteres
+		username := ""
+		if isPlaceholderEmail {
+			username = fmt.Sprintf("psi%d", fpvInt)
+		} else {
+			username = generateSecureUsername(email, strconv.Itoa(fpvInt), firstName)
+		}
+
+		// ── MANEJO DE FECHAS ──
 		bornDate := parseDate(getValorSeguro(row, 11))
 		if bornDate.IsZero() {
 			bornDate = time.Date(1900, 1, 1, 0, 0, 0, 0, time.UTC)
 		}
 
+		// ── DETECCIÓN DE FE DE VIDA (Fallecidos) ──────────────────────────
+		// Leemos la columna 15 (índice 14)
+		statusVidaRaw := strings.ToLower(getValorSeguro(row, 14))
+
+		// Por defecto asumimos que está vivo
+		estaVivo := true
+
+		// Si la celda contiene "fallecido", "finado", "no" o "f", marcamos como false
+		if strings.Contains(statusVidaRaw, "fallecido") ||
+			strings.Contains(statusVidaRaw, "finado") ||
+			statusVidaRaw == "no" ||
+			statusVidaRaw == "f" {
+			estaVivo = false
+			auditLogger.Printf("⚰️  FILA %d | %s | Detectado como FALLECIDO (Celda: %s)", rowIdx, fullName, statusVidaRaw)
+		}
+
+		psiID := uuid.New()
+
+		// ── CONSTRUCCIÓN DEL MODELO ──
 		psi := &domain.PsiUserModel{
-			ID:                          psiID,
-			Key:                         uuid.New().String(),
-			AuditModel:                  audit,
-			Username:                    username,
-			Email:                       email,
-			Password:                    hashedPassword,
-			FirstName:                   firstName,
-			SecondName:                  cleanDash(getValorSeguro(row, 8)),
-			LastName:                    lastName,
-			SecondLastName:              cleanDash(getValorSeguro(row, 10)),
-			FPV:                         fpvInt,
-			CI:                          ciInt,
-			Nationality:                 getValorSeguro(row, 5),
-			BornDate:                    bornDate,
-			Genre:                       getValorSeguro(row, 13),
-			ProofOfLife:                 strings.ToLower(getValorSeguro(row, 14)) != "fallecido",
-			Solvent:                     getValorSeguro(row, 45) == "Activo",
-			ContactPhone:                cleanDash(getValorSeguro(row, 17)),
-			ContactCellPhone:            cleanDash(getValorSeguro(row, 18)),
-			MunicipalityCarabobo:        getValorSeguro(row, 16),
-			StateOutside:                cleanDash(getValorSeguro(row, 19)),
-			MunicipalityOutSideCarabobo: cleanDash(getValorSeguro(row, 20)),
-			PhoneOutSideCarabobo:        cleanDash(getValorSeguro(row, 21)),
-			CelPhoneOutSideCarabobo:     cleanDash(getValorSeguro(row, 22)),
-			Country:                     cleanDash(getValorSeguro(row, 23)),
-			PhoneOutSideVenezuela:       cleanDash(getValorSeguro(row, 24)),
+			ID:         psiID,
+			Key:        uuid.New().String(),
+			AuditModel: audit,
+			Username:   username,
+			Email:      email,
+			Password:   hashedPassword,
+			IsActive:   getValorSeguro(row, 45) == "Activo",
+
+			FirstName:      firstName,
+			SecondName:     cleanDash(getValorSeguro(row, 8)),
+			LastName:       lastName,
+			SecondLastName: cleanDash(getValorSeguro(row, 10)),
+			FPV:            fpvInt,
+			CI:             ciInt,
+			Nationality:    getValorSeguro(row, 5),
+			BornDate:       bornDate,
+			Genre:          getValorSeguro(row, 13),
+
+			Solvent:     getValorSeguro(row, 45) == "Activo",
+			ProofOfLife: estaVivo,
+
+			ContactPhone:     cleanDash(getValorSeguro(row, 17)),
+			ContactCellPhone: cleanDash(getValorSeguro(row, 18)),
+			ContactEmail:     getValorSeguro(row, 15), // Guardamos el original (aunque sea vacío) aquí
+
+			MunicipalityCarabobo: getValorSeguro(row, 16),
+			StateOutside:         cleanDash(getValorSeguro(row, 19)),
+			Country:              cleanDash(getValorSeguro(row, 23)),
 		}
 
 		colData := &domain.PsiUserColData{
-			ID: uuid.New(), PsiUserModelID: psiID, AuditModel: audit,
+			ID:                      uuid.New(),
+			PsiUserModelID:          psiID,
+			AuditModel:              audit,
 			GuildInscriptionDate:    parseDate(getValorSeguro(row, 4)),
 			UniversityUndergraduate: getValorSeguro(row, 25),
 			GraduateDate:            parseDate(getValorSeguro(row, 26)),
 			MentionUndergraduate:    getValorSeguro(row, 27),
-			RegisterTitleState:      getValorSeguro(row, 28),
-			RegisterTitleDate:       parseDate(getValorSeguro(row, 29)),
 			RegisterNumber:          parseInt(getValorSeguro(row, 30)),
-			RegisterFolio:           getValorSeguro(row, 31),
-			RegisterTome:            getValorSeguro(row, 32),
 			DateOfLastSolvency:      parseDate(getValorSeguro(row, 44)),
-			DoubleGuild:             len(getValorSeguro(row, 46)) > 0,
-			CPSM:                    strings.ToLower(getValorSeguro(row, 47)) == "aprobado",
 		}
 
-		solvencies := domain.PsiUSerSolvency{
-			ID: uuid.New(), PsiUserModelID: psiID, AuditModel: audit,
-			Date: colData.DateOfLastSolvency,
+		solvency := domain.PsiUSerSolvency{
+			ID: uuid.New(), PsiUserModelID: psiID, AuditModel: audit, Date: colData.DateOfLastSolvency,
 		}
 
-		// Intentar guardar en DB
-		if err := s.repo.CreateWithColData(ctx, psi, colData, solvencies, []domain.PsiUserPostGrade{}); err != nil {
+		// 5. PERSISTENCIA
+		if err := s.repo.CreateWithColData(ctx, psi, colData, solvency, []domain.PsiUserPostGrade{}); err != nil {
+			humanError := mapDBErrorToHuman(err)
+			auditLogger.Printf("❌ FILA %d | %s | FPV: %d | ERROR: %v", rowIdx-2, fullName, fpvInt, humanError)
 			failedRecords = append(failedRecords, map[string]string{
-				"fila": strconv.Itoa(rowIdx), "nombre": fullName, "error": err.Error(),
+				"fila": strconv.Itoa(rowIdx), "nombre": fullName, "error": humanError,
 			})
 			continue
 		}
@@ -209,7 +254,41 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 		successCount++
 	}
 
+	auditLogger.Printf("=== FINALIZADO | EXITOSOS: %d | FALLIDOS: %d ===", successCount, len(failedRecords))
 	return successCount, failedRecords
+}
+
+func mapDBErrorToHuman(err error) string {
+	errStr := err.Error()
+
+	// Errores de Duplicidad (Postgres / GORM)
+	if strings.Contains(errStr, "idx_psi_users_ci") || strings.Contains(errStr, "psi_users_ci_key") {
+		return "La Cédula de Identidad ya está registrada en el sistema."
+	}
+	if strings.Contains(errStr, "idx_psi_users_fpv") || strings.Contains(errStr, "psi_users_fpv_key") {
+		return "El número de FPV ya está registrado en el sistema."
+	}
+	if strings.Contains(errStr, "idx_psi_users_email") || strings.Contains(errStr, "psi_users_email_key") {
+		return "El correo electrónico ya está en uso por otro perfil."
+	}
+	if strings.Contains(errStr, "idx_psi_users_username") || strings.Contains(errStr, "psi_users_username_key") {
+		return "El nombre de usuario generado ya existe."
+	}
+
+	// Errores de Longitud
+	if strings.Contains(errStr, "value too long for type character varying(25)") {
+		return "El nombre de usuario generado excede el límite de 25 caracteres."
+	}
+	if strings.Contains(errStr, "value too long") {
+		return "Un campo (Nombre, Apellido o Dirección) es demasiado largo para la base de datos."
+	}
+
+	// Otros
+	if strings.Contains(errStr, "invalid input syntax for type uuid") {
+		return "Error interno: ID de sistema inválido."
+	}
+
+	return "Error de base de datos: " + errStr
 }
 
 // ── Helpers de parseo ─────────────────────────────────────────────────────────
@@ -1086,29 +1165,19 @@ func parseInt(val string) int {
 	return i
 }
 
-func generateSecureUsername(email, fpv, ci, name string) string {
-	var base string
+func generateSecureUsername(email, fpv, name string) string {
+	base := ""
 	if strings.Contains(email, "@") {
 		base = strings.Split(email, "@")[0]
 	} else {
-		// Limpiar el nombre de espacios para que sea un username válido
 		base = strings.ReplaceAll(strings.ToLower(name), " ", "")
 	}
-
-	// El FPV ya viene limpio de la función parseInt
 	combined := base + fpv
-
-	// Truncar a 25 caracteres máximo para cumplir con el esquema de DB
 	if len(combined) > 25 {
-		// Intentamos mantener el FPV completo y recortar la base
-		fpvLen := len(fpv)
-		maxBaseLen := 25 - fpvLen
-		if maxBaseLen > 0 {
-			if len(base) > maxBaseLen {
-				combined = base[:maxBaseLen] + fpv
-			}
+		maxBase := 25 - len(fpv)
+		if maxBase > 0 {
+			combined = base[:maxBase] + fpv
 		} else {
-			// Si el FPV solo ya mide casi 25, truncamos el final
 			combined = combined[:25]
 		}
 	}
