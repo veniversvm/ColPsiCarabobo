@@ -63,7 +63,7 @@ func (s *SpecialtyService) Update(ctx context.Context, admin *domain.UserAdmin, 
 		return errors.New("no tienes permiso para editar especialidades")
 	}
 
-	spec, err := s.repo.GetByID(ctx, id, false)
+	spec, err := s.repo.GetByAdminID(ctx, id)
 	if err != nil {
 		return err
 	}
