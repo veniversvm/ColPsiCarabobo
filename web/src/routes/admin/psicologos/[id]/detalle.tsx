@@ -30,17 +30,11 @@ import { SolvenciesSection } from "~/components/admin/psicologos/edit/Solvencies
 // ─── Server Actions ───────────────────────────────────────────────────────────
 
 const updateAdminPsiServer = action(
-  async (params: { id: string; payload: any }) => {
+  async (params: { id: string; payload: FormData }) => {
     "use server";
     const { apiPatch } = await import("~/lib/api");
-    const cleanPayload = { ...params.payload };
-
-    // Convertimos strings vacíos a null para que Go los procese correctamente
-    Object.keys(cleanPayload).forEach((key) => {
-      if (cleanPayload[key] === "") cleanPayload[key] = null;
-    });
-
-    return await apiPatch(`/admin/psi/${params.id}`, cleanPayload);
+    // Enviamos el FormData directamente a la API
+    return await apiPatch(`/admin/psi/${params.id}`, params.payload);
   },
 );
 
@@ -66,39 +60,41 @@ const deleteSocialServer = action(
 
 const formatDate = (dateStr?: string) => (dateStr ? dateStr.split("T")[0] : "");
 
-// Campos que el backend de Go espera recibir como "1" o "0" (multipart-form)
+// Campos que el backend de Go espera recibir como "1" o "0" desde el FormData
 const RAW_BOOL_FIELDS = [
+  "is_active",
+  "solvent",
+  "proof_of_life",
   "show_contact_email",
   "show_public_service_address",
-  // Privacidad Carabobo
   "show_municipality_carabobo",
   "show_phone_carabobo",
   "show_cel_phone_carabobo",
-  // Privacidad Fuera de Carabobo
   "show_state_outside",
   "show_municipality_outside_carabobo",
   "show_phone_outside_carabobo",
   "show_cel_phone_outside_carabobo",
   "show_public_service_address_outside_carabobo",
-  // Privacidad Exterior
   "show_phone_outside_venezuela",
   "show_cel_phone_outside_venezuela",
   "show_public_service_address_outside_venezuela",
-  // Privacidad Académica
   "show_university_undergraduate",
   "show_graduate_date",
   "show_mention_undergraduate",
+  "guild_director",
+  "sixty_five_or_plus",
+  "guild_collaborator",
+  "public_employee",
+  "discapacity",
+  "university_professor",
+  "double_guild",
+  "cpsm",
 ];
-
-// ─── Page Component ───────────────────────────────────────────────────────────
 
 export default function AdminEditPsiPage() {
   const params = useParams();
 
   const runUpdateAction = useAction(updateAdminPsiServer);
-  const runAddSocial = useAction(addSocialServer);
-  const runDeleteSocial = useAction(deleteSocialServer);
-
   const [profile, { refetch }] = createResource(() =>
     apiGet<any>(`/admin/psi/${params.id}`),
   );
@@ -111,21 +107,23 @@ export default function AdminEditPsiPage() {
     text: string;
   } | null>(null);
 
-  const SITE_URL = import.meta.env.VITE_SITE_URL || "http://localhost:3000";
+  // Señales para manejar archivos (Imágenes de títulos y perfil)
+  const [files, setFiles] = createSignal<{ [key: string]: File }>({});
+  const [avatarFile, setAvatarFile] = createSignal<File | null>(null);
 
+  const SITE_URL = import.meta.env.VITE_SITE_URL || "http://localhost:3000";
   const canonicalUrl = () => {
     const p = profile();
     if (!p) return "";
     return `${SITE_URL}/directorio/${p.first_name}-${p.last_name}-fpv${p.fpv}`;
   };
 
-  // ── Sync DB → Store (Mapeo completo al nuevo modelo) ───────────────────────
+  // ── Sync DB → Store (Mapeo completo) ───────────────────────
   createEffect(() => {
     const p = profile();
     if (!p) return;
-
     setForm({
-      // 1. Identidad y Acceso
+      // ... (tu lógica de mapeo actual está bien, asegúrate de incluir todos los campos)
       username: p.username ?? "",
       email: p.email ?? "",
       first_name: p.first_name ?? "",
@@ -137,29 +135,21 @@ export default function AdminEditPsiPage() {
       nationality: p.nationality ?? "V",
       genre: p.genre ?? "M",
       born_date: formatDate(p.born_date),
-
-      // 2. Estatus Administrativo
       is_active: p.is_active ?? true,
       solvent: p.solvent ?? false,
       proof_of_life: p.proof_of_life ?? false,
-
-      // 3. Contacto y Privacidad General
       contact_email: p.contact_email ?? "",
       show_contact_email: p.show_contact_email ?? false,
       contact_phone: p.contact_phone ?? "",
       contact_cell_phone: p.contact_cell_phone ?? "",
       service_address: p.service_address ?? "",
       show_public_service_address: p.show_public_service_address ?? false,
-
-      // 4. Ubicación: Carabobo
       municipality_carabobo: p.municipality_carabobo ?? "",
       show_municipality_carabobo: p.show_municipality_carabobo ?? false,
       phone_carabobo: p.phone_carabobo ?? "",
       show_phone_carabobo: p.show_phone_carabobo ?? false,
       cel_phone_carabobo: p.cel_phone_carabobo ?? "",
       show_cel_phone_carabobo: p.show_cel_phone_carabobo ?? false,
-
-      // 5. Ubicación: Fuera de Carabobo (Venezuela)
       state_outside: p.state_outside ?? "",
       show_state_outside: p.show_state_outside ?? false,
       municipality_outside_carabobo: p.municipality_outside_carabobo ?? "",
@@ -168,14 +158,12 @@ export default function AdminEditPsiPage() {
       phone_outside_carabobo: p.phone_outside_carabobo ?? "",
       show_phone_outside_carabobo: p.show_phone_outside_carabobo ?? false,
       cel_phone_outside_carabobo: p.cel_phone_outside_carabobo ?? "",
-      show_cel_phone_outside_carabobo:
-        p.show_cel_phone_outside_carabobo ?? false,
+      show_cell_phone_outside_carabobo:
+        p.show_cell_phone_outside_carabobo ?? false,
       service_address_outside_carabobo:
         p.service_address_outside_carabobo ?? "",
       show_public_service_address_outside_carabobo:
         p.show_public_service_address_outside_carabobo ?? false,
-
-      // 6. Ubicación: Exterior
       country: p.country ?? "",
       phone_outside_venezuela: p.phone_outside_venezuela ?? "",
       show_phone_outside_venezuela: p.show_phone_outside_venezuela ?? false,
@@ -186,14 +174,10 @@ export default function AdminEditPsiPage() {
         p.service_address_outside_venezuela ?? "",
       show_public_service_address_outside_venezuela:
         p.show_public_service_address_outside_venezuela ?? false,
-
-      // 7. Profesional (Áreas de Desempeño)
       primary_work_area: p.primary_work_area ?? "",
       secondary_work_area: p.secondary_work_area ?? "",
       mini_bio: p.mini_bio ?? "",
       full_bio: p.full_bio?.content ?? "",
-
-      // 8. Datos Académicos
       guild_inscription_date: formatDate(p.col_data?.guild_inscription_date),
       university_undergraduate: p.col_data?.university_undergraduate ?? "",
       graduate_date: formatDate(p.col_data?.graduate_date),
@@ -203,15 +187,11 @@ export default function AdminEditPsiPage() {
       register_title_date: formatDate(p.col_data?.register_title_date),
       register_folio: p.col_data?.register_folio ?? "",
       register_tome: p.col_data?.register_tome ?? "",
-
-      // 9. Privacidad Académica
       show_university_undergraduate:
         p.col_data?.show_university_undergraduate ?? false,
       show_graduate_date: p.col_data?.show_graduate_date ?? false,
       show_mention_undergraduate:
         p.col_data?.show_mention_undergraduate ?? false,
-
-      // 10. Banderas Institucionales
       guild_director: p.col_data?.guild_director ?? false,
       sixty_five_or_plus: p.col_data?.sixty_five_or_plus ?? false,
       guild_collaborator: p.col_data?.guild_collaborator ?? false,
@@ -221,12 +201,11 @@ export default function AdminEditPsiPage() {
       double_guild: p.col_data?.double_guild ?? false,
       double_guild_location: p.col_data?.double_guild_location ?? "",
       date_of_last_solvency: formatDate(p.col_data?.date_of_last_solvency),
-
       solvencies: p.solvencies ?? [],
     });
   });
 
-  // ── Submit ───────────────────────────────────────────────────────────────────
+  // ── Submit con FormData ──────────────────────────────────────────────────
   const handleSave = async (e: Event) => {
     e.preventDefault();
     if (saving()) return;
@@ -234,29 +213,51 @@ export default function AdminEditPsiPage() {
     setMessage(null);
 
     const rawForm = unwrap(form);
-    const payload: Record<string, any> = {};
+    const fd = new FormData(); // 👈 Usamos FormData para soportar imágenes y tipos de Go
 
-    // Saneamiento del payload para la API de Go
+    // 1. Procesar campos del formulario
+    // 1. Procesar campos del formulario
     for (const [key, value] of Object.entries(rawForm)) {
-      if (RAW_BOOL_FIELDS.includes(key)) {
-        payload[key] = value === true ? "1" : "0";
-      } else if (value === "") {
-        payload[key] = null;
-      } else {
-        payload[key] = value;
+      // Failsafe: Si el valor es null, undefined o un string vacío, NO lo enviamos.
+      // Esto garantiza que en Go el puntero llegue como 'nil'.
+      if (value === "" || value === null || value === undefined) {
+        continue;
       }
-    }
 
-    // Conversión de tipos numéricos
-    payload.ci = parseInt(String(rawForm.ci)) || null;
-    payload.fpv = parseInt(String(rawForm.fpv)) || null;
-    payload.register_number = parseInt(String(rawForm.register_number)) || null;
+      // Caso especial: Historial de Solvencias (Array -> JSON String)
+      if (key === "solvencies") {
+        fd.append("solvencies", JSON.stringify(value));
+        continue;
+      }
+
+      // Caso especial: Booleanos de Privacidad y Flags
+      if (RAW_BOOL_FIELDS.includes(key)) {
+        // Enviamos "1" o "0" que es lo más compatible con parsers de formularios
+        fd.append(key, value === true ? "1" : "0");
+        continue;
+      }
+
+      // Resto de campos (Strings, Números, etc.)
+      fd.append(key, String(value));
+    }
+    // 2. Adjuntar Archivos (Imágenes de títulos)
+    const filesObj = files();
+    if (filesObj.title_image_one)
+      fd.append("title_image_one", filesObj.title_image_one);
+    if (filesObj.title_image_two)
+      fd.append("title_image_two", filesObj.title_image_two);
+    if (filesObj.title_image_three)
+      fd.append("title_image_three", filesObj.title_image_three);
+
+    // 3. Adjuntar Foto de Perfil
+    const avatar = avatarFile();
+    if (avatar) fd.append("profile_picture", avatar);
 
     try {
-      await runUpdateAction({ id: params.id ?? "", payload });
+      await runUpdateAction({ id: params.id ?? "", payload: fd });
       setMessage({
         type: "success",
-        text: "Expediente del psicólogo actualizado correctamente.",
+        text: "Expediente actualizado exitosamente.",
       });
       refetch();
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -264,11 +265,8 @@ export default function AdminEditPsiPage() {
       const msg = err?.message || String(err);
       setMessage({
         type: "error",
-        text:
-          msg.replace(/^.*?ApiError:\s*/i, "") ||
-          "Error en el servidor al guardar.",
+        text: msg.replace(/^.*?ApiError:\s*/i, "") || "Error al guardar.",
       });
-      window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setSaving(false);
     }
@@ -280,19 +278,24 @@ export default function AdminEditPsiPage() {
   return (
     <main class="pb-28 animate-in fade-in duration-500 font-sans">
       <EditPageHeader profile={profile()} />
-
       <Suspense
         fallback={
-          <div class="h-96 bg-white animate-pulse rounded-[2.5rem] shadow-sm border border-gray-100" />
+          <div class="h-96 bg-white animate-pulse rounded-[2.5rem] border border-gray-100" />
         }
       >
         <EditAlert message={message()} />
 
         <form onSubmit={handleSave} class="space-y-8">
-          <AccountSection form={form} setForm={set} url={canonicalUrl()} />
+          {/* Se pasa avatarFile y onFileChange para que AccountSection pueda capturar la foto */}
+          <AccountSection
+            form={form}
+            setForm={set}
+            url={canonicalUrl()}
+            avatarFile={avatarFile()}
+            onAvatarChange={setAvatarFile}
+          />
           <AdminStatusSection form={form} setForm={set} />
 
-          {/* Historial de Solvencias */}
           <SolvenciesSection
             solvencies={form.solvencies}
             onAddLocalSolvency={(year) => {
@@ -304,17 +307,20 @@ export default function AdminEditPsiPage() {
           <LegalIdentitySection form={form} setForm={set} />
           <ContactVisibilitySection form={form} setForm={set} />
           <LocationSection form={form} setForm={set} />
-
-          {/* Se pasa 'workAreas' siguiendo la nueva terminología */}
           <ProfessionalSection
             form={form}
             setForm={set}
             workAreas={workAreas()}
           />
 
-          <AcademicSection form={form} setForm={set} />
+          {/* Se pasan los estados de archivos a AcademicSection */}
+          <AcademicSection
+            form={form}
+            setForm={set}
+            files={files()}
+            setFiles={setFiles}
+          />
 
-          {/* Botón de guardado flotante */}
           <div class="sticky bottom-10 z-50 flex justify-end max-w-5xl mx-auto px-4">
             <button
               type="submit"
@@ -335,21 +341,16 @@ export default function AdminEditPsiPage() {
         <SocialNetworksBlock
           profile={profile()}
           onAdd={async (p) => {
-            // Aseguramos que params.id sea string para TypeScript
             const id = params.id ?? "";
             if (!id) return;
-
-            await runAddSocial({ id: id, payload: p });
+            await addSocialServer({ id, payload: p });
             refetch();
           }}
           onDelete={async (sid) => {
             const id = params.id ?? "";
-            if (!id) return;
-
-            if (confirm("¿Eliminar esta red social?")) {
-              await runDeleteSocial({ psiId: id, socialId: sid });
-              refetch();
-            }
+            if (!id || !confirm("¿Eliminar?")) return;
+            await deleteSocialServer({ psiId: id, socialId: sid });
+            refetch();
           }}
         />
 

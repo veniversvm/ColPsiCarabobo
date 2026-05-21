@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
@@ -502,58 +503,60 @@ func (r *psiRepo) SearchDirectory(ctx context.Context, filter request_structs.Ps
 	var users []domain.PsiUserModel
 	var total int64
 
-	// 1. Actualizado: Se cambian las especialidades por primary_work_area y secondary_work_area
+	// 1. Base de la consulta: Solo activos y solventes (Regla del directorio público)
 	query := r.db.WithContext(ctx).Model(&domain.PsiUserModel{}).
 		Select("id, first_name, last_name, ci, fpv, profile_picture_s3_key, mini_bio, solvent, primary_work_area, secondary_work_area").
-		Where("is_active = ?", true)
+		Where("is_active = ? AND solvent = ?", true, true)
 
+	// 2. Filtro por Identidad (Nombre, Apellido, CI, FPV)
+	// Quitamos el 'else' para que sea aditivo
 	if filter.SearchTerm != "" {
-		// CASO IDENTIDAD: Búsqueda amplia por texto en campos clave.
-		term := "%" + filter.SearchTerm + "%"
-		query = query.Where(
-			r.db.Where("first_name ILIKE ?", term).
-				Or("last_name ILIKE ?", term).
-				Or("CAST(ci AS TEXT) LIKE ?", term).
-				Or("CAST(fpv AS TEXT) LIKE ?", term),
-		)
-	} else {
-		// CASO NAVEGACIÓN: Restringe a usuarios solventes y aplica filtros de catálogo.
-		query = query.Where("solvent = ?", true)
+		term := "%" + strings.TrimSpace(filter.SearchTerm) + "%"
 
-		// 2. Actualizado: Ahora se busca por work_area en la base de datos
-		if filter.SpecialtyID > 0 {
-			var specName string
-			// Asumiendo que PsiSpecialtyModel cambió a PsiWorkAreaModel, ajusta el modelo aquí si es necesario:
-			r.db.Model(&domain.PsiSpecialtyModel{}).Select("name").Where("id = ?", filter.SpecialtyID).Scan(&specName)
+		// Usamos una función anónima para agrupar los OR entre paréntesis en el SQL
+		query = query.Where(r.db.Where("unaccent(first_name) ILIKE unaccent(?)", term).
+			Or("unaccent(last_name) ILIKE unaccent(?)", term).
+			Or("unaccent(first_name || ' ' || last_name) ILIKE unaccent(?)", term).
+			Or("unaccent(last_name || ' ' || first_name) ILIKE unaccent(?)", term).
+			Or("CAST(ci AS TEXT) LIKE ?", term).
+			Or("CAST(fpv AS TEXT) LIKE ?", term))
+	}
 
-			if specName != "" {
-				query = query.Where("primary_work_area = ? OR secondary_work_area = ?", specName, specName)
-			}
-		}
-
-		// 3. NUEVO FILTRO DE UBICACIÓN RESPETANDO LA PRIVACIDAD
-		if filter.Location != "" {
-			loc := "%" + filter.Location + "%"
-
-			// Se evalúa si el texto coincide con la ubicación Y, a la vez, si el psicólogo permite mostrarla
-			query = query.Where(
-				r.db.Where("municipality_carabobo ILIKE ? AND show_municipality_carabobo = ?", loc, true).
-					Or("state_outside ILIKE ? AND show_state_outside = ?", loc, true).
-					// FIX: Corregido el nombre a out_side para que coincida con la DB de GORM
-					Or("municipality_out_side_carabobo ILIKE ? AND show_municipality_out_side_carabobo = ?", loc, true).
-					Or("country ILIKE ?", loc),
-			)
-		}
-
-		if filter.Gender != "" {
-			query = query.Where("genre = ?", filter.Gender)
+	// 3. Filtro por Área de Desempeño
+	if filter.SpecialtyID > 0 {
+		var specName string
+		r.db.Model(&domain.PsiSpecialtyModel{}).Select("name").Where("id = ?", filter.SpecialtyID).Scan(&specName)
+		if specName != "" {
+			query = query.Where("primary_work_area = ? OR secondary_work_area = ?", specName, specName)
 		}
 	}
 
-	query.Count(&total)
+	// 4. Filtro de Ubicación (Ciudad/Estado/País)
+	if filter.Location != "" {
+		loc := "%" + strings.TrimSpace(filter.Location) + "%"
 
+		// Agrupamos la lógica de ubicación para que respete la privacidad
+		query = query.Where(r.db.Where(
+			r.db.Where("unaccent(municipality_carabobo) ILIKE unaccent(?) AND show_municipality_carabobo = ?", loc, true).
+				Or("unaccent(state_outside) ILIKE unaccent(?) AND show_state_outside = ?", loc, true).
+				Or("unaccent(municipality_out_side_carabobo) ILIKE unaccent(?) AND show_municipality_out_side_carabobo = ?", loc, true).
+				Or("unaccent(country) ILIKE unaccent(?)", loc), // País siempre es visible según tu modelo
+		))
+	}
+
+	// 5. Filtro de Género
+	if filter.Gender != "" {
+		query = query.Where("genre = ?", filter.Gender)
+	}
+
+	// Ejecutar conteo de totales
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Paginación y Orden
 	offset := (filter.Page - 1) * filter.Limit
-	err := query.Order("solvent DESC, last_name ASC").
+	err := query.Order("profile_picture_s3_key DESC, last_name ASC").
 		Limit(filter.Limit).
 		Offset(offset).
 		Find(&users).Error
@@ -571,15 +574,22 @@ func (r *psiRepo) SearchAdmin(ctx context.Context, filter request_structs.PsiDir
 		Select("id, first_name, last_name, ci, fpv, email, solvent, is_active, primary_work_area, secondary_work_area")
 
 	if filter.SearchTerm != "" {
-		term := "%" + filter.SearchTerm + "%"
+		// Limpiamos espacios
+		term := "%" + strings.TrimSpace(filter.SearchTerm) + "%"
+
+		// Aplicamos unaccent a las columnas y al término de búsqueda
+		// Usamos un sub-Where para agrupar la lógica de búsqueda de identidad
 		query = query.Where(
-			r.db.Where("first_name ILIKE ?", term).
-				Or("last_name ILIKE ?", term).
+			r.db.Where("unaccent(first_name) ILIKE unaccent(?)", term).
+				Or("unaccent(last_name) ILIKE unaccent(?)", term).
+				Or("unaccent(first_name || ' ' || last_name) ILIKE unaccent(?)", term).
+				Or("unaccent(last_name || ' ' || first_name) ILIKE unaccent(?)", term).
 				Or("CAST(ci AS TEXT) LIKE ?", term).
 				Or("CAST(fpv AS TEXT) LIKE ?", term),
 		)
 	}
 
+	// Filtro por Área de Desempeño
 	if filter.SpecialtyID > 0 {
 		var specName string
 		r.db.Model(&domain.PsiSpecialtyModel{}).Select("name").Where("id = ?", filter.SpecialtyID).Scan(&specName)
@@ -588,13 +598,13 @@ func (r *psiRepo) SearchAdmin(ctx context.Context, filter request_structs.PsiDir
 		}
 	}
 
+	// Filtro por Ubicación (también con unaccent, muy útil para nombres de municipios)
 	if filter.Location != "" {
 		loc := "%" + filter.Location + "%"
 		query = query.Where(
-			r.db.Where("municipality_carabobo ILIKE ?", loc).
-				Or("state_outside ILIKE ?", loc).
-				// FIX: Corregido el nombre exacto de la columna generada por GORM
-				Or("municipality_out_side_carabobo ILIKE ?", loc),
+			r.db.Where("unaccent(municipality_carabobo) ILIKE unaccent(?)", loc).
+				Or("unaccent(state_outside) ILIKE unaccent(?)", loc).
+				Or("unaccent(municipality_out_side_carabobo) ILIKE unaccent(?)", loc),
 		)
 	}
 

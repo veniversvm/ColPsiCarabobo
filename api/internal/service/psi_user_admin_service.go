@@ -8,6 +8,7 @@ package service
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -140,6 +141,9 @@ func (s *PsiService) CreatePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 // UpdatePsiByAdmin permite a un administrador modificar íntegramente el expediente.
 // Soporta actualizaciones parciales (PATCH) mediante el uso de punteros en el DTO,
 // garantizando que solo los campos enviados en el JSON sean alterados en la base de datos.
+// UpdatePsiByAdmin permite a un administrador modificar íntegramente el expediente.
+// Soporta actualizaciones parciales (PATCH) mediante el uso de punteros en el DTO,
+// garantizando que solo los campos enviados en el JSON sean alterados en la base de datos.
 func (s *PsiService) UpdatePsiByAdmin(
 	ctx context.Context,
 	admin *domain.UserAdmin,
@@ -170,18 +174,6 @@ func (s *PsiService) UpdatePsiByAdmin(
 		return t
 	}
 
-	// fmt.Printf("DEBUG MunicipalityCarabobo: %v\n", *req.MunicipalityCarabobo)
-	// fmt.Printf("DEBUG StateOutside: %v\n", *req.StateOutside)
-	if req.StateOutside != nil {
-		fmt.Printf("DEBUG StateOutside value: %q\n", *req.StateOutside)
-		estado, ok := utils.NormalizeEstadoVenezuela(*req.StateOutside)
-		fmt.Printf("DEBUG NormalizeEstadoVenezuela result: %q, ok: %v\n", estado, ok)
-		if !ok {
-			return fmt.Errorf("estado venezolano inválido o no permitido: %q", *req.StateOutside)
-		}
-		psi.StateOutside = estado
-	}
-
 	var uploadedS3Keys []string
 	var oldS3KeysToDelete []string
 
@@ -207,19 +199,7 @@ func (s *PsiService) UpdatePsiByAdmin(
 
 	// 4. MAPEO DE TABLA PRINCIPAL (PsiUserModel)
 
-	// 4a. Identidad y Filiación (solo admin)
-	if req.FirstName != nil {
-		psi.FirstName = *req.FirstName
-	}
-	if req.SecondName != nil {
-		psi.SecondName = *req.SecondName
-	}
-	if req.LastName != nil {
-		psi.LastName = *req.LastName
-	}
-	if req.SecondLastName != nil {
-		psi.SecondLastName = *req.SecondLastName
-	}
+	// 4a. Credenciales de acceso
 	if req.Email != nil {
 		validate_email, err := utils.ParseAndValidateEmail(*req.Email)
 		if err != nil {
@@ -239,11 +219,28 @@ func (s *PsiService) UpdatePsiByAdmin(
 		}
 		psi.Username = validate_username
 	}
-	if req.CI != nil {
-		psi.CI = *req.CI
+
+	// 4b. Identidad legal
+	if req.FirstName != nil {
+		psi.FirstName = *req.FirstName
+	}
+	if req.SecondName != nil {
+		psi.SecondName = *req.SecondName
+	}
+	if req.LastName != nil {
+		psi.LastName = *req.LastName
+	}
+	if req.SecondLastName != nil {
+		psi.SecondLastName = *req.SecondLastName
 	}
 	if req.FPV != nil {
 		psi.FPV = *req.FPV
+	}
+	if req.CI != nil {
+		psi.CI = *req.CI
+	}
+	if req.BornDate != nil {
+		psi.BornDate = parseDate(req.BornDate)
 	}
 	if req.Genre != nil {
 		psi.Genre = *req.Genre
@@ -251,11 +248,8 @@ func (s *PsiService) UpdatePsiByAdmin(
 	if req.Nationality != nil {
 		psi.Nationality = *req.Nationality
 	}
-	if req.BornDate != nil {
-		psi.BornDate = parseDate(req.BornDate)
-	}
 
-	// 4b. Estatus Administrativo (solo admin)
+	// 4c. Estado gremial
 	if req.Solvent != nil {
 		psi.Solvent = *req.Solvent
 	}
@@ -266,7 +260,15 @@ func (s *PsiService) UpdatePsiByAdmin(
 		psi.IsActive = *req.IsActive
 	}
 
-	// 4c. Contacto y Privacidad
+	// 4d. Contacto interno del gremio
+	if req.ContactPhone != nil {
+		psi.ContactPhone = *req.ContactPhone
+	}
+	if req.ContactCellPhone != nil {
+		psi.ContactCellPhone = *req.ContactCellPhone
+	}
+
+	// 4e. Contacto público y privacidad
 	if req.ContactEmail != nil {
 		validate_email, err := utils.ParseAndValidateEmail(*req.ContactEmail)
 		if err != nil {
@@ -274,94 +276,117 @@ func (s *PsiService) UpdatePsiByAdmin(
 		}
 		psi.ContactEmail = validate_email
 	}
-
 	if v := req.ShowContactEmail(); v != nil {
 		psi.ShowContactEmail = *v
 	}
-	if v := req.ShowPublicPhone(); v != nil {
-		psi.ShowPhoneCarabobo = *v
-	}
-	if v := req.ShowCelPhoneCarabobo; v != nil {
-		psi.ShowCelPhoneCarabobo = *v
+	if req.ServiceAddress != nil {
+		psi.ServiceAddress = *req.ServiceAddress
 	}
 	if v := req.ShowPublicServiceAddress(); v != nil {
 		psi.ShowPublicServiceAddress = *v
 	}
 
-	// 4d. Ubicación: Carabobo
+	// 4f. Ubicación: Carabobo
 	if req.MunicipalityCarabobo != nil {
-		mun, ok := utils.NormalizeMunicipioCarabobo(*req.MunicipalityCarabobo)
-		if !ok {
-			return fmt.Errorf("municipio de Carabobo inválido: %q", *req.MunicipalityCarabobo)
+		val := strings.TrimSpace(*req.MunicipalityCarabobo)
+		if val == "" {
+			psi.MunicipalityCarabobo = "" // Si el admin lo borra, se limpia en la DB
+		} else {
+			mun, ok := utils.NormalizeMunicipioCarabobo(val)
+			if !ok {
+				return fmt.Errorf("municipio de Carabobo inválido: %q", val)
+			}
+			psi.MunicipalityCarabobo = mun
 		}
-		psi.MunicipalityCarabobo = mun
 	}
-	if req.ServiceAddress != nil {
-		psi.ServiceAddress = *req.ServiceAddress
+
+	if v := req.ShowMunicipalityCarabobo(); v != nil {
+		psi.ShowMunicipalityCarabobo = *v
 	}
 	if req.PhoneCarabobo != nil {
 		psi.PhoneCarabobo = *req.PhoneCarabobo
 	}
+	if v := req.ShowPhoneCarabobo(); v != nil {
+		psi.ShowPhoneCarabobo = *v
+	}
 	if req.CellPhoneCarabobo != nil {
 		psi.CelPhoneCarabobo = *req.CellPhoneCarabobo
 	}
+	if v := req.ShowCelPhoneCarabobo(); v != nil {
+		psi.ShowCelPhoneCarabobo = *v
+	}
 
-	// 4e. Ubicación: Fuera de Carabobo (Venezuela)
+	// 4g. Ubicación: Fuera de Carabobo (Venezuela)
 	if req.StateOutside != nil {
-		estado, ok := utils.NormalizeEstadoVenezuela(*req.StateOutside)
-		if !ok {
-			return fmt.Errorf("estado venezolano inválido o no permitido: %q", *req.StateOutside)
+		val := strings.TrimSpace(*req.StateOutside)
+		if val == "" {
+			psi.StateOutside = "" // Si el admin lo borra, se limpia
+		} else {
+			estado, ok := utils.NormalizeEstadoVenezuela(val)
+			if !ok {
+				// Este es el error que te estaba saliendo
+				return fmt.Errorf("estado venezolano inválido o no permitido: %q", val)
+			}
+			psi.StateOutside = estado
 		}
-		psi.StateOutside = estado
+	}
+	if v := req.ShowStateOutside(); v != nil {
+		psi.ShowStateOutside = *v
 	}
 	if req.MunicipalityOutSideCarabobo != nil {
 		psi.MunicipalityOutSideCarabobo = *req.MunicipalityOutSideCarabobo
 	}
+	if v := req.ShowMunicipalityOutSideCarabobo(); v != nil {
+		psi.ShowMunicipalityOutSideCarabobo = *v
+	}
 	if req.PhoneOutSideCarabobo != nil {
 		psi.PhoneOutSideCarabobo = *req.PhoneOutSideCarabobo
-	}
-	if req.CelPhoneOutSideCarabobo != nil {
-		psi.CelPhoneOutSideCarabobo = *req.CelPhoneOutSideCarabobo
-	}
-	if req.ServiceAddressOutSideCarabobo != nil {
-		psi.ServiceAddressOutSideCarabobo = *req.ServiceAddressOutSideCarabobo
 	}
 	if v := req.ShowPhoneOutSideCarabobo(); v != nil {
 		psi.ShowPhoneOutSideCarabobo = *v
 	}
+	if req.CelPhoneOutSideCarabobo != nil {
+		psi.CelPhoneOutSideCarabobo = *req.CelPhoneOutSideCarabobo
+	}
 	if v := req.ShowCellPhoneOutSideCarabobo(); v != nil {
 		psi.ShowCellPhoneOutSideCarabobo = *v
+	}
+	if req.ServiceAddressOutSideCarabobo != nil {
+		psi.ServiceAddressOutSideCarabobo = *req.ServiceAddressOutSideCarabobo
 	}
 	if v := req.ShowPublicServiceAddressOutSideCarabobo(); v != nil {
 		psi.ShowPublicServiceAddressOutSideCarabobo = *v
 	}
 
-	// 4f. Ubicación: Fuera de Venezuela
+	// 4h. Ubicación: Fuera de Venezuela
 	if req.Country != nil {
 		psi.Country = *req.Country
 	}
 	if req.PhoneOutSideVenezuela != nil {
 		psi.PhoneOutSideVenezuela = *req.PhoneOutSideVenezuela
 	}
-	if req.ServiceAddressOutSideVenezuela != nil {
-		psi.ServiceAddressOutSideVenezuela = *req.ServiceAddressOutSideVenezuela
-	}
 	if v := req.ShowPhoneOutSideVenezuela(); v != nil {
 		psi.ShowPhoneOutSideVenezuela = *v
 	}
+	if req.CellPhoneOutSideVenezuela != nil {
+		psi.CellPhoneOutSideVenezuela = *req.CellPhoneOutSideVenezuela
+	}
 	if v := req.ShowCellPhoneOutSideVenezuela(); v != nil {
 		psi.ShowCellPhoneOutSideVenezuela = *v
+	}
+	if req.ServiceAddressOutSideVenezuela != nil {
+		psi.ServiceAddressOutSideVenezuela = *req.ServiceAddressOutSideVenezuela
 	}
 	if v := req.ShowPublicServiceAddressOutSideVenezuela(); v != nil {
 		psi.ShowPublicServiceAddressOutSideVenezuela = *v
 	}
 
-	// 4g. Perfil Profesional
+	// 4i. Perfil Profesional
 	if req.PrimaryWorkArea != nil {
 		psi.PrimaryWorkArea = *req.PrimaryWorkArea
 	}
-	if req.PrimaryWorkArea != nil {
-		psi.PrimaryWorkArea = *req.PrimaryWorkArea
+	if req.SecondaryWorkArea != nil {
+		psi.SecondaryWorkArea = *req.SecondaryWorkArea
 	}
 	if req.MiniBio != nil {
 		runes := []rune(*req.MiniBio)
@@ -372,7 +397,7 @@ func (s *PsiService) UpdatePsiByAdmin(
 		}
 	}
 
-	// 4h. Biografía extensa (sanitización XSS)
+	// 4j. Biografía extensa (sanitización XSS)
 	var bioTextToUpdate *domain.TextModel
 	if req.FullBio != nil {
 		cleanHTML := s.sanitizer.Sanitize(*req.FullBio)
@@ -394,89 +419,81 @@ func (s *PsiService) UpdatePsiByAdmin(
 		bioTextToUpdate = &psi.FullBio
 	}
 
-	// 4i. Procesamiento de Solvencias (evitar duplicados)
-	// --- PROCESAMIENTO DE SOLVENCIAS ---
+	// 4k. Procesamiento de Solvencias (Decodificando el JSON string)
 	var solvenciesToCreate []domain.PsiUSerSolvency
 	currentYear := time.Now().Year()
 
-	if req.Solvencies != nil && len(*req.Solvencies) > 0 {
-		// 1. Obtener solvencias actuales para comparar por fecha y evitar duplicados
-		currentSolvencies, err := s.repo.GetSolvencies(ctx, psi.ID)
-		if err != nil {
-			return fmt.Errorf("error al obtener historial de solvencias: %w", err)
+	if req.SolvenciesRaw != "" {
+		// 1. Decodificar el string JSON a un slice de structs
+		var incomingSolvencies []request_structs.SolvenciesUpdate
+		if err := json.Unmarshal([]byte(req.SolvenciesRaw), &incomingSolvencies); err != nil {
+			fmt.Printf("❌ Error al decodificar solvencias JSON: %v\n", err)
+			// Podrías retornar error aquí o simplemente loguear y continuar
 		}
 
-		// Mapa de fechas existentes (formato YYYY-MM-DD) para búsqueda O(1)
-		existingDates := make(map[string]bool)
-		for _, s := range currentSolvencies {
-			existingDates[s.Date.Format("2006-01-02")] = true
-		}
-
-		for _, incoming := range *req.Solvencies {
-			// Ignorar entradas sin fecha
-			if incoming.Date == "" {
-				fmt.Printf("⚠️ Error: Fecha de solvencia vacía en request (ID: %v)\n", incoming.ID)
-				continue
-			}
-
-			// Intentar parsear la fecha (RFC3339 es el estándar de JS/JSON)
-			t, err := time.Parse(time.RFC3339, incoming.Date)
+		if len(incomingSolvencies) > 0 {
+			// 2. Obtener solvencias actuales para evitar duplicados
+			currentSolvencies, err := s.repo.GetSolvencies(ctx, psi.ID)
 			if err != nil {
-				// Fallback a formato simple YYYY-MM-DD
-				t, err = time.Parse("2006-01-02", incoming.Date)
+				return fmt.Errorf("error al obtener historial de solvencias: %w", err)
 			}
 
-			if err != nil {
-				fmt.Printf("❌ Error al parsear fecha '%s': %v\n", incoming.Date, err)
-				continue
+			existingDates := make(map[string]bool)
+			for _, s := range currentSolvencies {
+				existingDates[s.Date.Format("2006-01-02")] = true
 			}
 
-			dateKey := t.Format("2006-01-02")
-
-			// 2. Solo añadir si NO existe ya en la DB
-			if !existingDates[dateKey] {
-				// Construcción del modelo para la base de datos
-				newSolvency := domain.PsiUSerSolvency{
-					ID:             uuid.New(),
-					PsiUserModelID: psi.ID,
-					Date:           t,
-					AuditModel: domain.AuditModel{
-						CreateBy:   admin.Username,
-						CreateById: &admin.ID,
-						UpdateBy:   admin.Username,
-						UpdateById: &admin.ID,
-					},
+			for _, incoming := range incomingSolvencies {
+				if incoming.Date == "" {
+					continue
 				}
 
-				// ASIGNACIÓN CRÍTICA: Guardamos en el slice que irá al repo
-				solvenciesToCreate = append(solvenciesToCreate, newSolvency)
-
-				// Marcamos como registrada para evitar duplicados en el mismo request
-				existingDates[dateKey] = true
-
-				// si la solvencia es del anno en curso, se activa al usuario
-				receivedYear := newSolvency.Date.Year()
-
-				if currentYear == receivedYear {
-					psi.Solvent = true
+				// Intentar parsear la fecha
+				t, err := time.Parse(time.RFC3339, incoming.Date)
+				if err != nil {
+					t, err = time.Parse("2006-01-02", incoming.Date)
+				}
+				if err != nil {
+					continue
 				}
 
-				if newSolvency.Date.After(psi.ColData.DateOfLastSolvency) {
-					s := newSolvency.Date.Format("2006-01-02")
-					req.DateOfLastSolvency = &s
-				}
+				dateKey := t.Format("2006-01-02")
 
-				fmt.Printf("✅ Preparada y añadida al slice: %s\n", dateKey)
-			} else {
-				fmt.Printf("ℹ️ Solvencia para %s ya existe en DB, omitiendo...\n", dateKey)
+				// 3. Solo añadir si NO existe ya en la DB
+				if !existingDates[dateKey] {
+					newSolvency := domain.PsiUSerSolvency{
+						ID:             uuid.New(),
+						PsiUserModelID: psi.ID,
+						Date:           t,
+						AuditModel: domain.AuditModel{
+							CreateBy:   admin.Username,
+							CreateById: &admin.ID,
+							UpdateBy:   admin.Username,
+							UpdateById: &admin.ID,
+						},
+					}
+					solvenciesToCreate = append(solvenciesToCreate, newSolvency)
+					existingDates[dateKey] = true
+
+					// Actualizar estado de solvencia si es del año actual
+					if t.Year() == currentYear {
+						psi.Solvent = true
+					}
+
+					// Actualizar fecha de última solvencia en ColData si es más reciente
+					if t.After(psi.ColData.DateOfLastSolvency) {
+						fechaStr := t.Format("2006-01-02")
+						req.DateOfLastSolvency = &fechaStr
+					}
+				}
 			}
 		}
 	}
-
 	// 5. MAPEO DE TABLA RELACIONADA (PsiUserColData)
 	hasColDataChanges := req.ShowUniversityUndergraduateRaw != "" ||
 		req.ShowGraduateDateRaw != "" ||
 		req.ShowMentionUndergraduateRaw != "" ||
+		req.GuildInscriptionDate != nil ||
 		req.UniversityUndergraduate != nil ||
 		req.GraduateDate != nil ||
 		req.MentionUndergraduate != nil ||
@@ -489,8 +506,10 @@ func (s *PsiService) UpdatePsiByAdmin(
 		req.SixtyFiveOrPlus != nil ||
 		req.GuildCollaborator != nil ||
 		req.PublicEmployee != nil ||
+		req.Discapacity != nil ||
 		req.UniversityProfessor != nil ||
 		req.DoubleGuild != nil ||
+		req.DoubleGuildLocation != nil ||
 		req.CPSM != nil ||
 		req.DateOfLastSolvency != nil ||
 		titleImgOne != nil || titleImgTwo != nil || titleImgThree != nil
@@ -511,6 +530,11 @@ func (s *PsiService) UpdatePsiByAdmin(
 		}
 		if v := req.ShowMentionUndergraduate(); v != nil {
 			currentColData.ShowMentionUndergraduate = *v
+		}
+
+		// Fecha de inscripción gremial
+		if req.GuildInscriptionDate != nil {
+			currentColData.GuildInscriptionDate = parseDate(req.GuildInscriptionDate)
 		}
 
 		// Datos académicos (solo admin)
@@ -554,11 +578,17 @@ func (s *PsiService) UpdatePsiByAdmin(
 		if req.PublicEmployee != nil {
 			currentColData.PublicEmployee = *req.PublicEmployee
 		}
+		if req.Discapacity != nil {
+			currentColData.Discapacity = *req.Discapacity
+		}
 		if req.UniversityProfessor != nil {
 			currentColData.UniversityProfessor = *req.UniversityProfessor
 		}
 		if req.DoubleGuild != nil {
 			currentColData.DoubleGuild = *req.DoubleGuild
+		}
+		if req.DoubleGuildLocation != nil {
+			currentColData.DoubleGuildLocation = *req.DoubleGuildLocation
 		}
 		if req.CPSM != nil {
 			currentColData.CPSM = *req.CPSM
