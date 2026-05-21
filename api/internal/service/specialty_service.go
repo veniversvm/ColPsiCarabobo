@@ -63,7 +63,7 @@ func (s *SpecialtyService) Update(ctx context.Context, admin *domain.UserAdmin, 
 		return errors.New("no tienes permiso para editar especialidades")
 	}
 
-	spec, err := s.repo.GetByID(ctx, id)
+	spec, err := s.repo.GetByID(ctx, id, false)
 	if err != nil {
 		return err
 	}
@@ -131,7 +131,7 @@ func (s *SpecialtyService) GetByID(ctx context.Context, id uint32) (*domain.PsiS
 	if id < 1 {
 		return nil, errors.New("ID de especialidad inválido")
 	}
-	return s.repo.GetByID(ctx, id)
+	return s.repo.GetByID(ctx, id, false)
 }
 
 // GetAllAdmin es un método de conveniencia para obtener el catálogo completo bypassando filtros.

@@ -74,11 +74,11 @@ func TestSpecialtyRepo_ComprehensiveSuite(t *testing.T) {
 		// Esto ignora cualquier regla de default que GORM intente aplicar.
 		tx.Model(&inactiveSpec).UpdateColumn("active", false)
 
-		found, err := r.GetByID(ctx, activeSpec.ID)
+		found, err := r.GetByID(ctx, activeSpec.ID, true)
 		require.NoError(t, err)
 		require.Equal(t, "Forense", found.Name)
 
-		_, err = r.GetByID(ctx, inactiveSpec.ID)
+		_, err = r.GetByID(ctx, inactiveSpec.ID, true)
 		require.Error(t, err)
 		require.True(t, errors.Is(err, gorm.ErrRecordNotFound), "No debe encontrar inactivas")
 	})
@@ -150,7 +150,7 @@ func TestSpecialtyRepo_ComprehensiveSuite(t *testing.T) {
 		err = r.Delete(ctx, spec.ID)
 		require.NoError(t, err)
 
-		_, err = r.GetByID(ctx, spec.ID)
+		_, err = r.GetByID(ctx, spec.ID, true)
 		require.Error(t, err, "Debe estar inactiva y no encontrarse")
 
 		adminList, err := r.GetAllAdmin(ctx)
