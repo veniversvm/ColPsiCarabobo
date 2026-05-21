@@ -503,26 +503,35 @@ func (r *psiRepo) SearchDirectory(ctx context.Context, filter request_structs.Ps
 	var users []domain.PsiUserModel
 	var total int64
 
-	// 1. Base de la consulta: Solo activos y solventes (Regla del directorio público)
+	// 1. Base: Siempre ACTIVOS
 	query := r.db.WithContext(ctx).Model(&domain.PsiUserModel{}).
 		Select("id, first_name, last_name, ci, fpv, profile_picture_s3_key, mini_bio, solvent, primary_work_area, secondary_work_area").
-		Where("is_active = ? AND solvent = ?", true, true)
+		Where("is_active = ?", true)
 
-	// 2. Filtro por Identidad (Nombre, Apellido, CI, FPV)
-	// Quitamos el 'else' para que sea aditivo
+	// 2. Lógica de Búsqueda por Identidad
 	if filter.SearchTerm != "" {
-		term := "%" + strings.TrimSpace(filter.SearchTerm) + "%"
+		// Dividimos la búsqueda en palabras (tokens). Ej: "Francisco Hernandez" -> ["Francisco", "Hernandez"]
+		words := strings.Fields(strings.TrimSpace(filter.SearchTerm))
 
-		// Usamos una función anónima para agrupar los OR entre paréntesis en el SQL
-		query = query.Where(r.db.Where("unaccent(first_name) ILIKE unaccent(?)", term).
-			Or("unaccent(last_name) ILIKE unaccent(?)", term).
-			Or("unaccent(first_name || ' ' || last_name) ILIKE unaccent(?)", term).
-			Or("unaccent(last_name || ' ' || first_name) ILIKE unaccent(?)", term).
-			Or("CAST(ci AS TEXT) LIKE ?", term).
-			Or("CAST(fpv AS TEXT) LIKE ?", term))
+		for _, word := range words {
+			w := "%" + word + "%"
+			// Definimos el bloque de nombre completo para comparar contra cada palabra
+			concatName := "unaccent(COALESCE(first_name, '') || ' ' || COALESCE(second_name, '') || ' ' || COALESCE(last_name, '') || ' ' || COALESCE(second_last_name, ''))"
+
+			// Aplicamos un WHERE por cada palabra (AND lógico entre palabras)
+			// Esto obliga a que CADA palabra buscada aparezca en algún lugar del nombre, CI o FPV
+			query = query.Where(
+				r.db.Where(concatName+" ILIKE unaccent(?)", w).
+					Or("CAST(ci AS TEXT) LIKE ?", w).
+					Or("CAST(fpv AS TEXT) LIKE ?", w),
+			)
+		}
+	} else {
+		// Si no hay búsqueda de texto, solo mostramos los SOLVENTES (Navegación general)
+		query = query.Where("solvent = ?", true)
 	}
 
-	// 3. Filtro por Área de Desempeño
+	// 3. Filtro por Área de Desempeño (Especialidad)
 	if filter.SpecialtyID > 0 {
 		var specName string
 		r.db.Model(&domain.PsiSpecialtyModel{}).Select("name").Where("id = ?", filter.SpecialtyID).Scan(&specName)
@@ -531,32 +540,26 @@ func (r *psiRepo) SearchDirectory(ctx context.Context, filter request_structs.Ps
 		}
 	}
 
-	// 4. Filtro de Ubicación (Ciudad/Estado/País)
+	// 4. Filtro de Ubicación (Respetando Privacidad)
 	if filter.Location != "" {
 		loc := "%" + strings.TrimSpace(filter.Location) + "%"
-
-		// Agrupamos la lógica de ubicación para que respete la privacidad
-		query = query.Where(r.db.Where(
+		query = query.Where(
 			r.db.Where("unaccent(municipality_carabobo) ILIKE unaccent(?) AND show_municipality_carabobo = ?", loc, true).
 				Or("unaccent(state_outside) ILIKE unaccent(?) AND show_state_outside = ?", loc, true).
 				Or("unaccent(municipality_out_side_carabobo) ILIKE unaccent(?) AND show_municipality_out_side_carabobo = ?", loc, true).
-				Or("unaccent(country) ILIKE unaccent(?)", loc), // País siempre es visible según tu modelo
-		))
+				Or("unaccent(country) ILIKE unaccent(?)", loc),
+		)
 	}
 
-	// 5. Filtro de Género
-	if filter.Gender != "" {
-		query = query.Where("genre = ?", filter.Gender)
-	}
-
-	// Ejecutar conteo de totales
+	// 5. Conteo y Ejecución
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	// Paginación y Orden
 	offset := (filter.Page - 1) * filter.Limit
-	err := query.Order("profile_picture_s3_key DESC, last_name ASC").
+
+	// Orden: Solventes primero, luego fotos, luego apellido
+	err := query.Order("solvent DESC, profile_picture_s3_key DESC, last_name ASC").
 		Limit(filter.Limit).
 		Offset(offset).
 		Find(&users).Error

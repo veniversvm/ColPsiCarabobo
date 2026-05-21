@@ -18,7 +18,7 @@ export default function AdminLayout(props: { children: JSX.Element }) {
   const menuItems = [
     { title: "Dashboard", path: "/admin", icon: "📊" },
     { title: "Psicólogos", path: "/admin/psicologos", icon: "👥" },
-    { title: "Especialidades", path: "/admin/especialidades", icon: "🔖" },
+    { title: "Areas de Ejercicio Psi", path: "/admin/areas_de_ejercicio_profesional", icon: "🔖" },
     { title: "Noticias", path: "/admin/noticias", icon: "📰" },
     { title: "Staff", path: "/admin/staff", icon: "🛡️" },
   ];

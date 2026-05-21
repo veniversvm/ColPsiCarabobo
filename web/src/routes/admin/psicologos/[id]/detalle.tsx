@@ -158,8 +158,8 @@ export default function AdminEditPsiPage() {
       phone_outside_carabobo: p.phone_outside_carabobo ?? "",
       show_phone_outside_carabobo: p.show_phone_outside_carabobo ?? false,
       cel_phone_outside_carabobo: p.cel_phone_outside_carabobo ?? "",
-      show_cell_phone_outside_carabobo:
-        p.show_cell_phone_outside_carabobo ?? false,
+      show_cel_phone_outside_carabobo:
+        p.show_cel_phone_outside_carabobo ?? false,
       service_address_outside_carabobo:
         p.service_address_outside_carabobo ?? "",
       show_public_service_address_outside_carabobo:
