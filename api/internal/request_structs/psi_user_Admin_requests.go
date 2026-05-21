@@ -44,10 +44,11 @@ type CreatePsiAdminRequest struct {
 	ProofOfLife bool `json:"proof_of_life"`
 	IsActive    bool `json:"is_active"`
 
-	// ── Contacto Público ──────────────────────────────────────────────────
-	ContactEmail   string `json:"contact_email"`
-	PublicPhone    string `json:"public_phone"`
-	ServiceAddress string `json:"service_address"`
+	// ── Contacto Gremial y Público ────────────────────────────────────────
+	ContactEmail     string `json:"contact_email"`
+	ContactPhone     string `json:"contact_phone"`      // Reemplaza a public_phone
+	ContactCellPhone string `json:"contact_cell_phone"` // Nuevo
+	ServiceAddress   string `json:"service_address"`
 
 	// ── Ubicación: Carabobo ───────────────────────────────────────────────
 	// Para miembros con consulta o residencia dentro del estado.
@@ -69,15 +70,17 @@ type CreatePsiAdminRequest struct {
 	// Para miembros en el exterior. Country debe usar código ISO 3166-1 alpha-2.
 	Country                        string `json:"country"`
 	PhoneOutSideVenezuela          string `json:"phone_outside_venezuela"`
+	CellPhoneOutSideVenezuela      string `json:"cell_phone_outside_venezuela"` // Nuevo
 	ServiceAddressOutSideVenezuela string `json:"service_address_outside_venezuela"`
 
 	// ── Perfil Profesional ────────────────────────────────────────────────
-	// Las especialidades deben corresponder a entradas activas en PsiSpecialtyModel.
+	// Las áreas de trabajo deben corresponder a entradas activas en el catálogo (WorkArea).
 	// La biografía (MiniBio/FullBio) se delega al psicólogo para su autogestión.
-	PrimarySpecialty   string `json:"primary_specialty"`
-	SecondarySpecialty string `json:"secondary_specialty"`
+	PrimaryWorkArea   string `json:"primary_work_area"`   // Reemplaza a primary_specialty
+	SecondaryWorkArea string `json:"secondary_work_area"` // Reemplaza a secondary_specialty
 
-	// ── Datos Colegiales: Pregrado ────────────────────────────────────────
+	// ── Datos Colegiales: Pregrado e Inscripción ──────────────────────────
+	GuildInscriptionDate    string `json:"guild_inscription_date"` // Nuevo
 	UniversityUndergraduate string `json:"university_undergraduate"`
 	GraduateDate            string `json:"graduate_date"`
 	MentionUndergraduate    string `json:"mention_undergraduate"`
@@ -94,12 +97,14 @@ type CreatePsiAdminRequest struct {
 	SixtyFiveOrPlus     bool `json:"sixty_five_or_plus"`   // Mayor de 65 años (tarifa diferenciada)
 	GuildCollaborator   bool `json:"guild_collaborator"`   // Colaborador activo del Colegio
 	PublicEmployee      bool `json:"public_employee"`      // Empleado público
+	Discapacity         bool `json:"discapacity"`          // Nuevo: Posee alguna discapacidad
 	UniversityProfessor bool `json:"university_professor"` // Docente universitario
 
 	// ── Datos Colegiales: Historial Gremial ──────────────────────────────
-	DateOfLastSolvency string `json:"date_of_last_solvency"` // Última cuota saldada
-	DoubleGuild        bool   `json:"double_guild"`          // Colegiado en más de un estado
-	CPSM               bool   `json:"cpsm"`                  // Miembro del Colegio de Psicólogos de Miranda
+	DateOfLastSolvency  string `json:"date_of_last_solvency"` // Última cuota saldada
+	DoubleGuild         bool   `json:"double_guild"`          // Colegiado en más de un estado
+	DoubleGuildLocation string `json:"double_guild_location"` // Nuevo: Dónde tiene la doble colegiatura
+	CPSM                bool   `json:"cpsm"`                  // Miembro del Colegio de Psicólogos de Miranda
 }
 
 // UpdatePsiAdminRequest permite al administrador modificar CUALQUIER campo del psicólogo.
@@ -107,123 +112,144 @@ type CreatePsiAdminRequest struct {
 // Esto implementa la semántica PATCH real: si un campo no se envía en el JSON (es nil),
 // el servicio sabe que NO debe actualizarlo en la base de datos.
 type UpdatePsiAdminRequest struct {
-	ID uuid.UUID `json:"id" validate:"required"`
+	ID uuid.UUID `json:"id" form:"id" validate:"required"`
 
-	// --- Identidad y Filiación ---
-	FirstName      *string `json:"first_name"`
-	SecondName     *string `json:"second_name"`
-	LastName       *string `json:"last_name"`
-	SecondLastName *string `json:"second_last_name"`
-	Username       *string `json:"username"`
-	Email          *string `json:"email"`
-	FPV            *int    `json:"fpv"`
-	CI             *int    `json:"ci"`
-	BornDate       *string `json:"born_date" example:"1990-01-01"`
-	Genre          *string `json:"genre"`
-	Nationality    *string `json:"nationality"`
+	// ── Credenciales de acceso ────────────────────────────────────────────
+	Username *string `json:"username" form:"username"`
+	Email    *string `json:"email" form:"email"`
 
-	// --- Estatus Administrativo ---
-	Solvent     *bool               `json:"solvent"`
-	Solvencies  *[]SolvenciesUpdate `json:"solvencies"`
-	ProofOfLife *bool               `json:"proof_of_life"`
-	IsActive    *bool               `json:"is_active"`
+	// ── Identidad legal ───────────────────────────────────────────────────
+	FirstName      *string `json:"first_name" form:"first_name"`
+	SecondName     *string `json:"second_name" form:"second_name"`
+	LastName       *string `json:"last_name" form:"last_name"`
+	SecondLastName *string `json:"second_last_name" form:"second_last_name"`
+	FPV            *int    `json:"fpv" form:"fpv"`
+	CI             *int    `json:"ci" form:"ci"`
+	BornDate       *string `json:"born_date" form:"born_date"`
+	Genre          *string `json:"genre" form:"genre"`
+	Nationality    *string `json:"nationality" form:"nationality"`
 
-	// --- Datos de Contacto y Visibilidad ---
-	ContactEmail   *string `json:"contact_email"`
-	PublicPhone    *string `json:"public_phone"`
-	ServiceAddress *string `json:"service_address"`
+	// ── Estado gremial y multimedia ───────────────────────────────────────
+	Solvent       *bool  `json:"solvent" form:"solvent"`
+	ProofOfLife   *bool  `json:"proof_of_life" form:"proof_of_life"`
+	IsActive      *bool  `json:"is_active" form:"is_active"`
+	SolvenciesRaw string `json:"solvencies" form:"solvencies"`
 
-	ShowContactEmailRaw         string `json:"show_contact_email"`
-	ShowPublicPhoneRaw          string `json:"show_public_phone"`
-	ShowPublicServiceAddressRaw string `json:"show_public_service_address"` // ← fix: form → json
+	// ── Contacto interno del gremio ────────────────────────────────────
+	ContactPhone     *string `json:"contact_phone" form:"contact_phone"`
+	ContactCellPhone *string `json:"contact_cell_phone" form:"contact_cell_phone"`
 
-	// --- Ubicación: Carabobo ---
-	MunicipalityCarabobo *string `json:"municipality_carabobo"`
-	PhoneCarabobo        *string `json:"phone_carabobo"`
-	CelPhoneCarabobo     *string `json:"cel_phone_carabobo"`
+	// ── Contacto público y privacidad ────────────────────────────────────
+	ContactEmail                *string `json:"contact_email" form:"contact_email"`
+	ShowContactEmailRaw         string  `json:"show_contact_email" form:"show_contact_email"`
+	ServiceAddress              *string `json:"service_address" form:"service_address"`
+	ShowPublicServiceAddressRaw string  `json:"show_public_service_address" form:"show_public_service_address"`
 
-	// --- Ubicación: Fuera de Carabobo (Venezuela) ---
-	StateOutside                  *string `json:"state_outside"`
-	MunicipalityOutSideCarabobo   *string `json:"municipality_outside_carabobo"`
-	PhoneOutSideCarabobo          *string `json:"phone_outside_carabobo"`
-	CelPhoneOutSideCarabobo       *string `json:"cel_phone_outside_carabobo"`
-	ServiceAddressOutSideCarabobo *string `json:"service_address_outside_carabobo"`
+	// ── Ubicación: Carabobo ───────────────────────────────────────────────
+	MunicipalityCarabobo        *string `json:"municipality_carabobo" form:"municipality_carabobo"`
+	ShowMunicipalityCaraboboRaw string  `json:"show_municipality_carabobo" form:"show_municipality_carabobo"`
+	PhoneCarabobo               *string `json:"phone_carabobo" form:"phone_carabobo"`
+	ShowPhoneCaraboboRaw        string  `json:"show_phone_carabobo" `
+	CellPhoneCarabobo           *string `json:"cell_phone_carabobo" form:"cell_phone_carabobo"`
+	ShowCelPhoneCaraboboRaw     string  `json:"show_cel_phone_carabobo" form:"show_cel_phone_carabobo"`
 
-	ShowPhoneOutSideCaraboboRaw          string `json:"show_phone_outside_carabobo"`
-	ShowCellPhoneOutSideCaraboboRaw      string `json:"show_cel_phone_outside_carabobo"`
-	ShowServiceAddressOutSideCaraboboRaw string `json:"show_public_service_address_outside_carabobo"`
+	// ── Ubicación: Fuera de Carabobo (Venezuela) ─────────────────────────
+	StateOutside                               *string `json:"state_outside" form:"state_outside"`
+	ShowStateOutsideRaw                        string  `json:"show_state_outside" form:"show_state_outside"`
+	MunicipalityOutSideCarabobo                *string `json:"municipality_outside_carabobo" form:"municipality_outside_carabobo"`
+	ShowMunicipalityOutSideCaraboboRaw         string  `json:"show_municipality_outside_carabobo" form:"show_municipality_outside_carabobo"`
+	PhoneOutSideCarabobo                       *string `json:"phone_outside_carabobo" form:"phone_outside_carabobo"`
+	ShowPhoneOutSideCaraboboRaw                string  `json:"show_phone_outside_carabobo" form:"show_phone_outside_carabobo"`
+	CelPhoneOutSideCarabobo                    *string `json:"cel_phone_outside_carabobo" form:"cel_phone_outside_carabobo"`
+	ShowCellPhoneOutSideCaraboboRaw            string  `json:"show_cel_phone_outside_carabobo" form:"show_cel_phone_outside_carabobo"`
+	ServiceAddressOutSideCarabobo              *string `json:"service_address_outside_carabobo" form:"service_address_outside_carabobo"`
+	ShowPublicServiceAddressOutSideCaraboboRaw string  `json:"show_public_service_address_outside_carabobo" form:"show_public_service_address_outside_carabobo"`
 
-	// --- Ubicación: Fuera de Venezuela ---
-	Country                        *string `json:"country"`
-	PhoneOutSideVenezuela          *string `json:"phone_outside_venezuela"`
-	ServiceAddressOutSideVenezuela *string `json:"service_address_outside_venezuela"`
-
-	ShowPhoneOutSideVenezuelaRaw          string `json:"show_phone_outside_venezuela"`
-	ShowCellPhoneOutSideVenezuelaRaw      string `json:"show_cel_phone_outside_venezuela"`
-	ShowServiceAddressOutSideVenezuelaRaw string `json:"show_public_service_address_outside_venezuela"`
+	// ── Ubicación: Fuera de Venezuela ─────────────────────────────────────
+	Country                                     *string `json:"country" form:"country"`
+	PhoneOutSideVenezuela                       *string `json:"phone_outside_venezuela" form:"phone_outside_venezuela"`
+	ShowPhoneOutSideVenezuelaRaw                string  `json:"show_phone_outside_venezuela" form:"show_phone_outside_venezuela"`
+	CellPhoneOutSideVenezuela                   *string `json:"cell_phone_outside_venezuela" form:"cell_phone_outside_venezuela"`
+	ShowCellPhoneOutSideVenezuelaRaw            string  `json:"show_cell_phone_outside_venezuela" form:"show_cell_phone_outside_venezuela"`
+	ServiceAddressOutSideVenezuela              *string `json:"service_address_outside_venezuela" form:"service_address_outside_venezuela"`
+	ShowPublicServiceAddressOutSideVenezuelaRaw string  `json:"show_public_service_address_outside_venezuela" form:"show_public_service_address_outside_venezuela"`
 
 	// --- Perfil Profesional ---
-	PrimarySpecialty   *string `json:"primary_specialty"`
-	SecondarySpecialty *string `json:"secondary_specialty"`
-	MiniBio            *string `json:"mini_bio"`
-	FullBio            *string `json:"full_bio"`
+	PrimaryWorkArea   *string `json:"primary_work_area" form:"primary_work_area"`
+	SecondaryWorkArea *string `json:"secondary_work_area" form:"secondary_work_area"`
+	MiniBio           *string `json:"mini_bio" form:"mini_bio"`
+	FullBio           *string `json:"full_bio" form:"full_bio"`
 
-	// --- DATOS COLEGIALES (ColData) ---
-	UniversityUndergraduate *string `json:"university_undergraduate"`
-	GraduateDate            *string `json:"graduate_date"`
-	MentionUndergraduate    *string `json:"mention_undergraduate"`
-	RegisterNumber          *int    `json:"register_number"`
-	RegisterTitleState      *string `json:"register_title_state"`
-	RegisterTitleDate       *string `json:"register_title_date"`
-	RegisterFolio           *string `json:"register_folio"`
-	RegisterTome            *string `json:"register_tome"`
+	// ─────────────── Datos Colegiales ─────────────── //
+	// ── Registro legal del título ─────────────────────────────────────────
+	GuildInscriptionDate *string `json:"guild_inscription_date" form:"guild_inscription_date"`
+	RegisterNumber       *int    `json:"register_number" form:"register_number"`
+	RegisterTitleState   *string `json:"register_title_state" form:"register_title_state"`
+	RegisterTitleDate    *string `json:"register_title_date" form:"register_title_date"`
+	RegisterFolio        *string `json:"register_folio" form:"register_folio"`
+	RegisterTome         *string `json:"register_tome" form:"register_tome"`
 
-	ShowUniversityUndergraduateRaw string `json:"show_university_undergraduate"`
-	ShowGraduateDateRaw            string `json:"show_graduate_date"`
-	ShowMentionUndergraduateRaw    string `json:"show_mention_undergraduate"`
+	// ── Solvencia y membresías ────────────────────────────────────────────
+	DateOfLastSolvency  *string `json:"date_of_last_solvency" form:"date_of_last_solvency"`
+	DoubleGuildLocation *string `json:"double_guild_location" form:"double_guild_location"`
 
-	// --- Banderas Profesionales ---
-	GuildDirector       *bool   `json:"guild_director"`
-	SixtyFiveOrPlus     *bool   `json:"sixty_five_or_plus"`
-	GuildCollaborator   *bool   `json:"guild_collaborator"`
-	PublicEmployee      *bool   `json:"public_employee"`
-	UniversityProfessor *bool   `json:"university_professor"`
-	DateOfLastSolvency  *string `json:"date_of_last_solvency"`
-	DoubleGuild         *bool   `json:"double_guild"`
-	CPSM                *bool   `json:"cpsm"`
+	// ── Pregrado ──────────────────────────────────────────────────────────
+	UniversityUndergraduate        *string `json:"university_undergraduate" form:"university_undergraduate"`
+	ShowUniversityUndergraduateRaw string  `json:"show_university_undergraduate" form:"show_university_undergraduate"`
+	GraduateDate                   *string `json:"graduate_date"`
+	ShowGraduateDateRaw            string  `json:"show_graduate_date" form:"show_graduate_date"`
+	MentionUndergraduate           *string `json:"mention_undergraduate"`
+	ShowMentionUndergraduateRaw    string  `json:"show_mention_undergraduate" form:"show_mention_undergraduate"`
+
+	// ── Flags gremiales ───────────────────────────────────────────────────
+	// Roles y estatus especiales dentro de la estructura del Colegio.y
+	GuildDirector       *bool `json:"guild_director" form:"guild_director"`
+	SixtyFiveOrPlus     *bool `json:"sixty_five_or_plus" form:"sixty_five_or_plus"`
+	GuildCollaborator   *bool `json:"guild_collaborator" form:"guild_collaborator"`
+	PublicEmployee      *bool `json:"public_employee" form:"public_employee"`
+	Discapacity         *bool `json:"discapacity" form:"discapacity"`
+	UniversityProfessor *bool `json:"university_professor" form:"university_professor"`
+	DoubleGuild         *bool `json:"double_guild" form:"double_guild"`
+	CPSM                *bool `json:"cpsm" form:"cpsm"`
+
+	// ── CAMPOS RAW (Para capturar los booleanos del Form/JSON como string) ──
+
 }
 
-type SolvenciesUpdate struct {
-	ID             uuid.UUID `json:"id" validate:"required"`
-	PsiUserModelID uuid.UUID `json:"psi_user_model_id"`
-	Date           string    `json:"date"`
-}
-
-// ── Getters: Contacto y Visibilidad ──────────────────────────────────────────
+// ── GETTERS DE VISIBILIDAD (Sincronizados con el struct) ──
 
 func (r *UpdatePsiAdminRequest) ShowContactEmail() *bool {
 	return utils.BoolFromForm(r.ShowContactEmailRaw)
-}
-func (r *UpdatePsiAdminRequest) ShowPublicPhone() *bool {
-	return utils.BoolFromForm(r.ShowPublicPhoneRaw)
 }
 func (r *UpdatePsiAdminRequest) ShowPublicServiceAddress() *bool {
 	return utils.BoolFromForm(r.ShowPublicServiceAddressRaw)
 }
 
-// ── Getters: Fuera de Carabobo ────────────────────────────────────────────────
+func (r *UpdatePsiAdminRequest) ShowMunicipalityCarabobo() *bool {
+	return utils.BoolFromForm(r.ShowMunicipalityCaraboboRaw)
+}
+func (r *UpdatePsiAdminRequest) ShowPhoneCarabobo() *bool {
+	return utils.BoolFromForm(r.ShowPhoneCaraboboRaw)
+}
+func (r *UpdatePsiAdminRequest) ShowCelPhoneCarabobo() *bool {
+	return utils.BoolFromForm(r.ShowCelPhoneCaraboboRaw)
+}
 
+func (r *UpdatePsiAdminRequest) ShowStateOutside() *bool {
+	return utils.BoolFromForm(r.ShowStateOutsideRaw)
+}
+func (r *UpdatePsiAdminRequest) ShowMunicipalityOutSideCarabobo() *bool {
+	return utils.BoolFromForm(r.ShowMunicipalityOutSideCaraboboRaw)
+}
 func (r *UpdatePsiAdminRequest) ShowPhoneOutSideCarabobo() *bool {
 	return utils.BoolFromForm(r.ShowPhoneOutSideCaraboboRaw)
 }
 func (r *UpdatePsiAdminRequest) ShowCellPhoneOutSideCarabobo() *bool {
 	return utils.BoolFromForm(r.ShowCellPhoneOutSideCaraboboRaw)
 }
-func (r *UpdatePsiAdminRequest) ShowPublicServiceAddressOutSideCarabobo() *bool { // ← fix: quitado Raw del nombre
-	return utils.BoolFromForm(r.ShowServiceAddressOutSideCaraboboRaw)
+func (r *UpdatePsiAdminRequest) ShowPublicServiceAddressOutSideCarabobo() *bool {
+	return utils.BoolFromForm(r.ShowPublicServiceAddressOutSideCaraboboRaw)
 }
-
-// ── Getters: Fuera de Venezuela ───────────────────────────────────────────────
 
 func (r *UpdatePsiAdminRequest) ShowPhoneOutSideVenezuela() *bool {
 	return utils.BoolFromForm(r.ShowPhoneOutSideVenezuelaRaw)
@@ -231,11 +257,9 @@ func (r *UpdatePsiAdminRequest) ShowPhoneOutSideVenezuela() *bool {
 func (r *UpdatePsiAdminRequest) ShowCellPhoneOutSideVenezuela() *bool {
 	return utils.BoolFromForm(r.ShowCellPhoneOutSideVenezuelaRaw)
 }
-func (r *UpdatePsiAdminRequest) ShowPublicServiceAddressOutSideVenezuela() *bool { // ← fix: quitado Raw del nombre
-	return utils.BoolFromForm(r.ShowServiceAddressOutSideVenezuelaRaw)
+func (r *UpdatePsiAdminRequest) ShowPublicServiceAddressOutSideVenezuela() *bool {
+	return utils.BoolFromForm(r.ShowPublicServiceAddressOutSideVenezuelaRaw)
 }
-
-// ── Getters: Datos Colegiales ─────────────────────────────────────────────────
 
 func (r *UpdatePsiAdminRequest) ShowUniversityUndergraduate() *bool {
 	return utils.BoolFromForm(r.ShowUniversityUndergraduateRaw)
@@ -245,6 +269,11 @@ func (r *UpdatePsiAdminRequest) ShowGraduateDate() *bool {
 }
 func (r *UpdatePsiAdminRequest) ShowMentionUndergraduate() *bool {
 	return utils.BoolFromForm(r.ShowMentionUndergraduateRaw)
+}
+
+type SolvenciesUpdate struct {
+	ID   uuid.UUID `json:"id"`   // Opcional, por si envías solvencias existentes
+	Date string    `json:"date"` // Formato "YYYY-MM-DD" o RFC3339
 }
 
 // =========================================================================

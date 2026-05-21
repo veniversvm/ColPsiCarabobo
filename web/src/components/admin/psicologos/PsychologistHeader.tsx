@@ -2,6 +2,7 @@
 import { A } from "@solidjs/router";
 
 interface Props {
+  title?: string;
   onImportClick: () => void;
 }
 

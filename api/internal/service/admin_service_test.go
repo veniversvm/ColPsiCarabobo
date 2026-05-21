@@ -43,16 +43,13 @@ func (m *mockAdminRepo) List(ctx context.Context, a *bool, s string, p, l int) (
 	return m.ListFunc(ctx, a, s, p, l)
 }
 
-// Nota: Para el MailService, asumo una estructura similar a la previa o mockeable
-// Si MailService es un struct rígido, lo ideal es usar una interfaz.
-
 // =========================================================================
 // TEST SUITE
 // =========================================================================
 
 func TestAdminService_All(t *testing.T) {
 	repo := &mockAdminRepo{}
-	// Usamos nil para mailService por brevedad, o un mock si se requiere probar envíos
+	// Usamos nil para mailService por brevedad
 	svc := NewAdminService(repo, nil)
 
 	// --- 1. TEST DE LOGIN Y KEY ROTATION ---
@@ -67,7 +64,7 @@ func TestAdminService_All(t *testing.T) {
 				Password: string(hashed),
 				IsActive: true,
 				Username: "admin_test",
-				Email:    "admin@test.com",
+				Email:    "admin@gmail.com", // Fix: dominio real
 			}, nil
 		}
 
@@ -115,7 +112,8 @@ func TestAdminService_All(t *testing.T) {
 		trueVal := true
 		req := request_structs.CreateAdminRequest{
 			Username: "nuevo_admin",
-			Email:    "nuevo@test.com",
+			// FIX: Usamos @gmail.com para que pase la validación MX de utilidades
+			Email:    "nuevo_admin_test@gmail.com",
 			Password: "Password123!",
 			Permissions: request_structs.AdminPermissionsDTO{
 				CanPublish: &trueVal, // <--- Intenta dar un permiso que él no tiene

@@ -21,35 +21,38 @@ import (
 // =========================================================================
 
 const (
-	maxFileSizeBytes       = 1 * 1024 * 1024 // 1 MB
-	compressionScaleFactor = 0.8
-	minDimensionPx         = 100
-	webpQuality            = 82.0 // float32 requerido por kolesa encoder
+	// Límites de peso diferenciados (1 MB era excesivo para WebP)
+	maxAvatarSizeBytes   = 150 * 1024 // 150 KB (Avatares cargan rápido en grillas)
+	maxDocumentSizeBytes = 400 * 1024 // 400 KB (Documentos necesitan mantener textos legibles)
 
-	maxAvatarDimension   = 800
-	maxDocumentDimension = 1600
+	compressionScaleFactor = 0.8 // Si excede el peso, reduce dimensiones un 20%
+	minDimensionPx         = 100
+	webpQuality            = 80.0 // 80 es el 'sweet spot' óptimo para WebP (antes 82)
+
+	maxAvatarDimension   = 800  // píxeles máximos de ancho o alto para fotos de perfil
+	maxDocumentDimension = 1600 // píxeles máximos para certificados (permite zoom a textos)
 )
 
 // =========================================================================
 // API PÚBLICA
 // =========================================================================
 
-// SanitizeImage limpia y convierte a WebP optimizado. Usar para avatares (cap 800px).
+// SanitizeImage limpia y convierte a WebP optimizado. Usar para avatares.
 func SanitizeImage(file io.Reader) ([]byte, string, string, error) {
-	return processImage(file, maxAvatarDimension)
+	return processImage(file, maxAvatarDimension, maxAvatarSizeBytes)
 }
 
-// SanitizeDocument limpia y convierte a WebP optimizado. Usar para títulos y certificados (cap 1600px).
+// SanitizeDocument limpia y convierte a WebP optimizado. Usar para títulos y certificados.
 func SanitizeDocument(file io.Reader) ([]byte, string, string, error) {
-	return processImage(file, maxDocumentDimension)
+	return processImage(file, maxDocumentDimension, maxDocumentSizeBytes)
 }
 
 // =========================================================================
 // PROCESAMIENTO INTERNO
 // =========================================================================
 
-func processImage(file io.Reader, maxDimension int) ([]byte, string, string, error) {
-	// 1. Decodificación — detección por magic numbers
+func processImage(file io.Reader, maxDimension int, maxSizeBytes int) ([]byte, string, string, error) {
+	// 1. Decodificación — detección por magic numbers (seguridad)
 	img, _, err := image.Decode(file)
 	if err != nil {
 		return nil, "", "", errors.New("archivo no es una imagen válida o formato no reconocido")
@@ -58,11 +61,11 @@ func processImage(file io.Reader, maxDimension int) ([]byte, string, string, err
 	// 2. Cap de dimensiones máximas (evita procesar imágenes enormes en memoria)
 	img = capDimensions(img, maxDimension)
 
-	// 3. Aplanar canal alfa sobre fondo blanco
+	// 3. Aplanar canal alfa sobre fondo blanco (evita fondos negros en PNG transparentes)
 	img = FlattenAlpha(img)
 
-	// 4. Codificar a WebP con compresión iterativa
-	compressed, err := compressToWebP(img)
+	// 4. Codificar a WebP con límite dinámico de peso
+	compressed, err := compressToWebP(img, maxSizeBytes)
 	if err != nil {
 		return nil, "", "", errors.New("error al codificar la imagen")
 	}
@@ -70,8 +73,7 @@ func processImage(file io.Reader, maxDimension int) ([]byte, string, string, err
 	return compressed, ".webp", "image/webp", nil
 }
 
-// capDimensions reduce la imagen si supera maxDimension en cualquier eje,
-// preservando la relación de aspecto.
+// capDimensions reduce la imagen si supera maxDimension en cualquier eje, preservando el aspect ratio.
 func capDimensions(src image.Image, maxDimension int) image.Image {
 	bounds := src.Bounds()
 	w := bounds.Dx()
@@ -94,8 +96,8 @@ func capDimensions(src image.Image, maxDimension int) image.Image {
 }
 
 // compressToWebP codifica a WebP con compresión iterativa.
-// Si el resultado supera 1 MB, reduce dimensiones un 20% por iteración.
-func compressToWebP(img image.Image) ([]byte, error) {
+// Si el resultado supera el límite, reduce dimensiones un 20% por iteración.
+func compressToWebP(img image.Image, maxSizeBytes int) ([]byte, error) {
 	options, err := encoder.NewLossyEncoderOptions(encoder.PresetDefault, webpQuality)
 	if err != nil {
 		return nil, err
@@ -109,14 +111,17 @@ func compressToWebP(img image.Image) ([]byte, error) {
 		}
 
 		encoded := buf.Bytes()
-		if len(encoded) <= maxFileSizeBytes {
+		// Si el archivo resultante pesa menos que nuestro límite, terminamos
+		if len(encoded) <= maxSizeBytes {
 			return encoded, nil
 		}
 
+		// Si sigue siendo muy pesado, achicamos un 20% y volvemos a codificar
 		bounds := current.Bounds()
 		newW := int(float64(bounds.Dx()) * compressionScaleFactor)
 		newH := int(float64(bounds.Dy()) * compressionScaleFactor)
 
+		// Failsafe de seguridad para no achicar infinitamente
 		if newW < minDimensionPx || newH < minDimensionPx {
 			return encoded, nil
 		}
@@ -129,6 +134,7 @@ func compressToWebP(img image.Image) ([]byte, error) {
 // UTILIDADES
 // =========================================================================
 
+// resizeImage hace un resampleado de alta calidad (BiLinear).
 func resizeImage(src image.Image, width, height int) image.Image {
 	dst := image.NewRGBA(image.Rect(0, 0, width, height))
 	draw.BiLinear.Scale(dst, dst.Bounds(), src, src.Bounds(), draw.Over, nil)
@@ -140,12 +146,14 @@ func FlattenAlpha(src image.Image) image.Image {
 	bounds := src.Bounds()
 	dst := image.NewRGBA(bounds)
 
+	// Pintar el fondo de blanco absoluto
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
 			dst.Set(x, y, color.White)
 		}
 	}
 
+	// Dibujar la imagen original encima
 	draw.Draw(dst, bounds, src, bounds.Min, draw.Over)
 	return dst
 }

@@ -18,13 +18,12 @@ import { PsicologoForm } from "~/types/admin";
 const createPsiServer = action(async (payload: any, idempotencyKey: string) => {
   "use server";
   const { apiPost } = await import("~/lib/api");
+  // El endpoint ahora espera el nuevo esquema (contact_phone, work_areas, etc.)
   return await apiPost("/admin/psi/create", payload, {
     headers: { "X-Idempotency-Key": idempotencyKey },
   });
 });
 
-// Genera una key única por intento: adminId se incluye en el servidor,
-// aquí usamos crypto.randomUUID() como nonce del lado cliente.
 function generateIdempotencyKey(): string {
   return crypto.randomUUID();
 }
@@ -35,32 +34,63 @@ export default function CreatePsychologistPage() {
 
   const [saving,  setSaving]  = createSignal(false);
   const [message, setMessage] = createSignal<{ type: "success" | "error"; text: string; details?: any } | null>(null);
-
-  // Una key por montaje del componente — se regenera si el admin navega
-  // fuera y vuelve, pero se mantiene si solo reintenta el mismo form.
   const [idempotencyKey] = createSignal(generateIdempotencyKey());
 
   const today = new Date().toISOString().split('T')[0];
 
+  // ── ESTADO INICIAL ACTUALIZADO AL MODELO 2026 ──────────────────────────
   const [form, setForm] = createStore<PsicologoForm>({
+    // Auth
     username: "", email: "", password: "",
+    
+    // Identidad
     first_name: "", second_name: "", last_name: "", second_last_name: "",
     ci: "", fpv: "", nationality: "V", genre: "M", born_date: "",
     
+    // Estatus
     is_active: true, solvent: true, proof_of_life: true,
     
-    public_phone: "", service_address: "",
+    // Contacto Principal
+    contact_email: "", 
+    contact_phone: "",      // Reemplaza a public_phone
+    contact_cell_phone: "",  // Nuevo
+    service_address: "",
     
+    // Ubicación: Carabobo
     municipality_carabobo: "", phone_carabobo: "", cel_phone_carabobo: "",
-    state_outside: "", municipality_outside_carabobo: "", phone_outside_carabobo: "", cel_phone_outside_carabobo: "",
     
-    primary_specialty: "", secondary_specialty: "",
+    // Ubicación: Fuera de Carabobo (Venezuela)
+    state_outside: "", 
+    municipality_outside_carabobo: "", 
+    phone_outside_carabobo: "", 
+    cel_phone_outside_carabobo: "",
+    service_address_outside_carabobo: "", // Nuevo
+
+    // Ubicación: Exterior
+    country: "",
+    phone_outside_venezuela: "",
+    cell_phone_outside_venezuela: "", // Nuevo
+    service_address_outside_venezuela: "", // Nuevo
     
+    // Profesional (Áreas de Desempeño)
+    primary_work_area: "", 
+    secondary_work_area: "",
+    
+    // Académico y Registro
+    guild_inscription_date: today, // Nuevo
     university_undergraduate: "", graduate_date: "", mention_undergraduate: "",
     register_number: "", register_title_state: "", register_title_date: "", register_folio: "", register_tome: "",
     
-    guild_director: false, sixty_five_or_plus: false, guild_collaborator: false, 
-    public_employee: false, university_professor: false, double_guild: false, cpsm: false,
+    // Flags Gremiales
+    guild_director: false, 
+    sixty_five_or_plus: false, 
+    guild_collaborator: false, 
+    public_employee: false, 
+    discapacity: false,      // Nuevo
+    university_professor: false, 
+    double_guild: false, 
+    double_guild_location: "", // Nuevo
+    cpsm: false,
     date_of_last_solvency: today,
   });
 
@@ -72,8 +102,8 @@ export default function CreatePsychologistPage() {
     e.preventDefault();
     if (saving()) return;
     
-    if (!isStrongPassword(form.password)) {
-      setMessage({ type: "error", text: "La contraseña no cumple con los requisitos de seguridad (Mín. 8 caracteres, mayúscula, minúscula, número y símbolo especial)." });
+    if (!isStrongPassword(form.password || "")) {
+      setMessage({ type: "error", text: "Seguridad insuficiente: La contraseña requiere mayúscula, número y símbolo." });
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
@@ -81,28 +111,22 @@ export default function CreatePsychologistPage() {
     setSaving(true);
     setMessage(null);
 
+    // Tipado correcto para el envío
     const payload = {
       ...form,
-      ci:              parseInt(form.ci)              || 0,
-      fpv:             parseInt(form.fpv)             || 0,
-      register_number: parseInt(form.register_number) || 0,
+      ci:              parseInt(String(form.ci))              || 0,
+      fpv:             parseInt(String(form.fpv))             || 0,
+      register_number: parseInt(String(form.register_number)) || 0,
     };
 
     try {
       await runCreateAction(payload, idempotencyKey());
-      setMessage({ type: "success", text: "Psicólogo registrado exitosamente. Volviendo al listado..." });
-      setTimeout(() => navigate("/admin/psicologos"), 2000);
+      setMessage({ type: "success", text: "Agremiado creado con éxito. Redirigiendo..." });
+      setTimeout(() => navigate("/admin/psicologos"), 1500);
 
     } catch (err: any) {
       const errorString = err?.message || String(err);
-      const isApiError  = errorString.includes("ApiError") || err?.name === "ApiError";
-
-      if (isApiError) {
-        setMessage({ type: "error", text: errorString.replace(/^.*?ApiError:\s*/i, "") });
-      } else {
-        setMessage({ type: "error", text: "Error crítico de conexión o el servidor está caído." });
-      }
-
+      setMessage({ type: "error", text: errorString.includes("ApiError") ? errorString.replace(/.*ApiError:\s*/i, "") : "Error de red o servidor." });
       window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setSaving(false);
@@ -113,12 +137,15 @@ export default function CreatePsychologistPage() {
     <div class="space-y-6 animate-in fade-in duration-500 pb-24 max-w-5xl mx-auto">
       <FormHeader />
       <FormMessage type={message()?.type} text={message()?.text || ""} details={message()?.details} />
+      
       <form onSubmit={handleSubmit} class="space-y-8">
+        {/* Cada sección debe actualizarse para manejar los nuevos nombres de campos */}
         <AccountSection            form={form} setForm={updateField} />
         <LegalIdentitySection      form={form} setForm={updateField} />
         <AcademicRegistrationSection form={form} setForm={updateField} />
         <ContactSection            form={form} setForm={updateField} />
         <InstitutionalStatusSection form={form} setForm={updateField} today={today} />
+        
         <FormActions saving={saving()} />
       </form>
     </div>

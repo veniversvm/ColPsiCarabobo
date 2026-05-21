@@ -1,18 +1,18 @@
 // web/src/components/directory/SearchHeader.tsx
 import { For, Show } from "solid-js";
 
-interface Specialty {
+interface WorkArea {
   id: number;
   name: string;
 }
 
 interface SearchHeaderProps {
   query: string;
-  specialty: string;
+  workArea: string;              // Cambiado de specialty
   location: string;
-  specialties: Specialty[] | undefined;
+  workAreas: WorkArea[] | undefined; // Cambiado de specialties
   onQueryChange: (value: string) => void;
-  onSpecialtyChange: (value: string) => void;
+  onWorkAreaChange: (value: string) => void; // Cambiado de onSpecialtyChange
   onLocationChange: (value: string) => void;
   onSearch: (e: Event) => void;
 }
@@ -21,20 +21,20 @@ export function SearchHeader(props: SearchHeaderProps) {
   return (
     <section class="bg-colpsi-blue pt-12 pb-24 px-6 text-center relative shadow-2xl">
       <div class="max-w-5xl mx-auto space-y-6 relative z-10">
-        <h1 class="text-white text-3xl md:text-5xl font-black tracking-tighter italic">
-          DIRECTORIO PROFESIONAL
+        <h1 class="text-white text-3xl md:text-5xl font-black tracking-tighter italic uppercase">
+          Directorio Profesional
         </h1>
 
         <form onSubmit={props.onSearch} class="space-y-4">
-          {/* Fila 1: Input de texto y especialidad */}
+          {/* Fila 1: Búsqueda por texto y Área de Desempeño */}
           <div class="flex flex-col md:flex-row gap-3 max-w-4xl mx-auto">
 
-            {/* Input de texto principal */}
+            {/* Input de Identidad */}
             <div class="relative flex-1">
               <input
                 type="text"
                 placeholder="Nombre, Cédula o FPV..."
-                name="nombre, cédula o fpv"
+                name="search_query"
                 value={props.query}
                 class="w-full bg-white rounded-2xl py-4 px-6 shadow-xl outline-none focus:ring-4 focus:ring-colpsi-yellow/50 transition-all text-colpsi-text font-medium pr-12"
                 onInput={(e) => props.onQueryChange(e.currentTarget.value)}
@@ -42,32 +42,40 @@ export function SearchHeader(props: SearchHeaderProps) {
               <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
             </div>
 
-            {/* Select de Especialidad */}
-            <select
-              value={props.specialty}
-              disabled={!props.specialties}
-              class="md:w-64 bg-white rounded-2xl py-4 px-6 shadow-xl outline-none focus:ring-4 focus:ring-colpsi-yellow/50 transition-all text-colpsi-text font-bold appearance-none cursor-pointer disabled:opacity-60 disabled:cursor-wait"
-              onChange={(e) => props.onSpecialtyChange(e.currentTarget.value)}
-              name="especialidad"
-            >
-              <Show
-                when={props.specialties}
-                fallback={<option value="">Cargando especialidades...</option>}
+            {/* Selector de Área de Desempeño */}
+            <div class="relative md:w-80">
+              <select
+                value={props.workArea}
+                disabled={!props.workAreas}
+                class="w-full bg-white rounded-2xl py-4 px-6 shadow-xl outline-none focus:ring-4 focus:ring-colpsi-yellow/50 transition-all text-colpsi-text font-bold appearance-none cursor-pointer disabled:opacity-60 disabled:cursor-wait"
+                onChange={(e) => props.onWorkAreaChange(e.currentTarget.value)}
+                name="area_desempeno"
               >
-                <option value="">Todas las áreas</option>
-                <For each={props.specialties}>
-                  {(item) => (
-                    <option value={String(item.id)}>{item.name}</option>
-                  )}
-                </For>
-              </Show>
-            </select>
+                <Show
+                  when={props.workAreas}
+                  fallback={<option value="">Cargando áreas...</option>}
+                >
+                  <option value="">Todas las Áreas de Desempeño</option>
+                  <For each={props.workAreas}>
+                    {(item) => (
+                      <option value={String(item.id)}>{item.name}</option>
+                    )}
+                  </For>
+                </Show>
+              </select>
+              {/* Icono de flecha para el select personalizado */}
+              <div class="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-colpsi-blue opacity-30">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+              </div>
+            </div>
           </div>
 
-          {/* Fila 2: Input de ubicación y botón */}
+          {/* Fila 2: Ubicación y Botón de Acción */}
           <div class="flex flex-col md:flex-row gap-3 max-w-4xl mx-auto">
 
-            {/* Input de ubicación */}
+            {/* Input de Ubicación */}
             <div class="relative flex-1">
               <input
                 type="text"
@@ -80,19 +88,21 @@ export function SearchHeader(props: SearchHeaderProps) {
               <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">📍</span>
             </div>
 
-            {/* BOTÓN DE ACCIÓN */}
+            {/* Botón Buscar */}
             <button
               type="submit"
-              class="md:w-48 bg-colpsi-yellow text-colpsi-blue px-8 py-4 rounded-2xl font-black shadow-lg shadow-yellow-500/20 hover:scale-105 active:scale-95 transition-all whitespace-nowrap flex items-center justify-center gap-2"
+              class="md:w-48 bg-colpsi-yellow text-colpsi-blue px-8 py-4 rounded-2xl font-black shadow-lg shadow-yellow-500/20 hover:bg-[#f3ca05] hover:scale-105 active:scale-95 transition-all whitespace-nowrap flex items-center justify-center gap-2"
             >
-              <span>🔍</span>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
               BUSCAR
             </button>
           </div>
 
-          {/* Sugerencia */}
-          <p class="text-blue-200 text-xs mt-4 text-left md:text-center">
-            💡 Puedes buscar por nombre, número de cédula, FPV, especialidad o ubicación
+          {/* Texto de Ayuda */}
+          <p class="text-blue-200 text-xs mt-4 text-left md:text-center font-medium">
+            💡 Tip: Filtra por <span class="text-white font-bold">Área de Desempeño</span> para encontrar especialistas según tus necesidades.
           </p>
         </form>
       </div>

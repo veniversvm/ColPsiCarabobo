@@ -9,32 +9,32 @@ function countWords(html: string): number {
   return text === "" ? 0 : text.split(" ").length;
 }
 
-interface Specialty {
+interface WorkArea {
   id: number;
   name: string;
 }
 
-export function ProfessionalSection(props: {
-  primarySpecialty: string;
-  secondarySpecialty: string;
+interface ProfessionalSectionProps {
+  primaryWorkArea: string;     // Actualizado
+  secondaryWorkArea: string;   // Actualizado
   miniBio: string;
   fullBio: string;
-  specialties: Specialty[] | undefined;
-  onPrimarySpecialtyChange: (v: string) => void;
-  onSecondarySpecialtyChange: (v: string) => void;
+  specialties: WorkArea[] | undefined; // Mantiene el nombre de la lista o cámbialo a workAreas
+  onPrimaryWorkAreaChange: (v: string) => void;   // Actualizado
+  onSecondaryWorkAreaChange: (v: string) => void; // Actualizado
   onMiniBioChange: (v: string) => void;
   onFullBioChange: (v: string) => void;
-}) {
+}
+
+export function ProfessionalSection(props: ProfessionalSectionProps) {
   const wordCount = () => countWords(props.fullBio);
   const isOverLimit = () => wordCount() > FULL_BIO_WORD_LIMIT;
 
   const handleFullBioChange = (v: string) => {
-    if (countWords(v) <= FULL_BIO_WORD_LIMIT) {
-      props.onFullBioChange(v);
-    }
+    // Permitimos el cambio pero el indicador visual mostrará el error si se pasa
+    props.onFullBioChange(v);
   };
 
-  // Clases compartidas para los selects
   const selectClass = "w-full bg-gray-50 border-2 border-transparent focus:border-colpsi-yellow rounded-xl px-5 py-3 outline-none text-colpsi-text transition-all appearance-none cursor-pointer disabled:opacity-60 disabled:cursor-wait";
 
   return (
@@ -45,25 +45,25 @@ export function ProfessionalSection(props: {
 
       <div class="space-y-6">
 
-        {/* ── ESPECIALIDADES ────────────────────────────────────────────── */}
+        {/* ── ÁREAS DE TRABAJO (Antes Especialidades) ────────────────────── */}
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-          {/* Especialidad Principal */}
+          {/* Área Principal */}
           <div class="space-y-2">
             <label class="text-xs font-bold text-gray-500 uppercase ml-2">
-              Especialidad Principal
+              Área de Trabajo Principal
             </label>
             <select
-              value={props.primarySpecialty}
+              value={props.primaryWorkArea}
               disabled={!props.specialties}
               class={selectClass}
-              onChange={(e) => props.onPrimarySpecialtyChange(e.currentTarget.value)}
+              onChange={(e) => props.onPrimaryWorkAreaChange(e.currentTarget.value)}
             >
               <Show
                 when={props.specialties}
-                fallback={<option value="">Cargando...</option>}
+                fallback={<option value="">Cargando áreas...</option>}
               >
-                <option value="">— Sin especialidad —</option>
+                <option value="">— Sin área asignada —</option>
                 <For each={props.specialties}>
                   {(item) => (
                     <option value={item.name}>{item.name}</option>
@@ -73,28 +73,27 @@ export function ProfessionalSection(props: {
             </select>
           </div>
 
-          {/* Especialidad Secundaria */}
+          {/* Área Secundaria */}
           <div class="space-y-2">
             <label class="text-xs font-bold text-gray-500 uppercase ml-2">
-              Especialidad Secundaria
+              Área de Trabajo Secundaria
             </label>
             <select
-              value={props.secondarySpecialty}
+              value={props.secondaryWorkArea}
               disabled={!props.specialties}
               class={selectClass}
-              onChange={(e) => props.onSecondarySpecialtyChange(e.currentTarget.value)}
+              onChange={(e) => props.onSecondaryWorkAreaChange(e.currentTarget.value)}
             >
               <Show
                 when={props.specialties}
-                fallback={<option value="">Cargando...</option>}
+                fallback={<option value="">Cargando áreas...</option>}
               >
-                <option value="">— Sin especialidad —</option>
+                <option value="">— Sin área secundaria —</option>
                 <For each={props.specialties}>
                   {(item) => (
                     <option
                       value={item.name}
-                      // Deshabilita la opción si ya está seleccionada como principal
-                      disabled={item.name === props.primarySpecialty}
+                      disabled={item.name === props.primaryWorkArea}
                     >
                       {item.name}
                     </option>
@@ -102,9 +101,9 @@ export function ProfessionalSection(props: {
                 </For>
               </Show>
             </select>
-            <Show when={props.secondarySpecialty && props.secondarySpecialty === props.primarySpecialty}>
+            <Show when={props.secondaryWorkArea && props.secondaryWorkArea === props.primaryWorkArea}>
               <p class="text-xs text-amber-500 font-bold ml-2">
-                ⚠️ La especialidad secundaria no puede ser igual a la principal.
+                ⚠️ El área secundaria no puede ser igual a la principal.
               </p>
             </Show>
           </div>
@@ -120,9 +119,10 @@ export function ProfessionalSection(props: {
             onInput={(e) => props.onMiniBioChange(e.currentTarget.value)}
             maxlength="250"
             class="w-full bg-gray-50 border-2 border-transparent focus:border-colpsi-yellow rounded-2xl px-5 py-4 outline-none text-colpsi-text transition-all min-h-[100px] resize-y"
+            placeholder="Escribe un breve resumen de tu práctica profesional..."
           />
           <p class="text-[11px] text-gray-400 text-right mr-2">
-            {props.miniBio.length}/250
+            {props.miniBio?.length || 0}/250
           </p>
         </div>
 
@@ -142,8 +142,8 @@ export function ProfessionalSection(props: {
             onUpdate={handleFullBioChange}
           />
           <Show when={isOverLimit()}>
-            <p class="text-xs text-red-500 mt-1 ml-2">
-              Has superado el límite de {FULL_BIO_WORD_LIMIT} palabras.
+            <p class="text-xs text-red-500 mt-1 ml-2 font-bold">
+              ⚠️ Has superado el límite de {FULL_BIO_WORD_LIMIT} palabras. Por favor, resume tu contenido.
             </p>
           </Show>
         </div>

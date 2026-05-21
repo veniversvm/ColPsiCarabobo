@@ -13,14 +13,14 @@ export default function AdminLayout(props: { children: JSX.Element }) {
   // PROTECCIÓN DE RUTA
   createEffect(() => {
     if (!isAuthenticated() || role() !== "admin") {
-      navigate("/admin-access", { replace: true });
+      navigate("/", { replace: true });
     }
   });
 
   const menuItems =[
     { title: "Dashboard", path: "/admin", icon: "📊" },
     { title: "Psicólogos", path: "/admin/psicologos", icon: "👥" },
-    { title: "Especialidades", path: "/admin/especialidades", icon: "🔖" },
+    { title: "Areas de Ejercicio", path: "/admin/areas_de_ejercicio_profesional", icon: "🔖" },
     { title: "Noticias", path: "/admin/noticias", icon: "📰" },
     { title: "Staff (SUDO)", path: "/admin/staff", icon: "🛡️" },
   ];

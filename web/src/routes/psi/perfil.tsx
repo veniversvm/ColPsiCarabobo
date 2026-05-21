@@ -1,9 +1,19 @@
-// web/src/routes/psi/perfil.tsx
-import { createResource, createEffect, Show, Suspense, createSignal } from "solid-js";
+import {
+  createResource,
+  createEffect,
+  Show,
+  Suspense,
+  createSignal,
+} from "solid-js";
 import { createStore } from "solid-js/store";
 import { A, action, useAction } from "@solidjs/router";
 import { apiGet, apiPatch, apiPost, apiDelete } from "~/lib/api";
-import { sanitizeEmail, sanitizePhone, sanitizeText, enforceMaxLength } from "~/lib/sanitizer";
+import {
+  sanitizeEmail,
+  sanitizePhone,
+  sanitizeText,
+  enforceMaxLength,
+} from "~/lib/sanitizer";
 import { ProfileFormData } from "~/types/psi";
 
 import { AccountSection } from "~/components/psi/profile/AccountSection";
@@ -20,7 +30,8 @@ import { AvatarUploader } from "~/components/psi/profile/vatarUploader";
 
 const updateProfileServer = action(async (formData: FormData) => {
   "use server";
-  const { sanitizeEmail, sanitizePhone, sanitizeText, enforceMaxLength } = await import("~/lib/sanitizer");
+  const { sanitizeEmail, sanitizePhone, sanitizeText, enforceMaxLength } =
+    await import("~/lib/sanitizer");
   const { apiPatch } = await import("~/lib/api");
 
   const cleanFd = new FormData();
@@ -42,21 +53,31 @@ const updateProfileServer = action(async (formData: FormData) => {
         continue;
       }
 
-      let cleanValue = key === "mini_bio" ? enforceMaxLength(value, 250) : value;
+      let cleanValue =
+        key === "mini_bio" ? enforceMaxLength(value, 250) : value;
 
       const phoneFields = [
-        "public_phone",
-        "phone_carabobo", "cel_phone_carabobo",
-        "phone_outside_carabobo", "cel_phone_outside_carabobo",
+        "contact_phone",
+        "contact_cell_phone", // Reemplazan a public_phone
+        "phone_carabobo",
+        "cel_phone_carabobo",
+        "phone_outside_carabobo",
+        "cel_phone_outside_carabobo",
         "phone_outside_venezuela",
+        "cell_phone_outside_venezuela", // Nuevo cell
       ];
 
       const textFields = [
         "municipality_carabobo",
-        "state_outside", "municipality_outside_carabobo",
-        "service_address", "service_address_outside_carabobo", "service_address_outside_venezuela",
+        "state_outside",
+        "municipality_outside_carabobo",
+        "service_address",
+        "service_address_outside_carabobo",
+        "service_address_outside_venezuela",
         "country",
-        "primary_specialty", "secondary_specialty", "mini_bio",
+        "primary_work_area",
+        "secondary_work_area",
+        "mini_bio", // WorkArea en vez de specialty
       ];
 
       if (phoneFields.includes(key)) {
@@ -76,11 +97,14 @@ const updateProfileServer = action(async (formData: FormData) => {
 
 export default function ProfilePage() {
   const [profile, { refetch }] = createResource(() => apiGet<any>("/psi/me"));
-  const [specialties] = createResource(() => apiGet<any[]>("/specialties"));
+  const [specialties] = createResource(() => apiGet<any[]>("/specialties")); // Asumiendo que esta API devuelve áreas de trabajo ahora
 
   const [form, setForm] = createStore<ProfileFormData>({} as ProfileFormData);
   const [saving, setSaving] = createSignal(false);
-  const [message, setMessage] = createSignal<{ type: "success" | "error"; text: string } | null>(null);
+  const [message, setMessage] = createSignal<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   const [files, setFiles] = createSignal<{ [key: string]: File }>({});
   const [avatarFile, setAvatarFile] = createSignal<File | null>(null);
@@ -90,7 +114,8 @@ export default function ProfilePage() {
 
   const runUpdateAction = useAction(updateProfileServer);
 
-  const SITE_URL = import.meta.env.VITE_SITE_URL || "http://localhost:8080/api/v1";
+  const SITE_URL =
+    import.meta.env.VITE_SITE_URL || "http://localhost:8080/api/v1";
 
   const canonicalUrl = `${SITE_URL}/directorio/${profile()?.first_name}-${profile()?.last_name}-fpv${profile()?.fpv}`;
 
@@ -101,7 +126,8 @@ export default function ProfilePage() {
         username: p.username || "",
         email: p.email || "",
         contact_email: sanitizeEmail(p.contact_email) || "",
-        public_phone: sanitizePhone(p.public_phone) || "",
+        contact_phone: sanitizePhone(p.contact_phone) || "", // NUEVO
+        contact_cell_phone: sanitizePhone(p.contact_cell_phone) || "", // NUEVO
         service_address: sanitizeText(p.service_address) || "",
 
         // Carabobo
@@ -111,40 +137,61 @@ export default function ProfilePage() {
 
         // Fuera de Carabobo (Venezuela)
         state_outside: sanitizeText(p.state_outside) || "",
-        municipality_outside_carabobo: sanitizeText(p.municipality_outside_carabobo || p.municipality_out_side_carabobo) || "",
+        municipality_outside_carabobo:
+          sanitizeText(
+            p.municipality_outside_carabobo || p.municipality_out_side_carabobo,
+          ) || "",
         phone_outside_carabobo: sanitizePhone(p.phone_outside_carabobo) || "",
-        cel_phone_outside_carabobo: sanitizePhone(p.cel_phone_outside_carabobo) || "",
-        service_address_outside_carabobo: sanitizeText(p.service_address_outside_carabobo) || "",
+        cel_phone_outside_carabobo:
+          sanitizePhone(p.cel_phone_outside_carabobo) || "",
+        service_address_outside_carabobo:
+          sanitizeText(p.service_address_outside_carabobo) || "",
 
         // Exterior
         country: sanitizeText(p.country) || "",
         phone_outside_venezuela: sanitizePhone(p.phone_outside_venezuela) || "",
-        service_address_outside_venezuela: sanitizeText(p.service_address_outside_venezuela) || "",
+        cell_phone_outside_venezuela:
+          sanitizePhone(p.cell_phone_outside_venezuela) || "", // NUEVO
+        service_address_outside_venezuela:
+          sanitizeText(p.service_address_outside_venezuela) || "",
 
         mini_bio: sanitizeText(p.mini_bio) || "",
-        primary_specialty: p.primary_specialty || "",
-        secondary_specialty: p.secondary_specialty || "",
+        primary_work_area: p.primary_work_area || "", // NUEVO
+        secondary_work_area: p.secondary_work_area || "", // NUEVO
         full_bio: p.full_bio?.content || "",
 
         // Privacidad: Contacto principal
         show_contact_email: p.show_contact_email ?? false,
-        show_public_phone: p.show_public_phone ?? false,
         show_public_service_address: p.show_public_service_address ?? false,
 
+        // Privacidad: Carabobo (NUEVOS)
+        show_municipality_carabobo: p.show_municipality_carabobo ?? false,
+        show_phone_carabobo: p.show_phone_carabobo ?? false,
+        show_cel_phone_carabobo: p.show_cel_phone_carabobo ?? false,
+
         // Privacidad: Fuera de Carabobo
+        show_state_outside: p.show_state_outside ?? false, // NUEVO
+        show_municipality_outside_carabobo:
+          p.show_municipality_outside_carabobo ?? false, // NUEVO
         show_phone_outside_carabobo: p.show_phone_outside_carabobo ?? false,
-        show_cel_phone_outside_carabobo: p.show_cel_phone_outside_carabobo ?? false,
-        show_public_service_address_outside_carabobo: p.show_public_service_address_outside_carabobo ?? false,
+        show_cel_phone_outside_carabobo:
+          p.show_cel_phone_outside_carabobo ?? false,
+        show_public_service_address_outside_carabobo:
+          p.show_public_service_address_outside_carabobo ?? false,
 
         // Privacidad: Exterior
         show_phone_outside_venezuela: p.show_phone_outside_venezuela ?? false,
-        show_cel_phone_outside_venezuela: p.show_cel_phone_outside_venezuela ?? false,
-        show_public_service_address_outside_venezuela: p.show_public_service_address_outside_venezuela ?? false,
+        show_cel_phone_outside_venezuela:
+          p.show_cel_phone_outside_venezuela ?? false,
+        show_public_service_address_outside_venezuela:
+          p.show_public_service_address_outside_venezuela ?? false,
 
         // Privacidad: Académicos
-        show_university_undergraduate: p.col_data?.show_university_undergraduate ?? false,
+        show_university_undergraduate:
+          p.col_data?.show_university_undergraduate ?? false,
         show_graduate_date: p.col_data?.show_graduate_date ?? false,
-        show_mention_undergraduate: p.col_data?.show_mention_undergraduate ?? false,
+        show_mention_undergraduate:
+          p.col_data?.show_mention_undergraduate ?? false,
       } as ProfileFormData);
     }
   });
@@ -153,7 +200,10 @@ export default function ProfilePage() {
     e.preventDefault();
 
     if (!form.password) {
-      setMessage({ type: "error", text: "Debe ingresar su contraseña actual." });
+      setMessage({
+        type: "error",
+        text: "Debe ingresar su contraseña actual.",
+      });
       return;
     }
 
@@ -163,18 +213,35 @@ export default function ProfilePage() {
     const fd = new FormData();
 
     const textFields: (keyof ProfileFormData)[] = [
-      "username", "email", "password", "new_password_1", "new_password_2",
-      "contact_email", "public_phone", "service_address",
+      "username",
+      "email",
+      "password",
+      "new_password_1",
+      "new_password_2",
+      "contact_email",
+      "contact_phone",
+      "contact_cell_phone",
+      "service_address",
       // Carabobo
-      "municipality_carabobo", "phone_carabobo", "cel_phone_carabobo",
+      "municipality_carabobo",
+      "phone_carabobo",
+      "cel_phone_carabobo",
       // Venezuela
-      "state_outside", "municipality_outside_carabobo",
-      "phone_outside_carabobo", "cel_phone_outside_carabobo",
+      "state_outside",
+      "municipality_outside_carabobo",
+      "phone_outside_carabobo",
+      "cel_phone_outside_carabobo",
       "service_address_outside_carabobo",
       // Exterior
-      "country", "phone_outside_venezuela", "service_address_outside_venezuela",
+      "country",
+      "phone_outside_venezuela",
+      "cell_phone_outside_venezuela",
+      "service_address_outside_venezuela",
       // Profesional
-      "primary_specialty", "secondary_specialty", "mini_bio", "full_bio",
+      "primary_work_area",
+      "secondary_work_area",
+      "mini_bio",
+      "full_bio",
     ];
 
     for (const key of textFields) {
@@ -187,9 +254,14 @@ export default function ProfilePage() {
     const boolFields: (keyof ProfileFormData)[] = [
       // Contacto principal
       "show_contact_email",
-      "show_public_phone",
       "show_public_service_address",
+      // Carabobo
+      "show_municipality_carabobo",
+      "show_phone_carabobo",
+      "show_cel_phone_carabobo",
       // Fuera de Carabobo
+      "show_state_outside",
+      "show_municipality_outside_carabobo",
       "show_phone_outside_carabobo",
       "show_cel_phone_outside_carabobo",
       "show_public_service_address_outside_carabobo",
@@ -209,16 +281,22 @@ export default function ProfilePage() {
 
     // Archivos de títulos
     const filesObj = files();
-    if (filesObj.title_image_one)   fd.append("title_image_one",   filesObj.title_image_one);
-    if (filesObj.title_image_two)   fd.append("title_image_two",   filesObj.title_image_two);
-    if (filesObj.title_image_three) fd.append("title_image_three", filesObj.title_image_three);
+    if (filesObj.title_image_one)
+      fd.append("title_image_one", filesObj.title_image_one);
+    if (filesObj.title_image_two)
+      fd.append("title_image_two", filesObj.title_image_two);
+    if (filesObj.title_image_three)
+      fd.append("title_image_three", filesObj.title_image_three);
 
     const avatar = avatarFile();
     if (avatar) fd.append("profile_picture", avatar);
 
     try {
       await runUpdateAction(fd);
-      setMessage({ type: "success", text: "Perfil actualizado correctamente." });
+      setMessage({
+        type: "success",
+        text: "Perfil actualizado correctamente.",
+      });
       setForm("password", "");
       setForm("new_password_1", "");
       setForm("new_password_2", "");
@@ -226,7 +304,10 @@ export default function ProfilePage() {
       setFiles({});
       refetch();
     } catch (err: any) {
-      setMessage({ type: "error", text: err.message || "Error al actualizar." });
+      setMessage({
+        type: "error",
+        text: err.message || "Error al actualizar.",
+      });
     } finally {
       setSaving(false);
     }
@@ -251,28 +332,37 @@ export default function ProfilePage() {
     refetch();
   };
 
-  // console.log("Profile => ", profile())
-
   return (
     <main class="bg-[#f8fafc] min-h-screen pb-24 font-sans">
       <div class="bg-colpsi-blue pt-10 pb-24 px-4 md:px-8 shadow-inner">
         <div class="max-w-4xl mx-auto flex items-center justify-between">
-          <A href="/psi" class="text-white hover:text-colpsi-yellow font-bold flex items-center gap-2 transition-colors">
+          <A
+            href="/psi"
+            class="text-white hover:text-colpsi-yellow font-bold flex items-center gap-2 transition-colors"
+          >
             <span>←</span> Volver al Panel
           </A>
-          <span class="text-blue-200 text-sm font-black tracking-widest uppercase hidden sm:block">Ajustes de Perfil</span>
+          <span class="text-blue-200 text-sm font-black tracking-widest uppercase hidden sm:block">
+            Ajustes de Perfil
+          </span>
         </div>
         <div class="max-w-4xl mx-auto mt-8">
-          <h1 class="text-white text-3xl md:text-4xl font-black">Tu Identidad Digital</h1>
+          <h1 class="text-white text-3xl md:text-4xl font-black">
+            Tu Identidad Digital
+          </h1>
           <p class="text-blue-200 mt-2 text-sm md:text-base">
-            Actualiza tus datos, fotografía y gestiona qué información pueden ver los pacientes.
+            Actualiza tus datos, fotografía y gestiona qué información pueden
+            ver los pacientes.
           </p>
         </div>
       </div>
 
       <div class="max-w-4xl mx-auto px-4 md:px-8 -mt-16 relative z-10 space-y-8">
-        <Suspense fallback={<div class="h-96 bg-white animate-pulse rounded-[2.5rem] shadow-premium border border-gray-100" />}>
-
+        <Suspense
+          fallback={
+            <div class="h-96 bg-white animate-pulse rounded-[2.5rem] shadow-premium border border-gray-100" />
+          }
+        >
           <AvatarUploader
             url={canonicalUrl}
             currentAvatarUrl={profile()?.profile_picture_url}
@@ -304,37 +394,40 @@ export default function ProfilePage() {
 
             <ContactSection
               contactEmail={form.contact_email ?? ""}
-              publicPhone={form.public_phone ?? ""}
-              serviceAddress={form.service_address ?? ""}
+              contactPhone={form.contact_phone ?? ""}
+              contactCellPhone={form.contact_cell_phone ?? ""}
               onContactEmailChange={(v) => setForm("contact_email", v)}
-              onPublicPhoneChange={(v) => setForm("public_phone", v)}
-              onServiceAddressChange={(v) => setForm("service_address", v)}
+              onContactPhoneChange={(v) => setForm("contact_phone", v)}
+              onContactCellPhoneChange={(v) => setForm("contact_cell_phone", v)}
             />
 
-            
-              <AcademicSection
-                undergraduateData={{
-                  university_undergraduate: profile()?.col_data?.university_undergraduate,
-                  graduate_date:            profile()?.col_data?.graduate_date,
-                  mention_undergraduate:    profile()?.col_data?.mention_undergraduate,
-                  title_image_one_url:      profile()?.col_data?.title_image_one_url,
-                  title_image_two_url:      profile()?.col_data?.title_image_two_url,
-                  title_image_three_url:    profile()?.col_data?.title_image_three_url,
-                  register_number:          profile()?.col_data?.register_number,
-                  register_folio:           profile()?.col_data?.register_folio,
-                  register_tome:            profile()?.col_data?.register_tome,
-                  register_title_date:      profile()?.col_data?.register_title_date,
-                  register_title_state:     profile()?.col_data?.register_title_state,
-                }}
-                showUniversity={true}
-                showGraduateDate={true}
-                showMention={true}
-                files={files()}
-                setFiles={setFiles}
-              />
+            <AcademicSection
+              undergraduateData={{
+                university_undergraduate:
+                  profile()?.col_data?.university_undergraduate,
+                graduate_date: profile()?.col_data?.graduate_date,
+                mention_undergraduate:
+                  profile()?.col_data?.mention_undergraduate,
+                title_image_one_url: profile()?.col_data?.title_image_one_url,
+                title_image_two_url: profile()?.col_data?.title_image_two_url,
+                title_image_three_url:
+                  profile()?.col_data?.title_image_three_url,
+                register_number: profile()?.col_data?.register_number,
+                register_folio: profile()?.col_data?.register_folio,
+                register_tome: profile()?.col_data?.register_tome,
+                register_title_date: profile()?.col_data?.register_title_date,
+                register_title_state: profile()?.col_data?.register_title_state,
+              }}
+              showUniversity={true}
+              showGraduateDate={true}
+              showMention={true}
+              files={files()}
+              setFiles={setFiles}
+            />
 
             <LocationSection
               // Carabobo
+              serviceAddress={form.service_address ?? ""} // NUEVO AQUI
               municipalityCarabobo={form.municipality_carabobo ?? ""}
               phoneCarabobo={form.phone_carabobo ?? ""}
               celPhoneCarabobo={form.cel_phone_carabobo ?? ""}
@@ -343,83 +436,145 @@ export default function ProfilePage() {
               municipalityOutside={form.municipality_outside_carabobo ?? ""}
               phoneOutside={form.phone_outside_carabobo ?? ""}
               celPhoneOutside={form.cel_phone_outside_carabobo ?? ""}
-              serviceAddressOutsideCarabobo={form.service_address_outside_carabobo ?? ""}
+              serviceAddressOutsideCarabobo={
+                form.service_address_outside_carabobo ?? ""
+              }
               // Exterior
               country={form.country ?? ""}
               phoneOutsideVenezuela={form.phone_outside_venezuela ?? ""}
-              serviceAddressOutsideVenezuela={form.service_address_outside_venezuela ?? ""}
+              cellPhoneOutsideVenezuela={
+                form.cell_phone_outside_venezuela ?? ""
+              } // NUEVO PROP (Asegúrate de actualizar LocationSection.tsx)
+              serviceAddressOutsideVenezuela={
+                form.service_address_outside_venezuela ?? ""
+              }
+              onServiceAddressChange={(v) => setForm("service_address", v)}
               // Handlers Carabobo
-              onMunicipalityCaraboboChange={(v) => setForm("municipality_carabobo", v)}
+              onMunicipalityCaraboboChange={(v) =>
+                setForm("municipality_carabobo", v)
+              }
               onPhoneCaraboboChange={(v) => setForm("phone_carabobo", v)}
               onCelPhoneCaraboboChange={(v) => setForm("cel_phone_carabobo", v)}
               // Handlers Venezuela
               onStateOutsideChange={(v) => setForm("state_outside", v)}
-              onMunicipalityOutsideChange={(v) => setForm("municipality_outside_carabobo", v)}
+              onMunicipalityOutsideChange={(v) =>
+                setForm("municipality_outside_carabobo", v)
+              }
               onPhoneOutsideChange={(v) => setForm("phone_outside_carabobo", v)}
-              onCelPhoneOutsideChange={(v) => setForm("cel_phone_outside_carabobo", v)}
-              onServiceAddressOutsideCaraboboChange={(v) => setForm("service_address_outside_carabobo", v)}
+              onCelPhoneOutsideChange={(v) =>
+                setForm("cel_phone_outside_carabobo", v)
+              }
+              onServiceAddressOutsideCaraboboChange={(v) =>
+                setForm("service_address_outside_carabobo", v)
+              }
               // Handlers Exterior
               onCountryChange={(v) => setForm("country", v)}
-              onPhoneOutsideVenezuelaChange={(v) => setForm("phone_outside_venezuela", v)}
-              onServiceAddressOutsideVenezuelaChange={(v) => setForm("service_address_outside_venezuela", v)}
+              onPhoneOutsideVenezuelaChange={(v) =>
+                setForm("phone_outside_venezuela", v)
+              }
+              onCellPhoneOutsideVenezuelaChange={(v) =>
+                setForm("cell_phone_outside_venezuela", v)
+              } // NUEVO
+              onServiceAddressOutsideVenezuelaChange={(v) =>
+                setForm("service_address_outside_venezuela", v)
+              }
             />
 
             <ProfessionalSection
-              primarySpecialty={form.primary_specialty ?? ""}
-              secondarySpecialty={form.secondary_specialty ?? ""}
+              primaryWorkArea={form.primary_work_area ?? ""} // NUEVO PROP (Asegúrate de actualizar ProfessionalSection.tsx)
+              secondaryWorkArea={form.secondary_work_area ?? ""} // NUEVO PROP
               miniBio={form.mini_bio ?? ""}
               fullBio={form.full_bio ?? ""}
-              specialties={specialties()}
+              specialties={specialties()} // Reutilizado o actualizar a workAreas si corresponde
               onFullBioChange={(v) => setForm("full_bio", v)}
-              onPrimarySpecialtyChange={(v) => setForm("primary_specialty", v)}
-              onSecondarySpecialtyChange={(v) => setForm("secondary_specialty", v)}
+              onPrimaryWorkAreaChange={(v) => setForm("primary_work_area", v)} // NUEVO
+              onSecondaryWorkAreaChange={(v) =>
+                setForm("secondary_work_area", v)
+              } // NUEVO
               onMiniBioChange={(v) => setForm("mini_bio", v)}
             />
 
             <PrivacySection
-            // Contacto principal
-            showContactEmail={form.show_contact_email}
-            showPublicPhone={form.show_public_phone}
-            showServiceAddress={form.show_public_service_address}
-            
-            // Fuera de Carabobo
-            showPhoneOutsideCarabobo={form.show_phone_outside_carabobo}
-            showCelPhoneOutsideCarabobo={form.show_cel_phone_outside_carabobo}
-            showServiceAddressOutsideCarabobo={form.show_public_service_address_outside_carabobo}
-            
-            // Exterior
-            showPhoneOutsideVenezuela={form.show_phone_outside_venezuela}
-            showCelPhoneOutsideVenezuela={form.show_cel_phone_outside_venezuela}
-            showServiceAddressOutsideVenezuela={form.show_public_service_address_outside_venezuela}
-            
-            // Datos académicos - AHORA INCLUYE showUniversity
-            showUniversity={form.show_university_undergraduate}
-            showGraduateDate={form.show_graduate_date}
-            showMention={form.show_mention_undergraduate}
-            
-            // Handlers contacto
-            onShowContactEmailChange={(v) => setForm("show_contact_email", v)}
-            onShowPublicPhoneChange={(v) => setForm("show_public_phone", v)}
-            onShowServiceAddressChange={(v) => setForm("show_public_service_address", v)}
-            
-            // Handlers fuera de Carabobo
-            onShowPhoneOutsideCaraboboChange={(v) => setForm("show_phone_outside_carabobo", v)}
-            onShowCelPhoneOutsideCaraboboChange={(v) => setForm("show_cel_phone_outside_carabobo", v)}
-            onShowServiceAddressOutsideCaraboboChange={(v) => setForm("show_public_service_address_outside_carabobo", v)}
-            
-            // Handlers exterior
-            onShowPhoneOutsideVenezuelaChange={(v) => setForm("show_phone_outside_venezuela", v)}
-            onShowCelPhoneOutsideVenezuelaChange={(v) => setForm("show_cel_phone_outside_venezuela", v)}
-            onShowServiceAddressOutsideVenezuelaChange={(v) => setForm("show_public_service_address_outside_venezuela", v)}
-            
-            // Handlers académicos
-            onShowUniversity={(v) => setForm("show_university_undergraduate", v)}  // 👈 NUEVO
-            onShowGraduateDateChange={(v) => setForm("show_graduate_date", v)}
-            onShowMentionChange={(v) => setForm("show_mention_undergraduate", v)}
-          />
+              // Contacto principal
+              showContactEmail={form.show_contact_email}
+              showServiceAddress={form.show_public_service_address}
+              // Carabobo (NUEVOS - Actualizar PrivacySection.tsx)
+              showMunicipalityCarabobo={form.show_municipality_carabobo}
+              showPhoneCarabobo={form.show_phone_carabobo}
+              showCelPhoneCarabobo={form.show_cel_phone_carabobo}
+              // Fuera de Carabobo
+              showStateOutside={form.show_state_outside} // NUEVO
+              showMunicipalityOutsideCarabobo={
+                form.show_municipality_outside_carabobo
+              } // NUEVO
+              showPhoneOutsideCarabobo={form.show_phone_outside_carabobo}
+              showCelPhoneOutsideCarabobo={form.show_cel_phone_outside_carabobo}
+              showServiceAddressOutsideCarabobo={
+                form.show_public_service_address_outside_carabobo
+              }
+              // Exterior
+              showPhoneOutsideVenezuela={form.show_phone_outside_venezuela}
+              showCelPhoneOutsideVenezuela={
+                form.show_cel_phone_outside_venezuela
+              }
+              showServiceAddressOutsideVenezuela={
+                form.show_public_service_address_outside_venezuela
+              }
+              // Datos académicos
+              showUniversity={form.show_university_undergraduate}
+              showGraduateDate={form.show_graduate_date}
+              showMention={form.show_mention_undergraduate}
+              // Handlers contacto
+              onShowContactEmailChange={(v) => setForm("show_contact_email", v)}
+              onShowServiceAddressChange={(v) =>
+                setForm("show_public_service_address", v)
+              }
+              // Handlers Carabobo (NUEVOS)
+              onShowMunicipalityCaraboboChange={(v) =>
+                setForm("show_municipality_carabobo", v)
+              }
+              onShowPhoneCaraboboChange={(v) =>
+                setForm("show_phone_carabobo", v)
+              }
+              onShowCelPhoneCaraboboChange={(v) =>
+                setForm("show_cel_phone_carabobo", v)
+              }
+              // Handlers fuera de Carabobo
+              onShowStateOutsideChange={(v) => setForm("show_state_outside", v)} // NUEVO
+              onShowMunicipalityOutsideCaraboboChange={(v) =>
+                setForm("show_municipality_outside_carabobo", v)
+              } // NUEVO
+              onShowPhoneOutsideCaraboboChange={(v) =>
+                setForm("show_phone_outside_carabobo", v)
+              }
+              onShowCelPhoneOutsideCaraboboChange={(v) =>
+                setForm("show_cel_phone_outside_carabobo", v)
+              }
+              onShowServiceAddressOutsideCaraboboChange={(v) =>
+                setForm("show_public_service_address_outside_carabobo", v)
+              }
+              // Handlers exterior
+              onShowPhoneOutsideVenezuelaChange={(v) =>
+                setForm("show_phone_outside_venezuela", v)
+              }
+              onShowCelPhoneOutsideVenezuelaChange={(v) =>
+                setForm("show_cel_phone_outside_venezuela", v)
+              }
+              onShowServiceAddressOutsideVenezuelaChange={(v) =>
+                setForm("show_public_service_address_outside_venezuela", v)
+              }
+              // Handlers académicos
+              onShowUniversity={(v) =>
+                setForm("show_university_undergraduate", v)
+              }
+              onShowGraduateDateChange={(v) => setForm("show_graduate_date", v)}
+              onShowMentionChange={(v) =>
+                setForm("show_mention_undergraduate", v)
+              }
+            />
 
             <SecuritySection
-              password={form.password}
+              password={form.password ?? ""}
               onPasswordChange={(v) => setForm("password", v)}
               message={message()}
             />
@@ -437,7 +592,6 @@ export default function ProfilePage() {
             onAddNetwork={handleAddSocial}
             onDeleteNetwork={handleDeleteSocial}
           />
-
         </Suspense>
       </div>
     </main>

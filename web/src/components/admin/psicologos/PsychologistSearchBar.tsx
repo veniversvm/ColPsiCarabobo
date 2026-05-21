@@ -6,6 +6,7 @@ interface Props {
   onInput: (e: Event) => void;
   onClear: () => void;
   loading: boolean;
+  placeholder?: string;
 }
 
 export function PsychologistSearchBar(props: Props) {

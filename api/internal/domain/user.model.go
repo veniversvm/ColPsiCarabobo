@@ -70,7 +70,7 @@ type PsiUserModel struct {
 	Email    string `gorm:"size:255;unique;not null" json:"email"` // Email institucional del gremio (login)
 	Password string `gorm:"size:512;not null" json:"-"`
 	Key      string `gorm:"size:512;" json:"-"`
-	IsActive bool   `gorm:"default:true" json:"is_active"`
+	IsActive bool   `gorm:"column:is_active" json:"is_active"`
 
 	// ── Identidad legal ───────────────────────────────────────────────────
 	FirstName      string    `gorm:"size:255;not null" json:"first_name"`
@@ -83,33 +83,40 @@ type PsiUserModel struct {
 	BornDate       time.Time `gorm:"type:date;not null" json:"born_date"`
 	Genre          string    `gorm:"size:1;not null" json:"genre"` // M = masculino, F = femenino
 
+	// ── Estado gremial y multimedia ───────────────────────────────────────
+	Solvent             bool   `gorm:"default:false" json:"solvent"`              // Solvencia con el Colegio
+	ProofOfLife         bool   `gorm:"column:proof_of_life" json:"proof_of_life"` // Fe de vida presentada
+	ProfilePictureS3Key string `gorm:"size:512" json:"profile_picture_url"`       // S3 key de la foto de perfil
+
+	// ── Contacto interno del gremio ────────────────────────────────────
+	ContactPhone     string `gorm:"size:255;not null" json:"contact_phone"`
+	ContactCellPhone string `gorm:"size:255;not null" json:"contact_cell_phone"`
+
 	// ── Contacto público y privacidad ────────────────────────────────────
 	// Cada campo sensible tiene un flag show_* que controla su visibilidad
 	// en el directorio público. El psicólogo gestiona estos desde su perfil.
 	ContactEmail             string `gorm:"size:255;not null" json:"contact_email"`
 	ShowContactEmail         bool   `gorm:"default:false" json:"show_contact_email"`
-	PublicPhone              string `gorm:"size:20" json:"public_phone"`
-	ShowPublicPhone          bool   `gorm:"default:false" json:"show_public_phone"`
 	ServiceAddress           string `gorm:"size:255" json:"service_address"`
 	ShowPublicServiceAddress bool   `gorm:"default:false" json:"show_public_service_address"`
-
-	// ── Estado gremial y multimedia ───────────────────────────────────────
-	Solvent             bool   `gorm:"default:false" json:"solvent"`        // Solvencia con el Colegio
-	ProofOfLife         bool   `gorm:"default:false" json:"proof_of_life"`  // Fe de vida presentada
-	ProfilePictureS3Key string `gorm:"size:512" json:"profile_picture_url"` // S3 key de la foto de perfil
 
 	// ── Ubicación: Carabobo ───────────────────────────────────────────────
 	// Para miembros residentes o con consulta dentro del estado Carabobo.
 	// MunicipalityCarabobo debe restringirse al catálogo de municipios del estado.
-	MunicipalityCarabobo string `gorm:"size:255" json:"municipality_carabobo"`
-	PhoneCarabobo        string `gorm:"size:20" json:"phone_carabobo"`
-	CelPhoneCarabobo     string `gorm:"size:20" json:"cel_phone_carabobo"`
+	MunicipalityCarabobo     string `gorm:"size:255" json:"municipality_carabobo"`
+	ShowMunicipalityCarabobo bool   `gorm:"size:255" json:"show_municipality_carabobo"`
+	PhoneCarabobo            string `gorm:"default:false" json:"phone_carabobo"`
+	ShowPhoneCarabobo        bool   `gorm:"default:false" json:"show_phone_carabobo"`
+	CelPhoneCarabobo         string `gorm:"size:20" json:"cel_phone_carabobo"`
+	ShowCelPhoneCarabobo     bool   `gorm:"default:false" json:"show_cel_phone_carabobo"`
 
 	// ── Ubicación: Fuera de Carabobo (Venezuela) ─────────────────────────
 	// Para miembros en otros estados venezolanos.
 	// StateOutside debe restringirse al catálogo de estados de Venezuela, excluyendo Carabobo.
 	StateOutside                            string `gorm:"size:255" json:"state_outside"`
+	ShowStateOutside                        bool   `gorm:"default:false" json:"show_state_outside"`
 	MunicipalityOutSideCarabobo             string `gorm:"size:255" json:"municipality_outside_carabobo"`
+	ShowMunicipalityOutSideCarabobo         bool   `gorm:"default:false" json:"show_municipality_outside_carabobo"`
 	PhoneOutSideCarabobo                    string `gorm:"size:20" json:"phone_outside_carabobo"`
 	ShowPhoneOutSideCarabobo                bool   `gorm:"default:false" json:"show_phone_outside_carabobo"`
 	CelPhoneOutSideCarabobo                 string `gorm:"size:20" json:"cel_phone_outside_carabobo"`
@@ -122,15 +129,16 @@ type PsiUserModel struct {
 	Country                                  string `gorm:"size:255" json:"country"`
 	PhoneOutSideVenezuela                    string `gorm:"size:20" json:"phone_outside_venezuela"`
 	ShowPhoneOutSideVenezuela                bool   `gorm:"default:false" json:"show_phone_outside_venezuela"`
-	ServiceAddressOutSideVenezuela           string `gorm:"size:255" json:"service_address_outside_venezuela"`
+	CellPhoneOutSideVenezuela                string `gorm:"size:20" json:"cell_phone_outside_venezuela"`
 	ShowCellPhoneOutSideVenezuela            bool   `gorm:"default:false" json:"show_cel_phone_outside_venezuela"`
+	ServiceAddressOutSideVenezuela           string `gorm:"size:255" json:"service_address_outside_venezuela"`
 	ShowPublicServiceAddressOutSideVenezuela bool   `gorm:"default:false" json:"show_public_service_address_outside_venezuela"`
 
 	// ── Especialidades profesionales ──────────────────────────────────────
 	// Almacenadas como strings para búsqueda directa en el directorio.
 	// Deben corresponder a entradas activas en el catálogo PsiSpecialtyModel.
-	PrimarySpecialty   string `gorm:"size:50" json:"primary_specialty"`
-	SecondarySpecialty string `gorm:"size:50" json:"secondary_specialty"`
+	PrimaryWorkArea   string `gorm:"size:50" json:"primary_work_area"`
+	SecondaryWorkArea string `gorm:"size:50" json:"secondary_work_area"`
 
 	// ── Biografía profesional ─────────────────────────────────────────────
 	MiniBio   string    `json:"mini_bio"`              // Resumen corto (max 250 chars) para el directorio
@@ -155,7 +163,8 @@ func (PsiUserModel) TableName() string { return "psi_users" }
 type PsiUserColData struct {
 	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	AuditModel
-	PsiUserModelID uuid.UUID `gorm:"type:uuid;uniqueIndex" json:"psi_user_model_id"`
+	PsiUserModelID       uuid.UUID `gorm:"type:uuid;uniqueIndex" json:"psi_user_model_id"`
+	GuildInscriptionDate time.Time `gorm:"type:date" json:"guild_inscription_date"`
 
 	// ── Pregrado ──────────────────────────────────────────────────────────
 	UniversityUndergraduate     string    `gorm:"size:255" json:"university_undergraduate"`
@@ -183,12 +192,14 @@ type PsiUserColData struct {
 	SixtyFiveOrPlus     bool `gorm:"default:false" json:"sixty_five_or_plus"`   // Mayor de 65 años (tarifa diferenciada)
 	GuildCollaborator   bool `gorm:"default:false" json:"guild_collaborator"`   // Colaborador activo del Colegio
 	PublicEmployee      bool `gorm:"default:false" json:"public_employee"`      // Empleado público
+	Discapacity         bool `gorm:"default:false" json:"discapacity"`          // Empleado público
 	UniversityProfessor bool `gorm:"default:false" json:"university_professor"` // Docente universitario
 
 	// ── Solvencia y membresías ────────────────────────────────────────────
-	DateOfLastSolvency time.Time `gorm:"type:date" json:"date_of_last_solvency"` // Última fecha de pago de cuota
-	DoubleGuild        bool      `gorm:"default:false" json:"double_guild"`      // Colegiado en más de un estado
-	CPSM               bool      `gorm:"default:false" json:"cpsm"`              // Miembro del Colegio de Psicólogos de Miranda
+	DateOfLastSolvency  time.Time `gorm:"type:date" json:"date_of_last_solvency"` // Última fecha de pago de cuota
+	DoubleGuild         bool      `gorm:"default:false" json:"double_guild"`      // Colegiado en más de un estado
+	DoubleGuildLocation string    `gorm:"size:255" json:"double_guild_location"`  // Colegiado en más de un estado
+	CPSM                bool      `gorm:"default:false" json:"cpsm"`              // Miembro del Colegio de Psicólogos de Miranda
 }
 
 func (PsiUserColData) TableName() string { return "psi_user_col_data" }
@@ -213,16 +224,28 @@ func (PsiUSerSolvency) TableName() string { return "psi_user_solvency" }
 // POSTGRADOS
 // =============================================================================
 
+// PostGradeType define el tipo de estudio de postgrado
+type PostGradeType string
+
+// Constantes que representan los valores permitidos del enum
+const (
+	Diplomado       PostGradeType = "diplomado"
+	Especializacion PostGradeType = "especializacion"
+	Maestria        PostGradeType = "maestria"
+	Doctorado       PostGradeType = "doctorado"
+)
+
 // PsiUserPostGrade representa títulos académicos adicionales del psicólogo:
 // Especializaciones, Maestrías, Doctorados, Diplomados, etc.
 // Relación N-a-1 con PsiUserModel.
 type PsiUserPostGrade struct {
 	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	AuditModel
-	PsiUserID uuid.UUID `gorm:"type:uuid;index" json:"psi_user_id"`
+	PsiUserID uuid.UUID     `gorm:"type:uuid;index" json:"psi_user_id"`
+	Type      PostGradeType `gorm:"type:varchar(50);not null" json:"post_grade_type"`
 
 	Title          string `gorm:"size:255;not null" json:"post_grade_title"`
-	University     string `gorm:"size:255;not null" json:"post_grade_university"`
+	University     string `gorm:"size:255" json:"post_grade_university"`
 	GraduationYear string `gorm:"size:50" json:"post_grade_graduation_year"`
 	Description    string `gorm:"type:text" json:"post_grade_description"`
 	Active         bool   `gorm:"default:true" json:"is_active"`
@@ -231,6 +254,16 @@ type PsiUserPostGrade struct {
 	PicOneS3Key   string `gorm:"size:512" json:"pic_one_url"`
 	PicTwoS3Key   string `gorm:"size:512" json:"pic_two_url"`
 	PicThreeS3Key string `gorm:"size:512" json:"pic_three_url"`
+}
+
+// IsValid es un método de ayuda (opcional) para validar que el string entrante sea correcto
+// Es muy útil validarlo antes de guardarlo en la base de datos.
+func (p PostGradeType) IsValid() bool {
+	switch p {
+	case Diplomado, Especializacion, Maestria, Doctorado:
+		return true
+	}
+	return false
 }
 
 func (PsiUserPostGrade) TableName() string { return "psi_user_post_grades" }

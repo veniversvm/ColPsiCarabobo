@@ -1,9 +1,14 @@
 // web/src/routes/admin/psicologos/[id]/editar.tsx
 
-import { createResource, createEffect, Suspense } from "solid-js";
+import {
+  createResource,
+  createEffect,
+  Suspense,
+  createSignal,
+  Show,
+} from "solid-js";
 import { createStore, unwrap } from "solid-js/store";
 import { useParams, action, useAction } from "@solidjs/router";
-import { createSignal } from "solid-js";
 import { apiGet } from "~/lib/api";
 
 import {
@@ -24,36 +29,49 @@ import { SolvenciesSection } from "~/components/admin/psicologos/edit/Solvencies
 
 // ─── Server Actions ───────────────────────────────────────────────────────────
 
-const updateAdminPsiServer = action(async (params: { id: string; payload: any }) => {
-  "use server";
-  const { apiPatch } = await import("~/lib/api");
-  const cleanPayload = { ...params.payload };
-  Object.keys(cleanPayload).forEach((key) => {
-    if (cleanPayload[key] === "") cleanPayload[key] = null;
-  });
-  return await apiPatch(`/admin/psi/${params.id}`, cleanPayload);
-});
+const updateAdminPsiServer = action(
+  async (params: { id: string; payload: FormData }) => {
+    "use server";
+    const { apiPatch } = await import("~/lib/api");
+    // Enviamos el FormData directamente a la API
+    return await apiPatch(`/admin/psi/${params.id}`, params.payload);
+  },
+);
 
-const addSocialServer = action(async (params: { id: string; payload: { name: string; url: string } }) => {
-  "use server";
-  const { apiPost } = await import("~/lib/api");
-  return await apiPost(`/admin/psi/${params.id}/social`, params.payload);
-});
+const addSocialServer = action(
+  async (params: { id: string; payload: { name: string; url: string } }) => {
+    "use server";
+    const { apiPost } = await import("~/lib/api");
+    return await apiPost(`/admin/psi/${params.id}/social`, params.payload);
+  },
+);
 
-const deleteSocialServer = action(async (params: { psiId: string; socialId: string }) => {
-  "use server";
-  const { apiDelete } = await import("~/lib/api");
-  return await apiDelete(`/admin/psi/${params.psiId}/social/${params.socialId}`);
-});
+const deleteSocialServer = action(
+  async (params: { psiId: string; socialId: string }) => {
+    "use server";
+    const { apiDelete } = await import("~/lib/api");
+    return await apiDelete(
+      `/admin/psi/${params.psiId}/social/${params.socialId}`,
+    );
+  },
+);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const formatDate = (dateStr?: string) => (dateStr ? dateStr.split("T")[0] : "");
 
+// Campos que el backend de Go espera recibir como "1" o "0" desde el FormData
 const RAW_BOOL_FIELDS = [
+  "is_active",
+  "solvent",
+  "proof_of_life",
   "show_contact_email",
-  "show_public_phone",
   "show_public_service_address",
+  "show_municipality_carabobo",
+  "show_phone_carabobo",
+  "show_cel_phone_carabobo",
+  "show_state_outside",
+  "show_municipality_outside_carabobo",
   "show_phone_outside_carabobo",
   "show_cel_phone_outside_carabobo",
   "show_public_service_address_outside_carabobo",
@@ -63,109 +81,131 @@ const RAW_BOOL_FIELDS = [
   "show_university_undergraduate",
   "show_graduate_date",
   "show_mention_undergraduate",
+  "guild_director",
+  "sixty_five_or_plus",
+  "guild_collaborator",
+  "public_employee",
+  "discapacity",
+  "university_professor",
+  "double_guild",
+  "cpsm",
 ];
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminEditPsiPage() {
   const params = useParams();
 
   const runUpdateAction = useAction(updateAdminPsiServer);
-  const runAddSocial    = useAction(addSocialServer);
-  const runDeleteSocial = useAction(deleteSocialServer);
-
-  const [profile, { refetch }] = createResource(() => apiGet<any>(`/admin/psi/${params.id}`));
-  const [specialties]          = createResource(() => apiGet<any[]>("/specialties"));
+  const [profile, { refetch }] = createResource(() =>
+    apiGet<any>(`/admin/psi/${params.id}`),
+  );
+  const [workAreas] = createResource(() => apiGet<any[]>("/specialties"));
 
   const [form, setForm] = createStore<EditFormState>({} as EditFormState);
-  const [saving,  setSaving]  = createSignal(false);
-  const [message, setMessage] = createSignal<{ type: "success" | "error"; text: string } | null>(null);
+  const [saving, setSaving] = createSignal(false);
+  const [message, setMessage] = createSignal<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
-  const SITE_URL = import.meta.env.VITE_SITE_URL || "http://localhost:8080/api/v1";
+  // Señales para manejar archivos (Imágenes de títulos y perfil)
+  const [files, setFiles] = createSignal<{ [key: string]: File }>({});
+  const [avatarFile, setAvatarFile] = createSignal<File | null>(null);
 
-  const canonicalUrl = `${SITE_URL}/directorio/${profile()?.first_name}-${profile()?.last_name}-fpv${profile()?.fpv}`;
+  const SITE_URL = import.meta.env.VITE_SITE_URL || "http://localhost:3000";
+  const canonicalUrl = () => {
+    const p = profile();
+    if (!p) return "";
+    return `${SITE_URL}/directorio/${p.first_name}-${p.last_name}-fpv${p.fpv}`;
+  };
 
-  // ── Sync DB → Store ─────────────────────────────────────────────────────────
+  // ── Sync DB → Store (Mapeo completo) ───────────────────────
   createEffect(() => {
     const p = profile();
-    // console.log(p)
     if (!p) return;
     setForm({
-      username:  p.username  ?? "",
-      email:     p.email     ?? "",
-
-      first_name:        p.first_name        ?? "",
-      second_name:       p.second_name       ?? "",
-      last_name:         p.last_name         ?? "",
-      second_last_name:  p.second_last_name  ?? "",
-      ci:                p.ci                ?? "",
-      fpv:               p.fpv               ?? "",
-      nationality:       p.nationality       ?? "V",
-      genre:             p.genre             ?? "M",
-      born_date:         formatDate(p.born_date),
-
-      is_active:     p.is_active     ?? true,
-      solvent:       p.solvent       ?? false,
+      // ... (tu lógica de mapeo actual está bien, asegúrate de incluir todos los campos)
+      username: p.username ?? "",
+      email: p.email ?? "",
+      first_name: p.first_name ?? "",
+      second_name: p.second_name ?? "",
+      last_name: p.last_name ?? "",
+      second_last_name: p.second_last_name ?? "",
+      ci: p.ci ?? "",
+      fpv: p.fpv ?? "",
+      nationality: p.nationality ?? "V",
+      genre: p.genre ?? "M",
+      born_date: formatDate(p.born_date),
+      is_active: p.is_active ?? true,
+      solvent: p.solvent ?? false,
       proof_of_life: p.proof_of_life ?? false,
-
-      contact_email:               p.contact_email               ?? "",
-      show_contact_email:          p.show_contact_email          ?? false,
-      public_phone:                p.public_phone                ?? "",
-      show_public_phone:           p.show_public_phone           ?? false,
-      service_address:             p.service_address             ?? "",
+      contact_email: p.contact_email ?? "",
+      show_contact_email: p.show_contact_email ?? false,
+      contact_phone: p.contact_phone ?? "",
+      contact_cell_phone: p.contact_cell_phone ?? "",
+      service_address: p.service_address ?? "",
       show_public_service_address: p.show_public_service_address ?? false,
-
-      municipality_carabobo:  p.municipality_carabobo  ?? "",
-      phone_carabobo:         p.phone_carabobo          ?? "",
-      cel_phone_carabobo:     p.cel_phone_carabobo      ?? "",
-
-      state_outside:                            p.state_outside                             ?? "",
-      municipality_outside_carabobo:            p.municipality_outside_carabobo            ?? p.municipality_out_side_carabobo  ?? "",
-      phone_outside_carabobo:                   p.phone_outside_carabobo                   ?? p.phone_out_side_carabobo         ?? "",
-      cel_phone_outside_carabobo:               p.cel_phone_outside_carabobo               ?? p.cel_phone_out_side_carabobo     ?? "",
-      service_address_outside_carabobo:         p.service_address_outside_carabobo         ?? "",
-      show_phone_outside_carabobo:              p.show_phone_outside_carabobo              ?? false,
-      show_cel_phone_outside_carabobo:          p.show_cel_phone_outside_carabobo          ?? false,
-      show_public_service_address_outside_carabobo: p.show_public_service_address_outside_carabobo ?? false,
-
-      country:                                      p.country                                       ?? "",
-      phone_outside_venezuela:                      p.phone_outside_venezuela                       ?? "",
-      service_address_outside_venezuela:            p.service_address_outside_venezuela             ?? "",
-      show_phone_outside_venezuela:                 p.show_phone_outside_venezuela                  ?? false,
-      show_cel_phone_outside_venezuela:             p.show_cel_phone_outside_venezuela              ?? false,
-      show_public_service_address_outside_venezuela: p.show_public_service_address_outside_venezuela ?? false,
-
-      primary_specialty:   p.primary_specialty   ?? "",
-      secondary_specialty: p.secondary_specialty ?? "",
-      mini_bio:            p.mini_bio            ?? "",
-      full_bio:            p.full_bio?.content   ?? "",
-
+      municipality_carabobo: p.municipality_carabobo ?? "",
+      show_municipality_carabobo: p.show_municipality_carabobo ?? false,
+      phone_carabobo: p.phone_carabobo ?? "",
+      show_phone_carabobo: p.show_phone_carabobo ?? false,
+      cel_phone_carabobo: p.cel_phone_carabobo ?? "",
+      show_cel_phone_carabobo: p.show_cel_phone_carabobo ?? false,
+      state_outside: p.state_outside ?? "",
+      show_state_outside: p.show_state_outside ?? false,
+      municipality_outside_carabobo: p.municipality_outside_carabobo ?? "",
+      show_municipality_outside_carabobo:
+        p.show_municipality_outside_carabobo ?? false,
+      phone_outside_carabobo: p.phone_outside_carabobo ?? "",
+      show_phone_outside_carabobo: p.show_phone_outside_carabobo ?? false,
+      cel_phone_outside_carabobo: p.cel_phone_outside_carabobo ?? "",
+      show_cel_phone_outside_carabobo:
+        p.show_cel_phone_outside_carabobo ?? false,
+      service_address_outside_carabobo:
+        p.service_address_outside_carabobo ?? "",
+      show_public_service_address_outside_carabobo:
+        p.show_public_service_address_outside_carabobo ?? false,
+      country: p.country ?? "",
+      phone_outside_venezuela: p.phone_outside_venezuela ?? "",
+      show_phone_outside_venezuela: p.show_phone_outside_venezuela ?? false,
+      cell_phone_outside_venezuela: p.cell_phone_outside_venezuela ?? "",
+      show_cel_phone_outside_venezuela:
+        p.show_cel_phone_outside_venezuela ?? false,
+      service_address_outside_venezuela:
+        p.service_address_outside_venezuela ?? "",
+      show_public_service_address_outside_venezuela:
+        p.show_public_service_address_outside_venezuela ?? false,
+      primary_work_area: p.primary_work_area ?? "",
+      secondary_work_area: p.secondary_work_area ?? "",
+      mini_bio: p.mini_bio ?? "",
+      full_bio: p.full_bio?.content ?? "",
+      guild_inscription_date: formatDate(p.col_data?.guild_inscription_date),
       university_undergraduate: p.col_data?.university_undergraduate ?? "",
-      graduate_date:            formatDate(p.col_data?.graduate_date),
-      mention_undergraduate:    p.col_data?.mention_undergraduate    ?? "",
-      register_number:          p.col_data?.register_number          ?? "",
-      register_title_state:     p.col_data?.register_title_state     ?? "",
-      register_title_date:      formatDate(p.col_data?.register_title_date),
-      register_folio:           p.col_data?.register_folio           ?? "",
-      register_tome:            p.col_data?.register_tome            ?? "",
-
-      show_university_undergraduate: p.col_data?.show_university_undergraduate ?? false,
-      show_graduate_date:            p.col_data?.show_graduate_date            ?? false,
-      show_mention_undergraduate:    p.col_data?.show_mention_undergraduate    ?? false,
-
-      guild_director:       p.col_data?.guild_director       ?? false,
-      sixty_five_or_plus:   p.col_data?.sixty_five_or_plus   ?? false,
-      guild_collaborator:   p.col_data?.guild_collaborator   ?? false,
-      public_employee:      p.col_data?.public_employee      ?? false,
+      graduate_date: formatDate(p.col_data?.graduate_date),
+      mention_undergraduate: p.col_data?.mention_undergraduate ?? "",
+      register_number: p.col_data?.register_number ?? "",
+      register_title_state: p.col_data?.register_title_state ?? "",
+      register_title_date: formatDate(p.col_data?.register_title_date),
+      register_folio: p.col_data?.register_folio ?? "",
+      register_tome: p.col_data?.register_tome ?? "",
+      show_university_undergraduate:
+        p.col_data?.show_university_undergraduate ?? false,
+      show_graduate_date: p.col_data?.show_graduate_date ?? false,
+      show_mention_undergraduate:
+        p.col_data?.show_mention_undergraduate ?? false,
+      guild_director: p.col_data?.guild_director ?? false,
+      sixty_five_or_plus: p.col_data?.sixty_five_or_plus ?? false,
+      guild_collaborator: p.col_data?.guild_collaborator ?? false,
+      public_employee: p.col_data?.public_employee ?? false,
+      discapacity: p.col_data?.discapacity ?? false,
       university_professor: p.col_data?.university_professor ?? false,
-      double_guild:         p.col_data?.double_guild         ?? false,
-      cpsm:                 p.col_data?.cpsm                 ?? false,
+      double_guild: p.col_data?.double_guild ?? false,
+      double_guild_location: p.col_data?.double_guild_location ?? "",
       date_of_last_solvency: formatDate(p.col_data?.date_of_last_solvency),
       solvencies: p.solvencies ?? [],
     });
   });
 
-  // ── Submit ───────────────────────────────────────────────────────────────────
+  // ── Submit con FormData ──────────────────────────────────────────────────
   const handleSave = async (e: Event) => {
     e.preventDefault();
     if (saving()) return;
@@ -173,117 +213,148 @@ export default function AdminEditPsiPage() {
     setMessage(null);
 
     const rawForm = unwrap(form);
-    const payload: Record<string, any> = {};
+    const fd = new FormData(); // 👈 Usamos FormData para soportar imágenes y tipos de Go
 
+    // 1. Procesar campos del formulario
+    // 1. Procesar campos del formulario
     for (const [key, value] of Object.entries(rawForm)) {
-      if (RAW_BOOL_FIELDS.includes(key)) {
-        payload[key] = value === true ? "1" : "0";
-      } else if (value === "") {
-        payload[key] = null;
-      } else {
-        payload[key] = value;
+      // Failsafe: Si el valor es null, undefined o un string vacío, NO lo enviamos.
+      // Esto garantiza que en Go el puntero llegue como 'nil'.
+      if (value === "" || value === null || value === undefined) {
+        continue;
       }
-    }
 
-    payload.ci              = parseInt(rawForm.ci)              || null;
-    payload.fpv             = parseInt(rawForm.fpv)             || null;
-    payload.register_number = parseInt(rawForm.register_number) || null;
+      // Caso especial: Historial de Solvencias (Array -> JSON String)
+      if (key === "solvencies") {
+        fd.append("solvencies", JSON.stringify(value));
+        continue;
+      }
+
+      // Caso especial: Booleanos de Privacidad y Flags
+      if (RAW_BOOL_FIELDS.includes(key)) {
+        // Enviamos "1" o "0" que es lo más compatible con parsers de formularios
+        fd.append(key, value === true ? "1" : "0");
+        continue;
+      }
+
+      // Resto de campos (Strings, Números, etc.)
+      fd.append(key, String(value));
+    }
+    // 2. Adjuntar Archivos (Imágenes de títulos)
+    const filesObj = files();
+    if (filesObj.title_image_one)
+      fd.append("title_image_one", filesObj.title_image_one);
+    if (filesObj.title_image_two)
+      fd.append("title_image_two", filesObj.title_image_two);
+    if (filesObj.title_image_three)
+      fd.append("title_image_three", filesObj.title_image_three);
+
+    // 3. Adjuntar Foto de Perfil
+    const avatar = avatarFile();
+    if (avatar) fd.append("profile_picture", avatar);
 
     try {
-      await runUpdateAction({ id: params.id ?? "", payload });
-      setMessage({ type: "success", text: "Expediente actualizado exitosamente." });
+      await runUpdateAction({ id: params.id ?? "", payload: fd });
+      setMessage({
+        type: "success",
+        text: "Expediente actualizado exitosamente.",
+      });
       refetch();
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err: any) {
       const msg = err?.message || String(err);
-      setMessage({ type: "error", text: msg.replace(/^.*?ApiError:\s*/i, "") || "Error al actualizar." });
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      setMessage({
+        type: "error",
+        text: msg.replace(/^.*?ApiError:\s*/i, "") || "Error al guardar.",
+      });
     } finally {
       setSaving(false);
     }
   };
 
-  // ── Social networks ──────────────────────────────────────────────────────────
-  const handleAddSocial = async (payload: { name: string; url: string }) => {
-    await runAddSocial({ id: params.id ?? "", payload });
-    refetch();
-  };
+  const set = (key: keyof EditFormState, value: any) =>
+    setForm(key as any, value);
 
-  const handleDeleteSocial = async (socialId: string) => {
-    if (!confirm("¿Eliminar esta red social?")) return;
-    await runDeleteSocial({ psiId: params.id ?? "", socialId });
-    refetch();
-  };
-
-  // ─── Convenience setter typed to keyof EditFormState ────────────────────────
-  const set = (key: keyof EditFormState, value: any) => setForm(key as any, value);
-
-  // ─── Manejo de solvencias ────────────────────────
-  const handleAddLocalSolvency = (year: number) => {
-    // 1. Verificamos que el año no esté ya en la lista para evitar duplicados visuales
-    const exists = form.solvencies.some((s: any) => {
-      const sYear = new Date(s.date || s.Date).getFullYear();
-      return sYear === year;
-    });
-
-    if (exists) {
-      alert(`El año ${year} ya está en la lista de solvencias.`);
-      return;
-    }
-
-    // 2. Creamos el objeto con la fecha requerida (31 de Diciembre a medianoche UTC)
-    // Nota: El backend de Go creará el ID y los campos de auditoría
-    const newSolvency = {
-      date: `${year}-12-31T00:00:00Z`,
-      // psi_user_model_id: params.id // (Opcional, GORM suele inferirlo si mandas el array anidado)
-    };
-
-    // 3. Actualizamos el store agregando el nuevo objeto al arreglo existente
-    set("solvencies", [...form.solvencies, newSolvency]);
-  };
-  // ────────────────────────────────────────────────────────────────────────────
   return (
-    <main class="pb-28 animate-in fade-in duration-500">
-
+    <main class="pb-28 animate-in fade-in duration-500 font-sans">
       <EditPageHeader profile={profile()} />
-
-      <Suspense fallback={<div class="h-96 bg-white animate-pulse rounded-3xl" />}>
-
+      <Suspense
+        fallback={
+          <div class="h-96 bg-white animate-pulse rounded-[2.5rem] border border-gray-100" />
+        }
+      >
         <EditAlert message={message()} />
 
         <form onSubmit={handleSave} class="space-y-8">
-          <AccountSection          form={form} setForm={set} url={canonicalUrl}/>
-          <AdminStatusSection      form={form} setForm={set} />
-          <SolvenciesSection solvencies={form.solvencies} onAddLocalSolvency={handleAddLocalSolvency} />
-          <LegalIdentitySection    form={form} setForm={set} />
-          <ContactVisibilitySection form={form} setForm={set} />
-          <LocationSection         form={form} setForm={set} />
-          <ProfessionalSection     form={form} setForm={set} specialties={specialties()} />
-          <AcademicSection         form={form} setForm={set} />
+          {/* Se pasa avatarFile y onFileChange para que AccountSection pueda capturar la foto */}
+          <AccountSection
+            form={form}
+            setForm={set}
+            url={canonicalUrl()}
+            avatarFile={avatarFile()}
+            onAvatarChange={setAvatarFile}
+          />
+          <AdminStatusSection form={form} setForm={set} />
 
-          {/* Floating save button */}
-          <div class="sticky bottom-16 z-50 flex justify-end">
+          <SolvenciesSection
+            solvencies={form.solvencies}
+            onAddLocalSolvency={(year) => {
+              const newSolv = { date: `${year}-12-31T00:00:00Z` };
+              set("solvencies", [...form.solvencies, newSolv]);
+            }}
+          />
+
+          <LegalIdentitySection form={form} setForm={set} />
+          <ContactVisibilitySection form={form} setForm={set} />
+          <LocationSection form={form} setForm={set} />
+          <ProfessionalSection
+            form={form}
+            setForm={set}
+            workAreas={workAreas()}
+          />
+
+          {/* Se pasan los estados de archivos a AcademicSection */}
+          <AcademicSection
+            form={form}
+            setForm={set}
+            files={files()}
+            setFiles={setFiles}
+          />
+
+          <div class="sticky bottom-10 z-50 flex justify-end max-w-5xl mx-auto px-4">
             <button
               type="submit"
               disabled={saving()}
-              class="bg-blue-800 text-white px-10 py-4 rounded-2xl font-black shadow-2xl hover:scale-105 active:scale-95 transition-all disabled:opacity-70 disabled:pointer-events-none flex items-center gap-3 border-2 border-white"
+              class="bg-blue-900 text-white px-12 py-5 rounded-2xl font-black shadow-2xl hover:bg-blue-800 active:scale-95 transition-all disabled:opacity-50 flex items-center gap-3 border-2 border-white/20 uppercase tracking-tight"
             >
-              {saving()
-                ? <><span class="animate-spin inline-block">⏳</span> GUARDANDO...</>
-                : "💾 GUARDAR EXPEDIENTE"
-              }
+              <Show
+                when={saving()}
+                fallback={<span>💾 Guardar Expediente Maestro</span>}
+              >
+                <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span>Procesando...</span>
+              </Show>
             </button>
           </div>
         </form>
 
         <SocialNetworksBlock
           profile={profile()}
-          onAdd={handleAddSocial}
-          onDelete={handleDeleteSocial}
+          onAdd={async (p) => {
+            const id = params.id ?? "";
+            if (!id) return;
+            await addSocialServer({ id, payload: p });
+            refetch();
+          }}
+          onDelete={async (sid) => {
+            const id = params.id ?? "";
+            if (!id || !confirm("¿Eliminar?")) return;
+            await deleteSocialServer({ psiId: id, socialId: sid });
+            refetch();
+          }}
         />
 
         <AuditBlock profile={profile()} />
-
       </Suspense>
     </main>
   );

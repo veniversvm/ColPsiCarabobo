@@ -1,6 +1,7 @@
 // web/src/types/psi.ts
 
 export type PostGrade = {
+  type: string; // "diplomado", "especializacion", "maestria", "doctorado"
   title: string;
   university: string;
   year: string;
@@ -10,7 +11,6 @@ export type PostGrade = {
   pic_three_url?: string;
 };
 
-// web/src/types/psi.ts
 export interface Undergraduate {
   university?: string;
   date?: string;
@@ -22,11 +22,11 @@ export interface Undergraduate {
   register_folio?: string;
   register_tome?: string;
   register_title_date?: string;
+  register_title_date_raw?: string;
   register_title_state?: string;
 }
 
 // ── Ubicación multi-zona ──────────────────────────────────────────────────────
-// Cada bloque es opcional — solo viene si el psicólogo tiene presencia en esa zona.
 
 export type LocationCarabobo = {
   municipality: string;
@@ -46,6 +46,7 @@ export type LocationVenezuela = {
 export type LocationExterior = {
   country: string;
   phone?: string;
+  cell_phone?: string; // Añadido
   address?: string;
 };
 
@@ -56,7 +57,6 @@ export type PsiLocation = {
 };
 
 // ── Perfil público (directorio) ───────────────────────────────────────────────
-// solvent eliminado — nunca debe exponerse al público.
 export type PsiProfile = {
   id: string;
   first_name: string;
@@ -68,10 +68,8 @@ export type PsiProfile = {
   gender: string;
   profile_picture: string;
   email?: string;
-  phone?: string;
-  address?: string;
   location: PsiLocation;
-  specialties: string[];
+  specialties: string[]; // Aquí el backend mapea las WorkAreas
   mini_bio?: string;
   full_bio_content?: string;
   undergraduate: Undergraduate;
@@ -84,8 +82,11 @@ export type PsiProfileSettings = {
   id: string;
   username: string;
   email: string;
+  
+  // Contacto principal
   contact_email?: string;
-  public_phone?: string;
+  contact_phone?: string;      // Reemplaza a public_phone
+  contact_cell_phone?: string; // Nuevo
   service_address?: string;
 
   first_name: string;
@@ -108,20 +109,29 @@ export type PsiProfileSettings = {
   // Ubicación: Fuera de Venezuela
   country?: string;
   phone_outside_venezuela?: string;
+  cell_phone_outside_venezuela?: string; // Nuevo
   service_address_outside_venezuela?: string;
 
   // Perfil profesional
   mini_bio?: string;
   full_bio?: string;
-  primary_specialty?: string;
-  secondary_specialty?: string;
+  primary_work_area?: string;   // Reemplaza a specialty
+  secondary_work_area?: string; // Reemplaza a specialty
 
+  // --- PRIVACIDAD (Privacy Shield) ---
+  
   // Privacidad: Contacto principal
   show_contact_email: boolean;
-  show_public_phone: boolean;
   show_public_service_address: boolean;
 
+  // Privacidad: Carabobo
+  show_municipality_carabobo: boolean;
+  show_phone_carabobo: boolean;
+  show_cel_phone_carabobo: boolean;
+
   // Privacidad: Fuera de Carabobo
+  show_state_outside: boolean;
+  show_municipality_outside_carabobo: boolean;
   show_phone_outside_carabobo: boolean;
   show_cel_phone_outside_carabobo: boolean;
   show_public_service_address_outside_carabobo: boolean;
@@ -137,12 +147,13 @@ export type PsiProfileSettings = {
   show_mention_undergraduate: boolean;
 
   social_networks?: SocialNetwork[];
+  col_data?: Undergraduate; // Datos académicos crudos
 };
 
 export type ProfileFormData = PsiProfileSettings & {
-  password: string;
-  new_password_1: string;
-  new_password_2: string;
+  password?: string;
+  new_password_1?: string;
+  new_password_2?: string;
 };
 
 export type SocialNetwork = {
@@ -168,4 +179,3 @@ export interface PostGradeModalProps {
   postGrade: PostGrade | null;
   onClose: () => void;
 }
-

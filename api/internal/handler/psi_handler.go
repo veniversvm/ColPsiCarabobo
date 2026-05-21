@@ -48,7 +48,7 @@ func (h *PsiHandler) UploadCsv(c *fiber.Ctx) error {
 		})
 	}
 
-	file, err := c.FormFile("csv")
+	file, err := c.FormFile("xlsx")
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "El archivo CSV es requerido",

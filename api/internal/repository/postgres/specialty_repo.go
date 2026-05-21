@@ -54,9 +54,32 @@ func (r *specialtyRepo) GetAll(ctx context.Context, status string) ([]domain.Psi
 // GetByID recupera una única especialidad basada en su identificador numérico (uint32).
 // Nota de Seguridad: Este método fuerza la cláusula 'active = true' a nivel de SQL
 // para garantizar que endpoints públicos no puedan acceder a especialidades desactivadas por fuerza bruta.
-func (r *specialtyRepo) GetByID(ctx context.Context, id uint32) (*domain.PsiSpecialtyModel, error) {
+func (r *specialtyRepo) GetByID(ctx context.Context, id uint32, active bool) (*domain.PsiSpecialtyModel, error) {
 	var s domain.PsiSpecialtyModel
-	err := r.db.WithContext(ctx).First(&s, "id = ? AND active = ?", id, true).Error
+
+	// Iniciamos la consulta con el ID que es obligatorio
+	query := r.db.WithContext(ctx).Where("id = ?", id)
+
+	// Si active es true, agregamos la condición al WHERE
+	// Si active es false, no agregamos nada, permitiendo que traiga el registro sin importar su estado
+	if active {
+		query = query.Where("active = ?", true)
+	}
+
+	err := query.First(&s).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &s, nil
+}
+
+// GetByID recupera una única especialidad basada en su identificador numérico (uint32).
+// Nota de Seguridad: Este método fuerza la cláusula 'active = true' a nivel de SQL
+// para garantizar que endpoints públicos no puedan acceder a especialidades desactivadas por fuerza bruta.
+func (r *specialtyRepo) GetByAdminID(ctx context.Context, id uint32) (*domain.PsiSpecialtyModel, error) {
+	var s domain.PsiSpecialtyModel
+	err := r.db.WithContext(ctx).First(&s, "id = ? ", id).Error
 	return &s, err
 }
 

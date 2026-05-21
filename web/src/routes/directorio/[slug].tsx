@@ -1,4 +1,3 @@
-// web/src/routes/directorio/[slug].tsx
 /**
  * Página de perfil público del psicólogo con URLs amigables y SSR.
  * Formato: nombre-apellido(s)-fpv-1234
@@ -18,11 +17,11 @@ import { FullBioModal } from "~/components/directory/FullBioModal";
 
 export const ssr = true;
 
-const SITE_URL = import.meta.env.VITE_SITE_URL || "http://localhost:8080/api/v1";
+const SITE_URL = import.meta.env.VITE_SITE_URL || "http://localhost:3000";
 const BUCKET_URL = import.meta.env.VITE_BUCKET_URL || "http://localhost:9000/colpsi-bucket";
 const imgUrl = (key: string) => (key ? `${BUCKET_URL}/${key}` : "");
 
-// ✅ Server function a nivel de módulo
+// ✅ Server function para obtener el perfil desde la API
 async function fetchProfile(fpv: string): Promise<PsiProfile | null> {
   "use server";
   if (!fpv) return null;
@@ -43,6 +42,7 @@ export default function PsiProfilePage() {
   const [selectedPostGrade, setSelectedPostGrade] = createSignal(null);
   const [showBioModal, setShowBioModal] = createSignal(false);
 
+  // Recurso que extrae el FPV del slug y busca el perfil
   const [profile] = createResource(async () => {
     try {
       const fpv = extractFpvFromSlug(params.slug ?? "");
@@ -55,7 +55,7 @@ export default function PsiProfilePage() {
 
   const profileData = () => profile();
 
-  // SEO helpers
+  // SEO Helper: Construye el nombre completo
   const fullName = () => {
     const p = profileData();
     if (!p) return "Psicólogo | COLPSI Carabobo";
@@ -63,19 +63,20 @@ export default function PsiProfilePage() {
       .filter(Boolean)
       .join(" ");
   };
-  //* DIRECION DEL PERFIL DEL USUARIO  *//
+
   const canonicalUrl = `${SITE_URL}/directorio/${params.slug}`;
+  
   const ogImage = () =>
     profileData()?.profile_picture
       ? imgUrl(profileData()!.profile_picture)
       : `${SITE_URL}/og-default.jpg`;
 
-  const title: string = `${fullName()} | COLPSI Carabobo`
+  const titleStr = () => `${fullName()} | COLPSI Carabobo`;
 
   return (
     <>
       {/* ── SEO ──────────────────────────────────────────────────────────── */}
-      <Title>{title}</Title>
+      <Title>{titleStr()}</Title>
       <Meta
         name="description"
         content={
@@ -87,7 +88,7 @@ export default function PsiProfilePage() {
 
       <Meta property="og:type" content="profile" />
       <Meta property="og:url" content={canonicalUrl} />
-      <Meta property="og:title" content={`${fullName()} | COLPSI Carabobo`} />
+      <Meta property="og:title" content={titleStr()} />
       <Meta
         property="og:description"
         content={
@@ -100,7 +101,7 @@ export default function PsiProfilePage() {
       <Meta property="og:locale" content="es_VE" />
 
       <Meta name="twitter:card" content="summary" />
-      <Meta name="twitter:title" content={`${fullName()} | COLPSI Carabobo`} />
+      <Meta name="twitter:title" content={titleStr()} />
       <Meta
         name="twitter:description"
         content={
@@ -121,6 +122,7 @@ export default function PsiProfilePage() {
           postGrade={selectedPostGrade()}
           onClose={() => setSelectedPostGrade(null)}
         />
+        
         <FullBioModal
           isOpen={showBioModal()}
           onClose={() => {
@@ -128,10 +130,10 @@ export default function PsiProfilePage() {
             document.body.style.overflow = "auto";
           }}
           content={profileData()?.full_bio_content}
-          psychologistName={`${profileData()?.first_name || ""} ${profileData()?.last_name || ""}`}
+          psychologistName={fullName()}
         />
 
-        {/* Barra superior */}
+        {/* Barra superior navegable */}
         <div class="bg-colpsi-blue py-6 px-4 shadow-md sticky top-0 z-40">
           <div class="max-w-5xl mx-auto flex items-center justify-between">
             <A
@@ -140,7 +142,7 @@ export default function PsiProfilePage() {
             >
               <span>←</span> Volver al Directorio
             </A>
-            <span class="text-blue-200 text-xs md:text-sm font-medium tracking-widest uppercase">
+            <span class="text-blue-200 text-xs md:text-sm font-black tracking-widest uppercase">
               Ficha Técnica
             </span>
           </div>
@@ -153,19 +155,20 @@ export default function PsiProfilePage() {
             <ProfileSkeleton />
           </Show>
 
-          {/* No encontrado */}
+          {/* Estado: No encontrado o Error */}
           <Show when={!profile.loading && profileData() === null}>
             <NotFound />
           </Show>
 
-          {/* Perfil */}
+          {/* Perfil cargado exitosamente */}
           <Show when={profileData()}>
             {(psi) => {
-              // console.log("🔍 DATOS COMPLETOS DEL FRONTEND:", psi());
-              //  console.log("🔍 UNDERGRADUATE EN FRONTEND:", psi().undergraduate);
               const sortedPostGrades = sortPostGradesByYear(psi().post_grades);
+              
               return (
                 <div class="flex flex-col lg:grid lg:grid-cols-3 gap-6">
+                  
+                  {/* Columna Izquierda: Identidad y Contacto */}
                   <div class="space-y-4">
                     <ProfileHeader
                       url={canonicalUrl}
@@ -176,29 +179,36 @@ export default function PsiProfilePage() {
                       fpv={psi().fpv}
                       ci={psi().ci}
                       profilePicture={psi().profile_picture}
-                      specialties={psi().specialties}
+                      specialties={psi().specialties} // Mapeado desde WorkAreas en el Backend
                     />
                     
+                    {/* 
+                      Ajuste: Se remueven props phone y address individuales.
+                      El componente ContactCard ahora consume 'location' que contiene 
+                      el desglose geográfico (Carabobo, Venezuela, Exterior).
+                    */}
                     <ContactCard
                       email={psi().email}
-                      phone={psi().phone}
-                      address={psi().address}
                       location={psi().location}
                       socialNetworks={psi().social_networks}
                     />
                   </div>
 
+                  {/* Columna Derecha: Biografía y Formación */}
                   <div class="lg:col-span-2 space-y-4">
+                    
+                    {/* Sección Biografía */}
                     <Show when={psi().mini_bio || psi().full_bio_content}>
                       <div class="bg-white rounded-3xl p-6 md:p-8 shadow-premium border border-gray-100">
                         <h3 class="text-xs md:text-sm font-black text-colpsi-blue uppercase tracking-widest mb-3 border-l-4 border-colpsi-yellow pl-3">
-                          Perfil Profesional (Resumen)
+                          Perfil Profesional
                         </h3>
                         <Show when={psi().mini_bio}>
                           <p class="text-gray-700 text-sm md:text-base leading-relaxed whitespace-pre-wrap font-medium">
                             {psi().mini_bio}
                           </p>
                         </Show>
+                        
                         <Show when={psi().full_bio_content && psi().full_bio_content !== "<p></p>"}>
                           <button
                             onClick={() => setShowBioModal(true)}
@@ -213,8 +223,9 @@ export default function PsiProfilePage() {
                       </div>
                     </Show>
 
+                    {/* Sección Académica */}
                     <AcademicSection
-                      undergraduate={psi().undergraduate} // 👈 Directamente así
+                      undergraduate={psi().undergraduate}
                       postGrades={sortedPostGrades}
                       onPostGradeClick={setSelectedPostGrade}
                     />
@@ -230,6 +241,8 @@ export default function PsiProfilePage() {
   );
 }
 
+// ── Componentes de Soporte Local ─────────────────────────────────────
+
 function ProfileSkeleton() {
   return (
     <div class="flex flex-col lg:grid lg:grid-cols-3 gap-6 animate-pulse">
@@ -244,10 +257,16 @@ function ProfileSkeleton() {
 
 function NotFound() {
   return (
-    <div class="text-center py-20">
+    <div class="text-center py-20 bg-white rounded-3xl shadow-sm border border-gray-100">
       <Meta name="robots" content="noindex, follow" />
-      <h2 class="text-2xl font-black text-colpsi-blue">Perfil no encontrado</h2>
-      <p class="text-colpsi-muted mt-2">El profesional no existe o su perfil es privado.</p>
+      <div class="text-5xl mb-4">🛡️</div>
+      <h2 class="text-2xl font-black text-colpsi-blue">Perfil no accesible</h2>
+      <p class="text-colpsi-muted mt-2 max-w-md mx-auto px-4">
+        El profesional no existe, ha desactivado su perfil o no cumple con los criterios de solvencia para visualización pública.
+      </p>
+      <A href="/directorio" class="mt-8 inline-block text-colpsi-blue font-bold hover:underline">
+        Volver al Directorio de Psicólogos
+      </A>
     </div>
   );
 }

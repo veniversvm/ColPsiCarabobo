@@ -11,21 +11,22 @@ interface Props {
 
 export function LocationSection(props: Props) {
   return (
-    <SectionCard title="Ubicación & Datos Regionales" accent="border-blue-300">
-      <div class="space-y-8">
+    <SectionCard title="Ubicación Geográfica y Privacidad" accent="border-indigo-400">
+      <div class="space-y-12">
 
-        {/* ── Carabobo ── */}
-        <div>
-          <h3 class="text-xs font-black text-blue-700 uppercase tracking-widest mb-4 pb-2 border-b border-blue-100">
-            📍 Carabobo
-          </h3>
-          <p class="text-xs text-gray-400 mb-4 italic">
-            Los teléfonos son privados — solo para uso interno del Colegio.
-          </p>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* ── 1. CARABOBO ────────────────────────────────────────────────── */}
+        <div class="space-y-6">
+          <div class="flex items-center gap-2 border-l-4 border-blue-600 pl-3">
+            <h3 class="text-sm font-black text-blue-900 uppercase tracking-widest">
+              📍 Presencia en Carabobo
+            </h3>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
             <Field label="Municipio">
               <input type="text" value={props.form.municipality_carabobo}
-                onInput={(e) => props.setForm("municipality_carabobo", e.currentTarget.value)} class={IC} />
+                onInput={(e) => props.setForm("municipality_carabobo", e.currentTarget.value)} class={IC} 
+                placeholder="Ej: Valencia" />
             </Field>
             <Field label="Teléfono Fijo">
               <input type="tel" value={props.form.phone_carabobo}
@@ -36,17 +37,36 @@ export function LocationSection(props: Props) {
                 onInput={(e) => props.setForm("cel_phone_carabobo", e.currentTarget.value)} class={IC} />
             </Field>
           </div>
+
+          <div class="bg-blue-50/50 p-5 rounded-2xl border border-blue-100">
+            <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-3 ml-1">Configuración de Visibilidad (Carabobo)</p>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <ToggleSwitch label="Públicar Municipio" 
+                checked={props.form.show_municipality_carabobo}
+                onChange={(v) => props.setForm("show_municipality_carabobo", v)} />
+              <ToggleSwitch label="Publicar Fijo" 
+                checked={props.form.show_phone_carabobo}
+                onChange={(v) => props.setForm("show_phone_carabobo", v)} />
+              <ToggleSwitch label="Publicar Celular" 
+                checked={props.form.show_cel_phone_carabobo}
+                onChange={(v) => props.setForm("show_cel_phone_carabobo", v)} />
+            </div>
+          </div>
         </div>
 
-        {/* ── Otro Estado de Venezuela ── */}
-        <div class="pt-4 border-t border-gray-100">
-          <h3 class="text-xs font-black text-purple-700 uppercase tracking-widest mb-4 pb-2 border-b border-purple-100">
-            🗺️ Otro Estado de Venezuela
-          </h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* ── 2. OTRO ESTADO DE VENEZUELA ────────────────────────────────── */}
+        <div class="space-y-6 pt-4 border-t border-gray-100">
+          <div class="flex items-center gap-2 border-l-4 border-purple-600 pl-3">
+            <h3 class="text-sm font-black text-purple-900 uppercase tracking-widest">
+              🗺️ Otro Estado de Venezuela
+            </h3>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
             <Field label="Estado">
               <input type="text" value={props.form.state_outside}
-                onInput={(e) => props.setForm("state_outside", e.currentTarget.value)} class={IC} />
+                onInput={(e) => props.setForm("state_outside", e.currentTarget.value)} class={IC} 
+                placeholder="Ej: Aragua" />
             </Field>
             <Field label="Ciudad / Municipio">
               <input type="text" value={props.form.municipality_outside_carabobo}
@@ -60,57 +80,79 @@ export function LocationSection(props: Props) {
               <input type="tel" value={props.form.cel_phone_outside_carabobo}
                 onInput={(e) => props.setForm("cel_phone_outside_carabobo", e.currentTarget.value)} class={IC} />
             </Field>
-            <div class="md:col-span-2">
-              <Field label="Dirección de Consultorio">
+            <div class="lg:col-span-4">
+              <Field label="Dirección de Consultorio Secundario">
                 <input type="text" value={props.form.service_address_outside_carabobo}
                   onInput={(e) => props.setForm("service_address_outside_carabobo", e.currentTarget.value)} class={IC} />
               </Field>
             </div>
           </div>
-          <div class="mt-4 bg-yellow-50/50 p-4 rounded-2xl border border-yellow-100 grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <ToggleSwitch label="Mostrar Teléfono Fijo"
-              checked={props.form.show_phone_outside_carabobo}
-              onChange={(v) => props.setForm("show_phone_outside_carabobo", v)} />
-            <ToggleSwitch label="Mostrar Celular"
-              checked={props.form.show_cel_phone_outside_carabobo}
-              onChange={(v) => props.setForm("show_cel_phone_outside_carabobo", v)} />
-            <ToggleSwitch label="Mostrar Dirección"
-              checked={props.form.show_public_service_address_outside_carabobo}
-              onChange={(v) => props.setForm("show_public_service_address_outside_carabobo", v)} />
+
+          <div class="bg-purple-50/50 p-5 rounded-2xl border border-purple-100">
+            <p class="text-[10px] font-black text-purple-600 uppercase tracking-widest mb-3 ml-1">Configuración de Visibilidad (Nacional)</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+              <ToggleSwitch label="Mostrar Estado" 
+                checked={props.form.show_state_outside}
+                onChange={(v) => props.setForm("show_state_outside", v)} />
+              <ToggleSwitch label="Mostrar Ciudad" 
+                checked={props.form.show_municipality_outside_carabobo}
+                onChange={(v) => props.setForm("show_municipality_outside_carabobo", v)} />
+              <ToggleSwitch label="Mostrar Fijo" 
+                checked={props.form.show_phone_outside_carabobo}
+                onChange={(v) => props.setForm("show_phone_outside_carabobo", v)} />
+              <ToggleSwitch label="Mostrar Celular" 
+                checked={props.form.show_cel_phone_outside_carabobo}
+                onChange={(v) => props.setForm("show_cel_phone_outside_carabobo", v)} />
+              <ToggleSwitch label="Mostrar Dirección" 
+                checked={props.form.show_public_service_address_outside_carabobo}
+                onChange={(v) => props.setForm("show_public_service_address_outside_carabobo", v)} />
+            </div>
           </div>
         </div>
 
-        {/* ── Exterior ── */}
-        <div class="pt-4 border-t border-gray-100">
-          <h3 class="text-xs font-black text-green-700 uppercase tracking-widest mb-4 pb-2 border-b border-green-100">
-            🌐 Exterior (Fuera de Venezuela)
-          </h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* ── 3. EXTERIOR ────────────────────────────────────────────────── */}
+        <div class="space-y-6 pt-4 border-t border-gray-100">
+          <div class="flex items-center gap-2 border-l-4 border-emerald-600 pl-3">
+            <h3 class="text-sm font-black text-emerald-900 uppercase tracking-widest">
+              🌐 Exterior (Fuera de Venezuela)
+            </h3>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
             <Field label="País">
               <input type="text" value={props.form.country}
-                onInput={(e) => props.setForm("country", e.currentTarget.value)} class={IC} />
+                onInput={(e) => props.setForm("country", e.currentTarget.value)} class={IC} 
+                placeholder="Ej: España" />
             </Field>
-            <Field label="Teléfono Internacional">
+            <Field label="Teléfono Fijo">
               <input type="tel" value={props.form.phone_outside_venezuela}
                 onInput={(e) => props.setForm("phone_outside_venezuela", e.currentTarget.value)} class={IC} />
             </Field>
-            <div class="md:col-span-2">
+            <Field label="Celular Internacional">
+              <input type="tel" value={props.form.cell_phone_outside_venezuela}
+                onInput={(e) => props.setForm("cell_phone_outside_venezuela", e.currentTarget.value)} class={IC} />
+            </Field>
+            <div class="md:col-span-3">
               <Field label="Dirección en el Exterior">
                 <input type="text" value={props.form.service_address_outside_venezuela}
                   onInput={(e) => props.setForm("service_address_outside_venezuela", e.currentTarget.value)} class={IC} />
               </Field>
             </div>
           </div>
-          <div class="mt-4 bg-green-50/50 p-4 rounded-2xl border border-green-100 grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <ToggleSwitch label="Mostrar Teléfono Internacional"
-              checked={props.form.show_phone_outside_venezuela}
-              onChange={(v) => props.setForm("show_phone_outside_venezuela", v)} />
-            <ToggleSwitch label="Mostrar Celular Internacional"
-              checked={props.form.show_cel_phone_outside_venezuela}
-              onChange={(v) => props.setForm("show_cel_phone_outside_venezuela", v)} />
-            <ToggleSwitch label="Mostrar Dirección en Exterior"
-              checked={props.form.show_public_service_address_outside_venezuela}
-              onChange={(v) => props.setForm("show_public_service_address_outside_venezuela", v)} />
+
+          <div class="bg-emerald-50/50 p-5 rounded-2xl border border-emerald-100">
+            <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-3 ml-1">Configuración de Visibilidad (Exterior)</p>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <ToggleSwitch label="Publicar Fijo Int." 
+                checked={props.form.show_phone_outside_venezuela}
+                onChange={(v) => props.setForm("show_phone_outside_venezuela", v)} />
+              <ToggleSwitch label="Publicar Celular Int." 
+                checked={props.form.show_cel_phone_outside_venezuela}
+                onChange={(v) => props.setForm("show_cel_phone_outside_venezuela", v)} />
+              <ToggleSwitch label="Publicar Dirección Int." 
+                checked={props.form.show_public_service_address_outside_venezuela}
+                onChange={(v) => props.setForm("show_public_service_address_outside_venezuela", v)} />
+            </div>
           </div>
         </div>
 

@@ -1,88 +1,97 @@
 // web/src/components/admin/psicologos/edit/types.ts
 
+// web/src/components/admin/psicologos/edit/... (donde esté definido)
+
 export interface EditFormState {
-  // Cuenta
+  // 1. Identidad y Acceso
   username: string;
   email: string;
-
-  // Identidad Legal
   first_name: string;
   second_name: string;
   last_name: string;
   second_last_name: string;
-  ci: string;
-  fpv: string;
+  ci: string | number;
+  fpv: string | number;
   nationality: string;
   genre: string;
   born_date: string;
 
-  // Estatus Institucional
+  // 2. Estatus Administrativo
   is_active: boolean;
   solvent: boolean;
   proof_of_life: boolean;
 
-  // Contacto público
+  // 3. Contacto y Privacidad General
   contact_email: string;
   show_contact_email: boolean;
-  public_phone: string;
-  show_public_phone: boolean;
+  contact_phone: string;       // Antes public_phone
+  contact_cell_phone: string;  // Nuevo
   service_address: string;
   show_public_service_address: boolean;
 
-  // Carabobo
+  // 4. Ubicación: Carabobo
   municipality_carabobo: string;
+  show_municipality_carabobo: boolean; // Nuevo
   phone_carabobo: string;
+  show_phone_carabobo: boolean;        // Nuevo
   cel_phone_carabobo: string;
+  show_cel_phone_carabobo: boolean;    // Nuevo
 
-  // Fuera de Carabobo
+  // 5. Ubicación: Fuera de Carabobo (Venezuela)
   state_outside: string;
+  show_state_outside: boolean;         // Nuevo
   municipality_outside_carabobo: string;
+  show_municipality_outside_carabobo: boolean; // Nuevo
   phone_outside_carabobo: string;
-  cel_phone_outside_carabobo: string;
-  service_address_outside_carabobo: string;
   show_phone_outside_carabobo: boolean;
+  cel_phone_outside_carabobo: string;
   show_cel_phone_outside_carabobo: boolean;
+  service_address_outside_carabobo: string;
   show_public_service_address_outside_carabobo: boolean;
 
-  // Exterior
+  // 6. Ubicación: Exterior
   country: string;
   phone_outside_venezuela: string;
-  service_address_outside_venezuela: string;
   show_phone_outside_venezuela: boolean;
-  show_cel_phone_outside_venezuela: boolean;
+  cell_phone_outside_venezuela: string; // Nuevo
+  show_cel_phone_outside_venezuela: boolean; // Nuevo
+  service_address_outside_venezuela: string;
   show_public_service_address_outside_venezuela: boolean;
 
-  // Perfil Profesional
-  primary_specialty: string;
-  secondary_specialty: string;
+  // 7. Profesional (Áreas de Desempeño)
+  primary_work_area: string;   // Antes primary_specialty
+  secondary_work_area: string; // Antes secondary_specialty
   mini_bio: string;
   full_bio: string;
 
-  // Registro Académico
+  // 8. Datos Académicos y Registro
+  guild_inscription_date: string; // Nuevo
   university_undergraduate: string;
   graduate_date: string;
   mention_undergraduate: string;
-  register_number: string;
+  register_number: string | number;
   register_title_state: string;
   register_title_date: string;
   register_folio: string;
   register_tome: string;
 
-  // Privacidad académica
+  // 9. Privacidad Académica
   show_university_undergraduate: boolean;
   show_graduate_date: boolean;
   show_mention_undergraduate: boolean;
 
-  // Flags Gremiales
+  // 10. Banderas Institucionales
   guild_director: boolean;
   sixty_five_or_plus: boolean;
   guild_collaborator: boolean;
   public_employee: boolean;
+  discapacity: boolean;        // Nuevo
   university_professor: boolean;
   double_guild: boolean;
-  cpsm: boolean;
+  double_guild_location: string; // Nuevo
   date_of_last_solvency: string;
-  solvencies: Solvency[];
+  
+  solvencies: any[]; // Array de registros de solvencia
 }
 
 export interface Solvency {

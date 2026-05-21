@@ -19,7 +19,10 @@ type SpecialtyRepository interface {
 
 	// GetByID busca una especialidad por su identificador único numérico.
 	// Retorna un error de tipo 'not found' si el registro no existe o está inactivo.
-	GetByID(ctx context.Context, id uint32) (*PsiSpecialtyModel, error)
+	GetByID(ctx context.Context, id uint32, active bool) (*PsiSpecialtyModel, error)
+
+	// mismo que el anterior pero tra todos al admin
+	GetByAdminID(ctx context.Context, id uint32) (*PsiSpecialtyModel, error)
 
 	// Update guarda los cambios realizados en una instancia de especialidad existente.
 	Update(ctx context.Context, s *PsiSpecialtyModel) error
