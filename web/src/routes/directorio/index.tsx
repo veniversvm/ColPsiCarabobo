@@ -1,4 +1,5 @@
-import { createSignal, onCleanup, onMount, Suspense, createEffect } from "solid-js";
+// web/src/routes/directorio/index.tsx
+import { createSignal, onCleanup, onMount, Suspense } from "solid-js";
 import { createStore } from "solid-js/store";
 import { apiGet } from "~/lib/api";
 import { DirectoryPsychologist } from "~/types/psi";
@@ -23,79 +24,68 @@ interface DirectoryResponse {
   total_pages: number;
 }
 
-const LIMIT = 10;
+const LIMIT = 12; 
 export const ssr = false;
 
+// ── ESTADO GLOBAL (Caché en Memoria) ──────────────────────────────────────
+const [query,      setQuery]      = createSignal("");
+const [workArea,   setWorkArea]   = createSignal(""); 
+const [location,   setLocation]   = createSignal("");
+const [searchParams, setSearchParams] = createSignal({ q: "", area: "", loc: "" });
+
+const [page,        setPage]        = createSignal(1);
+const [total,       setTotal]       = createSignal(0);
+const [allItems,    setAllItems]    = createStore<DirectoryPsychologist[]>([]);
+const [hasMore,     setHasMore]     = createSignal(true);
+const [isCached,    setIsCached]    = createSignal(false);
+// ─────────────────────────────────────────────────────────────────────────
+
 export default function DirectoryPage() {
-  // ── ESTADOS DE BÚSQUEDA (Renombrados a WorkArea) ────────────────────────
-  const [query,      setQuery]      = createSignal("");
-  const [workArea,   setWorkArea]   = createSignal(""); // Almacena el ID del área seleccionada
-  const [location,   setLocation]   = createSignal("");
-  
-  // Parámetros consolidados para disparar la búsqueda
-  const [searchParams, setSearchParams] = createSignal({ q: "", area: "", loc: "" });
-
-  const [page,        setPage]        = createSignal(1);
-  const [allItems,    setAllItems]    = createStore<DirectoryPsychologist[]>([]);
-  const [hasMore,     setHasMore]     = createSignal(true);
+  const [loading, setLoading] = createSignal(false);
   const [loadingMore, setLoadingMore] = createSignal(false);
+  
+  const [showLoading, setShowLoading] = createSignal(!isCached());
 
-  // ── FEEDBACK DE CARGA ──────────────────────────────────────────────────
-  const [showLoading, setShowLoading] = createSignal(true);
-  onMount(() => {
-    setTimeout(() => setShowLoading(false), 1200);
-  });
-
-  // ── CARGA DE CATÁLOGO (Áreas de Desempeño) ─────────────────────────────
   const [workAreas] = createResource(
     () => !isServer,
     async (ready) => {
       if (!ready) return [];
-      try { 
-        // El endpoint sigue siendo /specialties en Go, pero aquí lo tratamos como áreas
-        return await apiGet<any[]>("/specialties"); 
-      }
+      try { return await apiGet<any[]>("/specialties"); }
       catch { return []; }
     }
   );
 
-  // ── RECURSO DE RESULTADOS (Página 1) ──────────────────────────────────
-  const [firstPage] = createResource(
-    () => (!isServer ? searchParams() : null),
-    async (params) => {
-      if (!params) return null;
-      try {
-        setPage(1);
-        setHasMore(true);
-        
-        // Mapeo: mandamos 'area' al parámetro 'specialty' que espera la API de Go
-        const url = `/psi/directory?q=${encodeURIComponent(params.q)}&specialty=${params.area}&location=${encodeURIComponent(params.loc)}&limit=${LIMIT}&page=1`;
-        
-        const res = await apiGet<DirectoryResponse>(url);
-        
-        setAllItems(res.data ?? []);
-        setHasMore((res.total_pages ?? 1) > 1);
-        return res;
-      } catch (err) {
-        console.error("[directorio] error:", err);
-        setAllItems([]);
-        setHasMore(false);
-        return null;
-      }
+  const executeSearch = async (params: { q: string, area: string, loc: string }) => {
+    setLoading(true);
+    try {
+      const url = `/psi/directory?q=${encodeURIComponent(params.q)}&specialty=${params.area}&location=${encodeURIComponent(params.loc)}&limit=${LIMIT}&page=1`;
+      const res = await apiGet<DirectoryResponse>(url);
+      
+      setAllItems(res.data ?? []);
+      setTotal(res.total ?? 0);
+      setPage(1);
+      setHasMore((res.total_pages ?? 1) > 1);
+      setIsCached(true); 
+    } catch (err) {
+      console.error("[directorio] error de búsqueda:", err);
+      setAllItems([]);
+      setHasMore(false);
+    } finally {
+      setLoading(false);
     }
-  );
+  };
 
-  // Reiniciar loading visual cuando cambian los parámetros de búsqueda
-  createEffect(() => {
-    searchParams(); 
-    setShowLoading(true);
-    const timer = setTimeout(() => setShowLoading(false), 1200);
-    onCleanup(() => clearTimeout(timer));
+  onMount(() => {
+    if (!isCached()) {
+      executeSearch(searchParams());
+      setTimeout(() => setShowLoading(false), 1200);
+    } else {
+      setShowLoading(false);
+    }
   });
 
-  // ── SCROLL INFINITO (Cargar más) ──────────────────────────────────────
   const loadMore = async () => {
-    if (loadingMore() || !hasMore()) return;
+    if (loadingMore() || !hasMore() || loading()) return;
     setLoadingMore(true);
     try {
       const params  = searchParams();
@@ -103,6 +93,7 @@ export default function DirectoryPage() {
       const url = `/psi/directory?q=${encodeURIComponent(params.q)}&specialty=${params.area}&location=${encodeURIComponent(params.loc)}&limit=${LIMIT}&page=${nextPage}`;
       
       const res = await apiGet<DirectoryResponse>(url);
+      
       setAllItems((prev) => [...prev, ...(res.data ?? [])]);
       setPage(nextPage);
       setHasMore(nextPage < (res.total_pages ?? 1));
@@ -117,7 +108,7 @@ export default function DirectoryPage() {
   onMount(() => {
     const observer = new IntersectionObserver(
       (entries) => { if (entries[0].isIntersecting) loadMore(); },
-      { rootMargin: "300px" }
+      { rootMargin: "400px" }
     );
     if (sentinel) observer.observe(sentinel);
     onCleanup(() => observer.disconnect());
@@ -125,7 +116,44 @@ export default function DirectoryPage() {
 
   const handleSearch = (e: Event) => {
     e.preventDefault();
-    setSearchParams({ q: query(), area: workArea(), loc: location() });
+    const newParams = { q: query(), area: workArea(), loc: location() };
+    setSearchParams(newParams);
+    
+    setShowLoading(true);
+    executeSearch(newParams).then(() => {
+      setTimeout(() => setShowLoading(false), 800);
+    });
+  };
+
+  // ── UTILIDADES PARA LA BARRA DE FILTROS ────────────────────────────────
+  const hasActiveFilters = () => {
+    const p = searchParams();
+    return p.q !== "" || p.area !== "" || p.loc !== "";
+  };
+
+  const clearSearch = () => {
+    // 1. Limpiamos los inputs visuales
+    setQuery("");
+    setWorkArea("");
+    setLocation("");
+    
+    // 2. Limpiamos los parámetros de búsqueda activos
+    const emptyParams = { q: "", area: "", loc: "" };
+    setSearchParams(emptyParams);
+    
+    // 3. Ejecutamos la búsqueda limpia
+    setShowLoading(true);
+    executeSearch(emptyParams).then(() => {
+      setTimeout(() => setShowLoading(false), 800);
+    });
+  };
+
+  // Helper para buscar el nombre del Área según su ID para mostrarlo bonito en la barra
+  const getWorkAreaName = (id: string) => {
+    const areas = workAreas();
+    if (!areas) return id;
+    const found = areas.find((a: any) => String(a.id) === id);
+    return found ? found.name : id;
   };
 
   return (
@@ -137,18 +165,57 @@ export default function DirectoryPage() {
       <main class="min-h-screen bg-[#fcfcfc] pb-24 font-sans">
         <SearchHeader
           query={query()}
-          workArea={workArea()}         // Prop actualizada
+          workArea={workArea()}         
           location={location()}
-          workAreas={workAreas()}       // Lista actualizada
+          workAreas={workAreas()}       
           onQueryChange={setQuery}
-          onWorkAreaChange={setWorkArea} // Handler actualizado
+          onWorkAreaChange={setWorkArea} 
           onLocationChange={setLocation}
           onSearch={handleSearch}
         />
 
         <div class="max-w-7xl mx-auto px-6 -mt-10 relative z-20">
 
-          <Show when={showLoading() || firstPage.loading}>
+          {/* ── BARRA DE FILTROS ACTIVOS ───────────────────────────────── */}
+          <Show when={hasActiveFilters() && !showLoading()}>
+            <div class="bg-white rounded-2xl shadow-premium border border-gray-100 p-4 mb-8 flex flex-wrap items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4">
+              
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mr-2">
+                  Filtros aplicados:
+                </span>
+                
+                <Show when={searchParams().q}>
+                  <span class="bg-blue-50 text-colpsi-blue text-xs font-bold px-3 py-1.5 rounded-xl border border-blue-100 flex items-center gap-1.5">
+                    <span class="opacity-50">🔍</span> "{searchParams().q}"
+                  </span>
+                </Show>
+                
+                <Show when={searchParams().area}>
+                  <span class="bg-emerald-50 text-emerald-700 text-xs font-bold px-3 py-1.5 rounded-xl border border-emerald-100 flex items-center gap-1.5">
+                    <span class="opacity-50">🏷️</span> {getWorkAreaName(searchParams().area)}
+                  </span>
+                </Show>
+                
+                <Show when={searchParams().loc}>
+                  <span class="bg-purple-50 text-purple-700 text-xs font-bold px-3 py-1.5 rounded-xl border border-purple-100 flex items-center gap-1.5">
+                    <span class="opacity-50">📍</span> {searchParams().loc}
+                  </span>
+                </Show>
+              </div>
+
+              <button 
+                onClick={clearSearch}
+                class="text-[10px] font-black text-red-500 hover:text-red-700 hover:bg-red-50 px-4 py-2 rounded-xl transition-all uppercase tracking-widest border border-transparent hover:border-red-100 flex items-center gap-1"
+              >
+                <span class="text-sm">✕</span> Limpiar Búsqueda
+              </button>
+
+            </div>
+          </Show>
+          {/* ───────────────────────────────────────────────────────────── */}
+
+          <Show when={showLoading()}>
             <LoadingScreen
               image="/psi_loading.png"
               imageAlt="COLPSI Carabobo"
@@ -158,14 +225,14 @@ export default function DirectoryPage() {
             />
           </Show>
 
-          <Show when={!showLoading() && !firstPage.loading}>
-            <Suspense fallback={<div class="text-center p-20">Cargando resultados...</div>}>
+          <Show when={!showLoading()}>
+            <Suspense fallback={<div class="text-center p-20 text-gray-400 font-bold">Cargando resultados...</div>}>
               <ResultsGrid
                 psychologists={allItems}
-                loading={false}
+                loading={loading()}
                 loadingMore={loadingMore()}
                 hasMore={hasMore()}
-                total={firstPage()?.total}
+                total={total()}
               />
             </Suspense>
           </Show>
