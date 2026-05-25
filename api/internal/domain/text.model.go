@@ -12,7 +12,7 @@ import (
 // Esta separación facilita la implementación de filtros de sanitización (anti-XSS)
 // sin afectar el rendimiento de las consultas de listado.
 type TextModel struct {
-	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:uuidv7()" json:"id"`
 	// AuditModel hereda campos de identificación y auditoría.
 	AuditModel
 
@@ -33,7 +33,7 @@ const (
 // Post representa una publicación o noticia dentro de la plataforma del Colegio.
 // Diseñado para soportar tanto anuncios públicos como contenido exclusivo para colegiados.
 type Post struct {
-	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:uuidv7()" json:"id"`
 	// AuditModel proporciona la trazabilidad de quién creó/editó la publicación.
 	AuditModel
 

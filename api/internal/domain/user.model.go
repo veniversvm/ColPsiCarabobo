@@ -15,7 +15,7 @@ import (
 // Implementa un sistema de permisos granulares (RBAC) para segmentar capacidades
 // de gestión según el cargo del operador (Secretaría, Tesorería, IT, etc.).
 type UserAdmin struct {
-	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:uuidv7()" json:"id"`
 	AuditModel
 
 	// Credenciales de acceso al sistema administrativo.
@@ -62,7 +62,7 @@ func (UserAdmin) TableName() string { return "user_admins" }
 // Agrupa identidad legal, contacto, ubicación geográfica, estado gremial
 // y relaciones con los demás módulos del dominio.
 type PsiUserModel struct {
-	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:uuidv7()" json:"id"`
 	AuditModel
 
 	// ── Credenciales de acceso ────────────────────────────────────────────
@@ -161,7 +161,7 @@ func (PsiUserModel) TableName() string { return "psi_users" }
 // PsiUserColData almacena el historial académico y los datos regulatorios
 // del Colegio. Es una relación 1-a-1 con PsiUserModel (uniqueIndex en PsiUserModelID).
 type PsiUserColData struct {
-	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:uuidv7()" json:"id"`
 	AuditModel
 	PsiUserModelID       uuid.UUID `gorm:"type:uuid;uniqueIndex" json:"psi_user_model_id"`
 	GuildInscriptionDate time.Time `gorm:"type:date" json:"guild_inscription_date"`
@@ -211,7 +211,7 @@ func (PsiUserColData) TableName() string { return "psi_user_col_data" }
 // PsiUSerSolvency es un registro de las solvencia que posee el psicologo.
 // Relación N-a-1 con PsiUserModel.
 type PsiUSerSolvency struct {
-	ID uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
+	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:uuidv7()" json:"id"`
 	AuditModel
 	// El nombre del índice debe ser el mismo en ambos campos para crear una clave compuesta
 	PsiUserModelID uuid.UUID `gorm:"type:uuid;not null;uniqueIndex:idx_psi_solvency_unique" json:"psi_user_model_id"`
@@ -239,7 +239,7 @@ const (
 // Especializaciones, Maestrías, Doctorados, Diplomados, etc.
 // Relación N-a-1 con PsiUserModel.
 type PsiUserPostGrade struct {
-	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:uuidv7()" json:"id"`
 	AuditModel
 	PsiUserID uuid.UUID     `gorm:"type:uuid;index" json:"psi_user_id"`
 	Type      PostGradeType `gorm:"type:varchar(50);not null" json:"post_grade_type"`
@@ -277,7 +277,7 @@ func (PsiUserPostGrade) TableName() string { return "psi_user_post_grades" }
 // Solo el personal administrativo autorizado puede crearlas, editarlas y leerlas.
 // Relación N-a-1 con PsiUserModel.
 type PsiObservations struct {
-	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:uuidv7()" json:"id"`
 	AuditModel
 	PsiUserID uuid.UUID `gorm:"type:uuid;index" json:"psi_user_id"`
 	Content   string    `gorm:"type:text" json:"content"`
@@ -294,7 +294,7 @@ func (PsiObservations) TableName() string { return "psi_observations" }
 // Al igual que las observaciones, es de acceso exclusivo al personal autorizado.
 // Relación N-a-1 con PsiUserModel.
 type PsiODeontologia struct {
-	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:uuidv7()" json:"id"`
 	AuditModel
 	PsiUserID uuid.UUID `gorm:"type:uuid;index" json:"psi_user_id"`
 	Content   string    `gorm:"type:text" json:"content"`

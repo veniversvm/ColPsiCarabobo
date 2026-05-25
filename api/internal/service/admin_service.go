@@ -237,7 +237,7 @@ func (s *AdminService) CreateAdmin(
 		Username: req.Username,
 		Email:    validate_email,
 		IsActive: true,
-		Key:      uuid.New().String(),
+		Key:      uuid.Must(uuid.NewV7()).String(),
 		Sudo:     false, // Forzado a false; la elevación a Sudo es una operación externa a la API
 	}
 
@@ -353,7 +353,7 @@ func (s *AdminService) UpdateAdmin(
 			return err
 		}
 		target.Password = string(hashed)
-		target.Key = uuid.New().String()
+		target.Key = uuid.Must(uuid.NewV7()).String()
 	}
 
 	// Aplicación de mutaciones de permisos validadas

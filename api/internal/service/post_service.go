@@ -71,7 +71,7 @@ func (s *PostService) CreatePost(ctx context.Context, admin *domain.UserAdmin, r
 		}
 
 		// Generamos nombre único
-		filename := uuid.New().String() + ext
+		filename := uuid.Must(uuid.NewV7()).String() + ext
 
 		// Pasamos el Content-Type correcto a S3 (antes estaba hardcodeado a image/jpeg)
 		key, err := s.s3Client.UploadStream(ctx, bytes.NewReader(cleanBytes), "posts", filename, contentType)
@@ -85,7 +85,7 @@ func (s *PostService) CreatePost(ctx context.Context, admin *domain.UserAdmin, r
 	cleanContent := s.sanitizer.Sanitize(req.Content)
 
 	// 3. Preparar modelos
-	textID := uuid.New()
+	textID := uuid.Must(uuid.NewV7())
 	textModel := &domain.TextModel{
 		AuditModel: domain.AuditModel{
 			CreateBy: admin.Username, CreateById: &admin.ID,
@@ -216,7 +216,7 @@ func (s *PostService) UpdatePost(ctx context.Context, admin *domain.UserAdmin, r
 		}
 
 		// B. Generar nombre único y subir
-		filename := fmt.Sprintf("posts/updated_%s%s", uuid.New().String(), ext)
+		filename := fmt.Sprintf("posts/updated_%s%s", uuid.Must(uuid.NewV7()).String(), ext)
 		key, err := s.s3Client.UploadStream(ctx, bytes.NewReader(cleanBytes), "posts", filename, contentType)
 		if err != nil {
 			return err

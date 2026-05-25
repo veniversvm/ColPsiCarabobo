@@ -64,7 +64,7 @@ func TestPsiService_CreateByAdmin(t *testing.T) {
 	svc := NewPsiService(repo, nil, mail)
 	ctx := context.Background()
 
-	admin := &domain.UserAdmin{ID: uuid.New(), Username: "admin_tester", CanCreatePsi: true}
+	admin := &domain.UserAdmin{ID: uuid.Must(uuid.NewV7()), Username: "admin_tester", CanCreatePsi: true}
 
 	t.Run("Éxito: Registro completo", func(t *testing.T) {
 		// FIX: La función anónima mockeada debe recibir los 5 parámetros
@@ -92,8 +92,8 @@ func TestPsiService_UpdateByAdmin_Patch(t *testing.T) {
 	svc := NewPsiService(repo, nil, mail)
 
 	ctx := context.Background()
-	targetID := uuid.New()
-	admin := &domain.UserAdmin{ID: uuid.New(), Username: "super_admin", Sudo: true}
+	targetID := uuid.Must(uuid.NewV7())
+	admin := &domain.UserAdmin{ID: uuid.Must(uuid.NewV7()), Username: "super_admin", Sudo: true}
 
 	t.Run("Actualización Parcial: Solo cambia el estatus de solvencia", func(t *testing.T) {
 		currentPsi := &domain.PsiUserModel{

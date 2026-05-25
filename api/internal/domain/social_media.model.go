@@ -6,7 +6,7 @@ import "github.com/google/uuid"
 
 // PsiUserSocialNetwork representa los enlaces digitales del psicólogo.
 type PsiUserSocialNetwork struct {
-	ID uuid.UUID `gorm:"type:uuid;index;not null" json:"id"`
+	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:uuidv7()" json:"id"`
 
 	AuditModel
 

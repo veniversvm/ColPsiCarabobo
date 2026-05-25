@@ -97,7 +97,7 @@ func (s *PsiService) ImportFromXLSX(ctx context.Context, reader io.Reader, admin
 			}
 		}
 
-		psiID := uuid.New()
+		psiID := uuid.Must(uuid.NewV7())
 		audit := domain.AuditModel{
 			CreateById: &adminID,
 			CreateBy:   "Admin_XLSX_Import",
@@ -119,7 +119,7 @@ func (s *PsiService) ImportFromXLSX(ctx context.Context, reader io.Reader, admin
 		// ── Modelo Principal (PsiUserModel) ────────────────────────────────
 		psi := &domain.PsiUserModel{
 			ID:         psiID,
-			Key:        uuid.New().String(),
+			Key:        uuid.Must(uuid.NewV7()).String(),
 			AuditModel: audit,
 
 			// Credenciales de acceso
@@ -173,7 +173,7 @@ func (s *PsiService) ImportFromXLSX(ctx context.Context, reader io.Reader, admin
 
 		// ── Datos Colegiales (PsiUserColData) ──────────────────────────────
 		colData := &domain.PsiUserColData{
-			ID:                   uuid.New(),
+			ID:                   uuid.Must(uuid.NewV7()),
 			PsiUserModelID:       psiID,
 			AuditModel:           audit,
 			GuildInscriptionDate: parseDate(getValorSeguro(row, 4)),

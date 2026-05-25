@@ -56,7 +56,7 @@ func TestAdminService_All(t *testing.T) {
 	t.Run("Login: Éxito y Rotación de Key", func(t *testing.T) {
 		pass := "Admin123!"
 		hashed, _ := bcrypt.GenerateFromPassword([]byte(pass), bcrypt.DefaultCost)
-		adminID := uuid.New()
+		adminID := uuid.Must(uuid.NewV7())
 
 		repo.GetByIdentifierFunc = func(ctx context.Context, id string) (*domain.UserAdmin, error) {
 			return &domain.UserAdmin{
@@ -102,7 +102,7 @@ func TestAdminService_All(t *testing.T) {
 	// --- 3. TEST DE JERARQUÍA (CREATE ADMIN) ---
 	t.Run("CreateAdmin: Regla 'No puedes dar lo que no tienes'", func(t *testing.T) {
 		creator := domain.UserAdmin{
-			ID:             uuid.New(),
+			ID:             uuid.Must(uuid.NewV7()),
 			Username:       "moderador",
 			CanCreateAdmin: true,
 			Sudo:           false, // No es Super Usuario
@@ -128,8 +128,8 @@ func TestAdminService_All(t *testing.T) {
 
 	// --- 4. TEST DE PROTECCIÓN SUDO (UPDATE) ---
 	t.Run("UpdateAdmin: Proteger Super Usuario de ediciones externas", func(t *testing.T) {
-		updater := domain.UserAdmin{ID: uuid.New(), Sudo: false}    // Admin normal
-		targetSudo := &domain.UserAdmin{ID: uuid.New(), Sudo: true} // Destino Sudo
+		updater := domain.UserAdmin{ID: uuid.Must(uuid.NewV7()), Sudo: false}    // Admin normal
+		targetSudo := &domain.UserAdmin{ID: uuid.Must(uuid.NewV7()), Sudo: true} // Destino Sudo
 
 		repo.GetByIDFunc = func(ctx context.Context, id uuid.UUID) (*domain.UserAdmin, error) {
 			return targetSudo, nil
@@ -145,7 +145,7 @@ func TestAdminService_All(t *testing.T) {
 
 	// --- 5. TEST DE PREVENCIÓN DE AUTO-SUICIDIO (DELETE) ---
 	t.Run("DeleteAdmin: Impedir auto-eliminación", func(t *testing.T) {
-		adminID := uuid.New()
+		adminID := uuid.Must(uuid.NewV7())
 		updater := &domain.UserAdmin{ID: adminID}
 
 		err := svc.DeleteAdmin(context.Background(), updater, adminID)
