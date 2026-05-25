@@ -96,8 +96,8 @@ func (s *PsiService) CreatePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 	regDate, _ := time.Parse("2006-01-02", req.RegisterTitleDate)
 
 	// 5. Mapeo de Identidades (UUIDs frescos)
-	psiID := uuid.New()
-	colDataID := uuid.New()
+	psiID := uuid.Must(uuid.NewV7())
+	colDataID := uuid.Must(uuid.NewV7())
 
 	// 6. Crear un audit model
 	audit_moodel := domain.AuditModel{
@@ -407,7 +407,7 @@ func (s *PsiService) UpdatePsiByAdmin(
 			psi.FullBio.UpdateById = &admin.ID
 		} else {
 			psi.FullBio = domain.TextModel{
-				ID:      uuid.New(),
+				ID:      uuid.Must(uuid.NewV7()),
 				Content: cleanHTML,
 				AuditModel: domain.AuditModel{
 					CreateBy: admin.Username, CreateById: &admin.ID,
@@ -462,7 +462,7 @@ func (s *PsiService) UpdatePsiByAdmin(
 				// 3. Solo añadir si NO existe ya en la DB
 				if !existingDates[dateKey] {
 					newSolvency := domain.PsiUSerSolvency{
-						ID:             uuid.New(),
+						ID:             uuid.Must(uuid.NewV7()),
 						PsiUserModelID: psi.ID,
 						Date:           t,
 						AuditModel: domain.AuditModel{
@@ -611,7 +611,7 @@ func (s *PsiService) UpdatePsiByAdmin(
 			if err != nil {
 				return "", err
 			}
-			shortUUID := uuid.New().String()[:6]
+			shortUUID := uuid.Must(uuid.NewV7()).String()[:6]
 			filename := fmt.Sprintf("%s_title_%s_%s%s", psi.ID.String(), orderNum, shortUUID, ext)
 			newKey, err := s.s3Client.UploadStream(ctx, bytes.NewReader(cleanBytes), "titles", filename, contentType)
 			if err != nil {
@@ -762,7 +762,7 @@ func createSolvencieModel(date time.Time, userId uuid.UUID, audit_moodel domain.
 	// Si pasa las validaciones, llenamos el slice
 
 	return domain.PsiUSerSolvency{
-		ID:             uuid.New(),
+		ID:             uuid.Must(uuid.NewV7()),
 		PsiUserModelID: userId,
 		AuditModel:     audit_moodel,
 		Date:           time.Date(currentYear, time.December, 31, 0, 0, 0, 0, time.UTC),
@@ -774,7 +774,7 @@ func createPsiUSerModel(req request_structs.CreatePsiAdminRequest, psiID uuid.UU
 
 	return &domain.PsiUserModel{
 		ID:         psiID,
-		Key:        uuid.New().String(),
+		Key:        uuid.Must(uuid.NewV7()).String(),
 		AuditModel: audit_moodel,
 
 		// ── Credenciales ──────────────────────────────────────────────────

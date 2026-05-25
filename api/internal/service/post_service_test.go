@@ -60,7 +60,7 @@ func TestPostService_Extensive(t *testing.T) {
 
 	// --- 1. TEST DE REGLAS DE ACCESO (ACL) ---
 	t.Run("ACL_Visibility_Rules", func(t *testing.T) {
-		postID := uuid.New()
+		postID := uuid.Must(uuid.NewV7())
 		mockPost := &domain.Post{
 			ID:     postID,
 			Type:   "psi",
@@ -86,7 +86,7 @@ func TestPostService_Extensive(t *testing.T) {
 
 	// --- 2. TEST DE SANITIZACIÓN (XSS) ---
 	t.Run("XSS_Prevention", func(t *testing.T) {
-		admin := &domain.UserAdmin{ID: uuid.New(), Username: "admin", CanPublish: true}
+		admin := &domain.UserAdmin{ID: uuid.Must(uuid.NewV7()), Username: "admin", CanPublish: true}
 
 		// Inyectamos un script malicioso
 		maliciousHTML := "<p>Hola</p><script>alert('hack')</script>"
@@ -145,7 +145,7 @@ func TestPostService_Extensive(t *testing.T) {
 	// --- 4. TEST DE PERMISOS ADMINISTRATIVOS ---
 	t.Run("Admin_Permissions_Check", func(t *testing.T) {
 		// Admin que NO tiene permiso de publicar (ni es Sudo)
-		limitedAdmin := &domain.UserAdmin{ID: uuid.New(), CanPublish: false, Sudo: false}
+		limitedAdmin := &domain.UserAdmin{ID: uuid.Must(uuid.NewV7()), CanPublish: false, Sudo: false}
 
 		req := request_structs.CreatePostRequest{Title: "Intento Fallido"}
 		err := svc.CreatePost(ctx, limitedAdmin, req, nil)

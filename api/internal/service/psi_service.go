@@ -152,11 +152,13 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 		// ── FAILSAFE DE CORREO ──────────────────────────────────────────
 		email := getValorSeguro(row, 15)
 		isPlaceholderEmail := false
+		valid_email := true
 
 		if email == "" || email == "-" || !strings.Contains(email, "@") {
 			// Generamos un correo único basado en FPV para no romper la restricción UNIQUE de la DB
 			email = fmt.Sprintf("%d.sincorreo@colpsi.com", fpvInt)
 			isPlaceholderEmail = true
+			valid_email = false
 			auditLogger.Printf("⚠️ FILA %d | %s | Sin correo. Usando failsafe: %s", rowIdx, fullName, email)
 		}
 
@@ -191,12 +193,12 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 			auditLogger.Printf("⚰️  FILA %d | %s | Detectado como FALLECIDO (Celda: %s)", rowIdx, fullName, statusVidaRaw)
 		}
 
-		psiID := uuid.New()
+		psiID := uuid.Must(uuid.NewV7())
 
 		// ── CONSTRUCCIÓN DEL MODELO ──
 		psi := &domain.PsiUserModel{
 			ID:         psiID,
-			Key:        uuid.New().String(),
+			Key:        uuid.Must(uuid.NewV7()).String(),
 			AuditModel: audit,
 			Username:   username,
 			Email:      email,
@@ -226,7 +228,7 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 		}
 
 		colData := &domain.PsiUserColData{
-			ID:                      uuid.New(),
+			ID:                      uuid.Must(uuid.NewV7()),
 			PsiUserModelID:          psiID,
 			AuditModel:              audit,
 			GuildInscriptionDate:    parseDate(getValorSeguro(row, 4)),
@@ -238,7 +240,7 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 		}
 
 		solvency := domain.PsiUSerSolvency{
-			ID: uuid.New(), PsiUserModelID: psiID, AuditModel: audit, Date: colData.DateOfLastSolvency,
+			ID: uuid.Must(uuid.NewV7()), PsiUserModelID: psiID, AuditModel: audit, Date: colData.DateOfLastSolvency,
 		}
 
 		// 5. PERSISTENCIA
@@ -249,6 +251,25 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 				"fila": strconv.Itoa(rowIdx), "nombre": fullName, "error": humanError,
 			})
 			continue
+		}
+
+		// 6. ENVIO DE EMAIL
+		if estaVivo && valid_email {
+			mailData := map[string]interface{}{
+				"Name":      psi.Username,
+				"Email":     psi.Email,
+				"LoginTime": time.Now().Format(time.RFC1123),
+			}
+
+			err = s.mailService.SendEmail(
+				psi.Email,
+				"Bienvenido(a) a la palataforma del Colgeio de Psicologos del Estado Carabobo",
+				"welcome_psi",
+				mailData,
+			)
+			if err != nil {
+				auditLogger.Printf("Error con email: %v\nError %v", psi.Email, err.Error())
+			}
 		}
 
 		successCount++
@@ -346,7 +367,7 @@ func (s *PsiService) UpdateProfileSelf(
 		}
 		hashed, _ := bcrypt.GenerateFromPassword([]byte(*req.NewPassword1), bcrypt.DefaultCost)
 		psi.Password = string(hashed)
-		psi.Key = uuid.New().String()
+		psi.Key = uuid.Must(uuid.NewV7()).String()
 	}
 
 	var uploadedS3Keys []string
@@ -536,7 +557,7 @@ func (s *PsiService) UpdateProfileSelf(
 			psi.FullBio.UpdateById = &psi.ID
 		} else {
 			psi.FullBio = domain.TextModel{
-				ID:      uuid.New(),
+				ID:      uuid.Must(uuid.NewV7()),
 				Content: cleanHTML,
 				AuditModel: domain.AuditModel{
 					CreateBy: psi.Username, CreateById: &psi.ID,
@@ -584,7 +605,7 @@ func (s *PsiService) UpdateProfileSelf(
 			if err != nil {
 				return "", err
 			}
-			shortUUID := uuid.New().String()[:6]
+			shortUUID := uuid.Must(uuid.NewV7()).String()[:6]
 			filename := fmt.Sprintf("%s_title_%s_%s%s", psi.ID.String(), orderNum, shortUUID, ext)
 			newKey, err := s.s3Client.UploadStream(ctx, bytes.NewReader(cleanBytes), "titles", filename, contentType)
 			if err != nil {
@@ -929,7 +950,7 @@ func (s *PsiService) Login(ctx context.Context, identifier, password string) (st
 
 	// 4. ROTACIÓN DE SESIÓN (Seguridad Senior)
 	// Generamos una nueva llave. Esto invalida tokens anteriores en otros dispositivos.
-	newKey := uuid.New().String()
+	newKey := uuid.Must(uuid.NewV7()).String()
 	psi.Key = newKey
 
 	// Auditoría automática de login
@@ -969,7 +990,7 @@ func (s *PsiService) Login(ctx context.Context, identifier, password string) (st
 func (s *PsiService) Logout(ctx context.Context, psi *domain.PsiUserModel) error {
 	// Rotar la key invalida físicamente el token actual
 	// — cualquier request posterior con el JWT viejo fallará en validateToken
-	psi.Key = uuid.New().String()
+	psi.Key = uuid.Must(uuid.NewV7()).String()
 	psi.UpdateBy = psi.Username
 	psi.UpdateById = &psi.ID
 	return s.repo.UpdateKey(ctx, psi)
@@ -1018,7 +1039,7 @@ func (s *PsiService) AddPostGrade(ctx context.Context, psi *domain.PsiUserModel,
 		}
 
 		// 2. Subir a S3
-		filename := uuid.New().String() + ext
+		filename := uuid.Must(uuid.NewV7()).String() + ext
 		// Guardamos en la carpeta 'certificates'
 		return s.s3Client.UploadStream(ctx, bytes.NewReader(cleanBytes), "certificates", filename, contentType)
 	}
@@ -1103,7 +1124,7 @@ func (s *PsiService) UpdatePostGrade(ctx context.Context, psi *domain.PsiUserMod
 		}
 
 		// B. Subir nueva
-		filename := uuid.New().String() + ext
+		filename := uuid.Must(uuid.NewV7()).String() + ext
 		newKey, err := s.s3Client.UploadStream(ctx, bytes.NewReader(cleanBytes), "certificates", filename, contentType)
 		if err != nil {
 			return "", err

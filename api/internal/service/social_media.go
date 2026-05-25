@@ -39,7 +39,7 @@ func (s *PsiService) AddSocialNetwork(ctx context.Context, psi *domain.PsiUserMo
 	// 2. PREPARACIÓN DEL MODELO:
 	// Se integra la lógica de auditoría interna y la utilidad de normalización.
 	network := &domain.PsiUserSocialNetwork{
-		ID: uuid.New(),
+		ID: uuid.Must(uuid.NewV7()),
 		AuditModel: domain.AuditModel{
 			CreateBy:   psi.Username,
 			CreateById: &psi.ID,

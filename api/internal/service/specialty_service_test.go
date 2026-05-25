@@ -16,7 +16,7 @@ import (
 type mockSpecialtyRepo struct {
 	domain.SpecialtyRepository // Embedding para cumplir la interfaz
 	CreateFunc                 func(ctx context.Context, s *domain.PsiSpecialtyModel) error
-	GetByIDFunc                func(ctx context.Context, id uint32) (*domain.PsiSpecialtyModel, error)
+	GetByIDFunc                func(ctx context.Context, id uint32, includeInactive bool) (*domain.PsiSpecialtyModel, error)
 	UpdateFunc                 func(ctx context.Context, s *domain.PsiSpecialtyModel) error
 	GetAllFunc                 func(ctx context.Context, status string) ([]domain.PsiSpecialtyModel, error)
 	CountFunc                  func(ctx context.Context, active *bool) (int64, error)
@@ -25,8 +25,8 @@ type mockSpecialtyRepo struct {
 func (m *mockSpecialtyRepo) Create(ctx context.Context, s *domain.PsiSpecialtyModel) error {
 	return m.CreateFunc(ctx, s)
 }
-func (m *mockSpecialtyRepo) GetByID(ctx context.Context, id uint32) (*domain.PsiSpecialtyModel, error) {
-	return m.GetByIDFunc(ctx, id)
+func (m *mockSpecialtyRepo) GetByID(ctx context.Context, id uint32, includeInactive bool) (*domain.PsiSpecialtyModel, error) {
+	return m.GetByIDFunc(ctx, id, includeInactive)
 }
 func (m *mockSpecialtyRepo) Update(ctx context.Context, s *domain.PsiSpecialtyModel) error {
 	return m.UpdateFunc(ctx, s)
@@ -105,7 +105,7 @@ func TestSpecialtyService_Update(t *testing.T) {
 		admin := &domain.UserAdmin{ID: uuid.New(), Username: "editor", CanEditTags: true}
 		existingSpec := &domain.PsiSpecialtyModel{ID: 10, Name: "Viejo Nombre"}
 
-		repo.GetByIDFunc = func(ctx context.Context, id uint32) (*domain.PsiSpecialtyModel, error) {
+		repo.GetByIDFunc = func(ctx context.Context, id uint32, includeInactive bool) (*domain.PsiSpecialtyModel, error) {
 			return existingSpec, nil
 		}
 

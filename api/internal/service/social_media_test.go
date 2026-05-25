@@ -46,7 +46,7 @@ func TestPsiService_AddSocialNetwork(t *testing.T) {
 	repo := &mockPsiRepoSocialMedia{}
 	svc := &PsiService{repo: repo} // Asumiendo que tu struct se llama PsiService
 	ctx := context.Background()
-	psi := &domain.PsiUserModel{ID: uuid.New(), Username: "psicologo1"}
+	psi := &domain.PsiUserModel{ID: uuid.Must(uuid.NewV7()), Username: "psicologo1"}
 
 	t.Run("Éxito: Agrega red social dentro del límite", func(t *testing.T) {
 		repo.CountSocialNetworksFunc = func(ctx context.Context, id uuid.UUID) (int64, error) {
@@ -83,9 +83,9 @@ func TestPsiService_UpdateSocialNetwork_Ownership(t *testing.T) {
 	svc := &PsiService{repo: repo}
 	ctx := context.Background()
 
-	psiA := &domain.PsiUserModel{ID: uuid.New(), Username: "psicologo_A"}
-	psiB := &domain.PsiUserModel{ID: uuid.New(), Username: "psicologo_B"}
-	netID := uuid.New()
+	psiA := &domain.PsiUserModel{ID: uuid.Must(uuid.NewV7()), Username: "psicologo_A"}
+	psiB := &domain.PsiUserModel{ID: uuid.Must(uuid.NewV7()), Username: "psicologo_B"}
+	netID := uuid.Must(uuid.NewV7())
 
 	t.Run("Error: Intento de editar red ajena (ID Spoofing)", func(t *testing.T) {
 		// La red pertenece al Psicólogo B
@@ -108,9 +108,9 @@ func TestPsiService_DeleteSocialNetwork_Roles(t *testing.T) {
 	svc := &PsiService{repo: repo}
 	ctx := context.Background()
 
-	ownerID := uuid.New()
-	otherID := uuid.New()
-	netID := uuid.New()
+	ownerID := uuid.Must(uuid.NewV7())
+	otherID := uuid.Must(uuid.NewV7())
+	netID := uuid.Must(uuid.NewV7())
 
 	repo.GetSocialNetworkFunc = func(ctx context.Context, id uuid.UUID) (*domain.PsiUserSocialNetwork, error) {
 		return &domain.PsiUserSocialNetwork{ID: netID, PsiUserID: ownerID}, nil
@@ -133,7 +133,7 @@ func TestPsiService_DeleteSocialNetwork_Roles(t *testing.T) {
 
 	t.Run("Admin: Puede borrar cualquier red", func(t *testing.T) {
 		repo.DeleteSocialNetworkFunc = func(ctx context.Context, id uuid.UUID) error { return nil }
-		err := svc.DeleteSocialNetwork(ctx, "admin", uuid.New(), netID)
+		err := svc.DeleteSocialNetwork(ctx, "admin", uuid.Must(uuid.NewV7()), netID)
 		if err != nil {
 			t.Errorf("Admin debería poder borrar, error: %v", err)
 		}

@@ -87,7 +87,7 @@ func TestPsiService_GetPublicProfile_Privacy(t *testing.T) {
 	t.Run("Restricción de Solvencia: No solvente no muestra Postgrados", func(t *testing.T) {
 		repo.GetByFPVFunc = func(ctx context.Context, id int) (domain.PsiUserModel, error) {
 			return domain.PsiUserModel{
-				ID:       uuid.New(),
+				ID:       uuid.Must(uuid.NewV7()),
 				FPV:      psiFPV,
 				IsActive: true,
 				Solvent:  false, // Gatilla el retorno temprano
@@ -107,10 +107,10 @@ func TestPsiService_GetPublicProfile_Privacy(t *testing.T) {
 	})
 
 	t.Run("Privacidad Personal: Ocultar email", func(t *testing.T) {
-		bioID := uuid.New()
+		bioID := uuid.Must(uuid.NewV7())
 		repo.GetByFPVFunc = func(ctx context.Context, id int) (domain.PsiUserModel, error) {
 			return domain.PsiUserModel{
-				ID:               uuid.New(),
+				ID:               uuid.Must(uuid.NewV7()),
 				FPV:              psiFPV,
 				IsActive:         true,
 				Solvent:          true, // Pasa al Escudo de Privacidad
@@ -143,7 +143,7 @@ func TestPsiService_Login(t *testing.T) {
 
 	pass := "password123"
 	hashed, _ := bcrypt.GenerateFromPassword([]byte(pass), bcrypt.DefaultCost)
-	psiID := uuid.New()
+	psiID := uuid.Must(uuid.NewV7())
 
 	t.Run("Login Exitoso", func(t *testing.T) {
 		repo.GetByIdentifierFunc = func(ctx context.Context, id string) (*domain.PsiUserModel, error) {
@@ -166,7 +166,7 @@ func TestPsiService_Login(t *testing.T) {
 func TestPsiService_UpdateProfileSelf_LazyLoading(t *testing.T) {
 	repo := &mockPsiRepoSvc{}
 	svc := NewPsiService(repo, nil, nil)
-	psiID := uuid.New()
+	psiID := uuid.Must(uuid.NewV7())
 	hashed, _ := bcrypt.GenerateFromPassword([]byte("pass123"), bcrypt.DefaultCost)
 
 	// Usuario con password para que bcrypt no falle

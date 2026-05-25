@@ -1,5 +1,6 @@
 // web/src/components/admin/psicologos/edit/sections/AccountSection.tsx
 
+import { Show, createMemo } from "solid-js";
 import QRCodeGenerator from "~/components/psi/profile/QrCode";
 import { Field, IC, SectionCard } from "../EditPrimitives";
 import type { EditFormState } from "../types";
@@ -8,14 +9,69 @@ interface Props {
   url: string;
   form: EditFormState;
   setForm: (key: keyof EditFormState, value: any) => void;
+  // --- Nuevas Props para archivos ---
+  avatarFile: File | null;
+  onAvatarChange: (file: File | null) => void;
 }
 
 export function AccountSection(props: Props) {
+  // Generar una URL de vista previa si hay un archivo seleccionado
+  const previewUrl = createMemo(() => {
+    if (props.avatarFile) {
+      return URL.createObjectURL(props.avatarFile);
+    }
+    // Si no hay archivo nuevo, intentar mostrar la foto actual de la DB
+    // Nota: Ajusta 'profile_picture_url' según el nombre que venga en tu objeto de perfil
+    return (props.form as any).profile_picture_url || ""; 
+  });
+
+  const handleFileChange = (e: Event) => {
+    const file = (e.currentTarget as HTMLInputElement).files?.[0] || null;
+    props.onAvatarChange(file);
+  };
+
   return (
-    <SectionCard title="Cuenta y Acceso" accent="border-colpsi-yellow">
-      <div class="flex flex-col lg:flex-row gap-8">
+    <SectionCard title="Cuenta y Perfil Visual" accent="border-colpsi-yellow">
+      <div class="flex flex-col xl:flex-row gap-10">
         
-        {/* Inputs de Cuenta */}
+        {/* 1. Gestión de Foto de Perfil */}
+        <div class="flex flex-col items-center space-y-4">
+          <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+            Foto de Perfil
+          </label>
+          <div class="relative group">
+            <div class="w-32 h-32 rounded-3xl overflow-hidden border-4 border-gray-50 shadow-md bg-gray-100 flex items-center justify-center relative">
+              <Show 
+                when={previewUrl()} 
+                fallback={<span class="text-4xl text-gray-300">👤</span>}
+              >
+                <img src={previewUrl()} alt="Avatar" class="w-full h-full object-cover" />
+              </Show>
+              
+              {/* Overlay de carga */}
+              <label class="absolute inset-0 bg-blue-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer text-white p-2 text-center">
+                <span class="text-lg">📷</span>
+                <span class="text-[9px] font-bold uppercase leading-tight">Cambiar Foto</span>
+                <input type="file" accept="image/*" class="hidden" onChange={handleFileChange} />
+              </label>
+            </div>
+            
+            <Show when={props.avatarFile}>
+              <button 
+                onClick={() => props.onAvatarChange(null)}
+                class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs shadow-lg flex items-center justify-center hover:bg-red-600 transition-colors"
+                title="Quitar imagen seleccionada"
+              >
+                ✕
+              </button>
+            </Show>
+          </div>
+          <p class="text-[9px] text-gray-400 font-medium max-w-[120px] text-center">
+            Formatos: JPG, PNG. Máx 2MB.
+          </p>
+        </div>
+
+        {/* 2. Inputs de Cuenta */}
         <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-5">
           <Field label="Nombre de Usuario (Login)">
             <input
@@ -34,16 +90,24 @@ export function AccountSection(props: Props) {
             />
           </Field>
           
-          <div class="md:col-span-2 p-4 bg-blue-50 rounded-2xl border border-blue-100 mt-2">
-            <p class="text-xs text-colpsi-blue font-medium">
-              <span class="font-bold">Nota:</span> Estos datos son críticos para el inicio de sesión del psicólogo en la plataforma.
+          <div class="md:col-span-2 p-5 bg-blue-50/50 rounded-2xl border border-blue-100 mt-2">
+            <p class="text-[11px] text-blue-700 leading-relaxed">
+              <span class="font-black uppercase mr-1">Aviso:</span> 
+              Cualquier cambio en el Email o Username afectará las credenciales de acceso del psicólogo. 
+              Si el usuario está logueado, su sesión se invalidará.
             </p>
           </div>
         </div>
 
-        {/* Generador de QR lateral */}
-        <div class="flex justify-center items-start lg:border-l lg:border-gray-100 lg:pl-8">
+        {/* 3. Generador de QR lateral */}
+        <div class="flex flex-col items-center justify-start lg:border-l lg:border-gray-100 lg:pl-8">
+          <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">
+            Acceso Directo (QR)
+          </label>
           <QRCodeGenerator url={props.url} />
+          <p class="text-[9px] text-gray-400 mt-4 text-center max-w-[150px]">
+            Escanea para ver la <br/> ficha pública actual.
+          </p>
         </div>
 
       </div>
