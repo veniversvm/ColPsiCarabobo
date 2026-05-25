@@ -152,11 +152,13 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 		// ── FAILSAFE DE CORREO ──────────────────────────────────────────
 		email := getValorSeguro(row, 15)
 		isPlaceholderEmail := false
+		valid_email := true
 
 		if email == "" || email == "-" || !strings.Contains(email, "@") {
 			// Generamos un correo único basado en FPV para no romper la restricción UNIQUE de la DB
 			email = fmt.Sprintf("%d.sincorreo@colpsi.com", fpvInt)
 			isPlaceholderEmail = true
+			valid_email = false
 			auditLogger.Printf("⚠️ FILA %d | %s | Sin correo. Usando failsafe: %s", rowIdx, fullName, email)
 		}
 
@@ -249,6 +251,25 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 				"fila": strconv.Itoa(rowIdx), "nombre": fullName, "error": humanError,
 			})
 			continue
+		}
+
+		// 6. ENVIO DE EMAIL
+		if estaVivo && valid_email {
+			mailData := map[string]interface{}{
+				"Name":      psi.Username,
+				"Email":     psi.Email,
+				"LoginTime": time.Now().Format(time.RFC1123),
+			}
+
+			err = s.mailService.SendEmail(
+				psi.Email,
+				"Bienvenido(a) a la palataforma del Colgeio de Psicologos del Estado Carabobo",
+				"welcome_psi",
+				mailData,
+			)
+			if err != nil {
+				auditLogger.Printf("Error con email: %v\nError %v", psi.Email, err.Error())
+			}
 		}
 
 		successCount++

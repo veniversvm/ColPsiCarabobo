@@ -19,7 +19,6 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/requestid"
 	_ "github.com/veniversvm/ColPsiCarabobo/api/docs"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/config"
-	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/repository/postgres"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/router"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/service"
@@ -54,28 +53,28 @@ func main() {
 	}
 
 	// 3. MIGRACIÓN
-	log.Println("Syncing database schema...")
-	err = db.AutoMigrate(
-		&domain.TextModel{},
-		&domain.UserAdmin{},
-		&domain.PsiUserModel{},
-		&domain.PsiUserColData{},
-		&domain.PsiUserPostGrade{},
-		&domain.PsiUSerSolvency{},
-		&domain.Post{},
-		&domain.PsiSpecialtyModel{},
-		&domain.PsiUserSocialNetwork{},
-		&domain.PsiODeontologia{},
-		&domain.PsiObservations{},
-		&domain.LoginEvent{},
-		&domain.PageView{},
-		&domain.SearchEvent{},
-		&domain.ProfileView{},
-		&domain.ActiveSession{},
-	)
-	if err != nil {
-		log.Fatalf("❌ Error: Falló la migración de GORM: %v", err)
-	}
+	// log.Println("Syncing database schema...")
+	// err = db.AutoMigrate(
+	// 	&domain.TextModel{},
+	// 	&domain.UserAdmin{},
+	// 	&domain.PsiUserModel{},
+	// 	&domain.PsiUserColData{},
+	// 	&domain.PsiUserPostGrade{},
+	// 	&domain.PsiUSerSolvency{},
+	// 	&domain.Post{},
+	// 	&domain.PsiSpecialtyModel{},
+	// 	&domain.PsiUserSocialNetwork{},
+	// 	&domain.PsiODeontologia{},
+	// 	&domain.PsiObservations{},
+	// 	&domain.LoginEvent{},
+	// 	&domain.PageView{},
+	// 	&domain.SearchEvent{},
+	// 	&domain.ProfileView{},
+	// 	&domain.ActiveSession{},
+	// )
+	// if err != nil {
+	// 	log.Fatalf("❌ Error: Falló la migración de GORM: %v", err)
+	// }
 
 	// SEEDING
 	database.SeedAdmin(db)
