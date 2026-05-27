@@ -28,14 +28,16 @@ export default function Navbar() {
           </div>
 
           {/* DESKTOP NAV (Oculto en móvil) */}
-          <div class="hidden md:flex items-center space-x-8">
+          <div class="hidden md:flex items-center space-x-5 lg:space-x-8">
             <A href="/directorio" class="text-gray-600 hover:text-[#1e3a8a] font-medium transition-colors">Directorio</A>
             <A href="/noticias" class="text-gray-600 hover:text-[#1e3a8a] font-medium transition-colors">Noticias</A>
+            <A href="/inscripcion" class="text-gray-600 hover:text-[#1e3a8a] font-medium transition-colors">Inscripción</A>
+            <A href="/nosotros" class="text-gray-600 hover:text-[#1e3a8a] font-medium transition-colors">Nosotros</A>
             
             <Show 
               when={isAuthenticated()} 
               fallback={
-                <A href="/login" class="bg-[#facc15] text-[#1e3a8a] px-5 py-2 rounded-full font-bold shadow-sm hover:shadow-md hover:bg-[#fde047] transition-all">
+                <A href="/login" class="bg-[#facc15] text-[#1e3a8a] px-5 py-2 rounded-full font-bold shadow-sm hover:shadow-md hover:bg-[#fde047] transition-all ml-2">
                   Iniciar Sesión
                 </A>
               }
@@ -80,7 +82,7 @@ export default function Navbar() {
           <div class="flex md:hidden">
             <button 
               onClick={() => setIsOpen(!isOpen())}
-              class="inline-flex items-center justify-center p-2 rounded-md text-[#1e3a8a] hover:bg-blue-50 focus:outline-none"
+              class="inline-flex items-center justify-center p-2 rounded-md text-[#1e3a8a] hover:bg-blue-50 focus:outline-none transition-colors"
             >
               <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path 
@@ -98,15 +100,17 @@ export default function Navbar() {
       {/* MOBILE MENU CONTENT (Dropdown) */}
       <Show when={isOpen()}>
         <div class="md:hidden bg-white border-t border-gray-50 shadow-2xl animate-in slide-in-from-top duration-300">
-          <div class="px-4 pt-4 pb-6 space-y-2">
+          <div class="px-4 pt-4 pb-6 space-y-1">
             <A href="/directorio" onClick={() => setIsOpen(false)} class={navLinkClass}>Directorio Profesional</A>
             <A href="/noticias" onClick={() => setIsOpen(false)} class={navLinkClass}>Noticias y Avisos</A>
+            <A href="/inscripcion" onClick={() => setIsOpen(false)} class={navLinkClass}>Trámites e Inscripción</A>
+            <A href="/nosotros" onClick={() => setIsOpen(false)} class={navLinkClass}>Institución (Nosotros)</A>
             
             <div class="my-4 border-t border-gray-100 pt-4">
               <Show 
                 when={isAuthenticated()} 
                 fallback={
-                  <A href="/login" onClick={() => setIsOpen(false)} class="block w-full text-center bg-[#facc15] text-[#1e3a8a] px-4 py-4 rounded-2xl font-black shadow-lg shadow-yellow-500/20">
+                  <A href="/login" onClick={() => setIsOpen(false)} class="block w-full text-center bg-[#facc15] text-[#1e3a8a] px-4 py-4 rounded-2xl font-black shadow-lg shadow-yellow-500/20 mt-2">
                     INICIAR SESIÓN
                   </A>
                 }
@@ -136,7 +140,7 @@ export default function Navbar() {
                   
                   <button 
                     onClick={() => { logout(); setIsOpen(false); }}
-                    class="w-full text-red-500 font-bold py-3 text-sm flex items-center justify-center gap-2"
+                    class="w-full text-red-500 font-bold py-3 text-sm flex items-center justify-center gap-2 hover:bg-red-50 rounded-xl transition-colors"
                   >
                     <span>Cerrar Sesión</span>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
