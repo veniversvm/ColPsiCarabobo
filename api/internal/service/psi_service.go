@@ -85,37 +85,26 @@ func NewPsiService(repo domain.PsiUserRepository, s3Client *s3.S3Client, mailSer
 //	[35] GuildDirector             [42] CPSM
 //	[36] SixtyFiveOrPlus
 func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminID uuid.UUID) (int, []map[string]string) {
-	// 1. CONFIGURACIÓN DE LOG AISLADO
+	// 1. Logs (Igual que antes)
 	_ = os.Mkdir("logs", 0755)
 	logFileName := fmt.Sprintf("logs/import_%s.log", time.Now().Format("2006-01-02_15-04-05"))
-	logFile, err := os.OpenFile(logFileName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err != nil {
-		log.Printf("⚠️ No se pudo crear el archivo de log: %v", err)
-	}
+	logFile, _ := os.OpenFile(logFileName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	defer logFile.Close()
-
 	auditLogger := log.New(logFile, "", log.LstdFlags)
-	auditLogger.Println("=== INICIO DE IMPORTACIÓN MASIVA ===")
 
-	// 2. ABRIR EXCEL
+	// 2. Abrir Excel
 	f, err := excelize.OpenReader(reader)
 	if err != nil {
-		auditLogger.Printf("ERROR CRÍTICO: No se pudo abrir el archivo: %v", err)
 		return 0, []map[string]string{{"error": "archivo inválido"}}
 	}
 	defer f.Close()
 
-	sheetName := "BD ColPsiCarabobo 2026"
-	rows, err := f.Rows(sheetName)
-	if err != nil {
-		auditLogger.Printf("ERROR CRÍTICO: Hoja '%s' no encontrada", sheetName)
-		return 0, []map[string]string{{"error": "hoja no encontrada"}}
-	}
+	rows, _ := f.Rows("BD ColPsiCarabobo 2026")
 
-	// 3. PREPARACIÓN
+	// 3. Preparación
 	successCount := 0
 	var failedRecords []map[string]string
-	defaultPassword := "Colpsi2025!" // Clave temporal para todos
+	defaultPassword := "Colpsi2025!"
 	hashedPasswordBytes, _ := bcrypt.GenerateFromPassword([]byte(defaultPassword), bcrypt.DefaultCost)
 	hashedPassword := string(hashedPasswordBytes)
 
@@ -132,6 +121,7 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 			continue
 		}
 
+		// Captura de datos...
 		rawFPV := getValorSeguro(row, 3)
 		rawCI := getValorSeguro(row, 6)
 		firstName := getValorSeguro(row, 7)
@@ -141,96 +131,42 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 		fpvInt := parseInt(rawFPV)
 		ciInt := parseInt(rawCI)
 
-		// Validación mínima
 		if fpvInt == 0 || ciInt == 0 || firstName == "" {
-			msg := "Faltan datos críticos (FPV, CI o Nombre)"
-			auditLogger.Printf("❌ FILA %d | %s | %s", rowIdx, fullName, msg)
-			failedRecords = append(failedRecords, map[string]string{"fila": strconv.Itoa(rowIdx), "nombre": fullName, "error": msg})
+			failedRecords = append(failedRecords, map[string]string{"fila": strconv.Itoa(rowIdx), "nombre": fullName, "error": "Datos incompletos"})
 			continue
 		}
 
-		// ── FAILSAFE DE CORREO ──────────────────────────────────────────
+		// Failsafe correo...
 		email := getValorSeguro(row, 15)
-		isPlaceholderEmail := false
-		valid_email := true
-
-		if email == "" || email == "-" || !strings.Contains(email, "@") {
-			// Generamos un correo único basado en FPV para no romper la restricción UNIQUE de la DB
-			email = fmt.Sprintf("%d.sincorreo@colpsi.com", fpvInt)
-			isPlaceholderEmail = true
-			valid_email = false
-			auditLogger.Printf("⚠️ FILA %d | %s | Sin correo. Usando failsafe: %s", rowIdx, fullName, email)
+		emailToProcess := email
+		validEmail := true
+		if email == "" || !strings.Contains(email, "@") {
+			emailToProcess = fmt.Sprintf("%d.sincorreo@colpsi.com", fpvInt)
+			validEmail = false
 		}
 
-		// ── GENERACIÓN DE USERNAME SEGURO ──
-		// Si es failsafe, usamos un formato corto para no pasarnos de 25 caracteres
-		username := ""
-		if isPlaceholderEmail {
-			username = fmt.Sprintf("psi%d", fpvInt)
-		} else {
-			username = generateSecureUsername(email, strconv.Itoa(fpvInt), firstName)
-		}
-
-		// ── MANEJO DE FECHAS ──
-		bornDate := parseDate(getValorSeguro(row, 11))
-		if bornDate.IsZero() {
-			bornDate = time.Date(1900, 1, 1, 0, 0, 0, 0, time.UTC)
-		}
-
-		// ── DETECCIÓN DE FE DE VIDA (Fallecidos) ──────────────────────────
-		// Leemos la columna 15 (índice 14)
-		statusVidaRaw := strings.ToLower(getValorSeguro(row, 14))
-
-		// Por defecto asumimos que está vivo
-		estaVivo := true
-
-		// Si la celda contiene "fallecido", "finado", "no" o "f", marcamos como false
-		if strings.Contains(statusVidaRaw, "fallecido") ||
-			strings.Contains(statusVidaRaw, "finado") ||
-			statusVidaRaw == "no" ||
-			statusVidaRaw == "f" {
-			estaVivo = false
-			auditLogger.Printf("⚰️  FILA %d | %s | Detectado como FALLECIDO (Celda: %s)", rowIdx, fullName, statusVidaRaw)
-		}
-
+		// Generación única de UUIDs v7
 		psiID := uuid.Must(uuid.NewV7())
+		sessionKey := uuid.Must(uuid.NewV7()).String()
 
-		// ── CONSTRUCCIÓN DEL MODELO ──
+		// Modelo...
 		psi := &domain.PsiUserModel{
-			ID:         psiID,
-			Key:        uuid.Must(uuid.NewV7()).String(),
-			AuditModel: audit,
-			Username:   username,
-			Email:      email,
-			Password:   hashedPassword,
-			IsActive:   getValorSeguro(row, 45) == "Activo",
-
-			FirstName:      firstName,
-			SecondName:     cleanDash(getValorSeguro(row, 8)),
-			LastName:       lastName,
-			SecondLastName: cleanDash(getValorSeguro(row, 10)),
-			FPV:            fpvInt,
-			CI:             ciInt,
-			Nationality:    getValorSeguro(row, 5),
-			BornDate:       bornDate,
-			Genre:          getValorSeguro(row, 13),
-
-			Solvent:     getValorSeguro(row, 45) == "Activo",
-			ProofOfLife: estaVivo,
-
-			ContactPhone:     cleanDash(getValorSeguro(row, 17)),
-			ContactCellPhone: cleanDash(getValorSeguro(row, 18)),
-			ContactEmail:     getValorSeguro(row, 15), // Guardamos el original (aunque sea vacío) aquí
-
+			ID: psiID, Key: sessionKey, AuditModel: audit,
+			Username: generateSecureUsername(emailToProcess, strconv.Itoa(fpvInt), firstName),
+			Email:    emailToProcess, Password: hashedPassword,
+			FirstName: firstName, LastName: lastName,
+			FPV: fpvInt, CI: ciInt, BornDate: parseDate(getValorSeguro(row, 11)),
+			Genre: getValorSeguro(row, 13), IsActive: getValorSeguro(row, 45) == "Activo",
+			Solvent:              getValorSeguro(row, 45) == "Activo",
+			ProofOfLife:          strings.ToLower(getValorSeguro(row, 14)) != "fallecido",
+			ContactPhone:         cleanDash(getValorSeguro(row, 17)),
+			ContactCellPhone:     cleanDash(getValorSeguro(row, 18)),
+			ContactEmail:         email, // El original
 			MunicipalityCarabobo: getValorSeguro(row, 16),
-			StateOutside:         cleanDash(getValorSeguro(row, 19)),
-			Country:              cleanDash(getValorSeguro(row, 23)),
 		}
 
 		colData := &domain.PsiUserColData{
-			ID:                      uuid.Must(uuid.NewV7()),
-			PsiUserModelID:          psiID,
-			AuditModel:              audit,
+			ID: uuid.Must(uuid.NewV7()), PsiUserModelID: psiID, AuditModel: audit,
 			GuildInscriptionDate:    parseDate(getValorSeguro(row, 4)),
 			UniversityUndergraduate: getValorSeguro(row, 25),
 			GraduateDate:            parseDate(getValorSeguro(row, 26)),
@@ -246,36 +182,29 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 		// 5. PERSISTENCIA
 		if err := s.repo.CreateWithColData(ctx, psi, colData, solvency, []domain.PsiUserPostGrade{}); err != nil {
 			humanError := mapDBErrorToHuman(err)
-			auditLogger.Printf("❌ FILA %d | %s | FPV: %d | ERROR: %v", rowIdx-2, fullName, fpvInt, humanError)
-			failedRecords = append(failedRecords, map[string]string{
-				"fila": strconv.Itoa(rowIdx), "nombre": fullName, "error": humanError,
-			})
+			auditLogger.Printf("❌ FILA %d | %s | %v", rowIdx, fullName, humanError)
+			failedRecords = append(failedRecords, map[string]string{"fila": strconv.Itoa(rowIdx), "nombre": fullName, "error": humanError})
 			continue
 		}
 
-		// 6. ENVIO DE EMAIL
-		if estaVivo && valid_email {
-			mailData := map[string]interface{}{
-				"Name":      psi.Username,
-				"Email":     psi.Email,
-				"LoginTime": time.Now().Format(time.RFC1123),
-			}
-
-			err = s.mailService.SendEmail(
+		// 6. ENVÍO DE EMAIL NO BLOQUEANTE
+		// Al estar en una goroutine, el bucle principal de la DB sigue a toda velocidad
+		if psi.ProofOfLife && validEmail {
+			go s.mailService.SendEmail(
 				psi.Email,
-				"Bienvenido(a) a la palataforma del Colgeio de Psicologos del Estado Carabobo",
+				"Bienvenido(a) a la plataforma COLPSI Carabobo",
 				"welcome_psi",
-				mailData,
+				map[string]interface{}{
+					"Name":     psi.FirstName,
+					"Email":    psi.Email,
+					"Password": defaultPassword,
+				},
 			)
-			if err != nil {
-				auditLogger.Printf("Error con email: %v\nError %v", psi.Email, err.Error())
-			}
 		}
 
 		successCount++
 	}
 
-	auditLogger.Printf("=== FINALIZADO | EXITOSOS: %d | FALLIDOS: %d ===", successCount, len(failedRecords))
 	return successCount, failedRecords
 }
 
@@ -1243,4 +1172,9 @@ func (s *PsiService) GetPsiSOlvency(ctx context.Context, id uuid.UUID) ([]domain
 		return []domain.PsiUSerSolvency{}, err
 	}
 	return bio, nil
+}
+
+func (s *PsiService) GetSitemapPsis(ctx context.Context) (interface{}, error) {
+	// Solo traemos los campos mínimos para el sitemap
+	return s.repo.GetSitemapData(ctx)
 }

@@ -1,27 +1,21 @@
--- Create "search_events" table
-CREATE TABLE "search_events" (
-  "id" bigserial NOT NULL,
-  "query" character varying(255) NULL,
-  "specialty" character varying(255) NULL,
-  "municipality" character varying(255) NULL,
-  "state" character varying(255) NULL,
-  "results_count" bigint NULL,
-  "user_id" uuid NULL,
-  "session_id" character varying(64) NULL,
+-- Create "active_sessions" table
+CREATE TABLE "active_sessions" (
+  "id" uuid NOT NULL DEFAULT gen_random_uuid(),
+  "user_id" uuid NOT NULL,
+  "username" character varying(100) NULL,
+  "role" character varying(50) NULL,
   "ip" character varying(45) NULL,
+  "last_seen" timestamptz NULL,
+  "expires_at" timestamptz NULL,
   "created_at" timestamptz NULL,
   PRIMARY KEY ("id")
 );
--- Create index "idx_search_events_created_at" to table: "search_events"
-CREATE INDEX "idx_search_events_created_at" ON "search_events" ("created_at");
--- Create index "idx_search_events_municipality" to table: "search_events"
-CREATE INDEX "idx_search_events_municipality" ON "search_events" ("municipality");
--- Create index "idx_search_events_specialty" to table: "search_events"
-CREATE INDEX "idx_search_events_specialty" ON "search_events" ("specialty");
--- Create index "idx_search_events_state" to table: "search_events"
-CREATE INDEX "idx_search_events_state" ON "search_events" ("state");
--- Create index "idx_search_events_user_id" to table: "search_events"
-CREATE INDEX "idx_search_events_user_id" ON "search_events" ("user_id");
+-- Create index "idx_active_sessions_expires_at" to table: "active_sessions"
+CREATE INDEX "idx_active_sessions_expires_at" ON "active_sessions" ("expires_at");
+-- Create index "idx_active_sessions_last_seen" to table: "active_sessions"
+CREATE INDEX "idx_active_sessions_last_seen" ON "active_sessions" ("last_seen");
+-- Create index "idx_active_sessions_user_id" to table: "active_sessions"
+CREATE UNIQUE INDEX "idx_active_sessions_user_id" ON "active_sessions" ("user_id", "user_id");
 -- Create "login_events" table
 CREATE TABLE "login_events" (
   "id" uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -60,24 +54,6 @@ CREATE INDEX "idx_page_views_path" ON "page_views" ("path");
 CREATE INDEX "idx_page_views_session_id" ON "page_views" ("session_id");
 -- Create index "idx_page_views_user_id" to table: "page_views"
 CREATE INDEX "idx_page_views_user_id" ON "page_views" ("user_id");
--- Create "active_sessions" table
-CREATE TABLE "active_sessions" (
-  "id" uuid NOT NULL DEFAULT gen_random_uuid(),
-  "user_id" uuid NOT NULL,
-  "username" character varying(100) NULL,
-  "role" character varying(50) NULL,
-  "ip" character varying(45) NULL,
-  "last_seen" timestamptz NULL,
-  "expires_at" timestamptz NULL,
-  "created_at" timestamptz NULL,
-  PRIMARY KEY ("id")
-);
--- Create index "idx_active_sessions_expires_at" to table: "active_sessions"
-CREATE INDEX "idx_active_sessions_expires_at" ON "active_sessions" ("expires_at");
--- Create index "idx_active_sessions_last_seen" to table: "active_sessions"
-CREATE INDEX "idx_active_sessions_last_seen" ON "active_sessions" ("last_seen");
--- Create index "idx_active_sessions_user_id" to table: "active_sessions"
-CREATE UNIQUE INDEX "idx_active_sessions_user_id" ON "active_sessions" ("user_id", "user_id");
 -- Create "profile_views" table
 CREATE TABLE "profile_views" (
   "id" bigserial NOT NULL,
@@ -201,6 +177,30 @@ CREATE TABLE "text_models" (
 );
 -- Create index "idx_text_models_deleted_at" to table: "text_models"
 CREATE INDEX "idx_text_models_deleted_at" ON "text_models" ("deleted_at");
+-- Create "search_events" table
+CREATE TABLE "search_events" (
+  "id" bigserial NOT NULL,
+  "query" character varying(255) NULL,
+  "specialty" character varying(255) NULL,
+  "municipality" character varying(255) NULL,
+  "state" character varying(255) NULL,
+  "results_count" bigint NULL,
+  "user_id" uuid NULL,
+  "session_id" character varying(64) NULL,
+  "ip" character varying(45) NULL,
+  "created_at" timestamptz NULL,
+  PRIMARY KEY ("id")
+);
+-- Create index "idx_search_events_created_at" to table: "search_events"
+CREATE INDEX "idx_search_events_created_at" ON "search_events" ("created_at");
+-- Create index "idx_search_events_municipality" to table: "search_events"
+CREATE INDEX "idx_search_events_municipality" ON "search_events" ("municipality");
+-- Create index "idx_search_events_specialty" to table: "search_events"
+CREATE INDEX "idx_search_events_specialty" ON "search_events" ("specialty");
+-- Create index "idx_search_events_state" to table: "search_events"
+CREATE INDEX "idx_search_events_state" ON "search_events" ("state");
+-- Create index "idx_search_events_user_id" to table: "search_events"
+CREATE INDEX "idx_search_events_user_id" ON "search_events" ("user_id");
 -- Create "posts" table
 CREATE TABLE "posts" (
   "id" uuid NOT NULL DEFAULT uuidv7(),
@@ -385,3 +385,22 @@ CREATE TABLE "psi_user_social_networks" (
 CREATE INDEX "idx_psi_user_social_networks_deleted_at" ON "psi_user_social_networks" ("deleted_at");
 -- Create index "idx_psi_user_social_networks_psi_user_id" to table: "psi_user_social_networks"
 CREATE INDEX "idx_psi_user_social_networks_psi_user_id" ON "psi_user_social_networks" ("psi_user_id");
+-- Create "psi_user_solvency" table
+CREATE TABLE "psi_user_solvency" (
+  "id" uuid NOT NULL DEFAULT uuidv7(),
+  "created_at" timestamptz NULL,
+  "updated_at" timestamptz NULL,
+  "deleted_at" timestamptz NULL,
+  "create_by" character varying(255) NULL,
+  "update_by" character varying(255) NULL,
+  "create_by_id" uuid NULL,
+  "update_by_id" uuid NULL,
+  "psi_user_model_id" uuid NOT NULL,
+  "date" date NOT NULL,
+  PRIMARY KEY ("id"),
+  CONSTRAINT "fk_psi_users_solvencies" FOREIGN KEY ("psi_user_model_id") REFERENCES "psi_users" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION
+);
+-- Create index "idx_psi_solvency_unique" to table: "psi_user_solvency"
+CREATE UNIQUE INDEX "idx_psi_solvency_unique" ON "psi_user_solvency" ("psi_user_model_id", "date");
+-- Create index "idx_psi_user_solvency_deleted_at" to table: "psi_user_solvency"
+CREATE INDEX "idx_psi_user_solvency_deleted_at" ON "psi_user_solvency" ("deleted_at");

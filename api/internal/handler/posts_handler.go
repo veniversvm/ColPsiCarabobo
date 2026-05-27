@@ -169,3 +169,19 @@ func (h *PostHandler) UpdatePost(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{"message": "Publicación actualizada correctamente"})
 }
+
+func (h *PostHandler) GetSiteMapHandler(c *fiber.Ctx) error {
+	// 1. Llamamos al servicio usando c.UserContext() para respetar timeouts
+	data, err := h.service.GetSitemapData(c.UserContext())
+
+	// 2. Si hay error, respondemos con un status 500
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "No se pudieron obtener los datos para el sitemap: " + err.Error(),
+		})
+	}
+
+	// 3. Si todo está bien, enviamos el JSON con los posts
+	// Esto es lo que leerá tu archivo sitemap.xml.ts en el frontend
+	return c.JSON(data)
+}

@@ -1,3 +1,4 @@
+// api/cmd/exp/migrate/main.go
 package main
 
 import (
@@ -17,6 +18,7 @@ func main() {
 		&domain.PsiUserModel{},
 		&domain.PsiUserColData{},
 		&domain.PsiUserPostGrade{},
+		&domain.PsiUSerSolvency{},
 		&domain.Post{},
 		&domain.PsiSpecialtyModel{},
 		&domain.PsiUserSocialNetwork{},

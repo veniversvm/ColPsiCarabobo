@@ -52,4 +52,7 @@ type PostRepository interface {
 	// PublishScheduled actualiza a 'published' todos los posts programados cuya fecha ya pasó.
 	// Retorna el número de filas afectadas.
 	PublishScheduled(ctx context.Context) int64
+
+	// solo para uso de Google SEO
+	GetSitemapPosts(ctx context.Context) ([]Post, error)
 }

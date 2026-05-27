@@ -49,7 +49,7 @@ func NewMailService() (*MailService, error) {
 	ms := &MailService{
 		client: c,
 		from:   config.Envs.SMTPFrom,
-		queue:  make(chan MailJob, 1000), // Buffer para 1000 correos
+		queue:  make(chan MailJob, 5000), // Buffer para 1000 correos
 	}
 
 	// Iniciamos el worker en segundo plano al arrancar el servicio
@@ -147,9 +147,9 @@ func (s *MailService) executeSend(job MailJob) error {
 
 	// 4. Envío físico
 	// DialAndSend se encarga de abrir la conexión, enviar y cerrar.
-	if err := s.client.DialAndSend(m); err != nil {
-		return fmt.Errorf("fallo la conexión SMTP o el envío: %w", err)
-	}
+	// if err := s.client.DialAndSend(m); err != nil {
+	// 	return fmt.Errorf("fallo la conexión SMTP o el envío: %w", err)
+	// }
 
 	return nil
 }

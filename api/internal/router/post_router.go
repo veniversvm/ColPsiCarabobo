@@ -34,6 +34,7 @@ func SetupPostRoutes(router fiber.Router, db *gorm.DB, s3Client *s3.S3Client, an
 	posts := router.Group("/posts")
 
 	posts.Get("/", authMid.OptionalHybridAuth(), h.ListPosts)
+	posts.Get("/public/sitemap-posts", h.GetSiteMapHandler)
 	posts.Get("/:id", authMid.OptionalHybridAuth(), h.GetPost)
 
 	// =========================================================================

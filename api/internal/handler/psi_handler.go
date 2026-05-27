@@ -51,7 +51,7 @@ func (h *PsiHandler) UploadCsv(c *fiber.Ctx) error {
 	file, err := c.FormFile("xlsx")
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "El archivo CSV es requerido",
+			"error": err.Error(),
 		})
 	}
 
@@ -479,4 +479,14 @@ func (h *PsiHandler) DeleteSocialNetwork(c *fiber.Ctx) error {
 		return c.Status(403).JSON(fiber.Map{"error": err.Error()})
 	}
 	return c.JSON(fiber.Map{"message": "Red social eliminada correctamente"})
+}
+
+func (h *PsiHandler) GetSitemapData(c *fiber.Ctx) error {
+	// Pedimos al repo solo los que deben ser indexados (Activos y Solventes)
+	// Usamos el UserContext para que sea compatible con timeouts
+	psis, err := h.service.GetSitemapPsis(c.UserContext())
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(psis)
 }

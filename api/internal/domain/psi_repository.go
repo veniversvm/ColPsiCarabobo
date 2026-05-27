@@ -41,6 +41,9 @@ type PsiUserRepository interface {
 	// Validacion de username o email
 	ValidateUniqueCredentials(ctx context.Context, username, email string, excludeID uuid.UUID) error
 
+	// Uso exlusivo para indexacion de Google SEO
+	GetSitemapData(ctx context.Context) ([]PsiUserModel, error)
+
 	// =========================================================================
 	// ACTUALIZACIONES (MUTACIONES)
 	// =========================================================================

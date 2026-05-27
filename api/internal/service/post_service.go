@@ -287,3 +287,8 @@ func (s *PostService) PublishScheduled(ctx context.Context) error {
 	}
 	return nil
 }
+
+func (s *PostService) GetSitemapData(ctx context.Context) (interface{}, error) {
+	// Llamamos al repositorio de posts (noticias)
+	return s.repo.GetSitemapPosts(ctx)
+}

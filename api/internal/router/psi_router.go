@@ -67,6 +67,9 @@ func SetupPsiRoutes(router fiber.Router, db *gorm.DB, s3Client *s3.S3Client, ana
 	// =========================================================================
 	psiGroup := router.Group("/psi")
 
+	// No necesita token de admin porque es para el sitemap público
+	psiGroup.Get("/public/sitemap-data", h.GetSitemapData)
+
 	// Login con rate limiting — 10 intentos por IP cada 15 minutos
 	psiGroup.Post("/login", middleware.AuthRateLimiter(), h.Login)
 	psiGroup.Get("/directory", h.SearchDirectory)

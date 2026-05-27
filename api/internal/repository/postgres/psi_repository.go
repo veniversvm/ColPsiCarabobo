@@ -811,3 +811,13 @@ func (r *psiRepo) ValidateUniqueCredentials(ctx context.Context, username, email
 	}
 	return nil
 }
+
+func (r *psiRepo) GetSitemapData(ctx context.Context) ([]domain.PsiUserModel, error) {
+	var users []domain.PsiUserModel
+	// Traemos solo los campos necesarios para el slug y solo los activos/solventes
+	err := r.db.WithContext(ctx).
+		Select("first_name, last_name, fpv").
+		Where("is_active = ? AND solvent = ?", true, true).
+		Find(&users).Error
+	return users, err
+}

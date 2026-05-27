@@ -6,6 +6,7 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -130,4 +131,24 @@ func (r *postRepo) PublishScheduled(ctx context.Context) int64 {
 			"updated_at": time.Now(),
 		})
 	return result.RowsAffected
+}
+
+// api/internal/repository/postgres/post_repo.go
+
+func (r *postRepo) GetSitemapPosts(ctx context.Context) ([]domain.Post, error) {
+	var posts []domain.Post
+
+	err := r.db.WithContext(ctx).
+		Select("id, title, updated_at").  // Campos para el sitemap
+		Where("status = ?", "published"). // Solo los publicados (no borradores)
+		Where("type = ?", "public").      // 👈 AÑADIDO: Solo los de tipo 'public'
+		Order("created_at DESC").
+		Find(&posts).Error
+
+	if err != nil {
+		// Retornar un error más descriptivo si es necesario
+		return nil, fmt.Errorf("error al obtener posts para sitemap: %w", err)
+	}
+
+	return posts, nil
 }

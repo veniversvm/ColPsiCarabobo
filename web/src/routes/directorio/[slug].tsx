@@ -32,7 +32,6 @@ async function fetchProfile(fpv: string): Promise<PsiProfile | null> {
       console.warn(`[fetchProfile] ${err.status} – fpv=${fpv}: ${err.message}`);
       return null;
     }
-    console.error(`[fetchProfile] Error inesperado – fpv=${fpv}:`, err);
     return null;
   }
 }
@@ -42,7 +41,6 @@ export default function PsiProfilePage() {
   const [selectedPostGrade, setSelectedPostGrade] = createSignal(null);
   const [showBioModal, setShowBioModal] = createSignal(false);
 
-  // Recurso que extrae el FPV del slug y busca el perfil
   const [profile] = createResource(async () => {
     try {
       const fpv = extractFpvFromSlug(params.slug ?? "");
@@ -55,10 +53,10 @@ export default function PsiProfilePage() {
 
   const profileData = () => profile();
 
-  // SEO Helper: Construye el nombre completo
+  // SEO Helpers
   const fullName = () => {
     const p = profileData();
-    if (!p) return "Psicólogo | COLPSI Carabobo";
+    if (!p) return "Psicólogo";
     return [p.first_name, p.second_name, p.last_name, p.second_last_name]
       .filter(Boolean)
       .join(" ");
@@ -66,53 +64,49 @@ export default function PsiProfilePage() {
 
   const canonicalUrl = `${SITE_URL}/directorio/${params.slug}`;
   
-  const ogImage = () =>
-    profileData()?.profile_picture
-      ? imgUrl(profileData()!.profile_picture)
-      : `${SITE_URL}/og-default.jpg`;
+  const ogImage = () => {
+    const p = profileData();
+    return p?.profile_picture ? imgUrl(p.profile_picture) : `${SITE_URL}/og-default.jpg`;
+  };
 
-  const titleStr = () => `${fullName()} | COLPSI Carabobo`;
+  const description = () => {
+    const p = profileData();
+    return p?.mini_bio || `Perfil oficial de el/la Psicólogo(a) ${fullName()} en el Colegio de Psicólogos del Estado Carabobo. Información de contacto y formación académica.`;
+  };
 
   return (
     <>
-      {/* ── SEO ──────────────────────────────────────────────────────────── */}
-      <Title>{titleStr()}</Title>
-      <Meta
-        name="description"
-        content={
-          profileData()?.mini_bio ||
-          `Perfil profesional de ${fullName()} en el Colegio de Psicólogos del estado Carabobo.`
-        }
-      />
-      <Meta name="keywords" content={`psicólogo, Carabobo, Venezuela, ${fullName()}, directorio`} />
+      {/* ── SEO AVANZADO (SSR) ────────────────────────────────────────────── */}
+      <Title>{`${fullName()} | COLPSI Carabobo`}</Title>
+      <Meta name="description" content={description()} />
+      <Meta name="keywords" content={`psicólogo, salud mental, Carabobo, Valencia, ${fullName()}, FPV ${profileData()?.fpv}, directorio profesional`} />
+      <Meta name="robots" content="index, follow" />
+      <Link rel="canonical" href={canonicalUrl} />
 
+      {/* Open Graph / Facebook */}
       <Meta property="og:type" content="profile" />
       <Meta property="og:url" content={canonicalUrl} />
-      <Meta property="og:title" content={titleStr()} />
-      <Meta
-        property="og:description"
-        content={
-          profileData()?.mini_bio ||
-          `Perfil profesional de ${fullName()} en el Colegio de Psicólogos de Carabobo.`
-        }
-      />
+      <Meta property="og:title" content={`${fullName()} | COLPSI Carabobo`} />
+      <Meta property="og:description" content={description()} />
       <Meta property="og:image" content={ogImage()} />
-      <Meta property="og:site_name" content="COLPSI Carabobo" />
-      <Meta property="og:locale" content="es_VE" />
+      
+      {/* Etiquetas específicas de Perfil */}
+      <Show when={profileData()}>
+        {(p) => (
+          <>
+            <Meta property="profile:first_name" content={p().first_name} />
+            <Meta property="profile:last_name" content={p().last_name} />
+            <Meta property="profile:username" content={`fpv-${p().fpv}`} />
+            <Meta property="profile:gender" content={p().gender === 'M' ? 'male' : 'female'} />
+          </>
+        )}
+      </Show>
 
-      <Meta name="twitter:card" content="summary" />
-      <Meta name="twitter:title" content={titleStr()} />
-      <Meta
-        name="twitter:description"
-        content={
-          profileData()?.mini_bio ||
-          `Perfil profesional de ${fullName()} en el Colegio de Psicólogos de Carabobo.`
-        }
-      />
+      {/* Twitter */}
+      <Meta name="twitter:card" content="summary_large_image" />
+      <Meta name="twitter:title" content={`${fullName()} | COLPSI Carabobo`} />
+      <Meta name="twitter:description" content={description()} />
       <Meta name="twitter:image" content={ogImage()} />
-
-      <Link rel="canonical" href={canonicalUrl} />
-      <Meta name="robots" content="index, follow" />
 
       {/* ── Página ───────────────────────────────────────────────────────── */}
       <main class="min-h-screen bg-[#f5f5f5] pb-20 font-sans">
@@ -136,39 +130,29 @@ export default function PsiProfilePage() {
         {/* Barra superior navegable */}
         <div class="bg-colpsi-blue py-6 px-4 shadow-md sticky top-0 z-40">
           <div class="max-w-5xl mx-auto flex items-center justify-between">
-            <A
-              href="/directorio"
-              class="text-white hover:text-colpsi-yellow font-bold flex items-center gap-2 transition-colors text-sm md:text-base"
-            >
+            <A href="/directorio" class="text-white hover:text-colpsi-yellow font-bold flex items-center gap-2 transition-colors text-sm">
               <span>←</span> Volver al Directorio
             </A>
             <span class="text-blue-200 text-xs md:text-sm font-black tracking-widest uppercase">
-              Ficha Técnica
+              Ficha Profesional
             </span>
           </div>
         </div>
 
         <div class="max-w-5xl mx-auto px-4 mt-4 md:mt-8">
-
-          {/* Skeleton mientras carga */}
           <Show when={profile.loading}>
             <ProfileSkeleton />
           </Show>
 
-          {/* Estado: No encontrado o Error */}
           <Show when={!profile.loading && profileData() === null}>
             <NotFound />
           </Show>
 
-          {/* Perfil cargado exitosamente */}
           <Show when={profileData()}>
             {(psi) => {
               const sortedPostGrades = sortPostGradesByYear(psi().post_grades);
-              
               return (
                 <div class="flex flex-col lg:grid lg:grid-cols-3 gap-6">
-                  
-                  {/* Columna Izquierda: Identidad y Contacto */}
                   <div class="space-y-4">
                     <ProfileHeader
                       url={canonicalUrl}
@@ -179,14 +163,9 @@ export default function PsiProfilePage() {
                       fpv={psi().fpv}
                       ci={psi().ci}
                       profilePicture={psi().profile_picture}
-                      specialties={psi().specialties} // Mapeado desde WorkAreas en el Backend
+                      specialties={psi().specialties}
                     />
                     
-                    {/* 
-                      Ajuste: Se remueven props phone y address individuales.
-                      El componente ContactCard ahora consume 'location' que contiene 
-                      el desglose geográfico (Carabobo, Venezuela, Exterior).
-                    */}
                     <ContactCard
                       email={psi().email}
                       location={psi().location}
@@ -194,13 +173,10 @@ export default function PsiProfilePage() {
                     />
                   </div>
 
-                  {/* Columna Derecha: Biografía y Formación */}
                   <div class="lg:col-span-2 space-y-4">
-                    
-                    {/* Sección Biografía */}
                     <Show when={psi().mini_bio || psi().full_bio_content}>
                       <div class="bg-white rounded-3xl p-6 md:p-8 shadow-premium border border-gray-100">
-                        <h3 class="text-xs md:text-sm font-black text-colpsi-blue uppercase tracking-widest mb-3 border-l-4 border-colpsi-yellow pl-3">
+                        <h3 class="text-xs font-black text-colpsi-blue uppercase tracking-widest mb-3 border-l-4 border-colpsi-yellow pl-3">
                           Perfil Profesional
                         </h3>
                         <Show when={psi().mini_bio}>
@@ -208,7 +184,6 @@ export default function PsiProfilePage() {
                             {psi().mini_bio}
                           </p>
                         </Show>
-                        
                         <Show when={psi().full_bio_content && psi().full_bio_content !== "<p></p>"}>
                           <button
                             onClick={() => setShowBioModal(true)}
@@ -223,7 +198,6 @@ export default function PsiProfilePage() {
                       </div>
                     </Show>
 
-                    {/* Sección Académica */}
                     <AcademicSection
                       undergraduate={psi().undergraduate}
                       postGrades={sortedPostGrades}
@@ -234,14 +208,13 @@ export default function PsiProfilePage() {
               );
             }}
           </Show>
-
         </div>
       </main>
     </>
   );
 }
 
-// ── Componentes de Soporte Local ─────────────────────────────────────
+// ── COMPONENTES INTERNOS ─────────────────────────────────────────────
 
 function ProfileSkeleton() {
   return (
@@ -258,14 +231,14 @@ function ProfileSkeleton() {
 function NotFound() {
   return (
     <div class="text-center py-20 bg-white rounded-3xl shadow-sm border border-gray-100">
-      <Meta name="robots" content="noindex, follow" />
-      <div class="text-5xl mb-4">🛡️</div>
-      <h2 class="text-2xl font-black text-colpsi-blue">Perfil no accesible</h2>
-      <p class="text-colpsi-muted mt-2 max-w-md mx-auto px-4">
-        El profesional no existe, ha desactivado su perfil o no cumple con los criterios de solvencia para visualización pública.
+      <Meta name="robots" content="noindex, nofollow" />
+      <div class="text-6xl mb-4">🛡️</div>
+      <h2 class="text-2xl font-black text-colpsi-blue uppercase tracking-tight">Perfil Protegido</h2>
+      <p class="text-colpsi-muted mt-2 max-w-md mx-auto font-medium px-6">
+        El perfil solicitado es privado, el profesional no se encuentra solvente o el registro no existe en nuestra base de datos oficial.
       </p>
-      <A href="/directorio" class="mt-8 inline-block text-colpsi-blue font-bold hover:underline">
-        Volver al Directorio de Psicólogos
+      <A href="/directorio" class="mt-8 inline-flex items-center gap-2 bg-colpsi-blue text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-800 transition-all shadow-lg">
+        Volver al Directorio
       </A>
     </div>
   );
