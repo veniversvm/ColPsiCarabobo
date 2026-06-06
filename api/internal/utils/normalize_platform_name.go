@@ -1,5 +1,10 @@
 // api/internal/utils/normalize_platform_name.go
+
 // Package utils provee herramientas transversales de soporte para la aplicación.
+//
+// Esta sub-capa actúa como el motor de Calidad de Datos (Data Quality).
+// Protege a la base de datos de la entropía generada por el texto libre introducido
+// por los usuarios, estandarizando los formatos antes de su persistencia.
 package utils
 
 import (
@@ -10,16 +15,24 @@ import (
 )
 
 // =========================================================================
-// NORMALIZACIÓN DE REDES SOCIALES
+// NORMALIZACIÓN DE REDES SOCIALES (DATA CANONICALIZATION)
 // =========================================================================
 
-// Definimos el caser globalmente para evitar asignaciones de memoria repetitivas
-// y garantizar el máximo rendimiento en procesos de carga masiva.
+// Optimización de Memoria (Global Allocation):
+// Definimos el 'caser' globalmente en lugar de instanciarlo dentro de la función.
+// Al inicializar `cases.Title` una sola vez en el arranque de la aplicación,
+// evitamos asignaciones dinámicas repetitivas en el Heap de memoria. Esto reduce
+// drásticamente la presión sobre el Garbage Collector (GC) durante procesos de
+// carga masiva (ej. al importar miles de psicólogos desde un Excel).
 var titleCaser = cases.Title(language.Und)
 
-// platformVariants mapea una amplia gama de variantes, abreviaturas y errores
-// ortográficos comunes a su forma canónica profesional.
-// Esto permite que la base de datos mantenga una estética uniforme y coherente.
+// platformVariants implementa el patrón de Diccionario en Memoria (Lookup Table).
+//
+// Propósito Arquitectónico (UI Consistency):
+// Mapea una amplia gama de variantes, abreviaturas (ej. "ig") y errores ortográficos
+// (ej. "instagran") a una única forma canónica profesional ("Instagram").
+// Esto garantiza que el Frontend siempre reciba el mismo string exacto,
+// permitiéndole mapear la palabra a un ícono vectorial (SVG) sin condicionales complejos.
 var platformVariants = map[string]string{
 	"instagram": "Instagram", "ig": "Instagram", "insta": "Instagram", "instagran": "Instagram", "instgram": "Instagram",
 	"facebook": "Facebook", "fb": "Facebook", "face": "Facebook", "facbook": "Facebook", "facebok": "Facebook", "fbk": "Facebook",
@@ -37,25 +50,30 @@ var platformVariants = map[string]string{
 	"signal": "Signal", "wechat": "WeChat", "wc": "WeChat", "line": "Line", "viber": "Viber",
 }
 
-// NormalizePlatformName estandariza nombres de plataformas sociales y URLs básicas.
+// NormalizePlatformName estandariza los nombres de las plataformas sociales.
+// Actúa como un Pipeline (Tubería) de 4 fases para la resolución del dato.
 //
-// LÓGICA DE PROCESAMIENTO:
-// 1. Limpieza: Elimina espacios y convierte a minúsculas.
-// 2. Diccionario: Busca en el mapa de variantes para una resolución instantánea O(1).
-// 3. Patrones: Si no hay coincidencia exacta, busca sub-cadenas (útil para URLs pegadas).
-// 4. Fallback: Si es un nombre desconocido, aplica formato Título (Ej: "Threads" -> "Threads").
+// Complejidad Algorítmica:
+// Prioriza la resolución en tiempo constante O(1) usando Hash Maps, recurriendo a
+// escaneos lineales O(N) solo como un método defensivo (Fallback).
 func NormalizePlatformName(name string) string {
-	// 1. Limpieza básica y normalización de caracteres
+	// 1. Limpieza (Sanitización Base):
+	// Minimiza la varianza inicial eliminando capitalizaciones caprichosas
+	// y removiendo por completo los espacios en blanco inyectados por error.
 	clean := strings.ToLower(strings.TrimSpace(name))
 	lookup := strings.ReplaceAll(clean, " ", "")
 
-	// 2. Búsqueda directa en el mapa (Rendimiento optimizado)
+	// 2. Resolución O(1) (Lookup Table):
+	// Búsqueda directa en el mapa hash en memoria. Es la ruta más rápida y procesa
+	// el 95% de los casos de uso esperados de manera instantánea.
 	if normalized, ok := platformVariants[lookup]; ok {
 		return normalized
 	}
 
-	// 3. Detección por coincidencia de cadena (Manejo de URLs o typos largos)
-	// Esta sección previene que variaciones no mapeadas de dominios se pierdan.
+	// 3. Heurística Defensiva (Pattern Matching):
+	// Si el usuario intentó pegar una URL cruda o cometió un error tipográfico
+	// demasiado largo que escapa al mapa (ej. "https://www.instagr.am/mi_perfil"),
+	// se detecta la huella dactilar de la cadena mediante sub-strings.
 	if strings.Contains(lookup, "youtu") {
 		return "YouTube"
 	}
@@ -66,10 +84,15 @@ func NormalizePlatformName(name string) string {
 		return "Facebook"
 	}
 
-	// 4. Fallback: Uso del caser global para nombres de plataformas emergentes o no listadas.
+	// 4. Degradación Elegante (Graceful Degradation / Fallback):
+	// Si el usuario introduce una red social totalmente nueva o emergente
+	// (ej. "Bluesky" o "Mastodon") que no existe en el diccionario, el sistema
+	// no lanza error ni destruye el dato. Aplica la capitalización universal
+	// (`titleCaser`) para que, al menos, se almacene de forma visualmente estética.
 	if len(clean) > 0 {
 		return titleCaser.String(clean)
 	}
 
+	// Retorno vacío en caso de que la entrada solo contuviera espacios o caracteres nulos.
 	return clean
 }

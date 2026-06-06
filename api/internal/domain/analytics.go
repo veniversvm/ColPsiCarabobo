@@ -1,3 +1,4 @@
+// api/internal/domain/analytics.go
 package domain
 
 import (

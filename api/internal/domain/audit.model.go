@@ -1,3 +1,4 @@
+// api/internal/domain/audit.model.go
 // Package domain contiene las entidades de negocio y las interfaces del sistema.
 // Este paquete es el núcleo de Clean Architecture y no debe tener dependencias externas.
 package domain

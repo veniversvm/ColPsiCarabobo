@@ -11,8 +11,13 @@ import (
 )
 
 // =========================================================================
-// MOCKS (SIMULADORES)
+// MOCKS (SIMULADORES DE INFRAESTRUCTURA)
 // =========================================================================
+// Patrón de Mocks Funcionales (Func Override):
+// Permite aislar completamente la capa de Lógica de Negocio (Service) de la capa
+// de Persistencia (PostgreSQL) y de la nube (AWS S3). Al utilizar funciones variables,
+// cada sub-test puede programar su propio comportamiento (ej. simular un error de DB)
+// sin requerir frameworks de mocking pesados ni contaminar el estado global.
 
 type mockPostRepo struct {
 	domain.PostRepository
@@ -36,63 +41,78 @@ func (m *mockPostRepo) Update(ctx context.Context, p *domain.Post, t *domain.Tex
 	return m.UpdateFunc(ctx, p, t)
 }
 
+// mockS3Client simula la interacción con Amazon S3 / MinIO.
+// Evita conexiones de red reales durante la ejecución de los tests unitarios.
 type mockS3Client struct {
 	DeleteCalledWith string
 }
 
 func (m *mockS3Client) UploadStream(ctx context.Context, r io.Reader, b, f, c string) (string, error) {
-	return "posts/new_image.jpg", nil
+	return "posts/new_image.jpg", nil // Simula una carga exitosa devolviendo una ruta ficticia
 }
 func (m *mockS3Client) DeleteFile(ctx context.Context, key string) error {
-	m.DeleteCalledWith = key
+	m.DeleteCalledWith = key // Rastrea qué archivo se intentó borrar para aserciones posteriores
 	return nil
 }
 
 // =========================================================================
-// SUITE DE TESTS COMPLETA
+// SUITE DE TESTS COMPLETA: SISTEMA DE GESTIÓN DE CONTENIDOS (CMS)
 // =========================================================================
 
+// TestPostService_Extensive somete a prueba las reglas de negocio del CMS.
+// Evalúa críticamente el Control de Acceso (ACL), la higienización de entradas (Sanitización XSS)
+// y los bloqueos jerárquicos de administración.
 func TestPostService_Extensive(t *testing.T) {
 	repo := &mockPostRepo{}
-	// NewPostService inicializa el sanitizer internamente
+	// Inyección de Dependencias:
+	// NewPostService inicializa internamente el motor de sanitización HTML (Bluemonday).
+	// Usamos nil para el cliente S3 en los tests donde no se evalúa multimedia.
 	svc := NewPostService(repo, nil)
 	ctx := context.Background()
 
 	// --- 1. TEST DE REGLAS DE ACCESO (ACL) ---
+	// Vector Mitigado: Prevención de Fuga de Datos e IDOR.
+	// Garantiza que, aunque un usuario público adivine el UUID de un post en estado "borrador"
+	// o de uso exclusivo gremial ("psi"), la capa de servicios bloquee la entrega del payload.
 	t.Run("ACL_Visibility_Rules", func(t *testing.T) {
 		postID := uuid.Must(uuid.NewV7())
 		mockPost := &domain.Post{
 			ID:     postID,
 			Type:   "psi",
-			Status: domain.PostStatus("draft"), // Post en borrador
+			Status: domain.PostStatus("draft"), // Post en estado de revisión/borrador
 		}
 
 		repo.GetByIDFunc = func(ctx context.Context, id uuid.UUID) (*domain.Post, error) {
 			return mockPost, nil
 		}
 
-		// Caso Admin: Debe ver el post aunque sea draft (según línea 158 de tu svc)
+		// Caso Admin (Privilegio Absoluto): Debe ver el post aunque sea draft para poder editarlo.
 		p, err := svc.GetPostByID(ctx, postID, "admin")
 		if err != nil || p == nil {
 			t.Error("Admin debería ver el post independientemente de su estado")
 		}
 
-		// Caso Public: No debe ver posts que no sean Status: published y Type: public
+		// Caso Public (Restricción Estricta): Se rechaza la lectura de contenido interno o no publicado.
 		_, err = svc.GetPostByID(ctx, postID, "public")
 		if err == nil {
 			t.Error("Público NO debería ver posts en borrador o privados")
 		}
 	})
 
-	// --- 2. TEST DE SANITIZACIÓN (XSS) ---
+	// --- 2. TEST DE SANITIZACIÓN (XSS - CROSS-SITE SCRIPTING) ---
+	// Vector Mitigado: Defensa en Profundidad contra inyección de código.
+	// Dado que el CMS permite subir HTML enriquecido (Wysiwyg), un administrador comprometido
+	// o malicioso podría intentar inyectar Javascript. El servicio debe limpiar (sanitizar)
+	// el payload *antes* de que toque la base de datos.
 	t.Run("XSS_Prevention", func(t *testing.T) {
 		admin := &domain.UserAdmin{ID: uuid.Must(uuid.NewV7()), Username: "admin", CanPublish: true}
 
-		// Inyectamos un script malicioso
+		// Payload hostil: Incluye un tag script ejecutable
 		maliciousHTML := "<p>Hola</p><script>alert('hack')</script>"
 
 		repo.CreateFunc = func(ctx context.Context, p *domain.Post, textModel *domain.TextModel) error {
-			// El sanitizer del servicio debería haber eliminado el tag <script>
+			// Aserción de Seguridad: El sanitizer interno (Bluemonday) debió erradicar el tag <script>
+			// dejando únicamente el HTML seguro (<p>).
 			if textModel.Content != "<p>Hola</p>" {
 				t.Errorf("Sanitización falló, contenido: %s", textModel.Content)
 			}
@@ -106,9 +126,13 @@ func TestPostService_Extensive(t *testing.T) {
 		_ = svc.CreatePost(ctx, admin, req, nil)
 	})
 
-	// --- 3. TEST DE FILTROS DE LISTADO (ACL Logic) ---
+	// --- 3. TEST DE FILTROS DE LISTADO DINÁMICO (ACL Logic) ---
+	// Evalúa el motor de mutación de consultas. El servicio debe forzar filtros seguros (WHERE clauses)
+	// basados en el Rol del usuario (Contexto) que realiza la petición HTTP.
 	t.Run("List_Filters_By_Role", func(t *testing.T) {
-		// Escenario Public: El servicio debe filtrar por Type="public" y Status="published"
+
+		// Escenario Public: Visitantes anónimos de internet.
+		// Forzamiento estricto: Solo pueden ver posts Type="public" y Status="published".
 		repo.ListFunc = func(ctx context.Context, f domain.PostFilter, p, l int) ([]domain.Post, int64, error) {
 			if f.Type != "public" {
 				t.Errorf("Filtro incorrecto para público, se esperaba 'public' pero se obtuvo: %s", f.Type)
@@ -120,7 +144,9 @@ func TestPostService_Extensive(t *testing.T) {
 		}
 		_, _ = svc.GetPostsList(ctx, 1, 10, "public")
 
-		// Escenario Psi: El servicio filtra por Status="published" pero NO filtra por Type (ve public y psi)
+		// Escenario Psi: Psicólogos Colegiados (Autenticados).
+		// Forzamiento híbrido: Ven posts "published", pero el filtro de Tipo se vacía
+		// para que la base de datos devuelva tanto noticias 'public' como avisos internos 'psi'.
 		repo.ListFunc = func(ctx context.Context, f domain.PostFilter, p, l int) ([]domain.Post, int64, error) {
 			if f.Type != "" {
 				t.Errorf("Filtro de Type para PSI debería ser vacío para ver ambos tipos, se obtuvo: %s", f.Type)
@@ -132,7 +158,8 @@ func TestPostService_Extensive(t *testing.T) {
 		}
 		_, _ = svc.GetPostsList(ctx, 1, 10, "psi")
 
-		// Escenario Admin: No aplica filtros de estado (Status = nil)
+		// Escenario Admin: Personal de Staff.
+		// Ausencia de filtros: Pueden ver todo el espectro de contenido (incluyendo 'draft' y 'archived').
 		repo.ListFunc = func(ctx context.Context, f domain.PostFilter, p, l int) ([]domain.Post, int64, error) {
 			if f.Status != nil {
 				t.Error("Filtro para Admin debería ser nil en Status para ver borradores")
@@ -143,13 +170,17 @@ func TestPostService_Extensive(t *testing.T) {
 	})
 
 	// --- 4. TEST DE PERMISOS ADMINISTRATIVOS ---
+	// Vector Mitigado: Control de Acceso Inadecuado.
+	// Verifica el Principio de Menor Privilegio (PoLP). Que alguien sea administrador
+	// no significa que tenga permiso para inyectar contenido en el portal público.
 	t.Run("Admin_Permissions_Check", func(t *testing.T) {
-		// Admin que NO tiene permiso de publicar (ni es Sudo)
+		// Admin con bandera CanPublish deliberadamente apagada
 		limitedAdmin := &domain.UserAdmin{ID: uuid.Must(uuid.NewV7()), CanPublish: false, Sudo: false}
 
 		req := request_structs.CreatePostRequest{Title: "Intento Fallido"}
 		err := svc.CreatePost(ctx, limitedAdmin, req, nil)
 
+		// Aserción de Bloqueo Jerárquico
 		if err == nil || err.Error() != "no tienes permiso para publicar" {
 			t.Error("Se debió denegar la creación al admin sin permisos")
 		}

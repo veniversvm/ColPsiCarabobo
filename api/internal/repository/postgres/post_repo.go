@@ -1,7 +1,14 @@
-// api/internal/repository/postgres/post_repo.go
-
 // Package postgres proporciona la implementación de persistencia para el dominio de publicaciones
 // utilizando el motor PostgreSQL a través de GORM.
+//
+// # Arquitectura de datos
+//
+// Este paquete separa intencionalmente los datos en dos modelos complementarios:
+//   - [domain.Post]: almacena la metadata ligera de cada publicación (título, tipo, estado, etc.).
+//   - [domain.TextModel]: almacena el contenido extenso (cuerpo HTML/Markdown).
+//
+// Esta separación optimiza los listados masivos, ya que el frontend puede paginar y filtrar
+// publicaciones sin transferir el cuerpo completo de cada una.
 package postgres
 
 import (
@@ -14,29 +21,35 @@ import (
 	"gorm.io/gorm"
 )
 
-// postRepo implementa la interfaz domain.PostRepository.
-// Utiliza una arquitectura de base de datos relacional para separar la metadata ligera (Post)
-// del contenido pesado (TextModel), mejorando la velocidad de los listados masivos.
+// postRepo implementa la interfaz [domain.PostRepository] sobre PostgreSQL mediante GORM.
+// No debe instanciarse directamente; usar [NewPostRepository].
 type postRepo struct {
 	db *gorm.DB
 }
 
-// NewPostRepository crea una nueva instancia del repositorio de publicaciones.
+// NewPostRepository construye e inicializa un repositorio de publicaciones listo para usarse.
+// Recibe una conexión GORM activa y retorna la interfaz [domain.PostRepository],
+// ocultando los detalles de implementación al resto de la aplicación.
 func NewPostRepository(db *gorm.DB) domain.PostRepository {
 	return &postRepo{db: db}
 }
 
-// Create registra una nueva publicación y su contenido extenso de forma atómica.
-// Utiliza una transacción para asegurar que no se cree un Post sin su TextModel correspondiente,
-// manteniendo la integridad referencial del sistema.
+// Create registra una nueva publicación junto con su contenido de forma atómica.
+//
+// El proceso se ejecuta en una única transacción de base de datos con el siguiente orden:
+//  1. Persiste el [domain.TextModel] (contenido extenso) y obtiene su ID generado.
+//  2. Asigna ese ID al campo TextID de [domain.Post] y lo persiste.
+//
+// Si cualquiera de los dos pasos falla, la transacción se revierte completamente,
+// garantizando que nunca exista un Post sin su TextModel correspondiente.
 func (r *postRepo) Create(ctx context.Context, post *domain.Post, text *domain.TextModel) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// 1. Persistir el contenido extenso primero
+		// Paso 1: persistir el contenido extenso para obtener su ID autogenerado.
 		if err := tx.Create(text).Error; err != nil {
 			return err
 		}
 
-		// 2. Vincular el ID del texto generado a la metadata del post
+		// Paso 2: vincular el ID del texto a la metadata y persistir el post.
 		post.TextID = text.ID
 		if err := tx.Create(post).Error; err != nil {
 			return err
@@ -46,66 +59,83 @@ func (r *postRepo) Create(ctx context.Context, post *domain.Post, text *domain.T
 	})
 }
 
-// GetByID recupera una publicación específica junto con su contenido relacionado.
-// Utiliza 'Preload' (Eager Loading) para obtener el TextModel en una sola operación eficiente.
+// GetByID recupera una publicación por su identificador único, incluyendo su contenido completo.
+//
+// Utiliza Eager Loading mediante GORM Preload para cargar el [domain.TextModel] asociado
+// en una única consulta SQL eficiente, evitando el problema N+1.
+// Retorna un error wrapeado de GORM si el registro no existe (gorm.ErrRecordNotFound).
 func (r *postRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.Post, error) {
 	var post domain.Post
-	// Preload carga automáticamente la struct relacionada definida en el modelo.
 	err := r.db.WithContext(ctx).Preload("Text").First(&post, "id = ?", id).Error
 	return &post, err
 }
 
-// List implementa un buscador de publicaciones altamente optimizado con paginación y filtros.
-// Nota de Arquitectura: Este método deliberadamente NO carga el 'TextModel' (el contenido largo)
-// para minimizar el consumo de memoria y ancho de banda durante el renderizado de listados en el frontend.
+// List busca y pagina publicaciones aplicando los filtros indicados en [domain.PostFilter].
+//
+// Comportamiento de los filtros (todos son opcionales y acumulables):
+//   - Status: filtra por uno o más estados (ej. "published", "draft").
+//   - Type "all_visible": retorna publicaciones de tipo "public" y "psi" (para psicólogos autenticados).
+//   - Type <otro valor>: filtra por ese tipo exacto.
+//   - Search: búsqueda case-insensitive por coincidencia parcial en el título (ILIKE).
+//
+// Nota de rendimiento: este método deliberadamente NO carga el [domain.TextModel],
+// reduciendo el volumen de datos transferidos durante el renderizado de listados en el frontend.
+//
+// Retorna el slice de publicaciones de la página solicitada, el total de registros
+// que coinciden con el filtro (para calcular la paginación en el cliente) y un error si ocurre.
 func (r *postRepo) List(ctx context.Context, filter domain.PostFilter, page, limit int) ([]domain.Post, int64, error) {
 	var posts []domain.Post
 	var total int64
 
-	// Iniciamos la consulta sobre el modelo de metadatos
 	query := r.db.WithContext(ctx).Model(&domain.Post{})
 
-	// 1. Filtro de estado (Publicado / Borrador)
+	// Filtro 1: uno o más estados permitidos.
 	if len(filter.Status) > 0 {
 		query = query.Where("status IN ?", filter.Status)
 	}
 
-	// 2. Filtro de visibilidad (RBAC de contenido)
+	// Filtro 2: visibilidad basada en el rol del solicitante (RBAC de contenido).
 	if filter.Type != "" {
 		if filter.Type == "all_visible" {
-			// Los psicólogos autenticados pueden ver tanto noticias públicas como gremiales.
+			// Psicólogos autenticados pueden acceder a contenido público y gremial.
 			query = query.Where("type IN ?", []string{"public", "psi"})
 		} else {
 			query = query.Where("type = ?", filter.Type)
 		}
 	}
 
-	// 3. Búsqueda por título (Fuzzy Search)
+	// Filtro 3: búsqueda parcial e insensible a mayúsculas sobre el título.
 	if filter.Search != "" {
 		s := "%" + filter.Search + "%"
 		query = query.Where("title ILIKE ?", s)
 	}
 
-	// 4. Conteo total para gestión de paginación en UI
+	// Conteo total de resultados para que el frontend pueda construir la paginación.
 	query.Count(&total)
 
-	// 5. Ejecución de consulta paginada ordenada por fecha de creación
+	// Consulta paginada ordenada del más reciente al más antiguo.
 	offset := (page - 1) * limit
 	err := query.Offset(offset).Limit(limit).Order("created_at DESC").Find(&posts).Error
 
 	return posts, total, err
 }
 
-// Update modifica los datos de una publicación existente de forma transaccional.
-// Permite actualizaciones parciales: si el objeto 'text' es nil, solo se actualiza la metadata.
+// Update modifica de forma transaccional los datos de una publicación existente.
+//
+// Admite actualizaciones parciales:
+//   - Siempre actualiza la metadata del [domain.Post] (título, estado, imagen, etc.).
+//   - Solo actualiza el [domain.TextModel] si el parámetro text no es nil,
+//     permitiendo editar únicamente la metadata sin tocar el contenido extenso.
+//
+// La operación completa se revierte si cualquiera de las actualizaciones falla.
 func (r *postRepo) Update(ctx context.Context, post *domain.Post, text *domain.TextModel) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Actualizar metadatos (título, descripción, imagen, etc.)
+		// Actualizar siempre la metadata del post.
 		if err := tx.Save(post).Error; err != nil {
 			return err
 		}
 
-		// Actualizar el contenido extenso solo si se proporciona un nuevo modelo
+		// Actualizar el contenido extenso solo si se provee un nuevo modelo.
 		if text != nil {
 			if err := tx.Save(text).Error; err != nil {
 				return err
@@ -115,12 +145,23 @@ func (r *postRepo) Update(ctx context.Context, post *domain.Post, text *domain.T
 	})
 }
 
-// Delete realiza un borrado lógico del post.
-// Nota: Debido a la herencia de AuditFields, GORM aplicará Soft-Delete automáticamente.
+// Delete aplica un borrado lógico (soft delete) sobre la publicación indicada.
+//
+// Gracias al campo DeletedAt heredado de AuditFields, GORM marca el registro
+// con la fecha de eliminación en lugar de borrarlo físicamente. El registro
+// deja de aparecer en todas las consultas estándar pero puede recuperarse si es necesario.
 func (r *postRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	return r.db.WithContext(ctx).Delete(&domain.Post{}, "id = ?", id).Error
 }
 
+// PublishScheduled publica automáticamente todas las publicaciones programadas cuya
+// fecha de publicación (publish_at) ya ha llegado o pasado.
+//
+// Este método está diseñado para ser invocado periódicamente por un job o cron interno.
+// Transiciona el estado de [domain.PostStatusScheduled] a [domain.PostStatusPublished]
+// y limpia el campo publish_at para reflejar que ya no hay una programación pendiente.
+//
+// Retorna la cantidad de filas afectadas, útil para registrar la actividad del job.
 func (r *postRepo) PublishScheduled(ctx context.Context) int64 {
 	result := r.db.WithContext(ctx).
 		Model(&domain.Post{}).
@@ -133,20 +174,28 @@ func (r *postRepo) PublishScheduled(ctx context.Context) int64 {
 	return result.RowsAffected
 }
 
-// api/internal/repository/postgres/post_repo.go
-
+// GetSitemapPosts retorna el subconjunto mínimo de publicaciones necesario para generar
+// el sitemap XML del sitio.
+//
+// Criterios de inclusión:
+//   - Estado: únicamente publicaciones con status "published".
+//   - Tipo: únicamente publicaciones de tipo "public" (se excluye el contenido gremial "psi").
+//
+// Proyección: solo se seleccionan los campos id, title y updated_at para minimizar
+// el volumen de datos transferidos desde la base de datos.
+//
+// Retorna un error descriptivo wrapeado con fmt.Errorf si la consulta falla.
 func (r *postRepo) GetSitemapPosts(ctx context.Context) ([]domain.Post, error) {
 	var posts []domain.Post
 
 	err := r.db.WithContext(ctx).
-		Select("id, title, updated_at").  // Campos para el sitemap
-		Where("status = ?", "published"). // Solo los publicados (no borradores)
-		Where("type = ?", "public").      // 👈 AÑADIDO: Solo los de tipo 'public'
+		Select("id, title, updated_at").
+		Where("status = ?", "published").
+		Where("type = ?", "public").
 		Order("created_at DESC").
 		Find(&posts).Error
 
 	if err != nil {
-		// Retornar un error más descriptivo si es necesario
 		return nil, fmt.Errorf("error al obtener posts para sitemap: %w", err)
 	}
 

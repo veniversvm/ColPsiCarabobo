@@ -19,6 +19,10 @@ import (
 // =========================================================================
 // MOCKS ROBUSTOS
 // =========================================================================
+// Patrón de Mocks Funcionales: En lugar de usar herramientas pesadas de generación
+// de código (como mockgen), se emplean structs que encapsulan punteros a funciones.
+// Esto permite inyectar comportamientos dinámicos (y escenarios de error específicos)
+// directamente dentro de cada sub-test (t.Run) manteniendo un aislamiento total.
 
 type mockAdminRepo struct {
 	domain.UserAdminRepository
@@ -42,6 +46,9 @@ func (m *mockPsiRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.PsiUse
 // GENERADOR DE TOKENS PARA TESTS
 // =========================================================================
 
+// generateTestToken construye un JWT válido firmado con un secreto específico.
+// Se utiliza para simular sesiones activas o expiradas manipulando el claim "exp",
+// permitiendo probar los flujos de autorización sin requerir el endpoint de login.
 func generateTestToken(userID string, role string, secret string, expiresAt time.Time) string {
 	claims := jwt.MapClaims{
 		"user_id": userID,
@@ -57,6 +64,9 @@ func generateTestToken(userID string, role string, secret string, expiresAt time
 // TEST SUITE PRINCIPAL
 // =========================================================================
 
+// TestAuthMiddleware_Extensive valida las barreras de seguridad de la API.
+// Comprueba el manejo de tokens inválidos, la mitigación de vulnerabilidades JWT
+// y la inyección correcta del contexto de usuario en el framework Fiber.
 func TestAuthMiddleware_Extensive(t *testing.T) {
 	// Setup de variables globales del test
 	adminID := uuid.New()
@@ -64,6 +74,8 @@ func TestAuthMiddleware_Extensive(t *testing.T) {
 	correctSecret := "secret-valencia-2026"
 
 	// --- FIX: Inicialización de GORM en modo DryRun ---
+	// DryRun es una técnica avanzada para testing: GORM inicializa su motor interno
+	// pero NO intenta conectarse a una base de datos real ni ejecuta SQL.
 	// Esto crea una instancia de DB que NO necesita conexión real.
 	// Evita el nil pointer dereference cuando AnalyticsService llama a s.db
 	dummyDB, _ := gorm.Open(postgres.New(postgres.Config{}), &gorm.Config{
@@ -80,6 +92,11 @@ func TestAuthMiddleware_Extensive(t *testing.T) {
 	mw := NewAuthMiddleware(mAdmin, mPsi, analytics)
 
 	// --- ESCENARIO 1: PROTECTED ADMIN (SECURITY BY OBSCURITY) ---
+	// Táctica de Defensa (Seguridad por Oscuridad):
+	// Los endpoints de administración devuelven intencionalmente un Error 404 (Not Found)
+	// en lugar de 401 (Unauthorized) o 403 (Forbidden) ante credenciales inválidas.
+	// Esto previene ataques de enumeración, impidiendo que un atacante descubra
+	// la topología de la API administrativa.
 	t.Run("Admin_404_Logic", func(t *testing.T) {
 		app := fiber.New()
 		app.Get("/admin/secret", mw.ProtectedAdmin404(), func(c *fiber.Ctx) error { return c.SendStatus(200) })
@@ -136,6 +153,10 @@ func TestAuthMiddleware_Extensive(t *testing.T) {
 		app := fiber.New()
 		app.Get("/psi/me", mw.ProtectedPsiUser(), func(c *fiber.Ctx) error { return c.SendStatus(200) })
 
+		// Prevención de Vulnerabilidad CVE: "None Algorithm Attack".
+		// Verifica que el middleware rechace tokens JWT construidos intencionalmente
+		// sin algoritmo de firma (alg: "none"). Un fallo aquí permitiría a un atacante
+		// forjar tokens válidos con cualquier user_id sin conocer el secreto.
 		t.Run("Wrong_Signing_Method", func(t *testing.T) {
 			token := jwt.NewWithClaims(jwt.SigningMethodNone, jwt.MapClaims{"user_id": psiID.String()})
 			tokenString, _ := token.SignedString(jwt.UnsafeAllowNoneSignatureType)
@@ -151,6 +172,9 @@ func TestAuthMiddleware_Extensive(t *testing.T) {
 	})
 
 	// --- ESCENARIO 3: OPTIONAL HYBRID (FLEXIBILIDAD) ---
+	// Prueba el middleware no bloqueante. Utilizado en rutas públicas que pueden
+	// entregar información extra si el usuario está autenticado, pero no restringen
+	// el acceso si es un visitante anónimo (inyecta el contexto si es posible).
 	t.Run("Hybrid_Auth_Context_Injection", func(t *testing.T) {
 		app := fiber.New()
 		app.Get("/hybrid", mw.OptionalHybridAuth(), func(c *fiber.Ctx) error {
@@ -163,6 +187,8 @@ func TestAuthMiddleware_Extensive(t *testing.T) {
 			return c.Status(200).SendString("is_anonymous")
 		})
 
+		// Valida que la identidad se extraiga de la DB y se asigne a Fiber Locals
+		// de manera transparente para que el handler la consuma sin hacer parseos manuales.
 		t.Run("Detects_Psi", func(t *testing.T) {
 			mPsi.GetByIDFunc = func(ctx context.Context, id uuid.UUID) (*domain.PsiUserModel, error) {
 				return &domain.PsiUserModel{ID: psiID, Key: correctSecret}, nil

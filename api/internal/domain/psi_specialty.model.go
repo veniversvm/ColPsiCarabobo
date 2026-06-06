@@ -1,3 +1,4 @@
+// api/internal/domain/psi_specialty.model.go
 package domain
 
 // PsiSpecialtyModel representa el catálogo de especialidades.

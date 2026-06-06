@@ -1,20 +1,29 @@
 // api/internal/request_structs/response_request.go
 
-// Package request_structs define los objetos de transferencia de datos (DTOs).
+// Package request_structs define los objetos de transferencia de datos (DTOs)
+// y View Models que estructuran los contratos de entrada y salida de la API.
 package request_structs
 
-// SpecialtyStats representa un resumen cuantitativo del catálogo de especialidades.
-// Se utiliza principalmente en paneles de métricas y dashboards administrativos
-// para proporcionar una visión rápida del estado del sistema sin exponer datos individuales.
+// SpecialtyStats es un View Model de respuesta diseñado para la agregación de métricas (Data Aggregation).
+//
+// Propósito Arquitectónico y Rendimiento:
+// Alimenta los indicadores clave de rendimiento (KPIs) y gráficos del dashboard administrativo.
+// Delegar el conteo a la base de datos (mediante consultas COUNT optimizadas) y enviar
+// únicamente esta estructura ligera (Stats) evita que el Frontend tenga que descargar
+// arreglos masivos de objetos completos a través de la red solo para contarlos en memoria.
 type SpecialtyStats struct {
-	// Total es la sumatoria absoluta de todos los registros en la tabla,
-	// incluyendo activos e inactivos.
+	// Total representa el volumen absoluto del catálogo histórico.
+	// Métricamente útil para auditar el tamaño de la base de datos y medir el crecimiento
+	// de la taxonomía del sistema a lo largo del tiempo.
 	Total int64 `json:"total" example:"45"`
 
-	// Active representa la cantidad de especialidades visibles para el público general.
+	// Active cuantifica las áreas de desempeño clínico actualmente operativas.
+	// Representa las especialidades que están indexadas y visibles para el público
+	// en los motores de búsqueda del directorio de psicólogos.
 	Active int64 `json:"active" example:"40"`
 
-	// Inactive representa la cantidad de especialidades que han sido dadas de baja
-	// o que aún no han sido publicadas.
+	// Inactive expone la cantidad de registros deshabilitados, deprecados o en estado de borrador.
+	// Monitorear este valor (BI) permite a los administradores saber si existe
+	// "deuda técnica" en el catálogo que requiera una depuración o limpieza profunda.
 	Inactive int64 `json:"inactive" example:"5"`
 }

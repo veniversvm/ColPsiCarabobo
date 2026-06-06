@@ -1,3 +1,4 @@
+// api/internal/domain/psi_repository.go
 // Package domain define las entidades y los contratos de persistencia del sistema.
 package domain
 

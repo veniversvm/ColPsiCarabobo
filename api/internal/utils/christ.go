@@ -4,6 +4,7 @@ import (
 	"fmt"
 )
 
+// La funcion mas importante
 func PrintColpsiASCII() {
 	asciiArt := `
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣤⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀

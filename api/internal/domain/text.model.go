@@ -1,3 +1,5 @@
+// api/internal/domain/text.model.go
+
 package domain
 
 import (

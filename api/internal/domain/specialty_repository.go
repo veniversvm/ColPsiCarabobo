@@ -1,3 +1,4 @@
+// api/internal/domain/specialty_repository.go
 // Package domain define las reglas de negocio y los contratos de abstracción de datos.
 package domain
 

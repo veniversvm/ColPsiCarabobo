@@ -1,4 +1,12 @@
 // api/internal/middleware/rate_limiter.go
+
+// Package middleware aloja los interceptores de seguridad de la API.
+//
+// CONCEPTO DE RATE LIMITING (Control de Tráfico):
+// Este archivo implementa el patrón de estrangulamiento (Throttling). Funciona como la
+// primera barrera defensiva en la capa HTTP para proteger las rutas críticas (Logins)
+// contra ataques de Fuerza Bruta (adivinar contraseñas) y Credential Stuffing (uso
+// automatizado de credenciales filtradas en otras brechas de seguridad).
 package middleware
 
 import (
@@ -8,31 +16,55 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 )
 
-// AuthRateLimiter aplica un límite estricto para endpoints de autenticación.
-// 10 intentos por IP cada 15 minutos — bloquea fuerza bruta sin afectar uso legítimo.
+// AuthRateLimiter aplica un escudo de protección estándar para los endpoints
+// de autenticación del usuario general (psicólogos).
+//
+// Umbral de Tolerancia:
+// Permite 10 intentos por IP en una ventana temporal de 15 minutos. Este límite
+// fue diseñado para ser lo suficientemente holgado para un usuario humano legítimo
+// que olvidó su contraseña, pero matemáticamente inviable para un script que
+// intente romper la seguridad por fuerza bruta.
 func AuthRateLimiter() fiber.Handler {
 	return limiter.New(limiter.Config{
 		Max:        10,
 		Expiration: 15 * time.Minute,
+
+		// KeyGenerator define cómo se identifica a un "actor" único.
+		// Arquitectura de Red: c.IP() de Fiber resuelve automáticamente cabeceras como
+		// 'X-Forwarded-For' o 'X-Real-IP'. Esto garantiza que si la API está detrás de un
+		// Reverse Proxy (como Nginx o Cloudflare), el limitador castigará la IP real
+		// del atacante y no la IP interna del proxy.
 		KeyGenerator: func(c *fiber.Ctx) string {
-			// Usa el IP real aunque haya un proxy/reverse proxy delante
 			return c.IP()
 		},
+
+		// LimitReached estandariza la respuesta de error HTTP 429 (Too Many Requests).
 		LimitReached: func(c *fiber.Ctx) error {
 			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
 				"error":   "Demasiados intentos de acceso.",
 				"message": "Por seguridad, tu acceso ha sido bloqueado temporalmente. Intenta de nuevo en 15 minutos.",
 			})
 		},
-		// No contar rutas que no sean POST para no gastar cuota en GETs accidentales
+
+		// Next funciona como un filtro de excepción (Bypass).
+		// Optimización y UX: Evita descontar cuota del limitador si la petición NO es POST.
+		// Esto es vital en arquitecturas web modernas, ya que los navegadores envían
+		// peticiones 'OPTIONS' (CORS Preflight) antes del POST. Si no se ignoran,
+		// un usuario consumiría 2 intentos por cada click en "Ingresar".
 		Next: func(c *fiber.Ctx) bool {
 			return c.Method() != fiber.MethodPost
 		},
 	})
 }
 
-// AdminAuthRateLimiter es más agresivo para el login de administradores.
-// 5 intentos por IP cada 30 minutos.
+// AdminAuthRateLimiter aplica una política de "Confianza Cero" (Zero Trust)
+// diseñada específicamente para la superficie de ataque del Staff.
+//
+// Asimetría de Seguridad:
+// Las cuentas administrativas son "High-Value Targets" (Objetivos de Alto Valor).
+// Por ello, la política es deliberadamente el doble de agresiva que la del usuario
+// general: restringe los intentos a la mitad (5) y duplica el tiempo de castigo (30 minutos),
+// mitigando vectores de ataque dirigidos directamente al corazón del sistema.
 func AdminAuthRateLimiter() fiber.Handler {
 	return limiter.New(limiter.Config{
 		Max:        5,

@@ -1,3 +1,4 @@
+// api/internal/domain/social_media.model.go
 package domain
 
 import "github.com/google/uuid"

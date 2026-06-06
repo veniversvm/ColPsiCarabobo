@@ -116,6 +116,7 @@ func main() {
 	// 6. INICIALIZACIÓN DE FIBER
 	app := fiber.New(fiber.Config{
 		AppName:           "ColPsiCarabobo API v1.0",
+		BodyLimit:         20 * 1024 * 1024,
 		EnablePrintRoutes: false,
 		ErrorHandler: func(ctx *fiber.Ctx, err error) error {
 			code := fiber.StatusInternalServerError

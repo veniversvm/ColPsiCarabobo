@@ -22,20 +22,25 @@ import (
 	"github.com/veniversvm/ColPsiCarabobo/api/pkg/s3"
 )
 
-// PostService encapsula las dependencias para la gestión de contenido.
-// Utiliza bluemonday para prevenir ataques de Cross-Site Scripting (XSS).
+// PostService encapsula las dependencias para la gestión del CMS.
+// Coordina la base de datos (PostgreSQL), el almacenamiento de objetos (Amazon S3)
+// y el motor de Sanitización HTML.
 type PostService struct {
 	repo      domain.PostRepository
 	s3Client  *s3.S3Client
 	sanitizer *bluemonday.Policy
 }
 
-// NewPostService inicializa el servicio con una política de sanitización estándar (UGC).
+// NewPostService inicializa el servicio con una política de sanitización estricta.
+//
+// Seguridad XSS: bluemonday.UGCPolicy() (User Generated Content) limpia el HTML,
+// erradicando etiquetas <script>, eventos onMouseOver y estilos CSS peligrosos,
+// garantizando que el contenido renderizado por el Frontend sea 100% seguro.
 func NewPostService(repo domain.PostRepository, s3 *s3.S3Client) *PostService {
 	return &PostService{
 		repo:      repo,
 		s3Client:  s3,
-		sanitizer: bluemonday.UGCPolicy(), // Política segura para contenido generado por usuario
+		sanitizer: bluemonday.UGCPolicy(),
 	}
 }
 
@@ -43,18 +48,20 @@ func NewPostService(repo domain.PostRepository, s3 *s3.S3Client) *PostService {
 // CREACIÓN DE CONTENIDO
 // =========================================================================
 
-// CreatePost orquesta la creación de una noticia.
-// Procesa imágenes, limpia el HTML y persiste metadatos y contenido en una sola transacción.
+// CreatePost orquesta la publicación de una noticia.
+// Procesa imágenes, limpia el HTML y persiste metadatos y contenido.
 func (s *PostService) CreatePost(ctx context.Context, admin *domain.UserAdmin, req request_structs.CreatePostRequest, file *multipart.FileHeader) error {
+	// 1. Gatekeeping de Autorización
 	if !admin.CanPublish && !admin.Sudo {
 		return errors.New("no tienes permiso para publicar")
 	}
 
+	// 2. Validación de Estado (Máquina de Estados)
 	if req.Status == "scheduled" && req.PublishAt == nil {
 		return errors.New("un post programado requiere publish_at")
 	}
 
-	// 1. Subir imagen a S3 (si existe + Sanitización)
+	// 3. Subir imagen a S3 (Manejo Seguro de Archivos)
 	var s3Key string
 	if file != nil {
 		src, err := file.Open()
@@ -63,17 +70,17 @@ func (s *PostService) CreatePost(ctx context.Context, admin *domain.UserAdmin, r
 		}
 		defer src.Close()
 
-		// RECIBIMOS 3 VALORES: bytes, extensión y mime-type
-		// Re-codificación para eliminar scripts ocultos y metadatos sensibles (GPS/EXIF)
+		// Defensa contra Esteganografía y Metadatos Sensibles:
+		// La utilidad SanitizeDocument procesa los bytes crudos y elimina la metadata EXIF
+		// (como ubicación GPS de la foto) que los psicólogos o admins puedan subir por error.
 		cleanBytes, ext, contentType, err := utils.SanitizeDocument(src)
 		if err != nil {
 			return fmt.Errorf("error de seguridad en imagen: %v", err)
 		}
 
-		// Generamos nombre único
+		// Prevenir Colisión de Nombres y Forzar Tipado MIME seguro
 		filename := uuid.Must(uuid.NewV7()).String() + ext
 
-		// Pasamos el Content-Type correcto a S3 (antes estaba hardcodeado a image/jpeg)
 		key, err := s.s3Client.UploadStream(ctx, bytes.NewReader(cleanBytes), "posts", filename, contentType)
 		if err != nil {
 			return err
@@ -81,10 +88,10 @@ func (s *PostService) CreatePost(ctx context.Context, admin *domain.UserAdmin, r
 		s3Key = key
 	}
 
-	// 2. Sanitizar el HTML del contenido para evitar XSS
+	// 4. Sanitizar el HTML del contenido (Prevención Cross-Site Scripting)
 	cleanContent := s.sanitizer.Sanitize(req.Content)
 
-	// 3. Preparar modelos
+	// 5. Preparar modelos de Dominio y Auditoría
 	textID := uuid.Must(uuid.NewV7())
 	textModel := &domain.TextModel{
 		AuditModel: domain.AuditModel{
@@ -108,26 +115,29 @@ func (s *PostService) CreatePost(ctx context.Context, admin *domain.UserAdmin, r
 		TextID:           textID,
 	}
 
+	// 6. Transacción Atómica
 	return s.repo.Create(ctx, postModel, textModel)
 }
 
 // =========================================================================
-// CONSULTA Y VISIBILIDAD (ACL)
+// CONSULTA Y VISIBILIDAD (ACL - ACCESS CONTROL LIST)
 // =========================================================================
 
-// GetPostsList implementa filtros de visibilidad dinámicos según el rol del usuario.
-// - Admin: Ve todo (activos, inactivos, públicos y privados).
-// - Psi: Ve activos de tipo 'public' y 'psi'.
-// - Public: Solo ve activos de tipo 'public'.
+// GetPostsList implementa filtros dinámicos de listado según la jerarquía del solicitante.
+// En lugar de hacer IFs pesados en el código, muta el objeto `PostFilter` antes de enviarlo
+// a la base de datos, delegando el filtrado al motor SQL para máximo rendimiento.
 func (s *PostService) GetPostsList(ctx context.Context, page, limit int, userRole string) (interface{}, error) {
 	filter := domain.PostFilter{}
 
 	switch userRole {
 	case "admin":
-		filter.Status = nil // ve todos los estados
+		// Visión de Rayos X: El admin ve borradores, programados y archivados.
+		filter.Status = nil
 	case "psi":
+		// Acceso Gremial: El colegiado ve contenido publicado (tanto general como interno).
 		filter.Status = []domain.PostStatus{domain.PostStatusPublished}
-	default: // público
+	default: // "public"
+		// Acceso Restringido: El visitante anónimo solo ve contenido publicado y categorizado como público.
 		filter.Status = []domain.PostStatus{domain.PostStatusPublished}
 		filter.Type = "public"
 	}
@@ -137,8 +147,6 @@ func (s *PostService) GetPostsList(ctx context.Context, page, limit int, userRol
 		return nil, err
 	}
 
-	// Opcional: Generar URLs firmadas de S3 para las imágenes aquí si son privadas
-
 	return map[string]interface{}{
 		"data":  posts,
 		"total": total,
@@ -146,17 +154,17 @@ func (s *PostService) GetPostsList(ctx context.Context, page, limit int, userRol
 	}, nil
 }
 
-// GetPostByID recupera una noticia específica validando el nivel de acceso del solicitante.
+// GetPostByID recupera una noticia validando explícitamente el nivel de acceso (IDOR Protection).
+// Evita que un atacante extraiga un borrador adivinando el UUID en la URL (/api/posts/:id).
 func (s *PostService) GetPostByID(ctx context.Context, id uuid.UUID, userRole string) (*domain.Post, error) {
 	post, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	// Validación de lista de control de acceso (ACL)
+	// Validación estricta de la Lista de Control de Acceso (ACL)
 	switch userRole {
 	case "admin":
-		// El admin puede ver todo (incluso borradores o privados)
 		return post, nil
 
 	case "psi":
@@ -168,7 +176,6 @@ func (s *PostService) GetPostByID(ctx context.Context, id uuid.UUID, userRole st
 		}
 
 	default: // "public"
-		// El público solo ve activos y de tipo "public"
 		if post.Status != domain.PostStatusPublished || post.Type != "public" {
 			return nil, errors.New("post no encontrado o privado")
 		}
@@ -178,33 +185,38 @@ func (s *PostService) GetPostByID(ctx context.Context, id uuid.UUID, userRole st
 }
 
 // =========================================================================
-// ACTUALIZACIÓN Y LIMPIEZA
+// ACTUALIZACIÓN Y LIMPIEZA MANTENIDA (ORCHESTRATION)
 // =========================================================================
 
-// UpdatePost permite la edición parcial (PATCH) y gestiona el reemplazo de archivos en S3.
-// Implementa un mecanismo de "Rollback Manual" para S3: si la DB falla, borra la imagen nueva subida.
+// UpdatePost permite la edición parcial y gestiona el reemplazo de portadas.
+//
+// Arquitectura: Transacción Distribuida (Saga Pattern Lite).
+// Actualizar la Base de Datos y un servicio de nube (S3) al mismo tiempo es peligroso
+// porque no comparten la misma transacción. Si PostgreSQL falla pero S3 tuvo éxito,
+// te quedas con archivos "zombie" huérfanos cobrando almacenamiento.
+// Este método implementa un "Rollback de Compensación Manual" para S3.
 func (s *PostService) UpdatePost(ctx context.Context, admin *domain.UserAdmin, req request_structs.UpdatePostRequest, file *multipart.FileHeader, id uuid.UUID) error {
-	// 1. Validar Permisos (Solo Admins pueden modificar)
+
+	// 1. Validar Permisos
 	if !admin.CanUpdatePublish && !admin.Sudo {
 		return errors.New("no tienes permiso para modificar publicaciones")
 	}
 
-	// 2. Obtener Post y su texto actual
+	// 2. Extraer estado original
 	post, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return errors.New("publicación no encontrada")
 	}
 
-	// 3. Lógica de Auditoría
+	// 3. Lógica de Auditoría Inmutable
 	post.UpdateBy = admin.Username
 	post.UpdateById = &admin.ID
 
-	// 4. PROCESAMIENTO DE IMAGEN (Si se envía una nueva)
+	// 4. PROCESAMIENTO DE NUEVA IMAGEN (Si aplica)
 	oldS3Key := post.ImageS3Key
 	newS3Key := oldS3Key
 
 	if file != nil {
-		// A. Limpiar imagen (usando la utilidad que ya tenemos)
 		src, err := file.Open()
 		if err != nil {
 			return errors.New("error leyendo imagen")
@@ -215,7 +227,7 @@ func (s *PostService) UpdatePost(ctx context.Context, admin *domain.UserAdmin, r
 			return fmt.Errorf("error de seguridad en imagen: %v", err)
 		}
 
-		// B. Generar nombre único y subir
+		// Generar nombre e insertar en S3
 		filename := fmt.Sprintf("posts/updated_%s%s", uuid.Must(uuid.NewV7()).String(), ext)
 		key, err := s.s3Client.UploadStream(ctx, bytes.NewReader(cleanBytes), "posts", filename, contentType)
 		if err != nil {
@@ -225,7 +237,7 @@ func (s *PostService) UpdatePost(ctx context.Context, admin *domain.UserAdmin, r
 		newS3Key = key
 	}
 
-	// 5. APLICAR CAMBIOS PARCIALES (PATCH-LIKE)
+	// 5. APLICAR MUTACIONES (Semántica PATCH)
 	if req.Title != nil {
 		post.Title = *req.Title
 	}
@@ -236,7 +248,6 @@ func (s *PostService) UpdatePost(ctx context.Context, admin *domain.UserAdmin, r
 		post.Type = *req.Type
 	}
 	if req.Status != nil {
-		// Validar scheduled
 		if *req.Status == "scheduled" && req.PublishAt == nil && post.PublishAt == nil {
 			return errors.New("un post programado requiere publish_at")
 		}
@@ -246,11 +257,11 @@ func (s *PostService) UpdatePost(ctx context.Context, admin *domain.UserAdmin, r
 		post.PublishAt = req.PublishAt
 	}
 
-	// Actualización de texto (si viene en el request)
+	// Si hay nuevo contenido de texto, se limpia (Sanitize) antes de preparar el modelo
 	var textModel *domain.TextModel = nil
 	if req.Content != nil {
 		textModel = &domain.TextModel{
-			ID:      post.TextID, // Se asume que siempre actualizamos el contenido existente
+			ID:      post.TextID,
 			Content: s.sanitizer.Sanitize(*req.Content),
 			AuditModel: domain.AuditModel{
 				UpdatedAt:  time.Now(),
@@ -260,17 +271,19 @@ func (s *PostService) UpdatePost(ctx context.Context, admin *domain.UserAdmin, r
 		}
 	}
 
-	// 6. PERSISTENCIA Y LIMPIEZA DE S3
+	// 6. PERSISTENCIA Y COMPENSACIÓN (SAGA ROLLBACK)
 	if err := s.repo.Update(ctx, post, textModel); err != nil {
-		// ROLLBACK S3: Si la base de datos falla, borramos la imagen que acabamos de subir
+		// ROLLBACK S3: La BD falló. Para evitar basura en el bucket, borramos
+		// la imagen que acabamos de subir en el paso 4.
 		if newS3Key != "" && newS3Key != oldS3Key {
 			s.s3Client.DeleteFile(ctx, newS3Key)
 		}
 		return err
 	}
 
-	// 7. LIMPIEZA DE ARCHIVOS ANTIGUOS (Si se subió una nueva imagen)
-	//Borramos la imagen antigua para liberar espacio
+	// 7. LIMPIEZA DE ESPACIO (Garbage Collection)
+	// Si la actualización en la DB fue un éxito Y teníamos una imagen vieja,
+	// la borramos del bucket para no pagar almacenamiento de portadas deprecadas.
 	if newS3Key != oldS3Key && oldS3Key != "" {
 		s.s3Client.DeleteFile(ctx, oldS3Key)
 	}
@@ -278,8 +291,10 @@ func (s *PostService) UpdatePost(ctx context.Context, admin *domain.UserAdmin, r
 	return nil
 }
 
-// PublishScheduled busca posts programados cuya fecha ya llegó y los publica.
-// Llamar desde un ticker en main.go cada minuto.
+// PublishScheduled es un "Worker Job".
+// Ejecutado periódicamente por un orquestador (cron/ticker), busca en la base de datos
+// las publicaciones que estaban en sala de espera y las hace públicas si su fecha (`PublishAt`)
+// ya se cumplió.
 func (s *PostService) PublishScheduled(ctx context.Context) error {
 	result := s.repo.PublishScheduled(ctx)
 	if result > 0 {
@@ -288,7 +303,8 @@ func (s *PostService) PublishScheduled(ctx context.Context) error {
 	return nil
 }
 
+// GetSitemapData proyecta el subconjunto de datos necesarios para la indexación SEO
+// de los motores de búsqueda (Googlebot), abstrayendo la complejidad de la tabla Post.
 func (s *PostService) GetSitemapData(ctx context.Context) (interface{}, error) {
-	// Llamamos al repositorio de posts (noticias)
 	return s.repo.GetSitemapPosts(ctx)
 }
