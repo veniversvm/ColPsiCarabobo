@@ -10,8 +10,13 @@ import (
 )
 
 // =========================================================================
-// MOCK DEL REPOSITORIO (Usando Embedding)
+// MOCK DEL REPOSITORIO (Patrón Func Override usando Embedding)
 // =========================================================================
+// Arquitectura de Testing:
+// Se integra (embeds) la interfaz original `domain.PsiUserRepository` para satisfacer
+// el contrato implícitamente, pero se sobreescriben únicamente los métodos del
+// módulo de Redes Sociales usando funciones dinámicas (Func fields). Esto permite
+// aislar los escenarios de prueba en memoria sin requerir una base de datos real.
 
 type mockPsiRepoSocialMedia struct {
 	domain.PsiUserRepository
@@ -39,9 +44,12 @@ func (m *mockPsiRepoSocialMedia) DeleteSocialNetwork(ctx context.Context, id uui
 }
 
 // =========================================================================
-// TESTS UNITARIOS
+// TESTS UNITARIOS: PRESENCIA DIGITAL Y SEGURIDAD
 // =========================================================================
 
+// TestPsiService_AddSocialNetwork evalúa la Prevención de Agotamiento de Recursos.
+// Garantiza que la lógica de "Cuotas" (Quotas) funcione correctamente, impidiendo
+// que un usuario sature la base de datos creando redes sociales de forma infinita.
 func TestPsiService_AddSocialNetwork(t *testing.T) {
 	repo := &mockPsiRepoSocialMedia{}
 	svc := &PsiService{repo: repo} // Asumiendo que tu struct se llama PsiService
@@ -50,7 +58,7 @@ func TestPsiService_AddSocialNetwork(t *testing.T) {
 
 	t.Run("Éxito: Agrega red social dentro del límite", func(t *testing.T) {
 		repo.CountSocialNetworksFunc = func(ctx context.Context, id uuid.UUID) (int64, error) {
-			return 5, nil // Tiene 5, el límite es 10
+			return 5, nil // El usuario tiene 5 redes, el límite del sistema es 10
 		}
 		repo.CreateSocialNetworkFunc = func(ctx context.Context, sn *domain.PsiUserSocialNetwork) error {
 			return nil
@@ -66,18 +74,24 @@ func TestPsiService_AddSocialNetwork(t *testing.T) {
 
 	t.Run("Error: Límite de cuota alcanzado", func(t *testing.T) {
 		repo.CountSocialNetworksFunc = func(ctx context.Context, id uuid.UUID) (int64, error) {
-			return 10, nil // Ya llegó al límite
+			return 10, nil // Ya llegó al límite máximo permitido
 		}
 
 		req := request_structs.CreateSocialNetworkRequest{Name: "fb", URL: "url"}
 		err := svc.AddSocialNetwork(ctx, psi, req)
 
+		// Aserción Defensiva: El servicio debe rechazar tajantemente la inserción
 		if err == nil || err.Error() != "límite de redes sociales alcanzado (10)" {
 			t.Errorf("Se esperaba error de límite, se obtuvo: %v", err)
 		}
 	})
 }
 
+// TestPsiService_UpdateSocialNetwork_Ownership evalúa la vulnerabilidad IDOR
+// (Insecure Direct Object Reference).
+// Verifica el Principio de Confianza Cero (Zero Trust): el sistema no debe confiar
+// ciegamente en el ID de la URL que envía el cliente, sino que debe validar en la BD
+// que el usuario que ejecuta la acción es el dueño real del registro.
 func TestPsiService_UpdateSocialNetwork_Ownership(t *testing.T) {
 	repo := &mockPsiRepoSocialMedia{}
 	svc := &PsiService{repo: repo}
@@ -88,21 +102,26 @@ func TestPsiService_UpdateSocialNetwork_Ownership(t *testing.T) {
 	netID := uuid.Must(uuid.NewV7())
 
 	t.Run("Error: Intento de editar red ajena (ID Spoofing)", func(t *testing.T) {
-		// La red pertenece al Psicólogo B
+		// Mock: La base de datos responde que la red pertenece al Psicólogo B
 		repo.GetSocialNetworkFunc = func(ctx context.Context, id uuid.UUID) (*domain.PsiUserSocialNetwork, error) {
 			return &domain.PsiUserSocialNetwork{ID: netID, PsiUserID: psiB.ID}, nil
 		}
 
-		// El Psicólogo A intenta editarla
+		// Ataque Simulado: El Psicólogo A intenta editar la red del Psicólogo B
 		req := request_structs.UpdateSocialNetworkRequest{}
 		err := svc.UpdateSocialNetwork(ctx, psiA, netID, req)
 
+		// Aserción de Seguridad: El ataque debe ser interceptado en la capa lógica
 		if err == nil || err.Error() != "no tienes permiso para editar esta red social" {
 			t.Errorf("Se esperaba error de permiso, se obtuvo: %v", err)
 		}
 	})
 }
 
+// TestPsiService_DeleteSocialNetwork_Roles evalúa el Control de Acceso Polimórfico.
+// Asegura que un mismo método (`DeleteSocialNetwork`) enrute la lógica de autorización
+// de forma distinta dependiendo de si quien la invoca es el dueño del registro (Autogestión)
+// o el staff del colegio (Moderación Administrativa).
 func TestPsiService_DeleteSocialNetwork_Roles(t *testing.T) {
 	repo := &mockPsiRepoSocialMedia{}
 	svc := &PsiService{repo: repo}
@@ -116,6 +135,7 @@ func TestPsiService_DeleteSocialNetwork_Roles(t *testing.T) {
 		return &domain.PsiUserSocialNetwork{ID: netID, PsiUserID: ownerID}, nil
 	}
 
+	// Escenario 1: Autogestión exitosa (Ownership Validado)
 	t.Run("Psi: Puede borrar su propia red", func(t *testing.T) {
 		repo.DeleteSocialNetworkFunc = func(ctx context.Context, id uuid.UUID) error { return nil }
 		err := svc.DeleteSocialNetwork(ctx, "psi", ownerID, netID)
@@ -124,6 +144,7 @@ func TestPsiService_DeleteSocialNetwork_Roles(t *testing.T) {
 		}
 	})
 
+	// Escenario 2: Intento de Sabotaje bloqueado (IDOR)
 	t.Run("Psi: No puede borrar red ajena", func(t *testing.T) {
 		err := svc.DeleteSocialNetwork(ctx, "psi", otherID, netID)
 		if err == nil || err.Error() != "no puedes borrar una red social que no te pertenece" {
@@ -131,6 +152,7 @@ func TestPsiService_DeleteSocialNetwork_Roles(t *testing.T) {
 		}
 	})
 
+	// Escenario 3: Moderación Global Exitosa (RBAC Bypass por Rol)
 	t.Run("Admin: Puede borrar cualquier red", func(t *testing.T) {
 		repo.DeleteSocialNetworkFunc = func(ctx context.Context, id uuid.UUID) error { return nil }
 		err := svc.DeleteSocialNetwork(ctx, "admin", uuid.Must(uuid.NewV7()), netID)

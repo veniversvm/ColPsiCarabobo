@@ -278,6 +278,23 @@ func (h *PsiHandler) Login(c *fiber.Ctx) error {
 	})
 }
 
+func (h *PsiHandler) LoginLibrary(c *fiber.Ctx) error {
+	var req request_structs.PsiLoginRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "JSON inválido"})
+	}
+
+	token, err := h.service.LoginLibrary(c.UserContext(), req.Identifier, req.Password)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Acceso a la biblioteca",
+		"token":   token,
+	})
+}
+
 // Logout godoc
 // @Summary      Logout de Psicólogo
 // @Description  Invalida el token activo rotando la key de firma. Elimina la sesión activa de las estadísticas.

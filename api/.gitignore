@@ -60,3 +60,6 @@ minio_data/
 
 # --- Otros ---
 *.log
+biblioteca/books/
+biblioteca/config/
+biblioteca/metadata/

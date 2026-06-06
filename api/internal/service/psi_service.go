@@ -3,17 +3,23 @@
 // Package service implementa la capa de lógica de negocio (Business Logic Layer).
 // Este archivo contiene las operaciones centrales relacionadas con los psicólogos colegiados,
 // incluyendo la importación masiva desde CSV, la gestión de perfiles públicos y la autenticación.
-
+//
+// Arquitectura Central (Core Domain):
+// Orquesta múltiples componentes de infraestructura: Base de Datos (PostgreSQL),
+// Almacenamiento de Objetos (S3), Envíos de Correo Asíncronos (SMTP) y
+// Sincronización de Identidad con Sistemas de Terceros (Microservicio Audiobookshelf).
 package service
 
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"log"
 	"mime/multipart"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -23,6 +29,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/microcosm-cc/bluemonday"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/config"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/request_structs"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/utils"
@@ -40,6 +47,10 @@ type PsiService struct {
 }
 
 // NewPsiService es el constructor de PsiService, inyectando las dependencias necesarias.
+//
+// Seguridad por Defecto (Secure by Default):
+// Configura globalmente el motor Bluemonday con una política estricta (UGCPolicy),
+// previniendo ataques de Cross-Site Scripting (XSS) al momento de procesar biografías.
 func NewPsiService(repo domain.PsiUserRepository, s3Client *s3.S3Client, mailService IMailService) *PsiService {
 	policy := bluemonday.UGCPolicy()
 	policy.AllowStyles("text-align").OnElements("p", "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "li", "blockquote")
@@ -53,7 +64,7 @@ func NewPsiService(repo domain.PsiUserRepository, s3Client *s3.S3Client, mailSer
 }
 
 // =========================================================================
-// GESTIÓN MASIVA (CSV IMPORT)
+// GESTIÓN MASIVA (CSV / EXCEL IMPORT)
 // =========================================================================
 
 // ImportFromCSV procesa la carga masiva de agremiados desde un flujo de datos TSV/CSV.
@@ -84,6 +95,11 @@ func NewPsiService(repo domain.PsiUserRepository, s3Client *s3.S3Client, mailSer
 //	[34] RegisterTome              [41] DoubleGuild
 //	[35] GuildDirector             [42] CPSM
 //	[36] SixtyFiveOrPlus
+//
+// Arquitectura de Tolerancia a Fallos (ETL Pipeline):
+// Si una fila contiene errores de formato, colisión de FPV u omisión de datos,
+// el motor la empuja al array 'failedRecords' y continúa procesando el documento
+// ininterrumpidamente, garantizando alta disponibilidad.
 func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminID uuid.UUID) (int, []map[string]string) {
 	// 1. Logs (Igual que antes)
 	_ = os.Mkdir("logs", 0755)
@@ -101,7 +117,9 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 
 	rows, _ := f.Rows("BD ColPsiCarabobo 2026")
 
-	// 3. Preparación
+	// 3. Preparación y Optimización Criptográfica
+	// En un bucle masivo, generar el hash de Bcrypt por iteración consumiría todo el CPU.
+	// Se genera una sola vez y se reutiliza, reduciendo el tiempo de carga drásticamente.
 	successCount := 0
 	var failedRecords []map[string]string
 	defaultPassword := "Colpsi2025!"
@@ -154,7 +172,8 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 			ID: psiID, Key: sessionKey, AuditModel: audit,
 			Username: generateSecureUsername(emailToProcess, strconv.Itoa(fpvInt), firstName),
 			Email:    emailToProcess, Password: hashedPassword,
-			FirstName: firstName, LastName: lastName,
+			AudioBookShellId: psiID.String(),
+			FirstName:        firstName, LastName: lastName,
 			FPV: fpvInt, CI: ciInt, BornDate: parseDate(getValorSeguro(row, 11)),
 			Genre: getValorSeguro(row, 13), IsActive: getValorSeguro(row, 45) == "Activo",
 			Solvent:              getValorSeguro(row, 45) == "Activo",
@@ -266,10 +285,14 @@ func cleanDash(val string) string {
 // UpdateProfileSelf permite al psicólogo actualizar sus datos de contacto y visibilidad.
 // Implementa "Lazy Loading" para ColData: solo consulta y actualiza la tabla de datos
 // colegiales si el usuario solicita cambios en esos campos específicos.
-// UpdateProfileSelf permite al psicólogo actualizar sus datos de contacto y visibilidad.
 // UpdateProfileSelf procesa la autogestión del perfil del psicólogo.
 // Implementa actualizaciones parciales, manejo seguro de binarios y sanitización XSS.
-
+//
+// Arquitectura de Transacción Distribuida S3:
+// Almacenar en S3 y guardar en la Base de Datos son dos operaciones en sistemas distintos.
+// Implementa un mecanismo de compensación (Rollback Manual): si la DB falla, se eliminan
+// las imágenes subidas en la sesión actual. Solo tras el éxito definitivo en DB,
+// se eliminan las imágenes antiguas (Garbage Collection).
 func (s *PsiService) UpdateProfileSelf(
 	ctx context.Context,
 	psi *domain.PsiUserModel,
@@ -282,6 +305,8 @@ func (s *PsiService) UpdateProfileSelf(
 ) (*domain.PsiUserModel, error) {
 
 	// 1. Validación de contraseña actual (Security First)
+	// Defensa contra Session Hijacking: Aunque el usuario tenga el JWT válido,
+	// se exige su clave maestra para ejecutar mutaciones de perfil.
 	if err := bcrypt.CompareHashAndPassword([]byte(psi.Password), []byte(req.Password)); err != nil {
 		return nil, errors.New("contraseña actual incorrecta")
 	}
@@ -296,6 +321,7 @@ func (s *PsiService) UpdateProfileSelf(
 		}
 		hashed, _ := bcrypt.GenerateFromPassword([]byte(*req.NewPassword1), bcrypt.DefaultCost)
 		psi.Password = string(hashed)
+		// Renovar el 'Key' expulsa de inmediato cualquier otra sesión activa del usuario
 		psi.Key = uuid.Must(uuid.NewV7()).String()
 	}
 
@@ -576,12 +602,109 @@ func (s *PsiService) UpdateProfileSelf(
 		return nil, err
 	}
 
+	// 👇 NUEVA SINCRONIZACIÓN ASÍNCRONA TRAS ÉXITO EN DB 👇
+	var absUsername *string
+	var absEmail *string
+	var absPassword *string
+
+	// Validamos qué campos fueron enviados en la petición de cambio
+	if req.Username != nil {
+		absUsername = req.Username
+	}
+	if req.Email != nil {
+		absEmail = req.Email
+	}
+	// Usamos el password en texto plano antes de que fuera hasheado
+	if req.NewPassword1 != nil && *req.NewPassword1 != "" {
+		absPassword = req.NewPassword1
+	}
+
+	// Integración de Microservicios (Eventual Consistency):
+	// Una vez garantizada la persistencia de los datos en el sistema central (ColPsi),
+	// se dispara un evento de sincronización hacia el sistema de biblioteca digital (Audiobookshelf).
+	if absUsername != nil || absEmail != nil || absPassword != nil {
+		// Pasamos el campo AudioBookShellId de tu modelo gorm
+		if absErr := s.actualizarEnAudiobookshelf(ctx, psi.AudioBookShellId, absUsername, absPassword, absEmail); absErr != nil {
+			// Degradación Elegante (Graceful Degradation):
+			// Si la biblioteca está caída, logueamos el error interno pero NO devolvemos error
+			// HTTP 500 al cliente, ya que su perfil central se actualizó correctamente.
+			println("Error al sincronizar actualización con Audiobookshelf:", absErr.Error())
+		}
+	}
+
 	// Limpiar archivos S3 reemplazados solo tras confirmar la persistencia
 	for _, oldKey := range oldS3KeysToDelete {
 		_ = s.s3Client.DeleteFile(context.Background(), oldKey)
 	}
 
 	return psi, nil
+}
+
+// actualizarEnAudiobookshelf modifica las credenciales del usuario en la biblioteca virtual.
+//
+// Comunicación entre Servicios:
+// Ejecuta una petición HTTP PATCH hacia el microservicio en red interna.
+// Si el ID no existe en Audiobookshelf (da 404), se asume que el psicólogo nunca ingresó
+// a la biblioteca y el flujo se ignora pacíficamente (Idempotencia).
+func (s *PsiService) actualizarEnAudiobookshelf(ctx context.Context, absID string, username, password, email *string) error {
+	// Si el ID está vacío o no es un ID válido de Audiobookshelf, ignoramos de inmediato
+	if absID == "" {
+		return nil
+	}
+
+	url := fmt.Sprintf("http://audiobookshelf:80/api/users/%s", absID)
+
+	// Construimos el payload dinámicamente solo con los campos presentes
+	payload := map[string]interface{}{}
+	if username != nil {
+		payload["username"] = *username
+	}
+	if password != nil {
+		payload["password"] = *password
+	}
+	if email != nil {
+		payload["email"] = *email
+	}
+
+	// Si no hay cambios destinados a la biblioteca, terminamos tempranamente
+	if len(payload) == 0 {
+		return nil
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "PATCH", url, bytes.NewBuffer(body))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+config.Envs.AbsAdminToken)
+
+	// Patrón de Resiliencia (Timeout Strict):
+	// Nunca se debe hacer una petición HTTP entre servicios sin Timeout.
+	// Si Audiobookshelf colapsa y no responde, los 5 segundos garantizan que
+	// los hilos (Goroutines) de ColPsi se liberen y el servidor no sufra un efecto dominó.
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	// CORRECCIÓN/COMPROBACIÓN: Si da 404 significa que tenía el random string por defecto
+	// y el usuario no existe en Audiobookshelf, por lo que lo ignoramos.
+	if resp.StatusCode == http.StatusNotFound {
+		return nil
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return errors.New("audiobookshelf respondió con un código inesperado al actualizar el perfil")
+	}
+
+	return nil
 }
 
 // =========================================================================
@@ -664,7 +787,9 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 		return nil, uuid.Nil, errors.New("perfil no disponible")
 	}
 
-	// 3. RESTRICCIÓN DE SOLVENCIA — early return con datos mínimos
+	// 3. RESTRICCIÓN DE SOLVENCIA (Degradación Elegante del Perfil)
+	// Early return con datos mínimos. Previene mostrar credenciales académicas avanzadas
+	// si el psicólogo no cumple con sus deberes gremiales, sin romper el SEO o lanzar error 404.
 	if !psi.Solvent {
 		return &request_structs.PsiFullProfileDTO{
 			FirstName:      psi.FirstName,
@@ -714,7 +839,12 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 		Undergraduate:     request_structs.UndergraduateDTO{},
 	}
 
-	// ── Privacy Shield: Contacto principal ───────────────────────────────
+	// ── Privacy Shield (Data Masking) ────────────────────────────────────
+	// La Lógica de Negocio es la responsable de inyectar o retener información sensible
+	// basándose en las preferencias booleanas del usuario (Opt-In).
+	// Esto previene Fugas de Información PII (Personally Identifiable Information).
+
+	// Contacto principal
 	if psi.ShowContactEmail {
 		dto.Email = psi.ContactEmail
 	}
@@ -915,7 +1045,129 @@ func (s *PsiService) Login(ctx context.Context, identifier, password string) (st
 	return signed, psi, err
 }
 
-// Logout
+type AudiobookshelfUserResponse struct {
+	User struct {
+		ID string `json:"id"`
+	} `json:"user"`
+}
+
+// LoginLibrary ejecuta un puente de autenticación con la Biblioteca Digital de Psicología.
+//
+// Patrón Single Sign-On (SSO) Básico:
+// Valida las credenciales centrales del Colegio y emite un JWT firmado específicamente
+// para Audiobookshelf. Al mismo tiempo, asegura (sincroniza) que la cuenta del
+// usuario exista en la biblioteca mediante una petición asíncrona segura.
+func (s *PsiService) LoginLibrary(ctx context.Context, identifier, password string) (string, error) {
+	// 1. Buscar usuario
+	psi, err := s.repo.GetByIdentifier(ctx, identifier)
+	if err != nil {
+		return "", errors.New("credenciales inválidas")
+	}
+
+	// 2. Verificar si está activo (Soft delete o ban)
+	if !psi.IsActive {
+		return "", errors.New("cuenta inactiva o suspendida")
+	}
+
+	// 3. Verificar contraseña
+	if err := bcrypt.CompareHashAndPassword([]byte(psi.Password), []byte(password)); err != nil {
+		return "", errors.New("credenciales inválidas")
+	}
+
+	// 4. Generar JWT
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id": psi.ID.String(),
+		"role":    "psi",
+		"exp":     time.Now().Add(24 * 30 * time.Hour).Unix(),
+		"iat":     time.Now().Unix(),
+	})
+
+	// Firmar con la llave de libreria
+	jwtLibrarySecret := config.Envs.JwtLibrarySecret
+	signed, err := token.SignedString([]byte(jwtLibrarySecret))
+	if err != nil {
+		return "", err
+	}
+
+	// 5. Sincronizar en segundo plano de manera segura (Pasando el contexto)
+	// Ahora la función nos devuelve el ID asignado por Audiobookshelf si fue creado
+	absID, absErr := s.sincronizarConAudiobookshelf(ctx, psi.Username, password, psi.Email)
+	if absErr != nil {
+		println("Error sincronizando con Audiobookshelf:", absErr.Error())
+	} else if absID != "" {
+		// Hacemos update del modelo si optenemos el ID de AudioBookShell
+		psi.AudioBookShellId = absID
+		s.repo.Update(ctx, psi, nil, nil, nil)
+		println("Usuario creado en Audiobookshelf con ID:", absID)
+	} else {
+		println("El usuario ya existía en Audiobookshelf, no se generó un nuevo ID.")
+	}
+
+	return signed, nil
+}
+
+// sincronizarConAudiobookshelf inicializa una cuenta (Provisioning) en el sistema externo.
+//
+// Idempotencia: Si el servicio externo devuelve HTTP 409 (Conflict), indica
+// que el usuario ya fue creado en un inicio de sesión previo, manejando el escenario
+// de forma exitosa sin arrojar errores.
+func (s *PsiService) sincronizarConAudiobookshelf(ctx context.Context, username, password, email string) (string, error) {
+	url := "http://audiobookshelf:80/api/users"
+
+	payload := map[string]interface{}{
+		"username": username,
+		"password": password,
+		"email":    email,
+		"type":     "user",
+		"isActive": true,
+		"permissions": map[string]bool{
+			"download":           true,
+			"updateProgress":     true,
+			"accessAllLibraries": true,
+		},
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return "", err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(body))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+config.Envs.AbsAdminToken)
+
+	// Timeout Crítico de 5s para no bloquear el proceso de Login en caso de fallo de red
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	// Caso A: Si devuelve 409 Conflict significa que ya existe.
+	// Retornamos string vacío y nil error porque el comportamiento es seguro y esperado.
+	if resp.StatusCode == http.StatusConflict {
+		return "", nil
+	}
+
+	// Validar otros códigos inesperados de error
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		return "", errors.New("audiobookshelf respondió con código de estado inesperado")
+	}
+
+	// Caso B: Si es 201 Created o 200 OK, decodificamos el JSON para extraer el ID
+	var absData AudiobookshelfUserResponse
+	if err := json.NewDecoder(resp.Body).Decode(&absData); err != nil {
+		return "", errors.New("error al decodificar la respuesta de audiobookshelf")
+	}
+
+	return absData.User.ID, nil
+}
+
+// Logout cierra la sesión de forma segura a nivel de servidor (Stateful Logout).
 func (s *PsiService) Logout(ctx context.Context, psi *domain.PsiUserModel) error {
 	// Rotar la key invalida físicamente el token actual
 	// — cualquier request posterior con el JWT viejo fallará en validateToken
@@ -1122,18 +1374,21 @@ func generateSecureUsername(email, fpv, name string) string {
 	} else {
 		base = strings.ReplaceAll(strings.ToLower(name), " ", "")
 	}
-	combined := base + fpv
+
+	// LIMPIEZA EXTRA: Quitar comas, puntos y espacios del FPV
+	cleanFPV := strings.NewReplacer(",", "", ".", "", " ", "").Replace(fpv)
+
+	combined := base + cleanFPV
 	if len(combined) > 25 {
-		maxBase := 25 - len(fpv)
+		maxBase := 25 - len(cleanFPV)
 		if maxBase > 0 {
-			combined = base[:maxBase] + fpv
+			combined = base[:maxBase] + cleanFPV
 		} else {
 			combined = combined[:25]
 		}
 	}
 	return combined
 }
-
 func parseBool(s string) bool {
 	s = strings.ToLower(strings.TrimSpace(s))
 	return s == "true" || s == "1" || s == "v" || s == "s"

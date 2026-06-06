@@ -72,6 +72,7 @@ func SetupPsiRoutes(router fiber.Router, db *gorm.DB, s3Client *s3.S3Client, ana
 
 	// Login con rate limiting — 10 intentos por IP cada 15 minutos
 	psiGroup.Post("/login", middleware.AuthRateLimiter(), h.Login)
+	psiGroup.Post("/login-library", middleware.AuthRateLimiter(), h.LoginLibrary)
 	psiGroup.Get("/directory", h.SearchDirectory)
 	psiGroup.Get("/:id", h.GetPublicProfile)
 }

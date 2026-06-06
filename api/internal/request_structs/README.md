@@ -1,8 +1,3 @@
-
-Este es el `README.md` detallado para el módulo de estructuras de petición y respuesta del proyecto COLPSI Carabobo.
-
----
-
 # Request Structs & DTOs Module
 
 ## 📌 Descripción General

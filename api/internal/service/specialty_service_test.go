@@ -10,11 +10,16 @@ import (
 )
 
 // =========================================================================
-// MOCK DEL REPOSITORIO
+// MOCK DEL REPOSITORIO (Patrón Func Override usando Embedding)
 // =========================================================================
+// Arquitectura de Testing:
+// Mediante el "Embedding" de `domain.SpecialtyRepository`, el mock satisface el
+// contrato de la interfaz automáticamente. Sobrescribir los métodos con variables
+// de tipo función (Func fields) permite inyectar comportamientos dinámicos
+// ("Stubs" y "Spies") dentro del contexto cerrado de cada sub-test (t.Run).
 
 type mockSpecialtyRepo struct {
-	domain.SpecialtyRepository // Embedding para cumplir la interfaz
+	domain.SpecialtyRepository // Embedding para cumplir la interfaz implícitamente
 	CreateFunc                 func(ctx context.Context, s *domain.PsiSpecialtyModel) error
 	GetByIDFunc                func(ctx context.Context, id uint32, includeInactive bool) (*domain.PsiSpecialtyModel, error)
 	UpdateFunc                 func(ctx context.Context, s *domain.PsiSpecialtyModel) error
@@ -39,9 +44,15 @@ func (m *mockSpecialtyRepo) Count(ctx context.Context, active *bool) (int64, err
 }
 
 // =========================================================================
-// TESTS UNITARIOS
+// TESTS UNITARIOS: MASTER DATA MANAGEMENT (MDM) Y SEGURIDAD
 // =========================================================================
 
+// TestSpecialtyService_Create evalúa el Control de Acceso Basado en Roles (RBAC).
+//
+// Patrón de Prueba (Table-Driven Testing - TDT):
+// Se define una matriz de casos de prueba (`tests`) que evalúan exhaustivamente
+// los límites de la matriz de permisos. Esto garantiza que la lógica de "Gatekeeping"
+// sea determinística y no permita escaladas de privilegios accidentales.
 func TestSpecialtyService_Create(t *testing.T) {
 	repo := &mockSpecialtyRepo{}
 	svc := NewSpecialtyService(repo)
@@ -57,18 +68,21 @@ func TestSpecialtyService_Create(t *testing.T) {
 		errMsg  string
 	}{
 		{
+			// Escenario 1: Camino Feliz (Happy Path). El rol tiene el permiso exacto.
 			name:    "Éxito: Admin con permiso CanCreateTags",
 			admin:   &domain.UserAdmin{ID: adminID, Username: "admin1", CanCreateTags: true},
 			req:     request_structs.CreateSpecialtyRequest{Name: "Psicología Clínica"},
 			wantErr: false,
 		},
 		{
+			// Escenario 2: Bypass Jerárquico. El Superusuario hereda todos los accesos.
 			name:    "Éxito: Superusuario (Sudo) sin permiso explícito",
 			admin:   &domain.UserAdmin{ID: adminID, Username: "sudo_user", Sudo: true, CanCreateTags: false},
 			req:     request_structs.CreateSpecialtyRequest{Name: "Neuropsicología"},
 			wantErr: false,
 		},
 		{
+			// Escenario 3: Bloqueo de Seguridad (Principle of Least Privilege).
 			name:    "Error: Admin sin permisos",
 			admin:   &domain.UserAdmin{ID: adminID, Username: "pobre_admin", CanCreateTags: false, Sudo: false},
 			req:     request_structs.CreateSpecialtyRequest{Name: "Fake"},
@@ -79,14 +93,18 @@ func TestSpecialtyService_Create(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Stub de éxito silencioso para la base de datos
 			repo.CreateFunc = func(ctx context.Context, s *domain.PsiSpecialtyModel) error {
 				return tt.mockErr
 			}
 
 			err := svc.Create(ctx, tt.admin, tt.req)
+
+			// Aserción de Bloqueo
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Create() error = %v, wantErr %v", err, tt.wantErr)
 			}
+			// Aserción de Exactitud de Error (Previene falsos positivos en test)
 			if err != nil && tt.errMsg != "" && err.Error() != tt.errMsg {
 				t.Errorf("Create() error message = %v, want %v", err.Error(), tt.errMsg)
 			}
@@ -94,6 +112,11 @@ func TestSpecialtyService_Create(t *testing.T) {
 	}
 }
 
+// TestSpecialtyService_Update evalúa la Mutación de Datos y el Rastro de Auditoría.
+//
+// Verifica que la Semántica PATCH del DTO funcione, y garantiza el cumplimiento
+// de "No Repudio" (Non-Repudiation): el servicio debe obligatoriamente sellar
+// el registro con el Username de quien ejecutó la acción.
 func TestSpecialtyService_Update(t *testing.T) {
 	repo := &mockSpecialtyRepo{}
 	svc := NewSpecialtyService(repo)
@@ -105,15 +128,18 @@ func TestSpecialtyService_Update(t *testing.T) {
 		admin := &domain.UserAdmin{ID: uuid.New(), Username: "editor", CanEditTags: true}
 		existingSpec := &domain.PsiSpecialtyModel{ID: 10, Name: "Viejo Nombre"}
 
+		// Simulamos la lectura previa (Read-Before-Write)
 		repo.GetByIDFunc = func(ctx context.Context, id uint32, includeInactive bool) (*domain.PsiSpecialtyModel, error) {
 			return existingSpec, nil
 		}
 
+		// Espiamos el payload final (Spy Pattern) justo antes de que toque la BD.
 		repo.UpdateFunc = func(ctx context.Context, s *domain.PsiSpecialtyModel) error {
-			// Verificamos que los campos de auditoría se hayan actualizado
+			// Aserción de Trazabilidad Forense
 			if s.UpdateBy != admin.Username {
 				t.Errorf("UpdateBy no se actualizó, got %s", s.UpdateBy)
 			}
+			// Aserción de Mutación PATCH
 			if s.Name != nameUpdate {
 				t.Errorf("Name no se actualizó, got %s", s.Name)
 			}
@@ -128,6 +154,12 @@ func TestSpecialtyService_Update(t *testing.T) {
 	})
 }
 
+// TestSpecialtyService_GetSpecialties_Visibility evalúa la Degradación de Visibilidad.
+//
+// Patrón de Diseño: Fail-Safe Defaults (Seguro por Defecto).
+// Verifica que un usuario malintencionado no pueda aplicar "Fuzzing" de parámetros
+// enviando `?status=all` para descubrir taxonomías internas. La lógica debe reescribir
+// la variable forzando la seguridad.
 func TestSpecialtyService_GetSpecialties_Visibility(t *testing.T) {
 	repo := &mockSpecialtyRepo{}
 	svc := NewSpecialtyService(repo)
@@ -139,12 +171,14 @@ func TestSpecialtyService_GetSpecialties_Visibility(t *testing.T) {
 		expectedStatus  string
 	}{
 		{
+			// Escenario Restringido: El Backend sobrescribe un parámetro hostil.
 			name:            "Usuario normal: Fuerza estado 'active' aunque pida 'all'",
 			isAdmin:         false,
 			requestedStatus: "all",
 			expectedStatus:  "active",
 		},
 		{
+			// Escenario Confiable: Al administrador se le respeta su comando.
 			name:            "Admin: Puede pedir 'inactive'",
 			isAdmin:         true,
 			requestedStatus: "inactive",
@@ -155,6 +189,7 @@ func TestSpecialtyService_GetSpecialties_Visibility(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			repo.GetAllFunc = func(ctx context.Context, status string) ([]domain.PsiSpecialtyModel, error) {
+				// Aserción de Filtrado Defensivo
 				if status != tt.expectedStatus {
 					t.Errorf("Se esperaba status '%s', se recibió '%s'", tt.expectedStatus, status)
 				}
@@ -165,17 +200,22 @@ func TestSpecialtyService_GetSpecialties_Visibility(t *testing.T) {
 	}
 }
 
+// TestSpecialtyService_Count_Rules evalúa la Prevención de Fugas Telemétricas.
+// Garantiza que los visitantes no puedan usar el endpoint de métricas para deducir
+// el tamaño oculto de la base de datos institucional.
 func TestSpecialtyService_Count_Rules(t *testing.T) {
 	repo := &mockSpecialtyRepo{}
 	svc := NewSpecialtyService(repo)
 
 	t.Run("Usuario anónimo: fuerza conteo de solo activos", func(t *testing.T) {
 		repo.CountFunc = func(ctx context.Context, active *bool) (int64, error) {
+			// Aserción de Seguridad: El servicio debe inyectar el puntero en 'true'
 			if active == nil || !*active {
 				t.Error("Se esperaba que 'active' fuera true para usuario anónimo")
 			}
 			return 10, nil
 		}
-		_, _ = svc.Count(context.Background(), nil, nil) // Admin nil
+		// Invocación como visitante anónimo (Admin = nil)
+		_, _ = svc.Count(context.Background(), nil, nil)
 	})
 }

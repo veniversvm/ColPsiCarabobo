@@ -1,8 +1,8 @@
 // api/internal/service/psi_user_admin_service.go
 
 // Package service implementa la capa de lógica de negocio (Business Logic Layer).
-// Este archivo contiene las operaciones administrativas de alto nivel para la gestión
-// de los expedientes de los psicólogos colegiados.
+// Este archivo contiene las operaciones administrativas de alto nivel (High-Privilege Operations)
+// para la gestión integral de los expedientes de los psicólogos colegiados.
 package service
 
 import (
@@ -28,9 +28,12 @@ import (
 // GESTIÓN DE EXPEDIENTES (LECTURA DETALLADA)
 // =========================================================================
 
-// GetPsiByIDAdmin retorna el expediente completo de un psicólogo sin restricciones de privacidad.
-// Está diseñado exclusivamente para el uso del personal administrativo autorizado.
-// Implementa una barrera de permisos RBAC interna para asegurar que solo personal de gestión acceda.
+// GetPsiByIDAdmin retorna el expediente completo de un psicólogo.
+//
+// Arquitectura de Visión de Rayos X (Bypass del Privacy Shield):
+// A diferencia del perfil público, el personal del Colegio (Staff) requiere acceso total
+// al expediente (teléfonos privados, correos, historial de solvencias) para tareas
+// operativas y legales. Este método omite intencionalmente los filtros de privacidad.
 func (s *PsiService) GetPsiByIDAdmin(ctx context.Context, admin *domain.UserAdmin, targetID uuid.UUID) (*domain.PsiUserModel, error) {
 	// Como es una operación de solo lectura para el panel interno,
 	// verificamos que sea Sudo o que al menos tenga un permiso administrativo básico.
@@ -43,6 +46,7 @@ func (s *PsiService) GetPsiByIDAdmin(ctx context.Context, admin *domain.UserAdmi
 		return nil, errors.New("psicólogo no encontrado")
 	}
 
+	// Recuperación del historial financiero asociado al expediente
 	solvencies, err := s.repo.GetSolvencies(ctx, targetID)
 
 	psi.Solvencies = solvencies
@@ -54,11 +58,13 @@ func (s *PsiService) GetPsiByIDAdmin(ctx context.Context, admin *domain.UserAdmi
 // REGISTRO INDIVIDUAL (ESCRITURA ATÓMICA)
 // =========================================================================
 
-// CreatePsiByAdmin orquesta la creación manual de un nuevo colegiado.
-// Realiza validación de permisos, geo-normalización, hashing de credenciales,
-// parseo de fechas y escritura transaccional atómica del perfil y datos colegiales.
+// CreatePsiByAdmin orquesta la creación manual de un nuevo colegiado por parte del staff.
+//
+// Integridad de Datos (ACID):
+// Realiza validación de permisos, geo-normalización, hashing de credenciales, parseo de fechas
+// y escritura transaccional. Si alguna validación falla, nada se inserta en la base de datos.
 func (s *PsiService) CreatePsiByAdmin(ctx context.Context, admin *domain.UserAdmin, req request_structs.CreatePsiAdminRequest) error {
-	// 1. Validar Permisos
+	// 1. Validar Permisos (Gatekeeping)
 	if !admin.CanCreatePsi && !admin.Sudo {
 		return errors.New("no tienes permiso para registrar psicólogos")
 	}
@@ -83,7 +89,7 @@ func (s *PsiService) CreatePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 		estadoOutside = estado
 	}
 
-	// 3. Hash de Password
+	// 3. Hash de Password (Criptografía)
 	hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return errors.New("error al procesar seguridad")
@@ -95,11 +101,11 @@ func (s *PsiService) CreatePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 	solvDate, _ := time.Parse("2006-01-02", req.DateOfLastSolvency)
 	regDate, _ := time.Parse("2006-01-02", req.RegisterTitleDate)
 
-	// 5. Mapeo de Identidades (UUIDs frescos)
+	// 5. Mapeo de Identidades (UUIDs frescos v7 para indexación optimizada en B-Trees)
 	psiID := uuid.Must(uuid.NewV7())
 	colDataID := uuid.Must(uuid.NewV7())
 
-	// 6. Crear un audit model
+	// 6. Crear un audit model (Inmutabilidad Forense)
 	audit_moodel := domain.AuditModel{
 		CreateBy:   admin.Username,
 		CreateById: &admin.ID,
@@ -107,21 +113,23 @@ func (s *PsiService) CreatePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 		UpdateById: &admin.ID,
 	}
 
+	// Delegación a Constructores (Patrón Factory)
 	psi := createPsiUSerModel(req, psiID, audit_moodel, hashed, municipioCarabobo, estadoOutside, bornDate)
-	//── Solvencias ────────────────────────────────────────────
 
+	//── Solvencias ────────────────────────────────────────────
 	solvencies := createSolvencieModel(solvDate, psi.ID, audit_moodel)
 
 	//── Datos colegiales ────────────────────────────────────────────
-
 	colData := createColdata(req, psiID, colDataID, audit_moodel, gradDate, regDate, solvDate)
 
-	// 6. Persistencia transaccional — un solo punto de fallo
+	// 6. Persistencia transaccional — un solo punto de fallo.
+	// MapDBError actúa como escudo para no filtrar metadatos de Postgres al cliente.
 	if err := s.repo.CreateWithColData(ctx, psi, colData, solvencies, []domain.PsiUserPostGrade{}); err != nil {
 		return MapDBError(err)
 	}
 
 	// 7. Notificación de bienvenida — no bloqueante, fallo silencioso intencional
+	// Si el SMTP falla, la creación del registro no hace Rollback.
 	mailData := map[string]interface{}{
 		"Name":     psi.Username,
 		"Email":    psi.Email,
@@ -138,9 +146,6 @@ func (s *PsiService) CreatePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 // ACTUALIZACIÓN MAESTRA (CONTROL TOTAL)
 // =========================================================================
 
-// UpdatePsiByAdmin permite a un administrador modificar íntegramente el expediente.
-// Soporta actualizaciones parciales (PATCH) mediante el uso de punteros en el DTO,
-// garantizando que solo los campos enviados en el JSON sean alterados en la base de datos.
 // UpdatePsiByAdmin permite a un administrador modificar íntegramente el expediente.
 // Soporta actualizaciones parciales (PATCH) mediante el uso de punteros en el DTO,
 // garantizando que solo los campos enviados en el JSON sean alterados en la base de datos.
@@ -174,10 +179,11 @@ func (s *PsiService) UpdatePsiByAdmin(
 		return t
 	}
 
+	// Estructuras para Transacción Distribuida (Saga/Rollback manual de S3)
 	var uploadedS3Keys []string
 	var oldS3KeysToDelete []string
 
-	// 3. IMAGEN DE PERFIL
+	// 3. IMAGEN DE PERFIL (Sanitización y Carga S3)
 	if profilePic != nil {
 		src, _ := profilePic.Open()
 		defer src.Close()
@@ -324,7 +330,6 @@ func (s *PsiService) UpdatePsiByAdmin(
 		} else {
 			estado, ok := utils.NormalizeEstadoVenezuela(val)
 			if !ok {
-				// Este es el error que te estaba saliendo
 				return fmt.Errorf("estado venezolano inválido o no permitido: %q", val)
 			}
 			psi.StateOutside = estado
@@ -420,6 +425,9 @@ func (s *PsiService) UpdatePsiByAdmin(
 	}
 
 	// 4k. Procesamiento de Solvencias (Decodificando el JSON string)
+	// Solución de Arquitectura: Peticiones `multipart/form-data` no pueden anidar
+	// arrays de objetos de forma limpia en HTTP. Por ello, el cliente envía un String
+	// que contiene un JSON en crudo ("SolvenciesRaw"), el cual decodificamos aquí.
 	var solvenciesToCreate []domain.PsiUSerSolvency
 	currentYear := time.Now().Year()
 
@@ -448,7 +456,7 @@ func (s *PsiService) UpdatePsiByAdmin(
 					continue
 				}
 
-				// Intentar parsear la fecha
+				// Intentar parsear la fecha (Soporta ISO y Estándar Simple)
 				t, err := time.Parse(time.RFC3339, incoming.Date)
 				if err != nil {
 					t, err = time.Parse("2006-01-02", incoming.Date)
@@ -459,7 +467,7 @@ func (s *PsiService) UpdatePsiByAdmin(
 
 				dateKey := t.Format("2006-01-02")
 
-				// 3. Solo añadir si NO existe ya en la DB
+				// 3. Solo añadir si NO existe ya en la DB (Idempotencia Lógica)
 				if !existingDates[dateKey] {
 					newSolvency := domain.PsiUSerSolvency{
 						ID:             uuid.Must(uuid.NewV7()),
@@ -475,7 +483,7 @@ func (s *PsiService) UpdatePsiByAdmin(
 					solvenciesToCreate = append(solvenciesToCreate, newSolvency)
 					existingDates[dateKey] = true
 
-					// Actualizar estado de solvencia si es del año actual
+					// Automatización de Estado: Si paga el año actual, se activa la bandera de solvente
 					if t.Year() == currentYear {
 						psi.Solvent = true
 					}
@@ -489,7 +497,9 @@ func (s *PsiService) UpdatePsiByAdmin(
 			}
 		}
 	}
+
 	// 5. MAPEO DE TABLA RELACIONADA (PsiUserColData)
+	// Lazy Load: Solo preparamos la actualización si el payload tocó campos colegiales
 	hasColDataChanges := req.ShowUniversityUndergraduateRaw != "" ||
 		req.ShowGraduateDateRaw != "" ||
 		req.ShowMentionUndergraduateRaw != "" ||
@@ -645,11 +655,11 @@ func (s *PsiService) UpdatePsiByAdmin(
 		colDataToUpdate = currentColData
 	}
 
-	// 6. AUDITORÍA
+	// 6. AUDITORÍA (Blindaje Ciego)
 	psi.UpdateBy = admin.Username
 	psi.UpdateById = &admin.ID
 
-	// 7. PERSISTENCIA — rollback S3 si falla la DB
+	// 7. PERSISTENCIA — Rollback Distribuido si falla la DB
 	err = s.repo.Update(ctx, psi, colDataToUpdate, bioTextToUpdate, solvenciesToCreate)
 	if err != nil {
 		for _, key := range uploadedS3Keys {
@@ -658,7 +668,30 @@ func (s *PsiService) UpdatePsiByAdmin(
 		return fmt.Errorf("error al persistir los cambios: %w", err)
 	}
 
-	// Limpiar S3 reemplazados solo tras confirmar persistencia
+	// 👇 NUEVA SINCRONIZACIÓN ASÍNCRONA TRAS ÉXITO EN DB (Eventual Consistency) 👇
+	var absUsername *string
+	var absEmail *string
+
+	// Validamos si el admin solicitó cambiar las credenciales
+	if req.Username != nil {
+		absUsername = req.Username
+	}
+	if req.Email != nil {
+		absEmail = req.Email
+	}
+
+	// Notificación de Microservicio: Si hubo cambios en credenciales base,
+	// se dispara una actualización hacia la biblioteca virtual.
+	if absUsername != nil || absEmail != nil {
+		// Pasamos nil en la contraseña porque el admin no la está modificando en este panel
+		if absErr := s.actualizarEnAudiobookshelf(ctx, psi.AudioBookShellId, absUsername, nil, absEmail); absErr != nil {
+			// Logueamos el error interno pero no bloqueamos el retorno exitoso de la petición
+			// (Degradación Elegante)
+			println("Error al sincronizar actualización del administrador con Audiobookshelf:", absErr.Error())
+		}
+	}
+
+	// Limpiar S3 reemplazados (Garbage Collection) solo tras confirmar persistencia DB
 	for _, oldKey := range oldS3KeysToDelete {
 		_ = s.s3Client.DeleteFile(context.Background(), oldKey)
 	}
@@ -671,8 +704,8 @@ func (s *PsiService) UpdatePsiByAdmin(
 // =========================================================================
 
 // DeletePsiByAdmin realiza un borrado lógico del registro.
-// El sistema preserva la integridad referencial para propósitos legales históricos,
-// pero el usuario deja de existir para el motor de búsqueda y la autenticación.
+// El sistema preserva la integridad referencial para propósitos legales e históricos,
+// pero el usuario deja de existir para el motor de búsqueda y el sistema de autenticación.
 func (s *PsiService) DeletePsiByAdmin(ctx context.Context, admin *domain.UserAdmin, targetID uuid.UUID) error {
 	// 1. Validación de permisos (RBAC)
 	if !admin.CanDeletePsi && !admin.Sudo {
@@ -692,8 +725,11 @@ func (s *PsiService) DeletePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 // =========================================================================
 
 // GetAdminDirectory proporciona una vista de "Rayos X" del listado de miembros.
-// Ignora filtros de solvencia y visibilidad pública, permitiendo al staff administrativo
-// gestionar la morosidad y estados de actividad.
+//
+// Proyección de Datos (Data Projection DTO):
+// Ignora los filtros públicos (solvencia, privacidad) entregando la información absoluta
+// y re-empaqueta la salida en un `PsiAdminListDTO` ligero para evitar saturar
+// la red interna con biografías y metadatos no requeridos para una tabla (DataGrid).
 func (s *PsiService) GetAdminDirectory(ctx context.Context, admin *domain.UserAdmin, filter request_structs.PsiDirectoryFilterDTO) (interface{}, error) {
 	// Seguridad: Validar que sea administrador autorizado
 	if !admin.Sudo && !admin.CanUpdatePsi && !admin.CanCreatePsi {
@@ -739,16 +775,20 @@ func (s *PsiService) GetAdminDirectory(ctx context.Context, admin *domain.UserAd
 
 // =========================================================================
 // =========================================================================
-// AUXILIARY FUNCTIONS
+// AUXILIARY FUNCTIONS (PATRÓN FACTORY)
 // =========================================================================
 // =========================================================================
-func createSolvencieModel(date time.Time, userId uuid.UUID, audit_moodel domain.AuditModel) domain.PsiUSerSolvency {
-	// Inicializamos como un slice vacío (longitud 0) en lugar de nil
 
+// Patrón Factory (Creational):
+// Las siguientes funciones abstraen la complejidad de inicialización de los grafos
+// de objetos del dominio, previniendo que la función principal de registro
+// (CreatePsiByAdmin) se convierta en un monolito inmanejable.
+
+func createSolvencieModel(date time.Time, userId uuid.UUID, audit_moodel domain.AuditModel) domain.PsiUSerSolvency {
 	currentYear := date.Year()
 	nowYear := time.Now().Year()
 
-	// Validaciones
+	// Validaciones de Consistencia de Datos
 	if currentYear > nowYear {
 		fmt.Printf("Error: solvency year %d is in the future\n", currentYear)
 		return domain.PsiUSerSolvency{}
@@ -759,15 +799,13 @@ func createSolvencieModel(date time.Time, userId uuid.UUID, audit_moodel domain.
 		return domain.PsiUSerSolvency{}
 	}
 
-	// Si pasa las validaciones, llenamos el slice
-
+	// Si pasa las validaciones, generamos el objeto
 	return domain.PsiUSerSolvency{
 		ID:             uuid.Must(uuid.NewV7()),
 		PsiUserModelID: userId,
 		AuditModel:     audit_moodel,
 		Date:           time.Date(currentYear, time.December, 31, 0, 0, 0, 0, time.UTC),
 	}
-
 }
 
 func createPsiUSerModel(req request_structs.CreatePsiAdminRequest, psiID uuid.UUID, audit_moodel domain.AuditModel, hashed []byte, municipioCarabobo, estadoOutside string, bornDate time.Time) *domain.PsiUserModel {

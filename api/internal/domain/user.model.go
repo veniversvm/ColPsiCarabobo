@@ -66,11 +66,12 @@ type PsiUserModel struct {
 	AuditModel
 
 	// ── Credenciales de acceso ────────────────────────────────────────────
-	Username string `gorm:"size:25;unique;not null" json:"username"`
-	Email    string `gorm:"size:255;unique;not null" json:"email"` // Email institucional del gremio (login)
-	Password string `gorm:"size:512;not null" json:"-"`
-	Key      string `gorm:"size:512;" json:"-"`
-	IsActive bool   `gorm:"column:is_active" json:"is_active"`
+	Username         string `gorm:"size:25;unique;not null" json:"username"`
+	Email            string `gorm:"size:50;unique;not null" json:"email"` // Email institucional del gremio (login)
+	Password         string `gorm:"size:512;not null" json:"-"`
+	Key              string `gorm:"size:512;" json:"-"`
+	IsActive         bool   `gorm:"column:is_active" json:"is_active"`
+	AudioBookShellId string `gorm:"size:50;unique;" json:"audio_book_shell_id"` // Id sel servicio
 
 	// ── Identidad legal ───────────────────────────────────────────────────
 	FirstName      string    `gorm:"size:255;not null" json:"first_name"`

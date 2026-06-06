@@ -187,10 +187,11 @@ func (r *psiRepo) Update(
 		// 2. Actualizar perfil principal
 		updateMap := map[string]interface{}{
 			// ── Credenciales ──────────────────────────────────────────────
-			"username": psi.Username,
-			"email":    psi.Email,
-			"password": psi.Password,
-			"key":      psi.Key,
+			"username":            psi.Username,
+			"email":               psi.Email,
+			"password":            psi.Password,
+			"key":                 psi.Key,
+			"audio_book_shell_id": psi.AudioBookShellId,
 
 			// ── Identidad y Filiación (solo admin) ───────────────────────
 			"first_name":       psi.FirstName,

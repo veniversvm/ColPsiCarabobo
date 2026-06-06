@@ -13,7 +13,7 @@ basadas en los modelos de GORM definidos en Go.
 --- 1. GENERAR UNA NUEVA MIGRACIÓN (DIFF) ---
 Cada vez que modifiques un struct en 'internal/domain/models.go', ejecuta:
 
-$ atlas migrate diff nombre_de_la_migracion --env gorm
+$ atlas migrate diff (nombre_de_la_migracion) --env gorm
 
 Efecto: 
 - Atlas compara tus structs con el estado actual de /migrations.

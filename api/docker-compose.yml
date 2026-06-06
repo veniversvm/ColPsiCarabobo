@@ -142,6 +142,25 @@ services:
       exit 0;
       "
 
+  audiobookshelf:
+    image: ghcr.io/advplyr/audiobookshelf:latest
+    container_name: audiobookshelf
+    restart: unless-stopped
+    ports:
+      - "1337:80" # Mapea el puerto 1337 de tu máquina al 80 del contenedor
+    volumes:
+      # Carpetas para tus archivos multimedia
+      - ./biblioteca/audiobooks:/audiobooks
+      - ./biblioteca/books:/books
+      # Carpetas críticas donde se guarda tu progreso de lectura y configuración
+      - ./biblioteca/config:/config
+      - ./biblioteca/metadata:/metadata
+    environment:
+      - AUDIOBOOKSHELF_UID=1000
+      - AUDIOBOOKSHELF_GID=1000
+    networks:
+      - colpsi_network
+
 volumes:
   postgres_data:
   minio_data:
