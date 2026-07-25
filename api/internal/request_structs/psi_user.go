@@ -7,6 +7,7 @@ package request_structs
 
 import (
 	"github.com/google/uuid"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/utils"
 )
 
 // =========================================================================
@@ -110,74 +111,63 @@ type PsiUserUpdateRequestSelf struct {
 }
 
 // ── Getters de booleanos de privacidad ────────────────────────────────────────
-// BoolFromForm convierte "1"/"true" → true, "0"/"false" → false, "" → nil.
-
-// BoolFromForm convierte los valores de formulario "1"/"0"/"true"/"false" a *bool.
-// Retorna nil si el valor está vacío (campo no enviado → semántica PATCH).
-func BoolFromForm(val string) *bool {
-	if val == "" {
-		return nil
-	}
-	b := (val == "1" || val == "true")
-	return &b
-}
 
 // ── Contacto Público ──
 func (r *PsiUserUpdateRequestSelf) ShowContactEmail() *bool {
-	return BoolFromForm(r.ShowContactEmailRaw)
+	return utils.BoolFromForm(r.ShowContactEmailRaw)
 }
 func (r *PsiUserUpdateRequestSelf) ShowPublicServiceAddress() *bool {
-	return BoolFromForm(r.ShowPublicServiceAddressRaw)
+	return utils.BoolFromForm(r.ShowPublicServiceAddressRaw)
 }
 
 // ── Carabobo ──
 func (r *PsiUserUpdateRequestSelf) ShowMunicipalityCarabobo() *bool {
-	return BoolFromForm(r.ShowMunicipalityCaraboboRaw)
+	return utils.BoolFromForm(r.ShowMunicipalityCaraboboRaw)
 }
 func (r *PsiUserUpdateRequestSelf) ShowPhoneCarabobo() *bool {
-	return BoolFromForm(r.ShowPhoneCaraboboRaw)
+	return utils.BoolFromForm(r.ShowPhoneCaraboboRaw)
 }
 func (r *PsiUserUpdateRequestSelf) ShowCelPhoneCarabobo() *bool {
-	return BoolFromForm(r.ShowCelPhoneCaraboboRaw)
+	return utils.BoolFromForm(r.ShowCelPhoneCaraboboRaw)
 }
 
 // ── Fuera de Carabobo (Venezuela) ──
 func (r *PsiUserUpdateRequestSelf) ShowStateOutside() *bool {
-	return BoolFromForm(r.ShowStateOutsideRaw)
+	return utils.BoolFromForm(r.ShowStateOutsideRaw)
 }
 func (r *PsiUserUpdateRequestSelf) ShowMunicipalityOutSideCarabobo() *bool {
-	return BoolFromForm(r.ShowMunicipalityOutSideCaraboboRaw)
+	return utils.BoolFromForm(r.ShowMunicipalityOutSideCaraboboRaw)
 }
 func (r *PsiUserUpdateRequestSelf) ShowPhoneOutSideCarabobo() *bool {
-	return BoolFromForm(r.ShowPhoneOutSideCaraboboRaw)
+	return utils.BoolFromForm(r.ShowPhoneOutSideCaraboboRaw)
 }
 func (r *PsiUserUpdateRequestSelf) ShowCellPhoneOutSideCarabobo() *bool {
-	return BoolFromForm(r.ShowCellPhoneOutSideCaraboboRaw)
+	return utils.BoolFromForm(r.ShowCellPhoneOutSideCaraboboRaw)
 }
 func (r *PsiUserUpdateRequestSelf) ShowPublicServiceAddressOutSideCarabobo() *bool {
-	return BoolFromForm(r.ShowPublicServiceAddressOutSideCaraboboRaw)
+	return utils.BoolFromForm(r.ShowPublicServiceAddressOutSideCaraboboRaw)
 }
 
 // ── Fuera de Venezuela ──
 func (r *PsiUserUpdateRequestSelf) ShowPhoneOutSideVenezuela() *bool {
-	return BoolFromForm(r.ShowPhoneOutSideVenezuelaRaw)
+	return utils.BoolFromForm(r.ShowPhoneOutSideVenezuelaRaw)
 }
 func (r *PsiUserUpdateRequestSelf) ShowCellPhoneOutSideVenezuela() *bool {
-	return BoolFromForm(r.ShowCellPhoneOutSideVenezuelaRaw)
+	return utils.BoolFromForm(r.ShowCellPhoneOutSideVenezuelaRaw)
 }
 func (r *PsiUserUpdateRequestSelf) ShowPublicServiceAddressOutSideVenezuela() *bool {
-	return BoolFromForm(r.ShowPublicServiceAddressOutSideVenezuelaRaw)
+	return utils.BoolFromForm(r.ShowPublicServiceAddressOutSideVenezuelaRaw)
 }
 
 // ── Datos Colegiales ──
 func (r *PsiUserUpdateRequestSelf) ShowUniversityUndergraduate() *bool {
-	return BoolFromForm(r.ShowUniversityUndergraduateRaw)
+	return utils.BoolFromForm(r.ShowUniversityUndergraduateRaw)
 }
 func (r *PsiUserUpdateRequestSelf) ShowGraduateDate() *bool {
-	return BoolFromForm(r.ShowGraduateDateRaw)
+	return utils.BoolFromForm(r.ShowGraduateDateRaw)
 }
 func (r *PsiUserUpdateRequestSelf) ShowMentionUndergraduate() *bool {
-	return BoolFromForm(r.ShowMentionUndergraduateRaw)
+	return utils.BoolFromForm(r.ShowMentionUndergraduateRaw)
 }
 
 // =========================================================================
