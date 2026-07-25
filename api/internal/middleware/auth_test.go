@@ -203,4 +203,156 @@ func TestAuthMiddleware_Extensive(t *testing.T) {
 			}
 		})
 	})
+
+	// --- ESCENARIO 4: OPTIONAL HYBRID AUTH — TESTS DE SEGURIDAD ---
+	// Valida que el fix de side-effect-before-validation funcione correctamente.
+	// Un token con firma inválida NUNCA debe inyectar identidad en c.Locals().
+	t.Run("OptionalHybridAuth_Security", func(t *testing.T) {
+		app := fiber.New()
+		app.Get("/public", mw.OptionalHybridAuth(), func(c *fiber.Ctx) error {
+			if c.Locals("admin") != nil {
+				return c.Status(200).SendString("is_admin")
+			}
+			if c.Locals("psi_user") != nil {
+				return c.Status(200).SendString("is_psi")
+			}
+			return c.Status(200).SendString("is_anonymous")
+		})
+
+		// Test 1: Token con firma inválida (secret incorrecto) → debe ser anónimo
+		t.Run("Forged_Token_Rejected", func(t *testing.T) {
+			// El admin en la DB tiene "correctSecret", pero el token está firmado con "wrong-key"
+			mAdmin.GetByIDFunc = func(ctx context.Context, id uuid.UUID) (*domain.UserAdmin, error) {
+				return &domain.UserAdmin{ID: adminID, Key: correctSecret}, nil
+			}
+			forgedToken := generateTestToken(adminID.String(), "admin", "wrong-key", time.Now().Add(time.Hour))
+
+			req := httptest.NewRequest("GET", "/public", nil)
+			req.Header.Set("Authorization", "Bearer "+forgedToken)
+			resp, _ := app.Test(req)
+
+			body := make([]byte, 1024)
+			n, _ := resp.Body.Read(body)
+			bodyStr := string(body[:n])
+
+			if resp.StatusCode != 200 {
+				t.Errorf("se esperaba 200, se obtuvo %d", resp.StatusCode)
+			}
+			if bodyStr != "is_anonymous" {
+				t.Errorf("token forjado inyectó identidad — se esperaba 'is_anonymous', se obtuvo '%s'", bodyStr)
+			}
+		})
+
+		// Test 2: Token válido de admin → debe detectarlo
+		t.Run("Valid_Admin_Token_Detected", func(t *testing.T) {
+			mAdmin.GetByIDFunc = func(ctx context.Context, id uuid.UUID) (*domain.UserAdmin, error) {
+				return &domain.UserAdmin{ID: adminID, Key: correctSecret}, nil
+			}
+			validToken := generateTestToken(adminID.String(), "admin", correctSecret, time.Now().Add(time.Hour))
+
+			req := httptest.NewRequest("GET", "/public", nil)
+			req.Header.Set("Authorization", "Bearer "+validToken)
+			resp, _ := app.Test(req)
+
+			body := make([]byte, 1024)
+			n, _ := resp.Body.Read(body)
+			bodyStr := string(body[:n])
+
+			if bodyStr != "is_admin" {
+				t.Errorf("token válido no detectado — se esperaba 'is_admin', se obtuvo '%s'", bodyStr)
+			}
+		})
+
+		// Test 3: Token válido de psi → debe detectarlo
+		t.Run("Valid_Psi_Token_Detected", func(t *testing.T) {
+			mPsi.GetByIDFunc = func(ctx context.Context, id uuid.UUID) (*domain.PsiUserModel, error) {
+				return &domain.PsiUserModel{ID: psiID, Key: correctSecret}, nil
+			}
+			validToken := generateTestToken(psiID.String(), "psi", correctSecret, time.Now().Add(time.Hour))
+
+			req := httptest.NewRequest("GET", "/public", nil)
+			req.Header.Set("Authorization", "Bearer "+validToken)
+			resp, _ := app.Test(req)
+
+			body := make([]byte, 1024)
+			n, _ := resp.Body.Read(body)
+			bodyStr := string(body[:n])
+
+			if bodyStr != "is_psi" {
+				t.Errorf("token psi válido no detectado — se esperaba 'is_psi', se obtuvo '%s'", bodyStr)
+			}
+		})
+
+		// Test 4: Token expirado → debe ser anónimo
+		t.Run("Expired_Token_Anonymous", func(t *testing.T) {
+			expiredToken := generateTestToken(adminID.String(), "admin", correctSecret, time.Now().Add(-time.Hour))
+
+			req := httptest.NewRequest("GET", "/public", nil)
+			req.Header.Set("Authorization", "Bearer "+expiredToken)
+			resp, _ := app.Test(req)
+
+			body := make([]byte, 1024)
+			n, _ := resp.Body.Read(body)
+			bodyStr := string(body[:n])
+
+			if bodyStr != "is_anonymous" {
+				t.Errorf("token expirado inyectó identidad — se esperaba 'is_anonymous', se obtuvo '%s'", bodyStr)
+			}
+		})
+
+		// Test 5: Sin token → anónimo
+		t.Run("No_Token_Anonymous", func(t *testing.T) {
+			req := httptest.NewRequest("GET", "/public", nil)
+			resp, _ := app.Test(req)
+
+			body := make([]byte, 1024)
+			n, _ := resp.Body.Read(body)
+			bodyStr := string(body[:n])
+
+			if bodyStr != "is_anonymous" {
+				t.Errorf("sin token se esperaba 'is_anonymous', se obtuvo '%s'", bodyStr)
+			}
+		})
+
+		// Test 6: Token con alg:none → debe ser anónimo
+		t.Run("None_Algorithm_Anonymous", func(t *testing.T) {
+			token := jwt.NewWithClaims(jwt.SigningMethodNone, jwt.MapClaims{
+				"user_id": adminID.String(),
+				"role":    "admin",
+			})
+			tokenString, _ := token.SignedString(jwt.UnsafeAllowNoneSignatureType)
+
+			req := httptest.NewRequest("GET", "/public", nil)
+			req.Header.Set("Authorization", "Bearer "+tokenString)
+			resp, _ := app.Test(req)
+
+			body := make([]byte, 1024)
+			n, _ := resp.Body.Read(body)
+			bodyStr := string(body[:n])
+
+			if bodyStr != "is_anonymous" {
+				t.Errorf("alg:none inyectó identidad — se esperaba 'is_anonymous', se obtuvo '%s'", bodyStr)
+			}
+		})
+
+		// Test 7: User no existe en DB → anónimo
+		t.Run("Nonexistent_User_Anonymous", func(t *testing.T) {
+			mAdmin.GetByIDFunc = func(ctx context.Context, id uuid.UUID) (*domain.UserAdmin, error) {
+				return nil, errors.New("not found")
+			}
+			token := generateTestToken(uuid.NewString(), "admin", correctSecret, time.Now().Add(time.Hour))
+
+			req := httptest.NewRequest("GET", "/public", nil)
+			req.Header.Set("Authorization", "Bearer "+token)
+			resp, _ := app.Test(req)
+
+			body := make([]byte, 1024)
+			n, _ := resp.Body.Read(body)
+			bodyStr := string(body[:n])
+
+			if bodyStr != "is_anonymous" {
+				t.Errorf("user inexistente inyectó identidad — se esperaba 'is_anonymous', se obtuvo '%s'", bodyStr)
+			}
+		})
+	})
 }

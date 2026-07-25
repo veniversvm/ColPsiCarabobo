@@ -122,7 +122,12 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 	// Se genera una sola vez y se reutiliza, reduciendo el tiempo de carga drásticamente.
 	successCount := 0
 	var failedRecords []map[string]string
-	defaultPassword := "Colpsi2025!"
+	var defaultPassword string
+	if config.Envs.Environment == "development" {
+		defaultPassword = "Colpsi2025!"
+	} else {
+		defaultPassword = utils.GenerateSecureRandomString(16)
+	}
 	hashedPasswordBytes, _ := bcrypt.GenerateFromPassword([]byte(defaultPassword), bcrypt.DefaultCost)
 	hashedPassword := string(hashedPasswordBytes)
 

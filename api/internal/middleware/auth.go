@@ -150,6 +150,9 @@ func (m *AuthMiddleware) ProtectedAdmin404() fiber.Handler {
 // petición continúe su curso normal hacia el controlador.
 // Es ideal para endpoints públicos que muestran datos adicionales si el visitante
 // resulta ser un usuario autenticado (Graceful Degradation).
+//
+// Seguridad: La validación de firma SEPARADA de los side-effects garantiza que
+// un token con firma inválida NUNCA inyecte identidad en c.Locals().
 func (m *AuthMiddleware) OptionalHybridAuth() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		authHeader := c.Get("Authorization")
@@ -161,37 +164,67 @@ func (m *AuthMiddleware) OptionalHybridAuth() fiber.Handler {
 
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
-		// Intentamos parsear silenciando los errores, ya que la ruta no exige autenticación estricta.
-		_, _ = jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		// PASO 1: Parse + Verificar firma (sin side effects).
+		// El keyFunc retorna la clave HMAC pero NO inyecta en c.Locals().
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, nil
+				return nil, fmt.Errorf("método de firma inesperado: %v", token.Method)
 			}
 
 			claims, ok := token.Claims.(jwt.MapClaims)
 			if !ok {
-				return nil, nil
+				return nil, fmt.Errorf("claims inválidos")
 			}
 
 			userID, _ := claims["user_id"].(string)
 			role, _ := claims["role"].(string)
-			uid, _ := uuid.Parse(userID)
+			uid, err := uuid.Parse(userID)
+			if err != nil {
+				return nil, fmt.Errorf("user_id inválido: %w", err)
+			}
 
-			// Multiplexación de Roles
+			// Resolución dinámica del secreto (necesario para verificación HMAC).
+			// NO se inyecta en c.Locals() aquí — solo se retorna la key.
 			if role == "admin" {
 				admin, err := m.adminRepo.GetByID(c.UserContext(), uid)
-				if err == nil {
-					c.Locals("admin", admin)
-					return []byte(admin.Key), nil
+				if err != nil {
+					return nil, fmt.Errorf("admin no encontrado: %w", err)
 				}
-			} else {
-				psi, err := m.psiRepo.GetByID(c.UserContext(), uid)
-				if err == nil {
-					c.Locals("psi_user", psi)
-					return []byte(psi.Key), nil
-				}
+				return []byte(admin.Key), nil
 			}
-			return nil, nil
+			psi, err := m.psiRepo.GetByID(c.UserContext(), uid)
+			if err != nil {
+				return nil, fmt.Errorf("psi no encontrado: %w", err)
+			}
+			return []byte(psi.Key), nil
 		})
+
+		// PASO 2: Verificar que el token sea válido ANTES de inyectar identidad.
+		if err != nil || !token.Valid {
+			return c.Next() // token inválido → proceder como anónimo
+		}
+
+		// PASO 3: Ahora SÍ inyectar identidad (el token ya pasó verificación de firma).
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok {
+			return c.Next()
+		}
+		role, _ := claims["role"].(string)
+		userID, _ := claims["user_id"].(string)
+		uid, err := uuid.Parse(userID)
+		if err != nil {
+			return c.Next()
+		}
+
+		if role == "admin" {
+			if admin, err := m.adminRepo.GetByID(c.UserContext(), uid); err == nil {
+				c.Locals("admin", admin)
+			}
+		} else {
+			if psi, err := m.psiRepo.GetByID(c.UserContext(), uid); err == nil {
+				c.Locals("psi_user", psi)
+			}
+		}
 
 		return c.Next()
 	}
