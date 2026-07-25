@@ -11,6 +11,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/config"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 	"gorm.io/gorm"
 )
@@ -84,6 +85,7 @@ func AnalyticsMiddleware(db *gorm.DB) fiber.Handler {
 				Value:    sessionID,
 				Expires:  time.Now().Add(365 * 24 * time.Hour), // Persistencia de 1 año
 				HTTPOnly: true,                                 // Previene robo por XSS (Javascript no puede leerla)
+				Secure:   config.Envs.Environment == "production", // Solo enviar por HTTPS en producción
 				SameSite: "Lax",                                // Seguridad CSRF básica
 			})
 		}

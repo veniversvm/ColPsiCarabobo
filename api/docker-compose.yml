@@ -10,6 +10,8 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-db:/docker-entrypoint-initdb.d 
+      - ./init-db/pg_hba.conf:/etc/postgresql/pg_hba.conf
+    command: postgres -c hba_file=/etc/postgresql/pg_hba.conf
     ports:
       - "${POSTGRES_HOST_PORT:-5432}:5432"
     networks:

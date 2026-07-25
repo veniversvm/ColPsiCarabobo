@@ -4,6 +4,7 @@ package database
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/config"
 	"gorm.io/driver/postgres"
@@ -20,7 +21,7 @@ import (
 func ConnectDB() (*gorm.DB, error) {
 	// DSN (Data Source Name): Cadena de conexión estandarizada.
 	// Nota: config.Envs.DBPort debe ser 6432 para pasar por PgBouncer.
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable connect_timeout=5",
 		config.Envs.DBHost,
 		config.Envs.DBUser,
 		config.Envs.DBPass,
@@ -41,13 +42,27 @@ func ConnectDB() (*gorm.DB, error) {
 		// pero para este proyecto lo dejaremos en false para mayor seguridad.
 		SkipDefaultTransaction: false,
 
-		// Opcional: Logs para ver qué pasa en desarrollo
-		Logger: logger.Default.LogMode(logger.Info),
+		// Logs: Info solo en desarrollo, Warn en producción para no exponer datos sensibles
+		Logger: logger.Default.LogMode(func() logger.LogLevel {
+			if config.Envs.Environment == "development" {
+				return logger.Info
+			}
+			return logger.Warn
+		}()),
 	})
 
 	if err != nil {
 		return nil, fmt.Errorf("falló la conexión a la base de datos: %w", err)
 	}
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, fmt.Errorf("error al obtener pool de conexiones: %w", err)
+	}
+
+	sqlDB.SetMaxOpenConns(25)
+	sqlDB.SetMaxIdleConns(10)
+	sqlDB.SetConnMaxLifetime(5 * time.Minute)
 
 	return db, nil
 }

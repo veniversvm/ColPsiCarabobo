@@ -2,6 +2,7 @@
 package router
 
 import (
+	"log"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -19,7 +20,7 @@ func SetupPsiRoutes(router fiber.Router, db *gorm.DB, s3Client *s3.S3Client, ana
 
 	mailService, err := service.NewMailService()
 	if err != nil {
-		panic("Error al inicializar el servicio de correo: " + err.Error())
+		log.Printf("⚠️  Advertencia: No se pudo conectar al servidor SMTP: %v", err)
 	}
 
 	svc := service.NewPsiService(repo, s3Client, mailService)

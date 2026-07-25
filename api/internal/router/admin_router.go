@@ -6,6 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/monitor"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/config"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/handler"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/middleware"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/repository/postgres"
@@ -30,7 +31,9 @@ func SetupAdminRoutes(router fiber.Router, db *gorm.DB, analyticsSvc *service.An
 	// =========================================================================
 	// RUTAS DE DESARROLLO
 	// =========================================================================
-	router.Get("/debug-monitor", monitor.New(monitor.Config{Title: "DEV ONLY - Monitor"}))
+	if config.Envs.Environment == "development" {
+		router.Get("/debug-monitor", monitor.New(monitor.Config{Title: "DEV ONLY - Monitor"}))
+	}
 
 	// =========================================================================
 	// RUTAS PÚBLICAS

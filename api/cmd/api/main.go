@@ -40,7 +40,12 @@ import (
 // @bearerFormat                JWT
 func main() {
 	// 1. CONFIGURACIÓN
-	runtime.GOMAXPROCS(2)
+	numCPU := runtime.NumCPU()
+	if numCPU > 2 {
+		runtime.GOMAXPROCS(numCPU / 2)
+	} else {
+		runtime.GOMAXPROCS(numCPU)
+	}
 
 	println("Intentando cargar configuración...")
 	config.InitConfig()
