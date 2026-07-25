@@ -12,7 +12,7 @@ import (
 // 1. LOGIN EVENT — cada vez que alguien inicia sesión
 // ---------------------------------------------------------------------------
 type LoginEvent struct {
-	ID        uuid.UUID      `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `gorm:"type:uuid;primaryKey;default:uuidv7()"`
 	UserID    uuid.UUID      `gorm:"type:uuid;not null;index"`
 	Username  string         `gorm:"size:100"`
 	Role      string         `gorm:"size:50"` // "psi" | "admin"
@@ -71,7 +71,7 @@ type ProfileView struct {
 //
 // ---------------------------------------------------------------------------
 type ActiveSession struct {
-	ID        uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID `gorm:"type:uuid;primaryKey;default:uuidv7()"`
 	UserID    uuid.UUID `gorm:"type:uuid;not null;index;uniqueIndex"` // 1 sesión por usuario
 	Username  string    `gorm:"size:100"`
 	Role      string    `gorm:"size:50"`

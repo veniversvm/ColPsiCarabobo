@@ -73,10 +73,12 @@ func TestAdminRepo_ComprehensiveSuite(t *testing.T) {
 		r := NewAdminRepository(tx)
 
 		admin := &domain.UserAdmin{
-			ID:       uuid.New(),
-			Username: "admin_test",
-			Email:    "test@admin.com",
-			Password: "hashed_password",
+			ID: uuid.New(),
+			Credentials: domain.Credentials{
+				Username: "admin_test",
+				Email:    "test@admin.com",
+				Password: "hashed_password",
+			},
 		}
 		err := r.Create(ctx, admin)
 		require.NoError(t, err)
@@ -108,14 +110,14 @@ func TestAdminRepo_ComprehensiveSuite(t *testing.T) {
 		r := NewAdminRepository(tx)
 
 		// 1. Staff estándar (No debe ser contado)
-		tx.Create(&domain.UserAdmin{ID: uuid.New(), Username: "staff1", Email: "1@t.com", Sudo: false})
+		tx.Create(&domain.UserAdmin{ID: uuid.New(), Credentials: domain.Credentials{Username: "staff1", Email: "1@t.com"}, Sudo: false})
 
 		// 2. SUDO Activo (Este es el único que debe contar)
-		sudoActive := domain.UserAdmin{ID: uuid.New(), Username: "sudo_real", Email: "2@t.com", Sudo: true}
+		sudoActive := domain.UserAdmin{ID: uuid.New(), Credentials: domain.Credentials{Username: "sudo_real", Email: "2@t.com"}, Sudo: true}
 		tx.Create(&sudoActive)
 
 		// 3. SUDO Eliminado (Soft Delete)
-		sudoDeleted := domain.UserAdmin{ID: uuid.New(), Username: "sudo_ghost", Email: "3@t.com", Sudo: true}
+		sudoDeleted := domain.UserAdmin{ID: uuid.New(), Credentials: domain.Credentials{Username: "sudo_ghost", Email: "3@t.com"}, Sudo: true}
 		tx.Create(&sudoDeleted)
 
 		err := r.Delete(ctx, sudoDeleted.ID) // Aplicamos el Soft Delete
@@ -134,7 +136,7 @@ func TestAdminRepo_ComprehensiveSuite(t *testing.T) {
 		defer tx.Rollback()
 		r := NewAdminRepository(tx)
 
-		admin := &domain.UserAdmin{ID: uuid.New(), Username: "upd_test", Email: "upd@t.com", IsActive: true}
+		admin := &domain.UserAdmin{ID: uuid.New(), Credentials: domain.Credentials{Username: "upd_test", Email: "upd@t.com", IsActive: true}}
 		tx.Create(admin)
 
 		// Modificación en memoria
@@ -165,13 +167,13 @@ func TestAdminRepo_ComprehensiveSuite(t *testing.T) {
 		tx.Exec("DELETE FROM user_admins")
 
 		// Inserción de prueba
-		a1 := domain.UserAdmin{ID: uuid.New(), Username: "alpha", Email: "al@mail.com"}
+		a1 := domain.UserAdmin{ID: uuid.New(), Credentials: domain.Credentials{Username: "alpha", Email: "al@mail.com"}}
 		tx.Create(&a1)
 
-		a2 := domain.UserAdmin{ID: uuid.New(), Username: "bravo", Email: "br@mail.com"}
+		a2 := domain.UserAdmin{ID: uuid.New(), Credentials: domain.Credentials{Username: "bravo", Email: "br@mail.com"}}
 		tx.Create(&a2)
 
-		a3 := domain.UserAdmin{ID: uuid.New(), Username: "charlie", Email: "ch@alpha.com"}
+		a3 := domain.UserAdmin{ID: uuid.New(), Credentials: domain.Credentials{Username: "charlie", Email: "ch@alpha.com"}}
 		tx.Create(&a3)
 
 		// NOTA TÉCNICA: Usamos UpdateColumn para evadir los hooks de GORM.

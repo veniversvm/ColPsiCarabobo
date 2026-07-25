@@ -1,4 +1,4 @@
-// api/internal/domain/post_respository.go
+// api/internal/domain/post_repository.go
 // Package domain define las entidades de negocio y los contratos de abstracción.
 package domain
 

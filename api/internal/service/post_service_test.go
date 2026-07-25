@@ -106,7 +106,7 @@ func TestPostService_Extensive(t *testing.T) {
 	// o malicioso podría intentar inyectar Javascript. El servicio debe limpiar (sanitizar)
 	// el payload *antes* de que toque la base de datos.
 	t.Run("XSS_Prevention", func(t *testing.T) {
-		admin := &domain.UserAdmin{ID: uuid.Must(uuid.NewV7()), Username: "admin", CanPublish: true}
+		admin := &domain.UserAdmin{ID: uuid.Must(uuid.NewV7()), Credentials: domain.Credentials{Username: "admin"}, CanPublish: true}
 
 		// Payload hostil: Incluye un tag script ejecutable
 		maliciousHTML := "<p>Hola</p><script>alert('hack')</script>"

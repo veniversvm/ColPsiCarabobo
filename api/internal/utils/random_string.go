@@ -1,4 +1,4 @@
-// api/internal/utils/radom_string.go
+// api/internal/utils/random_string.go
 
 // Package utils provee herramientas transversales de soporte para la aplicación.
 //

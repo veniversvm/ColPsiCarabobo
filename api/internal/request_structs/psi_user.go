@@ -291,7 +291,7 @@ type PsiLocationExteriorDTO struct {
 type CreatePostGradeRequest struct {
 	Title          string `form:"title" json:"title" validate:"required"`
 	University     string `form:"university" json:"university" validate:"required"`
-	GraduationYear string `form:"graduation_year" json:"graduation_year" validate:"required"`
+	GraduationYear int    `form:"graduation_year" json:"graduation_year" validate:"required"`
 	Description    string `form:"description" json:"description"`
 }
 
@@ -299,7 +299,7 @@ type CreatePostGradeRequest struct {
 type UpdatePostGradeRequest struct {
 	Title          *string `form:"title"`
 	University     *string `form:"university"`
-	GraduationYear *string `form:"graduation_year"`
+	GraduationYear *int    `form:"graduation_year"`
 	Description    *string `form:"description"`
 }
 
@@ -308,7 +308,7 @@ type PostGradeDTO struct {
 	Type        string `json:"type"`
 	Title       string `json:"title"`
 	University  string `json:"university"`
-	Year        string `json:"year"`
+	Year        int    `json:"year"`
 	Description string `json:"description,omitempty"`
 	PicOneURL   string `json:"pic_one_url,omitempty"`   // URL o S3 Key del diploma o certificado
 	PicTwoURL   string `json:"pic_two_url,omitempty"`   // URL o S3 Key de un segundo documento (opcional)

@@ -11,12 +11,12 @@ import (
 // RunMigrations sincroniza los modelos de dominio con PostgreSQL e inyecta reglas de integridad.
 // Esta función garantiza que la base de datos sea "self-healing" al arrancar.
 func RunMigrations(db *gorm.DB) error {
-	log.Println("⏳ Iniciando proceso de sincronización de esquema...")
+	log.Println("[INFO] Iniciando proceso de sincronización de esquema...")
 
 	// 1. EXTENSIONES DE POSTGRES
 	// Habilitamos 'pgcrypto' para generación nativa de UUIDs (gen_random_uuid).
 	if err := db.Exec("CREATE EXTENSION IF NOT EXISTS \"pgcrypto\";").Error; err != nil {
-		log.Printf("❌ Error crítico: No se pudo habilitar la extensión pgcrypto: %v", err)
+		log.Printf("[ERROR] Error crítico: No se pudo habilitar la extensión pgcrypto: %v", err)
 		return err
 	}
 
@@ -33,7 +33,7 @@ func RunMigrations(db *gorm.DB) error {
 	)
 
 	if err != nil {
-		log.Printf("❌ Error crítico: Falló la ejecución de AutoMigrate: %v", err)
+		log.Printf("[ERROR] Error crítico: Falló la ejecución de AutoMigrate: %v", err)
 		return err
 	}
 
@@ -49,10 +49,10 @@ func RunMigrations(db *gorm.DB) error {
 		WHERE (sudo IS TRUE AND deleted_at IS NULL);
 	`
 	if err := db.Exec(sudoIndexSQL).Error; err != nil {
-		log.Printf("❌ Error al crear restricción de SUDO único: %v", err)
+		log.Printf("[ERROR] Error al crear restricción de SUDO único: %v", err)
 		return err
 	}
 
-	log.Println("✅ Esquema y reglas de integridad sincronizados exitosamente")
+	log.Println("[OK] Esquema y reglas de integridad sincronizados exitosamente")
 	return nil
 }

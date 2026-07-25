@@ -99,10 +99,12 @@ func TestPsiService_GetPublicProfile_Privacy(t *testing.T) {
 	t.Run("Restricción de Solvencia: No solvente no muestra Postgrados", func(t *testing.T) {
 		repo.GetByFPVFunc = func(ctx context.Context, id int) (domain.PsiUserModel, error) {
 			return domain.PsiUserModel{
-				ID:       uuid.Must(uuid.NewV7()),
-				FPV:      psiFPV,
-				IsActive: true,
-				Solvent:  false, // Gatilla la poda de datos en la capa de servicio
+				ID:  uuid.Must(uuid.NewV7()),
+				FPV: psiFPV,
+				Credentials: domain.Credentials{
+					IsActive: true,
+				},
+				Solvent: false, // Gatilla la poda de datos en la capa de servicio
 				ColData: domain.PsiUserColData{
 					UniversityUndergraduate: "UCV",
 				},
@@ -127,9 +129,11 @@ func TestPsiService_GetPublicProfile_Privacy(t *testing.T) {
 		bioID := uuid.Must(uuid.NewV7())
 		repo.GetByFPVFunc = func(ctx context.Context, id int) (domain.PsiUserModel, error) {
 			return domain.PsiUserModel{
-				ID:               uuid.Must(uuid.NewV7()),
-				FPV:              psiFPV,
-				IsActive:         true,
+				ID:  uuid.Must(uuid.NewV7()),
+				FPV: psiFPV,
+				Credentials: domain.Credentials{
+					IsActive: true,
+				},
 				Solvent:          true, // Solvente: Pasa la primera barrera y llega al Escudo de Privacidad
 				ContactEmail:     "privado@test.com",
 				ShowContactEmail: false, // Regla de ocultamiento activada
@@ -172,10 +176,12 @@ func TestPsiService_Login(t *testing.T) {
 	t.Run("Login Exitoso", func(t *testing.T) {
 		repo.GetByIdentifierFunc = func(ctx context.Context, id string) (*domain.PsiUserModel, error) {
 			return &domain.PsiUserModel{
-				ID:       psiID,
-				Password: string(hashed),
-				IsActive: true,
-				Username: "user_test",
+				ID: psiID,
+				Credentials: domain.Credentials{
+					Password: string(hashed),
+					IsActive: true,
+					Username: "user_test",
+				},
 			}, nil
 		}
 
@@ -202,9 +208,11 @@ func TestPsiService_UpdateProfileSelf_LazyLoading(t *testing.T) {
 
 	// Contexto base: Usuario autenticado y validado.
 	psi := &domain.PsiUserModel{
-		ID:       psiID,
-		Username: "psico_1",
-		Password: string(hashed),
+		ID: psiID,
+		Credentials: domain.Credentials{
+			Username: "psico_1",
+			Password: string(hashed),
+		},
 	}
 
 	// Escenario: Mutación de Datos Ligeros (Solo Metadata)

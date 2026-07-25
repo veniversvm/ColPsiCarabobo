@@ -17,13 +17,7 @@ import (
 type UserAdmin struct {
 	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:uuidv7()" json:"id"`
 	AuditModel
-
-	// Credenciales de acceso al sistema administrativo.
-	Username string `gorm:"size:25;unique;not null" json:"username"`
-	Email    string `gorm:"size:255;unique;not null" json:"email"`
-	Password string `gorm:"size:512;not null" json:"-"` // bcrypt — nunca expuesto en JSON
-	Key      string `gorm:"size:512;" json:"-"`         // usado para invalidar sesiones (key rotation)
-	IsActive bool   `gorm:"default:true" json:"is_active"`
+	Credentials
 
 	// Sudo otorga acceso total e irrevocable. Solo asignable fuera de la API.
 	Sudo bool `gorm:"default:false" json:"-"`
@@ -64,14 +58,10 @@ func (UserAdmin) TableName() string { return "user_admins" }
 type PsiUserModel struct {
 	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:uuidv7()" json:"id"`
 	AuditModel
+	Credentials
 
-	// ── Credenciales de acceso ────────────────────────────────────────────
-	Username         string `gorm:"size:25;unique;not null" json:"username"`
-	Email            string `gorm:"size:50;unique;not null" json:"email"` // Email institucional del gremio (login)
-	Password         string `gorm:"size:512;not null" json:"-"`
-	Key              string `gorm:"size:512;" json:"-"`
-	IsActive         bool   `gorm:"column:is_active" json:"is_active"`
-	AudioBookShellId string `gorm:"size:50;unique;" json:"audio_book_shell_id"` // Id sel servicio
+	// ── Campos exclusivos de Psi ───────────────────────────────────────────
+	AudioBookShellId string `gorm:"size:50;unique;" json:"audio_book_shell_id"` // Id del servicio
 
 	// ── Identidad legal ───────────────────────────────────────────────────
 	FirstName      string    `gorm:"size:255;not null" json:"first_name"`
@@ -150,7 +140,7 @@ type PsiUserModel struct {
 	ColData        PsiUserColData         `gorm:"foreignKey:PsiUserModelID" json:"col_data"`
 	PostGrades     []PsiUserPostGrade     `gorm:"foreignKey:PsiUserID" json:"post_grades"`
 	SocialNetworks []PsiUserSocialNetwork `gorm:"foreignKey:PsiUserID" json:"social_networks"`
-	Solvencies     []PsiUSerSolvency      `gorm:"foreignKey:PsiUserModelID" json:"solvencies"`
+	Solvencies     []PsiUserSolvency      `gorm:"foreignKey:PsiUserModelID" json:"solvencies"`
 }
 
 func (PsiUserModel) TableName() string { return "psi_users" }
@@ -193,7 +183,7 @@ type PsiUserColData struct {
 	SixtyFiveOrPlus     bool `gorm:"default:false" json:"sixty_five_or_plus"`   // Mayor de 65 años (tarifa diferenciada)
 	GuildCollaborator   bool `gorm:"default:false" json:"guild_collaborator"`   // Colaborador activo del Colegio
 	PublicEmployee      bool `gorm:"default:false" json:"public_employee"`      // Empleado público
-	Discapacity         bool `gorm:"default:false" json:"discapacity"`          // Empleado público
+	Discapacity         bool `gorm:"default:false" json:"discapacity"`          // Discapacidad
 	UniversityProfessor bool `gorm:"default:false" json:"university_professor"` // Docente universitario
 
 	// ── Solvencia y membresías ────────────────────────────────────────────
@@ -209,9 +199,9 @@ func (PsiUserColData) TableName() string { return "psi_user_col_data" }
 // SOLVENCIA
 // =============================================================================
 
-// PsiUSerSolvency es un registro de las solvencia que posee el psicologo.
+// PsiUserSolvency es un registro de las solvencia que posee el psicologo.
 // Relación N-a-1 con PsiUserModel.
-type PsiUSerSolvency struct {
+type PsiUserSolvency struct {
 	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:uuidv7()" json:"id"`
 	AuditModel
 	// El nombre del índice debe ser el mismo en ambos campos para crear una clave compuesta
@@ -219,7 +209,7 @@ type PsiUSerSolvency struct {
 	Date           time.Time `gorm:"type:date;not null;uniqueIndex:idx_psi_solvency_unique" json:"date"`
 }
 
-func (PsiUSerSolvency) TableName() string { return "psi_user_solvency" }
+func (PsiUserSolvency) TableName() string { return "psi_user_solvency" }
 
 // =============================================================================
 // POSTGRADOS
@@ -247,7 +237,7 @@ type PsiUserPostGrade struct {
 
 	Title          string `gorm:"size:255;not null" json:"post_grade_title"`
 	University     string `gorm:"size:255" json:"post_grade_university"`
-	GraduationYear string `gorm:"size:50" json:"post_grade_graduation_year"`
+	GraduationYear int    `json:"post_grade_graduation_year"`
 	Description    string `gorm:"type:text" json:"post_grade_description"`
 	Active         bool   `gorm:"default:true" json:"is_active"`
 

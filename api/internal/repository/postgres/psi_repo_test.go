@@ -84,35 +84,51 @@ func TestPsiRepo_ComprehensiveSuite(t *testing.T) {
 
 		// Sembrado de datos: Creamos una matriz de usuarios con distintos estados para evaluar los filtros.
 		users := []domain.PsiUserModel{
-			{
-				// Pedro: Solvente, Activo, Especialista, Privacidad de Ubicación ENCENDIDA (Visible)
-				ID: uuid.New(), FirstName: "Pedro", LastName: "Alfonso", CI: 10, FPV: 10,
-				Solvent: true, IsActive: true, Genre: "M", Nationality: "V",
-				ContactEmail: "p1@t.com", ContactPhone: "04141234567",
-				MunicipalityCarabobo: "Valencia", ShowMunicipalityCarabobo: true, // Visible
-				PrimaryWorkArea: "Neuropsicología",
-				Username:        "p1", Email: "p1@t.com", BornDate: now, BioTextID: dummyBio.ID,
+		{
+			// Pedro: Solvente, Activo, Especialista, Privacidad de Ubicación ENCENDIDA (Visible)
+			ID: uuid.New(), FirstName: "Pedro", LastName: "Alfonso", CI: 10, FPV: 10,
+			Solvent: true, Genre: "M", Nationality: "V",
+			ContactEmail: "p1@t.com", ContactPhone: "04141234567",
+			MunicipalityCarabobo: "Valencia", ShowMunicipalityCarabobo: true, // Visible
+			PrimaryWorkArea:      "Neuropsicología",
+			BornDate: now, BioTextID: dummyBio.ID,
+			Credentials: domain.Credentials{
+				IsActive: true,
+				Username: "p1", Email: "p1@t.com",
 			},
-			{
-				// Maria: Solvente, Activa, Privacidad de Ubicación APAGADA (Oculta en búsquedas por zona)
-				ID: uuid.New(), FirstName: "Maria", LastName: "Zeta", CI: 20, FPV: 20,
-				Solvent: true, IsActive: true, Genre: "F", Nationality: "V",
-				ContactEmail: "m2@t.com", ContactPhone: "04120000000",
-				MunicipalityCarabobo: "San Diego", ShowMunicipalityCarabobo: false, // Oculta
-				Username: "m2", Email: "m2@t.com", BornDate: now, BioTextID: dummyBio.ID,
+		},
+		{
+			// Maria: Solvente, Activa, Privacidad de Ubicación APAGADA (Oculta en búsquedas por zona)
+			ID: uuid.New(), FirstName: "Maria", LastName: "Zeta", CI: 20, FPV: 20,
+			Solvent: true, Genre: "F", Nationality: "V",
+			ContactEmail: "m2@t.com", ContactPhone: "04120000000",
+			MunicipalityCarabobo: "San Diego", ShowMunicipalityCarabobo: false, // Oculta
+			BornDate: now, BioTextID: dummyBio.ID,
+			Credentials: domain.Credentials{
+				IsActive: true,
+				Username: "m2", Email: "m2@t.com",
 			},
-			{
-				// Insolvente: No debe aparecer en búsquedas por navegación general
-				ID: uuid.New(), FirstName: "Insolvente", LastName: "Busquedame", CI: 30, FPV: 30,
-				Solvent: false, IsActive: true, Genre: "M", Nationality: "V",
-				ContactEmail: "i3@t.com", Username: "i3", Email: "i3@t.com", BornDate: now, BioTextID: dummyBio.ID,
+		},
+		{
+			// Insolvente: No debe aparecer en búsquedas por navegación general
+			ID: uuid.New(), FirstName: "Insolvente", LastName: "Busquedame", CI: 30, FPV: 30,
+			Solvent: false, Genre: "M", Nationality: "V",
+			ContactEmail: "i3@t.com", BornDate: now, BioTextID: dummyBio.ID,
+			Credentials: domain.Credentials{
+				IsActive: true,
+				Username: "i3", Email: "i3@t.com",
 			},
-			{
-				// Baneado/Inactivo: Jamás debe aparecer en el directorio público
-				ID: uuid.New(), FirstName: "Baneado", LastName: "Invisible", CI: 40, FPV: 40,
-				Solvent: true, IsActive: false, Genre: "M", Nationality: "V",
-				ContactEmail: "b4@t.com", Username: "b4", Email: "b4@t.com", BornDate: now, BioTextID: dummyBio.ID,
+		},
+		{
+			// Baneado/Inactivo: Jamás debe aparecer en el directorio público
+			ID: uuid.New(), FirstName: "Baneado", LastName: "Invisible", CI: 40, FPV: 40,
+			Solvent: true, Genre: "M", Nationality: "V",
+			ContactEmail: "b4@t.com", BornDate: now, BioTextID: dummyBio.ID,
+			Credentials: domain.Credentials{
+				IsActive: false,
+				Username: "b4", Email: "b4@t.com",
 			},
+		},
 		}
 		for i := range users {
 			require.NoError(t, tx.Create(&users[i]).Error)
@@ -144,10 +160,12 @@ func TestPsiRepo_ComprehensiveSuite(t *testing.T) {
 		tx.Create(&dummyBio)
 
 		psi := domain.PsiUserModel{
-			ID: uuid.New(), Username: "delete_me", Email: "del@t.com",
-			CI: 999, FPV: 999, BornDate: time.Now(), BioTextID: dummyBio.ID,
+			ID: uuid.New(), CI: 999, FPV: 999, BornDate: time.Now(), BioTextID: dummyBio.ID,
 			Genre: "M", Nationality: "V", ContactEmail: "del@t.com", ContactPhone: "123",
 			FirstName: "Del", LastName: "Me",
+			Credentials: domain.Credentials{
+				Username: "delete_me", Email: "del@t.com",
+			},
 		}
 		require.NoError(t, tx.Create(&psi).Error)
 
@@ -175,11 +193,13 @@ func TestPsiRepo_ComprehensiveSuite(t *testing.T) {
 		require.NoError(t, tx.Create(&bio).Error)
 
 		psi := domain.PsiUserModel{
-			ID: uuid.New(), Username: "upd", Email: "upd@t.com",
-			CI: 77, FPV: 77, BornDate: time.Now(), MiniBio: "Original",
+			ID: uuid.New(), CI: 77, FPV: 77, BornDate: time.Now(), MiniBio: "Original",
 			Genre: "F", Nationality: "V", ContactEmail: "upd@t.com", ContactPhone: "123",
 			FirstName: "Upd", LastName: "User",
 			BioTextID: bio.ID, // Asignación de FK obligatoria
+			Credentials: domain.Credentials{
+				Username: "upd", Email: "upd@t.com",
+			},
 		}
 		require.NoError(t, tx.Create(&psi).Error)
 
@@ -219,16 +239,22 @@ func TestPsiRepo_ComprehensiveSuite(t *testing.T) {
 
 		// Usuario 1: Inactivo pero Solvente
 		tx.Create(&domain.PsiUserModel{
-			ID: uuid.New(), Username: "a1", Email: "a1@t.com", CI: 1, FPV: 100,
-			Solvent: false, IsActive: true, BornDate: now, Genre: "M",
+			ID: uuid.New(), CI: 1, FPV: 100,
+			Solvent: false, BornDate: now, Genre: "M",
 			Nationality: "V", ContactEmail: "a1@t.com", ContactPhone: "111", FirstName: "A1", LastName: "T1", BioTextID: dummyBio.ID,
+			Credentials: domain.Credentials{
+				Username: "a1", Email: "a1@t.com", IsActive: true,
+			},
 		})
 
 		// Usuario 2: Activo pero Insolvente
 		tx.Create(&domain.PsiUserModel{
-			ID: uuid.New(), Username: "a2", Email: "a2@t.com", CI: 2, FPV: 200,
-			Solvent: true, IsActive: false, BornDate: now, Genre: "F",
+			ID: uuid.New(), CI: 2, FPV: 200,
+			Solvent: true, BornDate: now, Genre: "F",
 			Nationality: "V", ContactEmail: "a2@t.com", ContactPhone: "222", FirstName: "A2", LastName: "T2", BioTextID: dummyBio.ID,
+			Credentials: domain.Credentials{
+				Username: "a2", Email: "a2@t.com", IsActive: false,
+			},
 		})
 
 		// Ejecutar búsqueda genérica desde el panel Admin

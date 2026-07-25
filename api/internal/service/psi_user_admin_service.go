@@ -136,7 +136,7 @@ func (s *PsiService) CreatePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 		"Password": req.Password,
 	}
 	if err := s.mailService.SendEmail(psi.Email, "Bienvenido", "welcome_psi", mailData); err != nil {
-		log.Printf("⚠️ Error al enviar correo de bienvenida (psi creado correctamente): %v", err)
+		log.Printf("[WARN] Error al enviar correo de bienvenida (psi creado correctamente): %v", err)
 	}
 
 	return nil
@@ -428,14 +428,14 @@ func (s *PsiService) UpdatePsiByAdmin(
 	// Solución de Arquitectura: Peticiones `multipart/form-data` no pueden anidar
 	// arrays de objetos de forma limpia en HTTP. Por ello, el cliente envía un String
 	// que contiene un JSON en crudo ("SolvenciesRaw"), el cual decodificamos aquí.
-	var solvenciesToCreate []domain.PsiUSerSolvency
+	var solvenciesToCreate []domain.PsiUserSolvency
 	currentYear := time.Now().Year()
 
 	if req.SolvenciesRaw != "" {
 		// 1. Decodificar el string JSON a un slice de structs
 		var incomingSolvencies []request_structs.SolvenciesUpdate
 		if err := json.Unmarshal([]byte(req.SolvenciesRaw), &incomingSolvencies); err != nil {
-			fmt.Printf("❌ Error al decodificar solvencias JSON: %v\n", err)
+			fmt.Printf("[ERROR] Error al decodificar solvencias JSON: %v\n", err)
 			// Podrías retornar error aquí o simplemente loguear y continuar
 		}
 
@@ -469,7 +469,7 @@ func (s *PsiService) UpdatePsiByAdmin(
 
 				// 3. Solo añadir si NO existe ya en la DB (Idempotencia Lógica)
 				if !existingDates[dateKey] {
-					newSolvency := domain.PsiUSerSolvency{
+					newSolvency := domain.PsiUserSolvency{
 						ID:             uuid.Must(uuid.NewV7()),
 						PsiUserModelID: psi.ID,
 						Date:           t,
@@ -784,23 +784,23 @@ func (s *PsiService) GetAdminDirectory(ctx context.Context, admin *domain.UserAd
 // de objetos del dominio, previniendo que la función principal de registro
 // (CreatePsiByAdmin) se convierta en un monolito inmanejable.
 
-func createSolvencieModel(date time.Time, userId uuid.UUID, audit_moodel domain.AuditModel) domain.PsiUSerSolvency {
+func createSolvencieModel(date time.Time, userId uuid.UUID, audit_moodel domain.AuditModel) domain.PsiUserSolvency {
 	currentYear := date.Year()
 	nowYear := time.Now().Year()
 
 	// Validaciones de Consistencia de Datos
 	if currentYear > nowYear {
 		fmt.Printf("Error: solvency year %d is in the future\n", currentYear)
-		return domain.PsiUSerSolvency{}
+		return domain.PsiUserSolvency{}
 	}
 
 	if currentYear < 2024 {
 		fmt.Printf("Error: solvency year %d is before the 2024 limit\n", currentYear)
-		return domain.PsiUSerSolvency{}
+		return domain.PsiUserSolvency{}
 	}
 
 	// Si pasa las validaciones, generamos el objeto
-	return domain.PsiUSerSolvency{
+	return domain.PsiUserSolvency{
 		ID:             uuid.Must(uuid.NewV7()),
 		PsiUserModelID: userId,
 		AuditModel:     audit_moodel,
@@ -812,13 +812,14 @@ func createPsiUSerModel(req request_structs.CreatePsiAdminRequest, psiID uuid.UU
 
 	return &domain.PsiUserModel{
 		ID:         psiID,
-		Key:        uuid.Must(uuid.NewV7()).String(),
 		AuditModel: audit_moodel,
-
-		// ── Credenciales ──────────────────────────────────────────────────
-		Username: req.Username,
-		Email:    req.Email,
-		Password: string(hashed),
+		Credentials: domain.Credentials{
+			Key:      uuid.Must(uuid.NewV7()).String(),
+			Username: req.Username,
+			Email:    req.Email,
+			Password: string(hashed),
+			IsActive: req.IsActive,
+		},
 
 		// ── Identidad Legal ───────────────────────────────────────────────
 		FirstName:      req.FirstName,
@@ -834,7 +835,6 @@ func createPsiUSerModel(req request_structs.CreatePsiAdminRequest, psiID uuid.UU
 		// ── Estatus Administrativo ────────────────────────────────────────
 		Solvent:     req.Solvent,
 		ProofOfLife: req.ProofOfLife,
-		IsActive:    req.IsActive,
 
 		// ── Contacto Gremial y Público ────────────────────────────────────
 		ContactEmail:     req.ContactEmail,

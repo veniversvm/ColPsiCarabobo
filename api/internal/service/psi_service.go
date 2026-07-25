@@ -174,13 +174,17 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 
 		// Modelo...
 		psi := &domain.PsiUserModel{
-			ID: psiID, Key: sessionKey, AuditModel: audit,
-			Username: generateSecureUsername(emailToProcess, strconv.Itoa(fpvInt), firstName),
-			Email:    emailToProcess, Password: hashedPassword,
+			ID: psiID, AuditModel: audit,
+			Credentials: domain.Credentials{
+				Key:      sessionKey,
+				Username: generateSecureUsername(emailToProcess, strconv.Itoa(fpvInt), firstName),
+				Email:    emailToProcess, Password: hashedPassword,
+				IsActive: getValorSeguro(row, 45) == "Activo",
+			},
 			AudioBookShellId: psiID.String(),
 			FirstName:        firstName, LastName: lastName,
 			FPV: fpvInt, CI: ciInt, BornDate: parseDate(getValorSeguro(row, 11)),
-			Genre: getValorSeguro(row, 13), IsActive: getValorSeguro(row, 45) == "Activo",
+			Genre:          getValorSeguro(row, 13),
 			Solvent:              getValorSeguro(row, 45) == "Activo",
 			ProofOfLife:          strings.ToLower(getValorSeguro(row, 14)) != "fallecido",
 			ContactPhone:         cleanDash(getValorSeguro(row, 17)),
@@ -199,14 +203,14 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 			DateOfLastSolvency:      parseDate(getValorSeguro(row, 44)),
 		}
 
-		solvency := domain.PsiUSerSolvency{
+		solvency := domain.PsiUserSolvency{
 			ID: uuid.Must(uuid.NewV7()), PsiUserModelID: psiID, AuditModel: audit, Date: colData.DateOfLastSolvency,
 		}
 
 		// 5. PERSISTENCIA
 		if err := s.repo.CreateWithColData(ctx, psi, colData, solvency, []domain.PsiUserPostGrade{}); err != nil {
 			humanError := MapDBError(err).Error()
-			auditLogger.Printf("❌ FILA %d | %s | %v", rowIdx, fullName, humanError)
+			auditLogger.Printf("[ERROR] FILA %d | %s | %v", rowIdx, fullName, humanError)
 			failedRecords = append(failedRecords, map[string]string{"fila": strconv.Itoa(rowIdx), "nombre": fullName, "error": humanError})
 			continue
 		}
@@ -787,7 +791,7 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 	// 4. Obtener biografía extensa
 	fullBio, err := s.repo.GetTextContentByID(ctx, psi.BioTextID)
 	if err != nil {
-		log.Printf("⚠️ Error al obtener la biografía extensa del psicólogo %d: %v", id, err)
+		log.Printf("[WARN] Error al obtener la biografía extensa del psicólogo %d: %v", id, err)
 	}
 
 	// 5. Inicializar DTO
@@ -1009,7 +1013,7 @@ func (s *PsiService) Login(ctx context.Context, identifier, password string) (st
 
 	// Invocación dinámica y no-bloqueante
 	if err := s.mailService.SendEmail(psi.Email, "Colegio de Psicólogos de Carabobo - Inicio de sesión en la plataforma.", "login_psi", mailData); err != nil {
-		log.Printf("⚠️ Error al preparar el correo (pero el psicólogo se logueó): %v", err)
+		log.Printf("[WARN] Error al preparar el correo (pero el psicólogo se logueó): %v", err)
 	}
 
 	// Firmar con la llave personal del usuario
@@ -1393,10 +1397,10 @@ func (s *PsiService) GetPsiBioByID(ctx context.Context, id uuid.UUID) (string, e
 	return bio, nil
 }
 
-func (s *PsiService) GetPsiSOlvency(ctx context.Context, id uuid.UUID) ([]domain.PsiUSerSolvency, error) {
+func (s *PsiService) GetPsiSOlvency(ctx context.Context, id uuid.UUID) ([]domain.PsiUserSolvency, error) {
 	bio, err := s.repo.GetSolvencies(ctx, id)
 	if err != nil {
-		return []domain.PsiUSerSolvency{}, err
+		return []domain.PsiUserSolvency{}, err
 	}
 	return bio, nil
 }

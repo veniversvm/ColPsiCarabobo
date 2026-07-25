@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"mime/multipart"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -355,7 +356,7 @@ func (h *PsiHandler) Logout(c *fiber.Ctx) error {
 // @Produce      json
 // @Param        title           formData string true  "Título obtenido"
 // @Param        university      formData string true  "Universidad"
-// @Param        graduation_year formData string true  "Año de graduación"
+// @Param        graduation_year formData int     true  "Año de graduación"
 // @Param        description     formData string false "Descripción opcional"
 // @Param        pic_one         formData file  false  "Imagen del Título"
 // @Param        pic_two         formData file  false  "Imagen de Notas"
@@ -371,6 +372,11 @@ func (h *PsiHandler) AddPostGrade(c *fiber.Ctx) error {
 	var req request_structs.CreatePostGradeRequest
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Datos de formulario inválidos"})
+	}
+	if val := c.FormValue("graduation_year"); val != "" {
+		if y, err := strconv.Atoi(val); err == nil {
+			req.GraduationYear = y
+		}
 	}
 
 	// Archivos opcionales: nil si no se envían (manejado por el servicio).
@@ -399,7 +405,7 @@ func (h *PsiHandler) UpdatePsi(c *fiber.Ctx) error { return nil }
 // @Param        id              path     string true  "ID del Postgrado"
 // @Param        title           formData string false "Título"
 // @Param        university      formData string false "Universidad"
-// @Param        graduation_year formData string false "Año"
+// @Param        graduation_year formData int     false "Año"
 // @Param        description     formData string false "Descripción"
 // @Param        pic_one         formData file  false  "Reemplazar Imagen 1"
 // @Param        pic_two         formData file  false  "Reemplazar Imagen 2"
@@ -426,7 +432,9 @@ func (h *PsiHandler) UpdatePostGrade(c *fiber.Ctx) error {
 		req.University = &val
 	}
 	if val := c.FormValue("graduation_year"); val != "" {
-		req.GraduationYear = &val
+		if y, err := strconv.Atoi(val); err == nil {
+			req.GraduationYear = &y
+		}
 	}
 	if val := c.FormValue("description"); val != "" {
 		req.Description = &val

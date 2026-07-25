@@ -38,7 +38,7 @@ func (r *psiRepo) CreateWithColData(
 	ctx context.Context,
 	psi *domain.PsiUserModel,
 	colData *domain.PsiUserColData,
-	solvencies domain.PsiUSerSolvency,
+	solvencies domain.PsiUserSolvency,
 	postgrades []domain.PsiUserPostGrade, // 👈 1. Nuevo parámetro agregado
 ) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -172,7 +172,7 @@ func (r *psiRepo) Update(
 	psi *domain.PsiUserModel,
 	colData *domain.PsiUserColData,
 	bioText *domain.TextModel,
-	solvencies []domain.PsiUSerSolvency,
+	solvencies []domain.PsiUserSolvency,
 ) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 
@@ -703,18 +703,18 @@ func (r *psiRepo) UpdatePostGrade(ctx context.Context, pg *domain.PsiUserPostGra
 // GESTION DE SOLVENCIAS
 // =========================================================================
 
-func (r *psiRepo) CreateSolvency(ctx context.Context, pg *domain.PsiUSerSolvency) error {
+func (r *psiRepo) CreateSolvency(ctx context.Context, pg *domain.PsiUserSolvency) error {
 	return r.db.WithContext(ctx).Save(pg).Error
 }
 
-func (r *psiRepo) GetSolvencies(ctx context.Context, id uuid.UUID) ([]domain.PsiUSerSolvency, error) {
-	var pg []domain.PsiUSerSolvency
+func (r *psiRepo) GetSolvencies(ctx context.Context, id uuid.UUID) ([]domain.PsiUserSolvency, error) {
+	var pg []domain.PsiUserSolvency
 
 	err := r.db.WithContext(ctx).Where("psi_user_model_id = ?", id).Find(&pg).Error
 	return pg, err
 }
 
-func (r *psiRepo) CreateOrUpdateSolvencies(ctx context.Context, solvencies []domain.PsiUSerSolvency) error {
+func (r *psiRepo) CreateOrUpdateSolvencies(ctx context.Context, solvencies []domain.PsiUserSolvency) error {
 	if len(solvencies) == 0 {
 		return nil
 	}

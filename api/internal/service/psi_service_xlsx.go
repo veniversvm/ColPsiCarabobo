@@ -147,13 +147,14 @@ func (s *PsiService) ImportFromXLSX(ctx context.Context, reader io.Reader, admin
 		// 1. Modelo de Identidad Principal
 		psi := &domain.PsiUserModel{
 			ID:         psiID,
-			Key:        uuid.Must(uuid.NewV7()).String(),
 			AuditModel: audit,
-
-			IsActive: getValorSeguro(row, 45) == "Activo",
-			Username: username,
-			Email:    email,
-			Password: hashedPassword,
+			Credentials: domain.Credentials{
+				Key:        uuid.Must(uuid.NewV7()).String(),
+				IsActive: getValorSeguro(row, 45) == "Activo",
+				Username: username,
+				Email:    email,
+				Password: hashedPassword,
+			},
 
 			FirstName:      firstName,
 			SecondName:     cleanDash(getValorSeguro(row, 8)),

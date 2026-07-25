@@ -104,7 +104,7 @@ func (s *AdminService) Login(ctx context.Context, identifier, password string) (
 	// Invocación dinámica y no-bloqueante del servicio de mensajería.
 	// Si el servidor SMTP falla, la autenticación sigue adelante ("Graceful Degradation").
 	if err := s.mailService.SendEmail(admin.Email, "Inicio de sesión en el sistema", "login_admin", mailData); err != nil {
-		log.Printf("⚠️ Error al preparar el correo (pero el admin se creó): %v", err)
+		log.Printf("[WARN] Error al preparar el correo (pero el admin se creó): %v", err)
 	}
 
 	return token.SignedString([]byte(newKey))
@@ -265,10 +265,12 @@ func (s *AdminService) CreateAdmin(
 			UpdateBy:   creator.Username,
 			UpdateById: &creator.ID,
 		},
-		Username: req.Username,
-		Email:    validate_email,
-		IsActive: true,
-		Key:      uuid.Must(uuid.NewV7()).String(),
+		Credentials: domain.Credentials{
+			Username: req.Username,
+			Email:    validate_email,
+			IsActive: true,
+			Key:      uuid.Must(uuid.NewV7()).String(),
+		},
 		Sudo:     false, // Regla Dura: Sudo no puede heredarse ni crearse por API, requiere intervención directa.
 	}
 
@@ -316,7 +318,7 @@ func (s *AdminService) CreateAdmin(
 	}
 
 	if err := s.mailService.SendEmail(newAdmin.Email, "Bienvenido al Colegio de Psicólogos", "welcome_admin", mailData); err != nil {
-		log.Printf("⚠️ Error al preparar el correo (pero el admin se creó): %v", err)
+		log.Printf("[WARN] Error al preparar el correo (pero el admin se creó): %v", err)
 	}
 
 	// 7. Mantenimiento del Caché (Purge Completo)
@@ -376,7 +378,7 @@ func (s *AdminService) UpdateAdmin(
 	if req.Email != nil {
 		validate_email, err := utils.ParseAndValidateEmail(*req.Email)
 		if err != nil {
-			return fmt.Errorf("emial invalido") // Typo conservado del original
+			return fmt.Errorf("email inválido")
 		}
 		target.Email = validate_email
 	}

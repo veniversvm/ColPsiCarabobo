@@ -18,7 +18,7 @@ func main() {
 		&domain.PsiUserModel{},
 		&domain.PsiUserColData{},
 		&domain.PsiUserPostGrade{},
-		&domain.PsiUSerSolvency{},
+		&domain.PsiUserSolvency{},
 		&domain.Post{},
 		&domain.PsiSpecialtyModel{},
 		&domain.PsiUserSocialNetwork{},

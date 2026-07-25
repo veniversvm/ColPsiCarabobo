@@ -16,7 +16,7 @@ import (
 func SetupPsiRoutes(router fiber.Router, psiRepo domain.PsiUserRepository, adminRepo domain.UserAdminRepository, s3Client *s3.S3Client, analyticsSvc *service.AnalyticsService) {
 	mailService, err := service.NewMailService()
 	if err != nil {
-		log.Printf("⚠️  Advertencia: No se pudo conectar al servidor SMTP: %v", err)
+		log.Printf("[WARN] Advertencia: No se pudo conectar al servidor SMTP: %v", err)
 	}
 
 	svc := service.NewPsiService(psiRepo, s3Client, mailService)

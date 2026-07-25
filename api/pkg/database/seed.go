@@ -17,7 +17,7 @@ func SeedAdmin(db *gorm.DB) {
 	db.Model(&domain.UserAdmin{}).Count(&count)
 
 	if count == 0 {
-		log.Println("🌱 No se encontraron administradores. Creando Super Admin por defecto...")
+		log.Println("[INFO] No se encontraron administradores. Creando Super Admin por defecto...")
 
 		var defaultPass string
 		if config.Envs.Environment == "development" {
@@ -27,7 +27,7 @@ func SeedAdmin(db *gorm.DB) {
 		}
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(defaultPass), bcrypt.DefaultCost)
 		if err != nil {
-			log.Printf("❌ Error al hashear contraseña de seed: %v", err)
+			log.Printf("[ERROR] Error al hashear contraseña de seed: %v", err)
 			return
 		}
 
@@ -40,10 +40,12 @@ func SeedAdmin(db *gorm.DB) {
 				CreateBy:   "SYSTEM",
 				CreateById: &adminID, // Se auto-referencia como creador inicial
 			},
-			Username: "admin",
-			Email:    "admin@colpsicarabobo.com",
-			Password: string(hashedPassword),
-			IsActive: true,
+			Credentials: domain.Credentials{
+				Username: "admin",
+				Email:    "admin@colpsicarabobo.com",
+				Password: string(hashedPassword),
+				IsActive: true,
+			},
 			Sudo:     true, // Acceso total
 
 			// Activamos todos los permisos granulares
@@ -65,14 +67,14 @@ func SeedAdmin(db *gorm.DB) {
 		}
 
 		if err := db.Create(admin).Error; err != nil {
-			log.Printf("❌ Error al crear el Super Admin: %v", err)
+			log.Printf("[ERROR] Error al crear el Super Admin: %v", err)
 		} else {
-			log.Println("✅ Super Admin creado exitosamente.")
+			log.Println("[OK] Super Admin creado exitosamente.")
 			if config.Envs.Environment == "development" {
-				log.Printf("ℹ️  [DEV] User: %s | Pass: %s | ID: %s", admin.Username, defaultPass, admin.ID)
+				log.Printf("[INFO] [DEV] User: %s | Pass: %s | ID: %s", admin.Username, defaultPass, admin.ID)
 			} else {
-				log.Printf("ℹ️  Super Admin creado — User: %s | ID: %s", admin.Username, admin.ID)
-				log.Println("⚠️  La contraseña fue generada automáticamente. Cámbiela al iniciar sesión.")
+				log.Printf("[INFO] Super Admin creado — User: %s | ID: %s", admin.Username, admin.ID)
+				log.Println("[WARN] La contraseña fue generada automáticamente. Cámbiela al iniciar sesión.")
 			}
 		}
 	}

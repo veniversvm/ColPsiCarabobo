@@ -16,7 +16,7 @@ import (
 func SetupAdminRoutes(router fiber.Router, adminRepo domain.UserAdminRepository, psiRepo domain.PsiUserRepository, analyticsSvc *service.AnalyticsService) {
 	mailSvc, err := service.NewMailService()
 	if err != nil {
-		log.Printf("⚠️  Advertencia: No se pudo conectar al servidor SMTP: %v", err)
+		log.Printf("[WARN] Advertencia: No se pudo conectar al servidor SMTP: %v", err)
 	}
 
 	svc := service.NewAdminService(adminRepo, mailSvc)

@@ -73,20 +73,3 @@ func (s *S3Client) DeleteFile(ctx context.Context, key string) error {
 	}
 	return nil
 }
-
-// GetPresignedURL genera una URL temporal para ver archivos privados (Opcional, futuro uso).
-// Útil si decides que las imágenes no sean públicas por defecto.
-/*
-func (s *S3Client) GetPresignedURL(ctx context.Context, key string) (string, error) {
-	presignClient := s3.NewPresignClient(s.Client)
-	req, err := presignClient.PresignGetObject(ctx, &s3.GetObjectInput{
-		Bucket: aws.String(s.Bucket),
-		Key:    aws.String(key),
-	}, s3.WithPresignExpires(15*time.Minute))
-
-	if err != nil {
-		return "", err
-	}
-	return req.URL, nil
-}
-*/

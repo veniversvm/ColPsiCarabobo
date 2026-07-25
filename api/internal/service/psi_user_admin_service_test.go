@@ -32,11 +32,11 @@ func (m *mockMailService) SendEmail(to, subject, template string, data interface
 // en tiempo de ejecución durante cada test.
 type mockPsiRepoAdmin struct {
 	domain.PsiUserRepository
-	CreateWithColDataFunc func(ctx context.Context, psi *domain.PsiUserModel, colData *domain.PsiUserColData, solvencies domain.PsiUSerSolvency, postgrades []domain.PsiUserPostGrade) error
+	CreateWithColDataFunc func(ctx context.Context, psi *domain.PsiUserModel, colData *domain.PsiUserColData, solvencies domain.PsiUserSolvency, postgrades []domain.PsiUserPostGrade) error
 	GetByIDFunc           func(ctx context.Context, id uuid.UUID) (*domain.PsiUserModel, error)
 	// Interface Compliance: La firma debe coincidir con el contrato del dominio,
 	// soportando ahora la inserción transaccional de un slice de solvencias.
-	UpdateFunc func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, text *domain.TextModel, solvencies []domain.PsiUSerSolvency) error
+	UpdateFunc func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, text *domain.TextModel, solvencies []domain.PsiUserSolvency) error
 }
 
 // CreateWithColData simula la ingesta estructurada de un perfil de psicólogo.
@@ -44,7 +44,7 @@ type mockPsiRepoAdmin struct {
 // En Go, para que un mock satisfaga una interfaz implícitamente, sus métodos deben
 // tener los mismos tipos de datos, orden de parámetros y valores de retorno EXACTOS
 // que la interfaz definida en la capa de dominio.
-func (m *mockPsiRepoAdmin) CreateWithColData(ctx context.Context, p *domain.PsiUserModel, c *domain.PsiUserColData, s domain.PsiUSerSolvency, pg []domain.PsiUserPostGrade) error {
+func (m *mockPsiRepoAdmin) CreateWithColData(ctx context.Context, p *domain.PsiUserModel, c *domain.PsiUserColData, s domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
 	if m.CreateWithColDataFunc != nil {
 		return m.CreateWithColDataFunc(ctx, p, c, s, pg)
 	}
@@ -57,7 +57,7 @@ func (m *mockPsiRepoAdmin) GetByID(ctx context.Context, id uuid.UUID) (*domain.P
 
 // Update simula la mutación parcial del perfil de un psicólogo.
 // Garantiza la compatibilidad estricta con el contrato del repositorio.
-func (m *mockPsiRepoAdmin) Update(ctx context.Context, p *domain.PsiUserModel, c *domain.PsiUserColData, t *domain.TextModel, s []domain.PsiUSerSolvency) error {
+func (m *mockPsiRepoAdmin) Update(ctx context.Context, p *domain.PsiUserModel, c *domain.PsiUserColData, t *domain.TextModel, s []domain.PsiUserSolvency) error {
 	if m.UpdateFunc != nil {
 		return m.UpdateFunc(ctx, p, c, t, s)
 	}
@@ -80,12 +80,12 @@ func TestPsiService_CreateByAdmin(t *testing.T) {
 	svc := NewPsiService(repo, nil, mail)
 	ctx := context.Background()
 
-	admin := &domain.UserAdmin{ID: uuid.Must(uuid.NewV7()), Username: "admin_tester", CanCreatePsi: true}
+	admin := &domain.UserAdmin{ID: uuid.Must(uuid.NewV7()), Credentials: domain.Credentials{Username: "admin_tester"}, CanCreatePsi: true}
 
 	t.Run("Éxito: Registro completo", func(t *testing.T) {
 		// Mock Binding: Interceptamos la llamada y validamos que el servicio pasa
 		// correctamente la estructura de datos al repositorio simulado.
-		repo.CreateWithColDataFunc = func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, solvencies domain.PsiUSerSolvency, postgrades []domain.PsiUserPostGrade) error {
+		repo.CreateWithColDataFunc = func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, solvencies domain.PsiUserSolvency, postgrades []domain.PsiUserPostGrade) error {
 			return nil
 		}
 
@@ -113,7 +113,7 @@ func TestPsiService_UpdateByAdmin_Patch(t *testing.T) {
 
 	ctx := context.Background()
 	targetID := uuid.Must(uuid.NewV7())
-	admin := &domain.UserAdmin{ID: uuid.Must(uuid.NewV7()), Username: "super_admin", Sudo: true}
+	admin := &domain.UserAdmin{ID: uuid.Must(uuid.NewV7()), Credentials: domain.Credentials{Username: "super_admin"}, Sudo: true}
 
 	t.Run("Actualización Parcial: Solo cambia el estatus de solvencia", func(t *testing.T) {
 		currentPsi := &domain.PsiUserModel{
@@ -127,7 +127,7 @@ func TestPsiService_UpdateByAdmin_Patch(t *testing.T) {
 		}
 
 		// Aceptación de la firma actualizada del repositorio (incluyendo solvencias)
-		repo.UpdateFunc = func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, text *domain.TextModel, solvencies []domain.PsiUSerSolvency) error {
+		repo.UpdateFunc = func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, text *domain.TextModel, solvencies []domain.PsiUserSolvency) error {
 			return nil
 		}
 

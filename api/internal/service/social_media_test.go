@@ -55,7 +55,7 @@ func TestPsiService_AddSocialNetwork(t *testing.T) {
 	repo := &mockPsiRepoSocialMedia{}
 	svc := &PsiService{repo: repo} // Asumiendo que tu struct se llama PsiService
 	ctx := context.Background()
-	psi := &domain.PsiUserModel{ID: uuid.Must(uuid.NewV7()), Username: "psicologo1"}
+	psi := &domain.PsiUserModel{ID: uuid.Must(uuid.NewV7()), Credentials: domain.Credentials{Username: "psicologo1"}}
 
 	t.Run("Éxito: Agrega red social dentro del límite", func(t *testing.T) {
 		repo.CountSocialNetworksFunc = func(ctx context.Context, id uuid.UUID) (int64, error) {
@@ -98,8 +98,8 @@ func TestPsiService_UpdateSocialNetwork_Ownership(t *testing.T) {
 	svc := &PsiService{repo: repo}
 	ctx := context.Background()
 
-	psiA := &domain.PsiUserModel{ID: uuid.Must(uuid.NewV7()), Username: "psicologo_A"}
-	psiB := &domain.PsiUserModel{ID: uuid.Must(uuid.NewV7()), Username: "psicologo_B"}
+	psiA := &domain.PsiUserModel{ID: uuid.Must(uuid.NewV7()), Credentials: domain.Credentials{Username: "psicologo_A"}}
+	psiB := &domain.PsiUserModel{ID: uuid.Must(uuid.NewV7()), Credentials: domain.Credentials{Username: "psicologo_B"}}
 	netID := uuid.Must(uuid.NewV7())
 
 	t.Run("Error: Intento de editar red ajena (ID Spoofing)", func(t *testing.T) {

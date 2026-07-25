@@ -73,6 +73,8 @@ type Post struct {
 	// IsActive bool `gorm:"default:true" json:"is_active"`
 }
 
+func (Post) TableName() string { return "posts" }
+
 /*
 
 Seguridad de Contenido: Al tener el Content en una tabla separada (TextModel), podemos aplicar reglas de seguridad específicas. Por ejemplo, al guardar, podemos pasar ese string por una librería como bluemonday para eliminar cualquier tag <script> malicioso sin riesgo de "romper" los metadatos del Post.

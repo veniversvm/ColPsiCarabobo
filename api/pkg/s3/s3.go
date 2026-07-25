@@ -23,9 +23,9 @@ type S3Client struct {
 
 // ConnectS3 inicializa la configuración del SDK de AWS v2 y retorna un cliente S3.
 // Implementa el nuevo estándar de resolución de endpoints para evitar avisos de deprecación.
-func ConnectS3() (*S3Client, error) {
+func ConnectS3(ctx context.Context) (*S3Client, error) {
 	// 1. Cargamos la configuración base (Región y Credenciales)
-	cfg, err := awsConfig.LoadDefaultConfig(context.TODO(),
+	cfg, err := awsConfig.LoadDefaultConfig(ctx,
 		awsConfig.WithRegion(appConfig.Envs.S3Region),
 		awsConfig.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
 			appConfig.Envs.S3AccessKey,
@@ -69,7 +69,7 @@ func (s *S3Client) VerifyConnection() {
 	})
 
 	if err != nil {
-		log.Printf("⚠️  S3: El bucket '%s' no fue encontrado. Intentando crear...", s.Bucket)
+		log.Printf("[WARN] S3: El bucket '%s' no fue encontrado. Intentando crear...", s.Bucket)
 
 		// Intento de creación automática
 		_, err := s.Client.CreateBucket(ctx, &s3.CreateBucketInput{
@@ -77,11 +77,11 @@ func (s *S3Client) VerifyConnection() {
 		})
 
 		if err != nil {
-			log.Printf("❌ S3 Error: No se pudo crear ni acceder al bucket: %v", err)
+			log.Printf("[ERROR] S3 Error: No se pudo crear ni acceder al bucket: %v", err)
 			return
 		}
-		log.Printf("✅ S3: Bucket '%s' creado y listo para usar", s.Bucket)
+		log.Printf("[OK] S3: Bucket '%s' creado y listo para usar", s.Bucket)
 	} else {
-		log.Printf("✅ S3: Conexión establecida con el bucket '%s'", s.Bucket)
+		log.Printf("[OK] S3: Conexión establecida con el bucket '%s'", s.Bucket)
 	}
 }

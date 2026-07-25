@@ -65,7 +65,7 @@ func InitConfig() {
 	if err != nil {
 		// No lanzamos Fatal aquí porque en entornos como Docker/Heroku/AWS
 		// las variables suelen estar ya inyectadas en el sistema.
-		log.Println("⚠️  No .env file found, using system environment variables")
+		log.Println("[WARN] No .env file found, using system environment variables")
 	}
 
 	// Poblamos el struct Envs con valores del entorno o sus fallbacks (valores por defecto)

@@ -74,15 +74,17 @@ func TestAdminService_All(t *testing.T) {
 
 		repo.GetByIdentifierFunc = func(ctx context.Context, id string) (*domain.UserAdmin, error) {
 			return &domain.UserAdmin{
-				ID:       adminID,
-				Password: string(hashed),
-				IsActive: true,
-				Username: "admin_test",
-				// Nota Técnica de Integración:
-				// Se requiere usar un dominio con registros MX reales (como gmail.com)
-				// debido a que la utilidad de validación (utils.ParseAndValidateEmail)
-				// realiza una consulta DNS de los servidores de correo para evitar emails falsos.
-				Email: "admin@gmail.com",
+				ID: adminID,
+				Credentials: domain.Credentials{
+					Password: string(hashed),
+					IsActive: true,
+					Username: "admin_test",
+					// Nota Técnica de Integración:
+					// Se requiere usar un dominio con registros MX reales (como gmail.com)
+					// debido a que la utilidad de validación (utils.ParseAndValidateEmail)
+					// realiza una consulta DNS de los servidores de correo para evitar emails falsos.
+					Email: "admin@gmail.com",
+				},
 			}, nil
 		}
 
@@ -108,7 +110,7 @@ func TestAdminService_All(t *testing.T) {
 		callCount := 0
 		repo.ListFunc = func(ctx context.Context, active *bool, search string, page, limit int) ([]domain.UserAdmin, int64, error) {
 			callCount++
-			return []domain.UserAdmin{{Username: "cached_user"}}, 1, nil
+			return []domain.UserAdmin{{Credentials: domain.Credentials{Username: "cached_user"}}}, 1, nil
 		}
 
 		// Primera llamada (Cache Miss -> Consulta a la Base de Datos simulada)
@@ -128,8 +130,10 @@ func TestAdminService_All(t *testing.T) {
 	// comprometido no debe poder generar cuentas con accesos que él mismo no posee.
 	t.Run("CreateAdmin: Regla 'No puedes dar lo que no tienes'", func(t *testing.T) {
 		creator := domain.UserAdmin{
-			ID:             uuid.Must(uuid.NewV7()),
-			Username:       "moderador",
+			ID: uuid.Must(uuid.NewV7()),
+			Credentials: domain.Credentials{
+				Username: "moderador",
+			},
 			CanCreateAdmin: true,
 			Sudo:           false, // No es Super Usuario
 			CanPublish:     false, // <--- Carencia del permiso específico

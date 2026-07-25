@@ -50,10 +50,10 @@ func main() {
 	config.InitConfig()
 
 	if config.Envs.JwtLibrarySecret == "" {
-		log.Fatal("❌ JWT_LIBRARY_SECRET no está configurado. Defina la variable de entorno.")
+		log.Fatal("[ERROR] JWT_LIBRARY_SECRET no está configurado. Defina la variable de entorno.")
 	}
 	if config.Envs.AbsAdminToken == "" {
-		log.Fatal("❌ ABS_ADMIN_TOKEN no está configurado. Defina la variable de entorno.")
+		log.Fatal("[ERROR] ABS_ADMIN_TOKEN no está configurado. Defina la variable de entorno.")
 	}
 
 	log.Printf("INFO: Configuración cargada. Intentando conectar a DB...")
@@ -61,7 +61,7 @@ func main() {
 	// 2. PERSISTENCIA
 	db, err := database.ConnectDB()
 	if err != nil {
-		log.Fatalf("❌ Error crítico: Falló la conexión a PostgreSQL: %v", err)
+		log.Fatalf("[ERROR] Error crítico: Falló la conexión a PostgreSQL: %v", err)
 	}
 
 	// 3. MIGRACIÓN
@@ -72,7 +72,7 @@ func main() {
 	// 	&domain.PsiUserModel{},
 	// 	&domain.PsiUserColData{},
 	// 	&domain.PsiUserPostGrade{},
-	// 	&domain.PsiUSerSolvency{},
+	// 	&domain.PsiUserSolvency{},
 	// 	&domain.Post{},
 	// 	&domain.PsiSpecialtyModel{},
 	// 	&domain.PsiUserSocialNetwork{},
@@ -85,16 +85,16 @@ func main() {
 	// 	&domain.ActiveSession{},
 	// )
 	// if err != nil {
-	// 	log.Fatalf("❌ Error: Falló la migración de GORM: %v", err)
+	// 	log.Fatalf("[ERROR] Error: Falló la migración de GORM: %v", err)
 	// }
 
 	// SEEDING
 	database.SeedAdmin(db)
 
 	// 4. S3
-	s3Client, err := s3.ConnectS3()
+	s3Client, err := s3.ConnectS3(context.Background())
 	if err != nil {
-		log.Printf("⚠️  Advertencia: S3 no disponible: %v", err)
+		log.Printf("[WARN] Advertencia: S3 no disponible: %v", err)
 	} else {
 		s3Client.VerifyConnection()
 	}

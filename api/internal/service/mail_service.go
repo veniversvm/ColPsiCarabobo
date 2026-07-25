@@ -120,7 +120,7 @@ func NewMailService() (*MailService, error) {
 //  3. Rate Limiting por Socket: Una pausa microscópica (500ms) entre correos para evitar
 //     el agotamiento de los file descriptors (Socket Exhaustion) del servidor de origen.
 func (s *MailService) startWorker() {
-	log.Println("🚀 Mail Worker iniciado y escuchando cola...")
+	log.Println("[INFO] Mail Worker iniciado y escuchando cola...")
 
 	sentInBatch := 0
 
@@ -138,12 +138,12 @@ func (s *MailService) startWorker() {
 		if sentInBatch >= 30 {
 			// Generar tiempo aleatorio entre 60 y 180 segundos (1 a 3 min) -> Jitter Pattern
 			waitTime := rand.Intn(120) + 60
-			log.Printf("🕒 Límite de ráfaga (30) alcanzado. El Worker descansará %d segundos para evitar spam...", waitTime)
+			log.Printf("[INFO] Límite de ráfaga (30) alcanzado. El Worker descansará %d segundos para evitar spam...", waitTime)
 
 			time.Sleep(time.Duration(waitTime) * time.Second)
 
 			sentInBatch = 0 // Reiniciar contador de ráfaga para el siguiente ciclo
-			log.Println("🔄 Worker reanudado.")
+			log.Println("[INFO] Worker reanudado.")
 		}
 
 		// Pequeña pausa de cortesía entre correos individuales para no saturar el socket

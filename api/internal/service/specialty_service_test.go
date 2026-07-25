@@ -70,19 +70,19 @@ func TestSpecialtyService_Create(t *testing.T) {
 	}{
 		{
 			name:    "Éxito: Admin con permiso CanCreateTags",
-			admin:   &domain.UserAdmin{ID: adminID, Username: "admin1", CanCreateTags: true},
+			admin:   &domain.UserAdmin{ID: adminID, Credentials: domain.Credentials{Username: "admin1"}, CanCreateTags: true},
 			req:     request_structs.CreateSpecialtyRequest{Name: "Psicología Clínica"},
 			wantErr: false,
 		},
 		{
 			name:    "Éxito: Superusuario (Sudo) sin permiso explícito",
-			admin:   &domain.UserAdmin{ID: adminID, Username: "sudo_user", Sudo: true, CanCreateTags: false},
+			admin:   &domain.UserAdmin{ID: adminID, Credentials: domain.Credentials{Username: "sudo_user"}, Sudo: true, CanCreateTags: false},
 			req:     request_structs.CreateSpecialtyRequest{Name: "Neuropsicología"},
 			wantErr: false,
 		},
 		{
 			name:    "Error: Admin sin permisos",
-			admin:   &domain.UserAdmin{ID: adminID, Username: "pobre_admin", CanCreateTags: false, Sudo: false},
+			admin:   &domain.UserAdmin{ID: adminID, Credentials: domain.Credentials{Username: "pobre_admin"}, CanCreateTags: false, Sudo: false},
 			req:     request_structs.CreateSpecialtyRequest{Name: "Fake"},
 			wantErr: true,
 			errIs:   domain.ErrInsufficientPerms,
@@ -121,7 +121,7 @@ func TestSpecialtyService_Update(t *testing.T) {
 	nameUpdate := "Nuevo Nombre"
 
 	t.Run("Actualización Parcial (PATCH) inyecta auditoría correctamente", func(t *testing.T) {
-		admin := &domain.UserAdmin{ID: uuid.New(), Username: "editor", CanEditTags: true}
+		admin := &domain.UserAdmin{ID: uuid.New(), Credentials: domain.Credentials{Username: "editor"}, CanEditTags: true}
 		existingSpec := &domain.PsiSpecialtyModel{ID: 10, Name: "Viejo Nombre"}
 
 		// Simulamos la lectura previa (Read-Before-Write)

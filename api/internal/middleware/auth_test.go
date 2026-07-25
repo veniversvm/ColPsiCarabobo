@@ -120,7 +120,7 @@ func TestAuthMiddleware_Extensive(t *testing.T) {
 				token: generateTestToken(adminID.String(), "admin", correctSecret, time.Now().Add(time.Hour)),
 				setupMock: func() {
 					mAdmin.GetByIDFunc = func(ctx context.Context, id uuid.UUID) (*domain.UserAdmin, error) {
-						return &domain.UserAdmin{ID: adminID, Key: correctSecret}, nil
+						return &domain.UserAdmin{ID: adminID, Credentials: domain.Credentials{Key: correctSecret}}, nil
 					}
 				},
 				wantStatus: 200,
@@ -199,7 +199,7 @@ func TestAuthMiddleware_Extensive(t *testing.T) {
 		// de manera transparente para que el handler la consuma sin hacer parseos manuales.
 		t.Run("Detects_Psi", func(t *testing.T) {
 			mPsi.GetByIDFunc = func(ctx context.Context, id uuid.UUID) (*domain.PsiUserModel, error) {
-				return &domain.PsiUserModel{ID: psiID, Key: correctSecret}, nil
+				return &domain.PsiUserModel{ID: psiID, Credentials: domain.Credentials{Key: correctSecret}}, nil
 			}
 			token := generateTestToken(psiID.String(), "psi", correctSecret, time.Now().Add(time.Hour))
 			req := httptest.NewRequest("GET", "/hybrid", nil)
@@ -231,7 +231,7 @@ func TestAuthMiddleware_Extensive(t *testing.T) {
 		t.Run("Forged_Token_Rejected", func(t *testing.T) {
 			// El admin en la DB tiene "correctSecret", pero el token está firmado con "wrong-key"
 			mAdmin.GetByIDFunc = func(ctx context.Context, id uuid.UUID) (*domain.UserAdmin, error) {
-				return &domain.UserAdmin{ID: adminID, Key: correctSecret}, nil
+				return &domain.UserAdmin{ID: adminID, Credentials: domain.Credentials{Key: correctSecret}}, nil
 			}
 			forgedToken := generateTestToken(adminID.String(), "admin", "wrong-key", time.Now().Add(time.Hour))
 
@@ -254,7 +254,7 @@ func TestAuthMiddleware_Extensive(t *testing.T) {
 		// Test 2: Token válido de admin → debe detectarlo
 		t.Run("Valid_Admin_Token_Detected", func(t *testing.T) {
 			mAdmin.GetByIDFunc = func(ctx context.Context, id uuid.UUID) (*domain.UserAdmin, error) {
-				return &domain.UserAdmin{ID: adminID, Key: correctSecret}, nil
+				return &domain.UserAdmin{ID: adminID, Credentials: domain.Credentials{Key: correctSecret}}, nil
 			}
 			validToken := generateTestToken(adminID.String(), "admin", correctSecret, time.Now().Add(time.Hour))
 
@@ -274,7 +274,7 @@ func TestAuthMiddleware_Extensive(t *testing.T) {
 		// Test 3: Token válido de psi → debe detectarlo
 		t.Run("Valid_Psi_Token_Detected", func(t *testing.T) {
 			mPsi.GetByIDFunc = func(ctx context.Context, id uuid.UUID) (*domain.PsiUserModel, error) {
-				return &domain.PsiUserModel{ID: psiID, Key: correctSecret}, nil
+				return &domain.PsiUserModel{ID: psiID, Credentials: domain.Credentials{Key: correctSecret}}, nil
 			}
 			validToken := generateTestToken(psiID.String(), "psi", correctSecret, time.Now().Add(time.Hour))
 
