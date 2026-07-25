@@ -88,6 +88,7 @@ func (h *PostHandler) CreatePost(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Datos inválidos"})
 	}
 
+	// Archivo opcional: nil si no se envía (manejado por el servicio).
 	file, _ := c.FormFile("image")
 
 	if err := h.service.CreatePost(c.UserContext(), admin, req, file); err != nil {
@@ -168,6 +169,7 @@ func (h *PostHandler) UpdatePost(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Datos inválidos"})
 	}
 
+	// Archivo opcional: nil si no se envía (manejado por el servicio).
 	file, _ := c.FormFile("image")
 
 	if err := h.service.UpdatePost(c.UserContext(), admin, req, file, uuidID); err != nil {

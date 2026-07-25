@@ -98,6 +98,8 @@ func (h *PsiHandler) UpdateOwnProfile(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Formato de datos inválido"})
 	}
 
+	// Archivos opcionales: si no se envían, c.FormFile retorna ErrNotFound y el valor es nil.
+	// El servicio maneja nil como "no se quiere cambiar la imagen".
 	profilePic, _ := c.FormFile("profile_picture")
 	titleImgOne, _ := c.FormFile("title_image_one")
 	titleImgTwo, _ := c.FormFile("title_image_two")
@@ -353,6 +355,7 @@ func (h *PsiHandler) AddPostGrade(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Datos de formulario inválidos"})
 	}
 
+	// Archivos opcionales: nil si no se envían (manejado por el servicio).
 	file1, _ := c.FormFile("pic_one")
 	file2, _ := c.FormFile("pic_two")
 	file3, _ := c.FormFile("pic_three")

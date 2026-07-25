@@ -126,6 +126,8 @@ func (h *PsiHandler) UpdatePsiByAdmin(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "JSON inválido"})
 	}
 
+	// Archivos opcionales: si no se envían, c.FormFile retorna ErrNotFound y el valor es nil.
+	// La validación de "request vacío" más abajo verifica que al menos un campo o archivo sea no-nil.
 	profilePic, _ := c.FormFile("profile_picture")
 	titleImgOne, _ := c.FormFile("title_image_one")
 	titleImgTwo, _ := c.FormFile("title_image_two")
