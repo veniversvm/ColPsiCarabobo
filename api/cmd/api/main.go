@@ -13,7 +13,6 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/healthcheck"
 	"github.com/gofiber/fiber/v2/middleware/helmet"
-	"github.com/gofiber/fiber/v2/middleware/idempotency"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	fiberRecover "github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
@@ -47,7 +46,7 @@ func main() {
 		runtime.GOMAXPROCS(numCPU)
 	}
 
-	println("Intentando cargar configuración...")
+	log.Printf("INFO: Intentando cargar configuración...")
 	config.InitConfig()
 
 	if config.Envs.JwtLibrarySecret == "" {
@@ -57,7 +56,7 @@ func main() {
 		log.Fatal("❌ ABS_ADMIN_TOKEN no está configurado. Defina la variable de entorno.")
 	}
 
-	println("Configuración cargada. Intentando conectar a DB...")
+	log.Printf("INFO: Configuración cargada. Intentando conectar a DB...")
 
 	// 2. PERSISTENCIA
 	db, err := database.ConnectDB()
@@ -166,10 +165,6 @@ func main() {
 	}))
 
 	app.Use(helmet.New())
-	app.Use(idempotency.New(idempotency.Config{
-		Lifetime:  30 * time.Minute,
-		KeyHeader: "X-Idempotency-Key",
-	}))
 
 	app.Use(compress.New(compress.Config{
 		Level: compress.LevelDefault,

@@ -633,7 +633,7 @@ func (s *PsiService) UpdateProfileSelf(
 			// Degradación Elegante (Graceful Degradation):
 			// Si la biblioteca está caída, logueamos el error interno pero NO devolvemos error
 			// HTTP 500 al cliente, ya que su perfil central se actualizó correctamente.
-			println("Error al sincronizar actualización con Audiobookshelf:", absErr.Error())
+			log.Printf("WARN: Error al sincronizar actualización con Audiobookshelf: %v", absErr)
 		}
 	}
 
@@ -1098,14 +1098,14 @@ func (s *PsiService) LoginLibrary(ctx context.Context, identifier, password stri
 	// Ahora la función nos devuelve el ID asignado por Audiobookshelf si fue creado
 	absID, absErr := s.sincronizarConAudiobookshelf(ctx, psi.Username, password, psi.Email)
 	if absErr != nil {
-		println("Error sincronizando con Audiobookshelf:", absErr.Error())
+		log.Printf("WARN: Error sincronizando con Audiobookshelf: %v", absErr)
 	} else if absID != "" {
 		// Hacemos update del modelo si optenemos el ID de AudioBookShell
 		psi.AudioBookShellId = absID
 		s.repo.Update(ctx, psi, nil, nil, nil)
-		println("Usuario creado en Audiobookshelf con ID:", absID)
+		log.Printf("INFO: Usuario creado en Audiobookshelf con ID: %s", absID)
 	} else {
-		println("El usuario ya existía en Audiobookshelf, no se generó un nuevo ID.")
+		log.Printf("INFO: El usuario ya existía en Audiobookshelf, no se generó un nuevo ID.")
 	}
 
 	return signed, nil

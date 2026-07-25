@@ -687,7 +687,7 @@ func (s *PsiService) UpdatePsiByAdmin(
 		if absErr := s.actualizarEnAudiobookshelf(ctx, psi.AudioBookShellId, absUsername, nil, absEmail); absErr != nil {
 			// Logueamos el error interno pero no bloqueamos el retorno exitoso de la petición
 			// (Degradación Elegante)
-			println("Error al sincronizar actualización del administrador con Audiobookshelf:", absErr.Error())
+			log.Printf("WARN: Error al sincronizar actualización del administrador con Audiobookshelf: %v", absErr)
 		}
 	}
 
