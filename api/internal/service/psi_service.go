@@ -1029,21 +1029,21 @@ type AudiobookshelfUserResponse struct {
 // Valida las credenciales centrales del Colegio y emite un JWT firmado específicamente
 // para Audiobookshelf. Al mismo tiempo, asegura (sincroniza) que la cuenta del
 // usuario exista en la biblioteca mediante una petición asíncrona segura.
-func (s *PsiService) LoginLibrary(ctx context.Context, identifier, password string) (string, error) {
+func (s *PsiService) LoginLibrary(ctx context.Context, identifier, password string) (string, *domain.PsiUserModel, error) {
 	// 1. Buscar usuario
 	psi, err := s.repo.GetByIdentifier(ctx, identifier)
 	if err != nil {
-		return "", errors.New("credenciales inválidas")
+		return "", nil, errors.New("credenciales inválidas")
 	}
 
 	// 2. Verificar si está activo (Soft delete o ban)
 	if !psi.IsActive {
-		return "", errors.New("cuenta inactiva o suspendida")
+		return "", nil, errors.New("cuenta inactiva o suspendida")
 	}
 
 	// 3. Verificar contraseña
 	if err := bcrypt.CompareHashAndPassword([]byte(psi.Password), []byte(password)); err != nil {
-		return "", errors.New("credenciales inválidas")
+		return "", nil, errors.New("credenciales inválidas")
 	}
 
 	// 4. Generar JWT
@@ -1058,7 +1058,7 @@ func (s *PsiService) LoginLibrary(ctx context.Context, identifier, password stri
 	jwtLibrarySecret := config.Envs.JwtLibrarySecret
 	signed, err := token.SignedString([]byte(jwtLibrarySecret))
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 
 	// 5. Sincronizar en segundo plano de manera segura (Pasando el contexto)
@@ -1075,7 +1075,7 @@ func (s *PsiService) LoginLibrary(ctx context.Context, identifier, password stri
 		log.Printf("INFO: El usuario ya existía en Audiobookshelf, no se generó un nuevo ID.")
 	}
 
-	return signed, nil
+	return signed, psi, nil
 }
 
 // sincronizarConAudiobookshelf inicializa una cuenta (Provisioning) en el sistema externo.

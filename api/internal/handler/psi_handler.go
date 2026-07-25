@@ -284,16 +284,34 @@ func (h *PsiHandler) Login(c *fiber.Ctx) error {
 	})
 }
 
+// LoginLibrary godoc
+// @Summary      Login para Biblioteca (Audiobookshelf)
+// @Description  Autentica y retorna token SSO para el microservicio de biblioteca.
+// @Tags         Psicólogos - Auth
+// @Accept       json
+// @Produce      json
+// @Param        request body request_structs.PsiLoginRequest true "Credenciales"
+// @Success      200 {object} map[string]interface{}
+// @Failure      401 {object} map[string]string
+// @Router       /psi/login-library [post]
 func (h *PsiHandler) LoginLibrary(c *fiber.Ctx) error {
 	var req request_structs.PsiLoginRequest
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "JSON inválido"})
 	}
 
-	token, err := h.service.LoginLibrary(c.UserContext(), req.Identifier, req.Password)
+	token, user, err := h.service.LoginLibrary(c.UserContext(), req.Identifier, req.Password)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
 	}
+
+	h.analytics.RecordLogin(
+		user.ID,
+		user.Username,
+		"psi_library",
+		c.IP(),
+		c.Get("User-Agent"),
+	)
 
 	return c.JSON(fiber.Map{
 		"message": "Acceso a la biblioteca",
