@@ -7,25 +7,21 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/monitor"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/config"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/handler"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/middleware"
-	"github.com/veniversvm/ColPsiCarabobo/api/internal/repository/postgres"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/service"
-	"gorm.io/gorm"
 )
 
-func SetupAdminRoutes(router fiber.Router, db *gorm.DB, analyticsSvc *service.AnalyticsService) {
-	repo := postgres.NewAdminRepository(db)
-	psiRepo := postgres.NewPsiRepository(db)
-
+func SetupAdminRoutes(router fiber.Router, adminRepo domain.UserAdminRepository, psiRepo domain.PsiUserRepository, analyticsSvc *service.AnalyticsService) {
 	mailSvc, err := service.NewMailService()
 	if err != nil {
 		log.Printf("⚠️  Advertencia: No se pudo conectar al servidor SMTP: %v", err)
 	}
 
-	svc := service.NewAdminService(repo, mailSvc)
+	svc := service.NewAdminService(adminRepo, mailSvc)
 	h := handler.NewAdminHandler(svc)
-	authMid := middleware.NewAuthMiddleware(repo, psiRepo, analyticsSvc)
+	authMid := middleware.NewAuthMiddleware(adminRepo, psiRepo, analyticsSvc)
 	analyticsHandler := handler.NewAnalyticsHandler(analyticsSvc)
 
 	// =========================================================================

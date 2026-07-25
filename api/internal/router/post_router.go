@@ -5,21 +5,16 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/handler"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/middleware"
-	"github.com/veniversvm/ColPsiCarabobo/api/internal/repository/postgres"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/service"
 	"github.com/veniversvm/ColPsiCarabobo/api/pkg/s3"
-	"gorm.io/gorm"
 )
 
 // SetupPostRoutes inicializa las dependencias y registra los endpoints del módulo de noticias y publicaciones.
 // Implementa un sistema de visibilidad dual: público para visitantes y extendido para miembros autenticados.
-func SetupPostRoutes(router fiber.Router, db *gorm.DB, s3Client *s3.S3Client, analyticsSvc *service.AnalyticsService) {
-	adminRepo := postgres.NewAdminRepository(db)
-	psiRepo := postgres.NewPsiRepository(db)
-	postRepo := postgres.NewPostRepository(db)
-
+func SetupPostRoutes(router fiber.Router, adminRepo domain.UserAdminRepository, psiRepo domain.PsiUserRepository, postRepo domain.PostRepository, s3Client *s3.S3Client, analyticsSvc *service.AnalyticsService) {
 	svc := service.NewPostService(postRepo, s3Client)
 	h := handler.NewPostHandler(svc)
 

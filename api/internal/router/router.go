@@ -8,6 +8,7 @@ import (
 	"github.com/gofiber/swagger"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/config"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/middleware"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/repository/postgres"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/service"
 	"github.com/veniversvm/ColPsiCarabobo/api/pkg/s3"
 	"gorm.io/gorm"
@@ -20,9 +21,14 @@ import (
 func SetupRouter(app *fiber.App, db *gorm.DB, s3Client *s3.S3Client) {
 
 	// ── Analytics: instanciar servicio y registrar middleware global ──────────
-	// El middleware captura TODOS los GET exitosos antes de que lleguen a las rutas
 	analyticsSvc := service.NewAnalyticsService(db)
 	app.Use(middleware.AnalyticsMiddleware(db))
+
+	// ── Repositories: instanciar una sola vez para todos los routers ─────────
+	adminRepo := postgres.NewAdminRepository(db)
+	psiRepo := postgres.NewPsiRepository(db)
+	postRepo := postgres.NewPostRepository(db)
+	specialtyRepo := postgres.NewSpecialtyRepository(db)
 
 	// Agrupación principal
 	api := app.Group("/api/v1")
@@ -33,11 +39,11 @@ func SetupRouter(app *fiber.App, db *gorm.DB, s3Client *s3.S3Client) {
 		api.Get("/swagger/*", swagger.HandlerDefault)
 	}
 
-	// Rutas de dominio — se pasa analyticsSvc solo a quienes lo necesitan
-	SetupAdminRoutes(api, db, analyticsSvc)
-	SetupPsiRoutes(api, db, s3Client, analyticsSvc)
-	SetupSpecialtyRoutes(api, db, analyticsSvc)
-	SetupPostRoutes(api, db, s3Client, analyticsSvc)
+	// Rutas de dominio — se pasan repos e analyticsSvc
+	SetupAdminRoutes(api, adminRepo, psiRepo, analyticsSvc)
+	SetupPsiRoutes(api, psiRepo, adminRepo, s3Client, analyticsSvc)
+	SetupSpecialtyRoutes(api, psiRepo, adminRepo, specialtyRepo, analyticsSvc)
+	SetupPostRoutes(api, adminRepo, psiRepo, postRepo, s3Client, analyticsSvc)
 
 	// =========================================================================
 	// DEFAULT 404 HANDLER (CATCH-ALL)

@@ -6,26 +6,22 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/handler"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/middleware"
-	"github.com/veniversvm/ColPsiCarabobo/api/internal/repository/postgres"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/service"
 	"github.com/veniversvm/ColPsiCarabobo/api/pkg/s3"
-	"gorm.io/gorm"
 )
 
-func SetupPsiRoutes(router fiber.Router, db *gorm.DB, s3Client *s3.S3Client, analyticsSvc *service.AnalyticsService) {
-	repo := postgres.NewPsiRepository(db)
-	adminRepo := postgres.NewAdminRepository(db)
-
+func SetupPsiRoutes(router fiber.Router, psiRepo domain.PsiUserRepository, adminRepo domain.UserAdminRepository, s3Client *s3.S3Client, analyticsSvc *service.AnalyticsService) {
 	mailService, err := service.NewMailService()
 	if err != nil {
 		log.Printf("⚠️  Advertencia: No se pudo conectar al servidor SMTP: %v", err)
 	}
 
-	svc := service.NewPsiService(repo, s3Client, mailService)
+	svc := service.NewPsiService(psiRepo, s3Client, mailService)
 	h := handler.NewPsiHandler(svc, analyticsSvc)
-	authMid := middleware.NewAuthMiddleware(adminRepo, repo, analyticsSvc)
+	authMid := middleware.NewAuthMiddleware(adminRepo, psiRepo, analyticsSvc)
 
 	// Store de idempotencia — compartido solo para las rutas que lo necesitan
 	idempotencyStore := middleware.NewIdempotencyStore()

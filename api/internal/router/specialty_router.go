@@ -3,28 +3,20 @@ package router
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/handler"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/middleware"
-	"github.com/veniversvm/ColPsiCarabobo/api/internal/repository/postgres"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/service"
-	"gorm.io/gorm"
 )
 
 // SetupSpecialtyRoutes inicializa las dependencias y registra los endpoints del catálogo de especialidades.
 // Aplica una arquitectura de capas inyectando Repositorios -> Servicios -> Handlers.
-func SetupSpecialtyRoutes(router fiber.Router, db *gorm.DB, analyticsSvc *service.AnalyticsService) {
-	// 1. INYECCIÓN DE DEPENDENCIAS
-	// Inicializamos los repositorios necesarios para el dominio y la seguridad del middleware.
-	repo := postgres.NewPsiRepository(db)
-	adminRepo := postgres.NewAdminRepository(db)
-	specialtyRepo := postgres.NewSpecialtyRepository(db)
-
-	// Inicializamos la lógica de negocio y los controladores.
+func SetupSpecialtyRoutes(router fiber.Router, psiRepo domain.PsiUserRepository, adminRepo domain.UserAdminRepository, specialtyRepo domain.SpecialtyRepository, analyticsSvc *service.AnalyticsService) {
 	svc := service.NewSpecialtyService(specialtyRepo)
 	h := handler.NewSpecialtyHandler(svc)
 
 	// Configuración del middleware de autenticación dinámica.
-	authMid := middleware.NewAuthMiddleware(adminRepo, repo, analyticsSvc)
+	authMid := middleware.NewAuthMiddleware(adminRepo, psiRepo, analyticsSvc)
 
 	// =========================================================================
 	// GRUPO ADMINISTRATIVO (ALTA PRIORIDAD)
