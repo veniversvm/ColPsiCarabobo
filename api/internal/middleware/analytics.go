@@ -13,7 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/config"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
-	"gorm.io/gorm"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/service"
 )
 
 // visitWindow define el umbral de "Debouncing" para el rastreo de visitas.
@@ -46,15 +46,12 @@ func shouldSkip(path string) bool {
 // respuesta HTTP esperando a que la base de datos registre la visita, ejecuta
 // un "Fire-and-Forget" mediante Goroutines, garantizando una latencia de red de 0ms
 // de impacto para el cliente final.
-func AnalyticsMiddleware(db *gorm.DB) fiber.Handler {
+func AnalyticsMiddleware(analytics *service.AnalyticsService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		// 1. Ejecutar la petición (c.Next) hacia el controlador.
-		// Esto nos permite capturar el código de estado (StatusCode) real de la respuesta.
 		err := c.Next()
 
 		// 2. Filtro de Calidad de Datos (Data Quality)
-		// Solo rastreamos peticiones GET (lectura de páginas) que hayan sido
-		// exitosas (HTTP 2xx) y que no pertenezcan a rutas de sistema (estáticos, healthchecks).
 		if c.Method() != "GET" || shouldSkip(c.Path()) {
 			return err
 		}
@@ -63,39 +60,31 @@ func AnalyticsMiddleware(db *gorm.DB) fiber.Handler {
 		}
 
 		// 3. Exclusión de Staff (Métricas Limpias)
-		// Ignorar el tráfico generado por el propio equipo administrativo para no sesgar las métricas.
 		if admin, ok := c.Locals("admin").(*domain.UserAdmin); ok && admin != nil {
 			return err
 		}
 
 		// 4. Identificación de Entidad
-		// Extracción del ID si es un psicólogo autenticado.
 		var userID *uuid.UUID
 		if uid, ok := c.Locals("userID").(uuid.UUID); ok {
 			userID = &uid
 		}
 
 		// 5. Gestión de Sesión Anónima (Tracking Cookie)
-		// Si el usuario no tiene la cookie de sesión (_sid), se le asigna una.
 		sessionID := c.Cookies("_sid")
 		if sessionID == "" {
 			sessionID = uuid.NewString()
 			c.Cookie(&fiber.Cookie{
 				Name:     "_sid",
 				Value:    sessionID,
-				Expires:  time.Now().Add(365 * 24 * time.Hour), // Persistencia de 1 año
-				HTTPOnly: true,                                 // Previene robo por XSS (Javascript no puede leerla)
-				Secure:   config.Envs.Environment == "production", // Solo enviar por HTTPS en producción
-				SameSite: "Lax",                                // Seguridad CSRF básica
+				Expires:  time.Now().Add(365 * 24 * time.Hour),
+				HTTPOnly: true,
+				Secure:   config.Envs.Environment == "production",
+				SameSite: "Lax",
 			})
 		}
 
 		// ── SEGURIDAD DE CONTEXTO (Fiber Lifecycle) ──────────────────────────
-		// FastHTTP (motor base de Fiber) recicla activamente el objeto *fiber.Ctx
-		// tan pronto como la función actual retorna al cliente, para ahorrar memoria.
-		// Si la Goroutine intenta acceder a c.Path() o c.IP() más tarde, la memoria
-		// ya habrá sido sobreescrita, provocando un Panic o inyectando basura en la DB.
-		// Solución: Copiar los valores primitivos a memoria segura ANTES del go func().
 		path := c.Path()
 		method := c.Method()
 		ip := c.IP()
@@ -105,18 +94,13 @@ func AnalyticsMiddleware(db *gorm.DB) fiber.Handler {
 		// 6. Volcado Asíncrono a Base de Datos
 		go func() {
 			// Ventana de sesión (Debouncing):
-			// Consultamos si este dispositivo ya registró actividad reciente.
-			var count int64
-			db.Model(&domain.PageView{}).
-				Where("session_id = ? AND created_at >= ?", sessionID, time.Now().Add(-visitWindow)).
-				Count(&count)
-
+			count, _ := analytics.CountRecentPageViews(sessionID, time.Now().Add(-visitWindow))
 			if count > 0 {
-				return // Ya registrado en esta ventana (solo está navegando)
+				return // Ya registrado en esta ventana
 			}
 
 			// Si es una visita fresca, se persiste en el log de analíticas.
-			db.Create(&domain.PageView{
+			analytics.RecordPageView(domain.PageView{
 				Path:      path,
 				Method:    method,
 				UserID:    userID,

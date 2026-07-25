@@ -85,3 +85,49 @@ type ActiveSession struct {
 func (s *ActiveSession) IsActive() bool {
 	return time.Now().Before(s.ExpiresAt)
 }
+
+// ── Dashboard Stats (Read Model para BI) ─────────────────────────────────────
+
+type DashboardStats struct {
+	LoginsTotal         int64       `json:"logins_total"`
+	LoginsToday         int64       `json:"logins_today"`
+	LoginsThisWeek      int64       `json:"logins_this_week"`
+	LoginsThisMonth     int64       `json:"logins_this_month"`
+	UniqueUsersToday    int64       `json:"unique_users_today"`
+	PageViewsTotal      int64       `json:"page_views_total"`
+	PageViewsToday      int64       `json:"page_views_today"`
+	PageViewsThisWeek   int64       `json:"page_views_this_week"`
+	UniqueVisitorsToday int64       `json:"unique_users_today_page"`
+	UniqueVisitorsWeek  int64       `json:"unique_visitors_week"`
+	SearchesTotal       int64       `json:"searches_total"`
+	SearchesToday       int64       `json:"searches_today"`
+	SearchesThisWeek    int64       `json:"searches_this_week"`
+	ProfileViewsTotal   int64       `json:"profile_views_total"`
+	ProfileViewsToday   int64       `json:"profile_views_today"`
+	ProfileViewsWeek    int64       `json:"profile_views_week"`
+	ActiveSessionsNow   int64       `json:"active_sessions_now"`
+	TopSpecialties      []TopItem   `json:"top_specialties"`
+	TopMunicipios       []TopItem   `json:"top_municipios"`
+	TopSearchTerms      []TopItem   `json:"top_search_terms"`
+	TopProfiles         []TopProfile `json:"top_profiles"`
+	LoginTrend          []DailyCount `json:"login_trend"`
+	ViewTrend           []DailyCount `json:"view_trend"`
+}
+
+type TopItem struct {
+	Value string `json:"value"`
+	Count int64  `json:"count"`
+	Name  string `json:"name"`
+}
+
+type TopProfile struct {
+	PsiID    string `json:"psi_id"`
+	Name     string `json:"name"`
+	LastName string `json:"last_name"`
+	Count    int64  `json:"count"`
+}
+
+type DailyCount struct {
+	Date  string `json:"date"`
+	Count int64  `json:"count"`
+}

@@ -100,7 +100,7 @@ func main() {
 	}
 
 	// 5. ANALYTICS SERVICE — instancia necesaria para el ticker
-	analyticsSvc := service.NewAnalyticsService(db)
+	analyticsSvc := service.NewAnalyticsService(postgres.NewAnalyticsRepository(db))
 	postSvc := service.NewPostService(
 		postgres.NewPostRepository(db),
 		s3Client,

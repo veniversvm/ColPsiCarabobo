@@ -12,8 +12,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/service"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 )
 
 // =========================================================================
@@ -41,6 +39,25 @@ type mockPsiRepo struct {
 func (m *mockPsiRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.PsiUserModel, error) {
 	return m.GetByIDFunc(ctx, id)
 }
+
+// mockAnalyticsRepo es un no-op para tests que no dependen de analytics reales.
+type mockAnalyticsRepo struct {
+	domain.AnalyticsRepository
+}
+
+func (m *mockAnalyticsRepo) CreateLoginEvent(domain.LoginEvent) error   { return nil }
+func (m *mockAnalyticsRepo) UpsertActiveSession(domain.ActiveSession) error { return nil }
+func (m *mockAnalyticsRepo) DeleteActiveSession(uuid.UUID) error        { return nil }
+func (m *mockAnalyticsRepo) UpdateSessionHeartbeat(uuid.UUID, time.Time, time.Time) error { return nil }
+func (m *mockAnalyticsRepo) CreateSearchEvent(domain.SearchEvent) error { return nil }
+func (m *mockAnalyticsRepo) CreateProfileView(domain.ProfileView) error { return nil }
+func (m *mockAnalyticsRepo) CreatePageView(domain.PageView) error       { return nil }
+func (m *mockAnalyticsRepo) CountRecentPageViews(string, time.Time) (int64, error) { return 0, nil }
+func (m *mockAnalyticsRepo) GetDashboardStats() (*domain.DashboardStats, error) { return &domain.DashboardStats{}, nil }
+func (m *mockAnalyticsRepo) DeletePageViewsOlderThan(time.Time) error   { return nil }
+func (m *mockAnalyticsRepo) DeleteSearchEventsOlderThan(time.Time) error { return nil }
+func (m *mockAnalyticsRepo) DeleteProfileViewsOlderThan(time.Time) error { return nil }
+func (m *mockAnalyticsRepo) DeleteExpiredSessions(time.Time) error      { return nil }
 
 // =========================================================================
 // GENERADOR DE TOKENS PARA TESTS
@@ -73,17 +90,8 @@ func TestAuthMiddleware_Extensive(t *testing.T) {
 	psiID := uuid.New()
 	correctSecret := "secret-valencia-2026"
 
-	// --- FIX: Inicialización de GORM en modo DryRun ---
-	// DryRun es una técnica avanzada para testing: GORM inicializa su motor interno
-	// pero NO intenta conectarse a una base de datos real ni ejecuta SQL.
-	// Esto crea una instancia de DB que NO necesita conexión real.
-	// Evita el nil pointer dereference cuando AnalyticsService llama a s.db
-	dummyDB, _ := gorm.Open(postgres.New(postgres.Config{}), &gorm.Config{
-		DryRun: true,
-	})
-
-	// Inicializamos el servicio con la DB dummy
-	analytics := service.NewAnalyticsService(dummyDB)
+	// --- Mock de AnalyticsRepository (no-op) ---
+	analytics := service.NewAnalyticsService(&mockAnalyticsRepo{})
 
 	mAdmin := &mockAdminRepo{}
 	mPsi := &mockPsiRepo{}

@@ -20,9 +20,10 @@ import (
 
 func SetupRouter(app *fiber.App, db *gorm.DB, s3Client *s3.S3Client) {
 
-	// ── Analytics: instanciar servicio y registrar middleware global ──────────
-	analyticsSvc := service.NewAnalyticsService(db)
-	app.Use(middleware.AnalyticsMiddleware(db))
+	// ── Analytics: instanciar repo, servicio y registrar middleware global ────
+	analyticsRepo := postgres.NewAnalyticsRepository(db)
+	analyticsSvc := service.NewAnalyticsService(analyticsRepo)
+	app.Use(middleware.AnalyticsMiddleware(analyticsSvc))
 
 	// ── Repositories: instanciar una sola vez para todos los routers ─────────
 	adminRepo := postgres.NewAdminRepository(db)
