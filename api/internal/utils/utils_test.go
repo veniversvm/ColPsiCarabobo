@@ -25,7 +25,7 @@ func TestSanitizeImage_Defensive(t *testing.T) {
 	require.Nil(t, bytes)
 	require.Empty(t, ext)
 	require.Empty(t, contentType)
-	require.Contains(t, err.Error(), "archivo no es una imagen válida")
+	require.Contains(t, err.Error(), "el servidor no reconoce este formato de imagen")
 }
 
 // =========================================================================
