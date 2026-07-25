@@ -92,7 +92,7 @@ func InitConfig() {
 		S3SecretKey: getEnv("AWS_SECRET_ACCESS_KEY", "minioadmin"),
 
 		// Configuración de Entorno
-		Environment: getEnv("APP_ENV", "development"),
+		Environment: getEnv("APP_ENV", "production"),
 
 		// Configuración de Email
 		SMTPHost:     getEnv("SMTP_HOST", "localhost"),
@@ -107,8 +107,8 @@ func InitConfig() {
 		AllowedOrigins: getEnv("ALLOWED_ORIGINS", "http://127.0.0.1:3000, http://localhost:3000"),
 
 		// Library
-		JwtLibrarySecret: getEnv("JWT_LIBRARY_SECRET", "secret-for-psi-library"),
-		AbsAdminToken:    getEnv("ABS_ADMIN_TOKEN", "deaful_ABS_ADMIN_TOKEN"),
+		JwtLibrarySecret: getEnv("JWT_LIBRARY_SECRET", ""),
+		AbsAdminToken:    getEnv("ABS_ADMIN_TOKEN", ""),
 	}
 }
 

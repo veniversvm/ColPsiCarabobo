@@ -44,6 +44,14 @@ func main() {
 
 	println("Intentando cargar configuración...")
 	config.InitConfig()
+
+	if config.Envs.JwtLibrarySecret == "" {
+		log.Fatal("❌ JWT_LIBRARY_SECRET no está configurado. Defina la variable de entorno.")
+	}
+	if config.Envs.AbsAdminToken == "" {
+		log.Fatal("❌ ABS_ADMIN_TOKEN no está configurado. Defina la variable de entorno.")
+	}
+
 	println("Configuración cargada. Intentando conectar a DB...")
 
 	// 2. PERSISTENCIA

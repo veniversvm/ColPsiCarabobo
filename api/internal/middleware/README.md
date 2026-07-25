@@ -1,160 +1,232 @@
-Entendido. Vamos a profundizar al máximo nivel de detalle técnico. Esta documentación está diseñada para que cualquier ingeniero senior o auditor de sistemas entienda la mecánica interna de cada línea de código en la capa de **Middlewares**.
+# 🛡️ Middleware de Seguridad (middleware/)
+
+El perímetro de seguridad de la API. Cada request debe atravesar estos 4 módulos antes de llegar a los handlers.
+
+## Arquitectura de Seguridad
+
+```
+                    ┌─────────────────────────────────────────────────┐
+                    │              REQUEST entrante                   │
+                    └──────────────────────┬──────────────────────────┘
+                                           │
+                    ┌──────────────────────▼──────────────────────────┐
+                    │           1. ANALYTICS MIDDLEWARE               │
+                    │  • Intercepta TODOS los requests                │
+                    │  • Crea cookie de sesión (30min, UUID)          │
+                    │  • Registra page views, búsquedas, logins       │
+                    │  • Goroutines no-bloqueantes para DB writes     │
+                    │  • Trackea: IP, user agent, path, referrer      │
+                    └──────────────────────┬──────────────────────────┘
+                                           │
+                    ┌──────────────────────▼──────────────────────────┐
+                    │              REQUEST ID                          │
+                    │  • Asigna ID único al request                   │
+                    │  • Propagado en headers de respuesta            │
+                    └──────────────────────┬──────────────────────────┘
+                                           │
+                    ┌──────────────────────▼──────────────────────────┐
+                    │                CORS                              │
+                    │  • Control de origenes permitidos               │
+                    │  • Headers permitidos                           │
+                    └──────────────────────┬──────────────────────────┘
+                                           │
+                    ┌──────────────────────▼──────────────────────────┐
+                    │         2. RATE LIMITER MIDDLEWARE              │
+                    │  • Sliding window en memoria                    │
+                    │  • Auth: 10 req/15min por IP                    │
+                    │  • Admin: 5 req/30min por IP                    │
+                    │  • 429 Too Many Requests + Retry-After          │
+                    └──────────────────────┬──────────────────────────┘
+                                           │
+                    ┌──────────────────────▼──────────────────────────┐
+                    │        3. IDEMPOTENCY MIDDLEWARE                 │
+                    │  • Previene duplicados en POST/PUT/DELETE        │
+                    │  • SHA-256(body + userId + path) como key       │
+                    │  • TTL configurable para expiración             │
+                    └──────────────────────┬──────────────────────────┘
+                                           │
+                    ┌──────────────────────▼──────────────────────────┐
+                    │            4. AUTH MIDDLEWARE (per-route)       │
+                    │  • JWT Bearer token validation                  │
+                    │  • Admin 404-Hiding                             │
+                    │  • Hybrid Auth (tokens opcionales)              │
+                    │  • Psi User Protection                          │
+                    │  • Extracción: userId, userRole, userEmail      │
+                    └──────────────────────┬──────────────────────────┘
+                                           │
+                    ┌──────────────────────▼──────────────────────────┐
+                    │              HANDLER / CONTROLLER                │
+                    └─────────────────────────────────────────────────┘
+```
+
+## Capas de Seguridad
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  CAPA 4: AUTHORIZATION (Auth Middleware)                        │
+│  ¿Quién eres? ¿Qué puedes hacer?                               │
+│  • JWT validation, Role extraction, Admin 404-Hiding            │
+├─────────────────────────────────────────────────────────────────┤
+│  CAPA 3: IDEMPOTENCY (Idempotency Middleware)                   │
+│  ¿Es este request único?                                        │
+│  • SHA-256 dedup, TTL cache, scoped per user                    │
+├─────────────────────────────────────────────────────────────────┤
+│  CAPA 2: RATE LIMITING (Rate Limiter Middleware)                │
+│  ¿Cuántas veces has pedido esto?                                │
+│  • Sliding window, IP-based, 429 responses                      │
+├─────────────────────────────────────────────────────────────────┤
+│  CAPA 1: OBSERVABILITY (Analytics Middleware)                   │
+│  ¿Qué está pasando?                                            │
+│  • Session tracking, page views, event logging                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## Módulos
+
+### 1. Analytics Middleware (`analytics.go`)
+
+Intercepta **todos** los requests para registrar actividad del usuario.
+
+**Funcionalidades:**
+- Crea cookie de sesión con UUID (expira a los 30 minutos)
+- Registra automáticamente: page views, profile views, search events, login events
+- Usa goroutines para writes a DB no-bloqueantes (fire-and-forget)
+- Captura: IP del cliente, user agent, path solicitado, referrer, session ID
+
+**Flujo:**
+```
+Request → Extraer/Crear session cookie → Capturar metadata → Goroutine → DB
+```
+
+**Eventos trackeados:**
+| Evento         | Trigger                          |
+|----------------|----------------------------------|
+| `page_view`    | Cualquier request GET            |
+| `profile_view` | Request a `/api/profiles/:id`    |
+| `search`       | Request a `/api/search`          |
+| `login`        | Request exitoso a `/api/login`   |
 
 ---
 
-# 🛡️ Documentación Técnica: Capa de Middlewares
+### 2. Auth Middleware (`auth.go`)
 
-[⬅ Volver al Índice Principal](../../README.md)
+Validación JWT y control de acceso basado en roles.
 
-Esta capa constituye el **Perímetro de Seguridad y Telemetría** de la API. Aquí se gestionan las reglas de tráfico, la identidad y la integridad de los datos antes de que las peticiones toquen la lógica de negocio.
+**Funcionalidades:**
 
----
+#### JWT Validation
+- Extrae token del header `Authorization: Bearer <token>`
+- Valida firma y expiración
+- Si no hay token → behaviour depende del tipo de ruta
 
-## 📊 1. Módulo: Analíticas de Tráfico (`analytics.go`)
+#### Admin 404-Hiding
+```
+ Usuario normal → GET /admin/dashboard → 404 Not Found (no 403)
+ Admin         → GET /admin/dashboard → 200 OK
+```
+Los usuarios no-admin obtienen **404** (no 403) para rutas admin. Esto evita revelar la existencia de panel administrativo.
 
-**Archivo:** `internal/middleware/analytics.go`
-**Propósito:** Capturar el comportamiento de los usuarios para Business Intelligence (BI) sin degradar la experiencia de usuario (UX).
+#### Hybrid Auth
+Algunas rutas aceptan tokens opcionales:
+- Sin token → comportamiento público (menos datos)
+- Con token → comportamiento autenticado (datos completos)
 
-### 🛠️ Desglose de Funciones
+#### Psi User Protection
+Usuarios con rol `PSICOLOGO` solo pueden acceder a sus propios datos. El middleware verifica que el userId del token coincida con el recurso solicitado.
 
-#### `shouldSkip(path string) bool`
+#### Roles
+| Rol              | Descripción                        |
+|------------------|------------------------------------|
+| `ADMINISTRADOR`  | Acceso total, incluye rutas admin  |
+| `SUPER_USUARIO`  | Acceso elevado sin panel admin     |
+| `USUARIO`        | Acceso básico                      |
 
-* **Propósito:** Actúa como un filtro de ruido inicial.
-* **Lógica:** Recorre el slice `skipPaths` y compara el prefijo de la ruta actual. Si coincide con rutas de sistema (como `/health` o `/metrics`), retorna `true`.
-* **Variables:**
-  * `skipPaths`: Lista negra de rutas que no generan valor analítico.
-
-#### `AnalyticsMiddleware(db *gorm.DB) fiber.Handler`
-
-* **Propósito:** Punto de entrada principal para el rastreo de visitas.
-* **Lógica:**
-  1. Llama a `c.Next()` para procesar la petición primero.
-  2. Valida si la petición fue exitosa (2xx) y es de tipo `GET`.
-  3. Extrae el `sessionID` desde la cookie `_sid`. Si no existe, genera un nuevo UUID y lo planta en el navegador del usuario con flags de seguridad (`HTTPOnly`, `SameSite: Lax`).
-  4. Copia los datos del contexto de Fiber a variables locales (evita colisiones de memoria en hilos asíncronos).
-  5. Dispara una **Goroutine** que consulta si el usuario ya registró actividad en la ventana de tiempo definida; si no, inserta un registro en la tabla `page_views`.
-* **Variables:**
-  * `visitWindow` (Constante): 30 minutos. Define el tiempo de "sesión única".
-  * `sessionID`: UUID que vincula múltiples peticiones a un mismo dispositivo.
-  * `path`, `method`, `ip`, `referer`: Metadatos capturados del request.
-
----
-
-## 🔐 2. Módulo: Gestión de Identidad - IAM (`auth.go`)
-
-**Archivo:** `internal/middleware/auth.go`
-**Propósito:** Validar la legitimidad de las sesiones mediante criptografía JWT y proveer contexto de usuario a los controladores.
-
-### 🛠️ Desglose de Funciones
-
-#### `NewAuthMiddleware(a, p, analytics) *AuthMiddleware`
-
-* **Propósito:** Constructor del objeto de middleware. Inyecta dependencias de repositorios y servicios para que el middleware pueda consultar la base de datos durante la validación.
-
-#### `jwtError(c *fiber.Ctx, status int, message string) error`
-
-* **Propósito:** Estandarizar las respuestas de error de seguridad. Asegura que el cliente reciba un JSON uniforme ante fallos de token.
-
-#### `validateToken(c *fiber.Ctx, getKeyFunc) (*jwt.Token, error)`
-
-* **Propósito:** El motor de validación criptográfica.
-* **Lógica:** Extrae el token de la cabecera `Authorization`. Valida que el método de firma sea `HMAC`. Decodifica los `claims` para obtener el `user_id`. Finalmente, llama a `getKeyFunc` para obtener la clave secreta específica de ese usuario y validar la firma.
-
-#### `ProtectedAdmin404() fiber.Handler`
-
-* **Propósito:** Proteger rutas de staff administrativo.
-* **Lógica:** Valida el token contra el repositorio de administradores.
-* **Estrategia:** Si el token es inválido o el usuario no es admin, retorna `404 Not Found` en lugar de `401`. Esto oculta la existencia de rutas sensibles a atacantes. Inyecta el objeto `admin` en `c.Locals`.
-
-#### `OptionalHybridAuth() fiber.Handler`
-
-* **Propósito:** Proveer "identidad opcional" en rutas públicas.
-* **Lógica:** Si hay un token, intenta identificar al usuario (admin o psi) e inyectarlo en el contexto. Si falla o no hay token, no bloquea la petición, permitiendo que el controlador decida qué mostrar.
-
-#### `ProtectedPsiUser() fiber.Handler`
-
-* **Propósito:** Bloquear acceso a rutas privadas del psicólogo.
-* **Lógica:** Similar a la protección de admin, pero valida contra el repositorio de psicólogos. Si falla, retorna `401 Unauthorized`. Inyecta el objeto `psi_user` en `c.Locals`.
+#### c.Locals() extraídos
+```go
+c.Locals("userId", user.ID)
+c.Locals("userRole", user.Role)
+c.Locals("userEmail", user.Email)
+```
 
 ---
 
-## 🔄 3. Módulo: Resiliencia e Idempotencia (`idempotency.go`)
+### 3. Idempotency Middleware (`idempotency.go`)
 
-**Archivo:** `internal/middleware/idempotency.go`
-**Propósito:** Garantizar que operaciones críticas (como cobros o registros) no se ejecuten dos veces si el cliente reintenta la petición.
+Previene operaciones duplicadas en mutaciones.
 
-### 🛠️ Desglose de Funciones
+**Funcionalidades:**
+- Aplica solo a **POST**, **PUT**, **DELETE** (no a GET)
+- Genera key con SHA-256 de: `request body + user ID + path`
+- **Scoped por usuario**: dos usuarios diferentes pueden enviar el mismo body sin conflicto
+- TTL configurable: las entradas expiran después de un tiempo determinado
 
-#### `NewIdempotencyStore() *IdempotencyStore`
+**Flujo:**
+```
+POST /api/appointments
+    → SHA-256(body + userId + path) = "a1b2c3..."
+    → ¿Existe en cache?
+        → SÍ: 409 Conflict (duplicate detected)
+        → NO: Guardar en cache + Continuar al handler
+```
 
-* **Propósito:** Inicializa el mapa de memoria y arranca la rutina de limpieza.
-* **Variables:** `entries`: Mapa donde la llave es el hash de la petición y el valor es la respuesta cacheada.
-
-#### `cleanup()`
-
-* **Propósito:** Prevenir el agotamiento de memoria (OOM).
-* **Lógica:** Un `Ticker` despierta cada 10 minutos para eliminar del mapa todas las entradas cuya fecha `expires` sea anterior a la actual.
-
-#### `get(key string)` / `set(key string, ...)`
-
-* **Propósito:** Métodos de acceso al mapa protegidos por `sync.RWMutex`.
-* **Lógica:** `get` usa un bloqueo de lectura compartido; `set` usa un bloqueo de escritura exclusivo para garantizar la consistencia en entornos multihilo.
-
-#### `UserScopedIdempotency(store, ttl) fiber.Handler`
-
-* **Propósito:** Middleware que intercepta la petición.
-* **Lógica:** Lee la cabecera `X-Idempotency-Key`. Si existe, genera una llave compuesta con el ID del usuario. Si la llave está en el `store`, devuelve la respuesta cacheada instantáneamente. Si no, procesa la petición y guarda el resultado en el `store` antes de responder.
-
-#### `scopeKey(userID, rawKey) string`
-
-* **Propósito:** Blindar el caché contra accesos cruzados.
-* **Lógica:** Genera un `SHA-256` combinando el ID del usuario y la llave enviada por el cliente. Esto asegura que la llave "123" del Usuario A no devuelva la respuesta del Usuario B.
+**Key generation:**
+```go
+key = SHA256(requestBody + "|" + userId + "|" + requestPath)
+```
 
 ---
 
-## 🚦 4. Módulo: Control de Tráfico (`rate_limiter.go`)
+### 4. Rate Limiter Middleware (`rate_limiter.go`)
 
-**Archivo:** `internal/middleware/rate_limiter.go`
-**Propósito:** Mitigar ataques de Denegación de Servicio (DoS) y Fuerza Bruta.
+Limitación de tasa basada en IP con sliding window en memoria.
 
-### 🛠️ Desglose de Funciones
+**Configuración:**
 
-#### `AuthRateLimiter()`
+| Endpoint Pattern   | Límite            | Ventana  |
+|--------------------|-------------------|----------|
+| `/api/auth/*`      | 10 requests       | 15 min   |
+| `/api/admin/*`     | 5 requests        | 30 min   |
+| Todo lo demás      | Sin límite        | —        |
 
-* **Propósito:** Proteger el login de usuarios.
-* **Configuración:** Permite 10 peticiones por cada 15 minutos. Usa la IP del cliente como llave.
-* **Lógica:** Si se excede el límite, retorna un `429 Too Many Requests`. Ignora peticiones que no sean `POST` para no bloquear la navegación normal.
+**Respuesta cuando se excede el límite:**
+```json
+{
+  "error": "Too Many Requests",
+  "retry_after": 845
+}
+```
+- Status code: `429 Too Many Requests`
+- Header: `Retry-After: <seconds>`
 
-#### `AdminAuthRateLimiter()`
-
-* **Propósito:** Hardening extremo para el panel Staff.
-* **Configuración:** Restringe a 5 intentos cada 30 minutos. La política es más agresiva porque el compromiso de una cuenta admin es crítico.
-
----
-
-## 🔬 5. Módulo: Pruebas de Seguridad (`auth_test.go`)
-
-**Archivo:** `internal/middleware/auth_test.go`
-**Propósito:** Validar que los middlewares de autenticación sean impenetrables.
-
-### 🛠️ Desglose de Funciones
-
-#### `generateTestToken(userID, role, secret, expiresAt)`
-
-* **Propósito:** Helper de test para crear JWTs sintéticos con cualquier configuración (expirados, roles falsos, etc.) para probar las reacciones del middleware.
-
-#### `TestAuthMiddleware_Extensive(t *testing.T)`
-
-* **Propósito:** Suite de pruebas principal.
-* **Casos de prueba:**
-  1. **Admin_404_Logic:** Valida que un admin inexistente o token expirado resulte en 404.
-  2. **Wrong_Signing_Method:** Intenta saltarse la seguridad usando el ataque "None Algorithm".
-  3. **Hybrid_Auth:** Valida que la inyección de contexto funcione correctamente en rutas mixtas.
+**Implementación:**
+- Sliding window log (no fixed window) para distribución más uniforme
+- Almacenamiento en memoria (se resetea al reiniciar el servidor)
+- Tracking por IP del cliente
 
 ---
 
-## 🔗 Navegación de Módulos
+## Orden de Ejecución
 
-- [Ir a la Raíz de Documentación](../../README.md)
-- [Explorar Lógica de Negocio (Services) ➡](../service/README.md)
-- [Explorar Controladores (Handlers) ➡](../handler/README.md)
+```
+Analytics → RequestID → CORS → RateLimiter → Idempotency → Auth (per-route)
+```
+
+**Nota:** `Auth` se aplica **per-route**, no globalmente. Cada grupo de rutas define si necesita auth público, hybrid o obligatorio.
+
+## Archivos
+
+| Archivo              | Descripción                          |
+|----------------------|--------------------------------------|
+| `analytics.go`       | Tracking de actividad y sesiones     |
+| `auth.go`            | JWT validation y control de acceso   |
+| `idempotency.go`     | Deduplicación de mutaciones          |
+| `rate_limiter.go`    | Limitación de tasa por IP            |
+| `auth_test.go`       | Tests para escenarios de auth        |
+
+## Notas de Seguridad
+
+- Los tokens JWT se validan en cada request (no se cachea la validación)
+- El Admin 404-Hiding es transparente para el cliente (nunca ve 403)
+- El Rate Limiter se resetea con el servidor (in-memory)
+- Las goroutines de Analytics son fire-and-forget (no afectan la respuesta)
+- La Idempotency key incluye el userId para evitar falsos positivos entre usuarios

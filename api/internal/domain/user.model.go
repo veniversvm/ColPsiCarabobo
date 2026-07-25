@@ -105,8 +105,8 @@ type PsiUserModel struct {
 	// Para miembros residentes o con consulta dentro del estado Carabobo.
 	// MunicipalityCarabobo debe restringirse al catálogo de municipios del estado.
 	MunicipalityCarabobo     string `gorm:"size:255" json:"municipality_carabobo"`
-	ShowMunicipalityCarabobo bool   `gorm:"size:255" json:"show_municipality_carabobo"`
-	PhoneCarabobo            string `gorm:"default:false" json:"phone_carabobo"`
+	ShowMunicipalityCarabobo bool   `gorm:"default:false" json:"show_municipality_carabobo"`
+	PhoneCarabobo            string `gorm:"default:''" json:"phone_carabobo"`
 	ShowPhoneCarabobo        bool   `gorm:"default:false" json:"show_phone_carabobo"`
 	CelPhoneCarabobo         string `gorm:"size:20" json:"cel_phone_carabobo"`
 	ShowCelPhoneCarabobo     bool   `gorm:"default:false" json:"show_cel_phone_carabobo"`

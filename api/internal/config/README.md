@@ -1,63 +1,161 @@
-# ⚙️ Módulo de Configuración (Config)
+# ⚙️ Configuración (config/)
 
-[⬅ Volver al Inicio](../../README.md)
+Configuración centralizada del sistema. Usa **singleton pattern** para garantizar una sola instancia de configuración en toda la aplicación.
 
-Este módulo es el encargado de la **Gestión de Entorno**. Su propósito principal es desacoplar el código fuente de los valores sensibles (credenciales) y de los parámetros que cambian según el lugar donde se ejecute la aplicación (Local, Docker, Producción).
+## Patrón Singleton
 
-## 🎯 ¿Por qué existe este módulo?
+```go
+// Al inicio de la app (main.go)
+cfg := config.InitConfig()
 
-1. **Seguridad (12-Factor App):** Sigue las mejores prácticas de la industria al no "hardcodear" (escribir directamente) claves secretas en el código. Las credenciales viajan a través de variables de entorno.
-2. **Portabilidad:** Permite que la misma aplicación corra en tu PC con `localhost:5432` y en un servidor de producción con un RDS de AWS sin cambiar una sola línea de código.
-3. **Centralización:** Si mañana el servicio de correo cambia de puerto, solo se modifica el archivo `.env` o este struct, evitando buscar y reemplazar en todo el proyecto.
+// En cualquier otro archivo
+cfg := config.Config{} // Accede a la misma instancia
+```
 
----
+`InitConfig()` se llama una sola vez al arrancar el servidor. Todas las demás llamadas acceden a la misma instancia. Lee variables de entorno del SO (no usa archivos `.env`).
 
-## 🛠️ Estructura de Datos: `Config`
+## Lectura de Variables
 
-La estructura `Config` agrupa los parámetros en 5 categorías lógicas:
+```go
+func getEnv(key, defaultValue string) string {
+    if value, exists := os.LookupEnv(key); exists {
+        return value
+    }
+    return defaultValue
+}
+```
 
-| Categoría               | Variables Clave                                | Propósito                                                                           |
-| :----------------------- | :--------------------------------------------- | :----------------------------------------------------------------------------------- |
-| **Servidor**       | `Port`, `AllowedOrigins`                   | Define dónde escucha la API y quién tiene permiso de acceder (CORS).               |
-| **Base de Datos**  | `DBHost`, `DBUser`, `DBPass`, `DBName` | Datos de conexión para el driver de PostgreSQL.                                     |
-| **Almacenamiento** | `S3Bucket`, `S3Endpoint`, `S3Region`     | Configuración para AWS S3 o MinIO (para manejo de imágenes de perfiles).           |
-| **Email (SMTP)**   | `SMTPHost`, `SMTPPort`, `SMTPUser`       | Parámetros para el envío de notificaciones y bienvenidas.                          |
-| **Entorno**        | `Environment`                                | Define si estamos en `development` o `production` para ajustar el nivel de logs. |
+Si la variable de entorno no existe, se usa el valor por defecto. Esto permite que la app funcione sin configurar todas las variables (útil en desarrollo).
 
----
+## Estructura Config
 
-## 🛠️ Funciones del Módulo
+### 🖥️ Server
 
-### `InitConfig()`
+| Campo         | Variable de Entorno | Default       | Descripción                    |
+|---------------|---------------------|---------------|--------------------------------|
+| `Port`        | `PORT`              | `8080`        | Puerto del servidor HTTP       |
+| `Environment` | `ENVIRONMENT`       | `development` | Entorno de ejecución           |
 
-Es la función "maestra" de inicialización.
+### 🗄️ Database
 
-- **Qué hace:** Intenta cargar un archivo `.env` usando la librería `godotenv`. Si no lo encuentra, no se detiene (no lanza `Fatal`), ya que en entornos de **Docker** o **Kubernetes**, las variables ya están inyectadas en el sistema.
-- **Singleton:** Instancia la variable global `Envs` para que el resto de la aplicación pueda consultar la configuración de forma rápida.
+| Campo      | Variable de Entorno  | Default       | Descripción              |
+|------------|----------------------|---------------|--------------------------|
+| `Host`     | `DB_HOST`            | `localhost`   | Host de PostgreSQL       |
+| `Port`     | `DB_PORT`            | `5432`        | Puerto de PostgreSQL     |
+| `User`     | `DB_USER`            | `postgres`    | Usuario de DB            |
+| `Password` | `DB_PASSWORD`        | *(requerido)* | Contraseña de DB         |
+| `DBName`   | `DB_NAME`            | `colpsi_db`   | Nombre de la base datos  |
+| `DBDriver` | `DB_DRIVER`          | `postgres`    | Driver de DB             |
 
-### `getEnv(key, fallback)`
+### ☁️ Storage (AWS S3)
 
-Es una función auxiliar de seguridad y robustez.
+| Campo            | Variable de Entorno   | Default       | Descripción                    |
+|------------------|-----------------------|---------------|--------------------------------|
+| `AWSRegion`      | `AWS_REGION`          | `us-east-1`   | Región de AWS                  |
+| `AWSAccessKey`   | `AWS_ACCESS_KEY`      | *(requerido)* | Access Key de AWS              |
+| `AWSSecretKey`   | `AWS_SECRET_KEY`      | *(requerido)* | Secret Key de AWS              |
+| `AWSBucket`      | `AWS_BUCKET`          | *(requerido)* | Nombre del bucket S3           |
 
-- **`key`**: El nombre de la variable que buscamos en el sistema.
-- **`fallback`**: El valor por defecto que usará la aplicación si la variable no existe.
-- **Importancia:** Evita que la aplicación falle por falta de una variable no crítica, garantizando valores por defecto sensatos (ej: usar el puerto `8080` si no se especifica uno).
+### 📧 Email (SMTP)
 
----
+| Campo      | Variable de Entorno | Default       | Descripción              |
+|------------|---------------------|---------------|--------------------------|
+| `SMTPHost` | `SMTP_HOST`         | *(requerido)* | Host del servidor SMTP   |
+| `SMTPPort` | `SMTP_PORT`         | `587`         | Puerto SMTP              |
+| `SMTPUser` | `SMTP_USER`         | *(requerido)* | Usuario SMTP             |
+| `SMTPPass` | `SMTP_PASS`         | *(requerido)* | Contraseña SMTP          |
+| `SMTPFrom` | `SMTP_FROM`         | *(requerido)* | Email remitente          |
 
-## 📋 Listado de Variables de Entorno Soportadas
+### 🌍 Environment
 
-| Variable            | Descripción        | Valor Default (Fallback)   |
-| :------------------ | :------------------ | :------------------------- |
-| `PORT`            | Puerto de la API    | `8080`                   |
-| `DB_PASSWORD`     | Clave de Postgres   | `postgres`               |
-| `AWS_REGION`      | Región de S3       | `us-east-1`              |
-| `SMTP_PORT`       | Puerto de correo    | `1025` (MailHog/Mailpit) |
-| `ALLOWED_ORIGINS` | Dominios permitidos | `http://localhost:3000`  |
+| Campo   | Variable de Entorno | Default       | Descripción                   |
+|---------|---------------------|---------------|-------------------------------|
+| `GoEnv` | `GOENV`             | `development` | Entorno Go (development/prod) |
 
----
+## Variables de Entorno Requeridas
 
-## 🔗 Navegación
+Las siguientes variables **deben** estar configuradas para que la app funcione en producción:
 
-- [Ir al Core de Dominio ➡](../domain/README.md)
-- [Ir a Utilidades ➡](../utils/README.md)
+```bash
+# Database (REQUIRED)
+DB_PASSWORD=tu_password_aqui
+
+# AWS S3 (REQUIRED)
+AWS_ACCESS_KEY=tu_access_key
+AWS_SECRET_KEY=tu_secret_key
+AWS_BUCKET=tu_bucket_name
+
+# Email SMTP (REQUIRED)
+SMTP_HOST=smtp.gmail.com
+SMTP_USER=tu_email@gmail.com
+SMTP_PASS=tu_password_app
+SMTP_FROM=tu_email@gmail.com
+```
+
+## Variables Opcionales (con defaults)
+
+```bash
+# Server
+PORT=8080
+ENVIRONMENT=development
+
+# Database
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_NAME=colpsi_db
+DB_DRIVER=postgres
+
+# AWS
+AWS_REGION=us-east-1
+
+# Email
+SMTP_PORT=587
+
+# Environment
+GOENV=development
+```
+
+## Configuración en Docker
+
+```yaml
+# docker-compose.yml
+services:
+  api:
+    environment:
+      - DB_HOST=postgres
+      - DB_PASSWORD=secret
+      - AWS_ACCESS_KEY=${AWS_ACCESS_KEY}
+      - AWS_SECRET_KEY=${AWS_SECRET_KEY}
+      - AWS_BUCKET=colpsi-production
+      - SMTP_HOST=smtp.gmail.com
+      - SMTP_USER=admin@colpsi.com
+      - SMTP_PASS=${SMTP_PASS}
+      - SMTP_FROM=admin@colpsi.com
+      - ENVIRONMENT=production
+      - GOENV=production
+```
+
+## Uso
+
+```go
+package main
+
+import "ColPsiCarabobo/api/internal/config"
+
+func main() {
+    cfg := config.InitConfig()
+
+    // Usar en cualquier parte
+    fmt.Println(cfg.Server.Port)           // "8080"
+    fmt.Println(cfg.Database.Host)         // "localhost"
+    fmt.Println(cfg.Storage.AWSRegion)     // "us-east-1"
+    fmt.Println(cfg.Email.SMTPHost)        // "smtp.gmail.com"
+}
+```
+
+## Archivos
+
+| Archivo      | Descripción                              |
+|--------------|------------------------------------------|
+| `config.go`  | Struct Config + InitConfig() + getEnv()  |

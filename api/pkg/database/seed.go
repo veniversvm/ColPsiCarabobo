@@ -4,7 +4,9 @@ import (
 	"log"
 
 	"github.com/google/uuid"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/config"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/utils"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -17,8 +19,12 @@ func SeedAdmin(db *gorm.DB) {
 	if count == 0 {
 		log.Println("🌱 No se encontraron administradores. Creando Super Admin por defecto...")
 
-		// Definimos una contraseña segura (En producción esto debería venir de una ENV)
-		defaultPass := "admin123"
+		var defaultPass string
+		if config.Envs.Environment == "development" {
+			defaultPass = "admin123"
+		} else {
+			defaultPass = utils.GenerateSecureRandomString(16)
+		}
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(defaultPass), bcrypt.DefaultCost)
 		if err != nil {
 			log.Printf("❌ Error al hashear contraseña de seed: %v", err)
@@ -62,8 +68,12 @@ func SeedAdmin(db *gorm.DB) {
 			log.Printf("❌ Error al crear el Super Admin: %v", err)
 		} else {
 			log.Println("✅ Super Admin creado exitosamente.")
-			log.Printf("ℹ️  User: %s | Pass: %s | ID: %s", admin.Username, defaultPass, admin.ID)
-			log.Println("⚠️  POR FAVOR CAMBIE LA CONTRASEÑA AL INICIAR SESIÓN")
+			if config.Envs.Environment == "development" {
+				log.Printf("ℹ️  [DEV] User: %s | Pass: %s | ID: %s", admin.Username, defaultPass, admin.ID)
+			} else {
+				log.Printf("ℹ️  Super Admin creado — User: %s | ID: %s", admin.Username, admin.ID)
+				log.Println("⚠️  La contraseña fue generada automáticamente. Cámbiela al iniciar sesión.")
+			}
 		}
 	}
 }
