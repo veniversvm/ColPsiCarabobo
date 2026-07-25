@@ -326,8 +326,6 @@ func (r *psiRepo) Update(
 			}
 		}
 
-		fmt.Printf("### REPO DEBUG: Recibidas %d solvencias para procesar\n", len(solvencies))
-
 		if len(solvencies) > 0 {
 			// Usamos tx.Create pasándole el PUNTERO al slice
 			err := tx.Clauses(clause.OnConflict{
@@ -341,7 +339,6 @@ func (r *psiRepo) Update(
 				// Si esto falla, toda la transacción (incluyendo psi y colData) hará Rollback
 				return fmt.Errorf("error en on-conflict solvencias: %w", err)
 			}
-			fmt.Println("### REPO DEBUG: Solvencias insertadas/actualizadas con éxito")
 		}
 
 		return nil
