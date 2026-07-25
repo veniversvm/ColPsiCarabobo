@@ -17,7 +17,7 @@ func NewAnalyticsHandler(svc *service.AnalyticsService) *AnalyticsHandler {
 func (h *AnalyticsHandler) GetDashboardStats(c *fiber.Ctx) error {
 	stats, err := h.svc.GetDashboardStats()
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "Error al obtener estadísticas"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Error al obtener estadísticas"})
 	}
 	return c.JSON(stats)
 }

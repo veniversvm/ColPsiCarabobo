@@ -87,14 +87,14 @@ func (h *PsiHandler) CreatePsiByAdmin(c *fiber.Ctx) error {
 	var req request_structs.CreatePsiAdminRequest
 
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "JSON malformado"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "JSON malformado"})
 	}
 
 	if err := h.service.CreatePsiByAdmin(c.UserContext(), admin, req); err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	return c.Status(201).JSON(fiber.Map{"message": "Psicólogo registrado con éxito"})
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "Psicólogo registrado con éxito"})
 }
 
 // UpdatePsiByAdmin godoc
@@ -118,12 +118,12 @@ func (h *PsiHandler) UpdatePsiByAdmin(c *fiber.Ctx) error {
 	}
 	targetID, err := uuid.Parse(c.Params("id"))
 	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "ID de psicólogo inválido"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ID de psicólogo inválido"})
 	}
 
 	var req request_structs.UpdatePsiAdminRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "JSON inválido"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "JSON inválido"})
 	}
 
 	profilePic, _ := c.FormFile("profile_picture")
@@ -146,7 +146,7 @@ func (h *PsiHandler) UpdatePsiByAdmin(c *fiber.Ctx) error {
 		titleImgTwo,
 		titleImgThree,
 	); err != nil {
-		return c.Status(403).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": err.Error()})
 	}
 	return c.JSON(fiber.Map{"message": "Perfil actualizado por administración"})
 }
@@ -170,11 +170,11 @@ func (h *PsiHandler) DeletePsiByAdmin(c *fiber.Ctx) error {
 	}
 	targetID, err := uuid.Parse(c.Params("id"))
 	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "ID de psicólogo inválido"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ID de psicólogo inválido"})
 	}
 
 	if err := h.service.DeletePsiByAdmin(c.UserContext(), admin, targetID); err != nil {
-		return c.Status(403).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": err.Error()})
 	}
 	return c.JSON(fiber.Map{"message": "Psicólogo eliminado correctamente"})
 }

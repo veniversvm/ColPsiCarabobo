@@ -146,14 +146,14 @@ func (h *PsiHandler) UpdateOwnProfile(c *fiber.Ctx) error {
 func (h *PsiHandler) SearchDirectory(c *fiber.Ctx) error {
 	var filter request_structs.PsiDirectoryFilterDTO
 	if err := c.QueryParser(&filter); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Parámetros de consulta inválidos"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Parámetros de consulta inválidos"})
 	}
 
 	filter = request_structs.SanitizeDirectoryFilter(filter)
 
 	result, err := h.service.GetPublicDirectory(c.UserContext(), filter)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "Error interno en la búsqueda"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Error interno en la búsqueda"})
 	}
 
 	// ── Analytics: registrar búsqueda ────────────────────────────────────────
@@ -448,12 +448,12 @@ func (h *PsiHandler) AddSocialNetwork(c *fiber.Ctx) error {
 	}
 	var req request_structs.CreateSocialNetworkRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "JSON inválido"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "JSON inválido"})
 	}
 	if err := h.service.AddSocialNetwork(c.UserContext(), psi, req); err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
-	return c.Status(201).JSON(fiber.Map{"message": "Red social agregada"})
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "Red social agregada"})
 }
 
 // UpdateSocialNetwork godoc
@@ -473,14 +473,14 @@ func (h *PsiHandler) UpdateSocialNetwork(c *fiber.Ctx) error {
 	}
 	netID, err := uuid.Parse(c.Params("id"))
 	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "ID inválido"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ID inválido"})
 	}
 	var req request_structs.UpdateSocialNetworkRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "JSON inválido"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "JSON inválido"})
 	}
 	if err := h.service.UpdateSocialNetwork(c.UserContext(), psi, netID, req); err != nil {
-		return c.Status(403).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": err.Error()})
 	}
 	return c.JSON(fiber.Map{"message": "Red social actualizada"})
 }
@@ -497,7 +497,7 @@ func (h *PsiHandler) UpdateSocialNetwork(c *fiber.Ctx) error {
 func (h *PsiHandler) DeleteSocialNetwork(c *fiber.Ctx) error {
 	netID, err := uuid.Parse(c.Params("id"))
 	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "ID inválido"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ID inválido"})
 	}
 
 	role := ""
@@ -512,7 +512,7 @@ func (h *PsiHandler) DeleteSocialNetwork(c *fiber.Ctx) error {
 	}
 
 	if err := h.service.DeleteSocialNetwork(c.UserContext(), role, execID, netID); err != nil {
-		return c.Status(403).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": err.Error()})
 	}
 	return c.JSON(fiber.Map{"message": "Red social eliminada correctamente"})
 }
@@ -522,7 +522,7 @@ func (h *PsiHandler) GetSitemapData(c *fiber.Ctx) error {
 	// Usamos el UserContext para que sea compatible con timeouts
 	psis, err := h.service.GetSitemapPsis(c.UserContext())
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 	return c.JSON(psis)
 }
