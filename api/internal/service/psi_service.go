@@ -205,7 +205,7 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 
 		// 5. PERSISTENCIA
 		if err := s.repo.CreateWithColData(ctx, psi, colData, solvency, []domain.PsiUserPostGrade{}); err != nil {
-			humanError := mapDBErrorToHuman(err)
+			humanError := MapDBError(err).Error()
 			auditLogger.Printf("❌ FILA %d | %s | %v", rowIdx, fullName, humanError)
 			failedRecords = append(failedRecords, map[string]string{"fila": strconv.Itoa(rowIdx), "nombre": fullName, "error": humanError})
 			continue
@@ -230,39 +230,6 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 	}
 
 	return successCount, failedRecords
-}
-
-func mapDBErrorToHuman(err error) string {
-	errStr := err.Error()
-
-	// Errores de Duplicidad (Postgres / GORM)
-	if strings.Contains(errStr, "idx_psi_users_ci") || strings.Contains(errStr, "psi_users_ci_key") {
-		return "La Cédula de Identidad ya está registrada en el sistema."
-	}
-	if strings.Contains(errStr, "idx_psi_users_fpv") || strings.Contains(errStr, "psi_users_fpv_key") {
-		return "El número de FPV ya está registrado en el sistema."
-	}
-	if strings.Contains(errStr, "idx_psi_users_email") || strings.Contains(errStr, "psi_users_email_key") {
-		return "El correo electrónico ya está en uso por otro perfil."
-	}
-	if strings.Contains(errStr, "idx_psi_users_username") || strings.Contains(errStr, "psi_users_username_key") {
-		return "El nombre de usuario generado ya existe."
-	}
-
-	// Errores de Longitud
-	if strings.Contains(errStr, "value too long for type character varying(25)") {
-		return "El nombre de usuario generado excede el límite de 25 caracteres."
-	}
-	if strings.Contains(errStr, "value too long") {
-		return "Un campo (Nombre, Apellido o Dirección) es demasiado largo para la base de datos."
-	}
-
-	// Otros
-	if strings.Contains(errStr, "invalid input syntax for type uuid") {
-		return "Error interno: ID de sistema inválido."
-	}
-
-	return "Error de base de datos: " + errStr
 }
 
 // ── Helpers de parseo ─────────────────────────────────────────────────────────

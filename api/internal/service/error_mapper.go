@@ -16,31 +16,41 @@ import (
 //     criptográficas en mensajes de retroalimentación claros, accionables y en español
 //     para que el Frontend pueda mostrarlos directamente al usuario final.
 func MapDBError(err error) error {
-	// Extraemos el string crudo del error emitido por la capa de infraestructura
 	msg := err.Error()
 
-	// Identificación de colisiones en Restricciones Únicas (Unique Keys).
-	// Se evalúan tanto los prefijos estándar de índices (idx_) como los de unicidad (uni_)
-	// para cubrir distintas versiones de convenciones de nombrado generadas por GORM/AutoMigrate.
+	// ── Colisiones en Unique Keys (prefijos idx_ y uni_, sufijos _key) ──────
 
-	if strings.Contains(msg, "idx_psi_users_ci") || strings.Contains(msg, "uni_psi_users_ci") {
+	if strings.Contains(msg, "idx_psi_users_ci") || strings.Contains(msg, "uni_psi_users_ci") || strings.Contains(msg, "psi_users_ci_key") {
 		return errors.New("la Cédula de Identidad ya se encuentra registrada")
 	}
 
-	if strings.Contains(msg, "idx_psi_users_fpv") || strings.Contains(msg, "uni_psi_users_fpv") {
+	if strings.Contains(msg, "idx_psi_users_fpv") || strings.Contains(msg, "uni_psi_users_fpv") || strings.Contains(msg, "psi_users_fpv_key") {
 		return errors.New("el número de FPV ya está registrado por otro psicólogo")
 	}
 
-	if strings.Contains(msg, "uni_psi_users_email") {
+	if strings.Contains(msg, "idx_psi_users_email") || strings.Contains(msg, "uni_psi_users_email") || strings.Contains(msg, "psi_users_email_key") {
 		return errors.New("el correo electrónico ya está en uso")
 	}
 
-	if strings.Contains(msg, "uni_psi_users_username") {
+	if strings.Contains(msg, "idx_psi_users_username") || strings.Contains(msg, "uni_psi_users_username") || strings.Contains(msg, "psi_users_username_key") {
 		return errors.New("el nombre de usuario ya existe")
 	}
 
-	// Si el error no coincide con ninguna restricción de negocio conocida,
-	// lo dejamos pasar hacia arriba en la pila de llamadas (Bubbling up)
-	// para que sea registrado por el logger centralizado del servidor HTTP.
+	// ── Errores de Longitud ─────────────────────────────────────────────────
+
+	if strings.Contains(msg, "value too long for type character varying(25)") {
+		return errors.New("el nombre de usuario generado excede el límite de 25 caracteres")
+	}
+	if strings.Contains(msg, "value too long") {
+		return errors.New("un campo es demasiado largo para la base de datos")
+	}
+
+	// ── Errores de formato ──────────────────────────────────────────────────
+
+	if strings.Contains(msg, "invalid input syntax for type uuid") {
+		return errors.New("error interno: ID de sistema inválido")
+	}
+
+	// Fallback: no exponer el error crudo al cliente (CWE-209)
 	return err
 }
