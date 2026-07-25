@@ -231,8 +231,7 @@ func (h *PsiHandler) GetMe(c *fiber.Ctx) error {
 		})
 	}
 
-	log.Printf("----- PSI Profile ----\n")
-	log.Printf("%v", psi)
+	log.Printf("PSI Profile loaded: id=%s, username=%s", psi.ID, psi.Username)
 
 	bio, err := h.service.GetPsiBioByID(c.UserContext(), psi.BioTextID)
 	if err != nil {

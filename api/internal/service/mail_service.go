@@ -15,6 +15,32 @@ import (
 	"github.com/wneessen/go-mail"
 )
 
+// maskEmail enmascara un email para logs: "j***@e****.com"
+func maskEmail(email string) string {
+	at := -1
+	for i, c := range email {
+		if c == '@' {
+			at = i
+			break
+		}
+	}
+	if at < 0 || at > len(email)-2 {
+		return "***"
+	}
+	domain := email[at+1:]
+	dot := -1
+	for i, c := range domain {
+		if c == '.' {
+			dot = i
+			break
+		}
+	}
+	if dot < 0 {
+		return string(email[0]) + "***@" + domain
+	}
+	return string(email[0]) + "***@" + string(domain[0]) + "***" + domain[dot:]
+}
+
 // IMailService define el contrato público para el envío de correos electrónicos.
 //
 // Principio de Inversión de Dependencias (SOLID):
@@ -101,9 +127,9 @@ func (s *MailService) startWorker() {
 	for job := range s.queue {
 		// 1. Intentar enviar el correo
 		if err := s.executeSend(job); err != nil {
-			log.Printf("❌ ERROR critico en Worker al enviar a %s: %v", job.To, err)
+			log.Printf("ERROR critico en Worker al enviar a %s: %v", maskEmail(job.To), err)
 		} else {
-			log.Printf("📧 Correo procesado por Worker: %s", job.To)
+			log.Printf("Correo procesado por Worker: %s", maskEmail(job.To))
 			sentInBatch++
 		}
 
@@ -148,7 +174,7 @@ func (s *MailService) SendEmail(to string, subject string, templateName string, 
 		Data:         data,
 	}
 
-	log.Printf("📥 Correo encolado para %s", to)
+	log.Printf("Correo encolado: %s, subject=%s", maskEmail(to), subject)
 	return nil
 }
 

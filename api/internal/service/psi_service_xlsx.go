@@ -275,7 +275,7 @@ func (s *PsiService) ImportFromXLSX(ctx context.Context, reader io.Reader, admin
 				"Password": defaultPassword, // Envío de credencial temporal en plano (Plain-text transitorio)
 			}
 			if err := s.mailService.SendEmail(psi.Email, "Bienvenido a la plataforma Colegio de Psicólogos", "welcome_psi", mailData); err != nil {
-				log.Printf("⚠️ Error al enviar correo de bienvenida a %s [%s]: %v", psi.Email, psi.Username, err)
+				log.Printf("WARN: Error sending welcome email for user_id=%s: %v", psi.ID, err)
 			}
 		}
 
