@@ -69,6 +69,10 @@ func (r *adminRepo) Create(ctx context.Context, user *domain.UserAdmin) error {
 
 // Update actualiza todos los campos de un administrador existente.
 // Utiliza Save(), lo cual incluye los campos de auditoría automáticos de GORM.
+//
+// Advertencia Técnica: Save() sobreescribe TODOS los campos incluyendo zero-values.
+// El caller DEBE obtener el modelo completo vía GetByID antes de modificar campos.
+// Nunca pasar un modelo parcialmente construido a este método.
 func (r *adminRepo) Update(ctx context.Context, user *domain.UserAdmin) error {
 	return r.db.WithContext(ctx).Save(user).Error
 }

@@ -694,6 +694,7 @@ func (r *psiRepo) GetPostGradeByID(ctx context.Context, id uuid.UUID) (*domain.P
 }
 
 // UpdatePostGrade actualiza los datos de un registro académico existente.
+// Advertencia: Save() sobreescribe todos los campos. El caller DEBE obtener el modelo completo vía GetByID primero.
 func (r *psiRepo) UpdatePostGrade(ctx context.Context, pg *domain.PsiUserPostGrade) error {
 	return r.db.WithContext(ctx).Save(pg).Error
 }
@@ -745,6 +746,7 @@ func (r *psiRepo) GetSocialNetworkByID(ctx context.Context, id uuid.UUID) (*doma
 }
 
 // UpdateSocialNetwork modifica el enlace o tipo de una red social existente.
+// Advertencia: Save() sobreescribe todos los campos. El caller DEBE obtener el modelo completo vía GetByID primero.
 func (r *psiRepo) UpdateSocialNetwork(ctx context.Context, sn *domain.PsiUserSocialNetwork) error {
 	return r.db.WithContext(ctx).Save(sn).Error
 }
