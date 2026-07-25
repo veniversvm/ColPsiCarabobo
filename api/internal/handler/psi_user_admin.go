@@ -7,7 +7,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/middleware"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/request_structs"
 	utils "github.com/veniversvm/ColPsiCarabobo/api/internal/utils"
 )
@@ -25,8 +25,10 @@ import (
 // @Failure      404  {object}  map[string]string "Psicólogo no encontrado"
 // @Router       /admin/psi/{id} [get]
 func (h *PsiHandler) GetPsiByIDAdmin(c *fiber.Ctx) error {
-	// 1. Extraer al administrador de la sesión
-	admin := c.Locals("admin").(*domain.UserAdmin)
+	admin, err := middleware.GetAuthenticatedAdmin(c)
+	if err != nil {
+		return err
+	}
 
 	// 2. Parsear el UUID solicitado
 	targetID, err := uuid.Parse(c.Params("id"))
@@ -77,7 +79,10 @@ func (h *PsiHandler) GetPsiByIDAdmin(c *fiber.Ctx) error {
 // @Failure      500 {object} map[string]string "error: Fallo interno al crear el registro"
 // @Router       /admin/psi/create [post]
 func (h *PsiHandler) CreatePsiByAdmin(c *fiber.Ctx) error {
-	admin := c.Locals("admin").(*domain.UserAdmin)
+	admin, err := middleware.GetAuthenticatedAdmin(c)
+	if err != nil {
+		return err
+	}
 	var req request_structs.CreatePsiAdminRequest
 
 	if err := c.BodyParser(&req); err != nil {
@@ -106,7 +111,10 @@ func (h *PsiHandler) CreatePsiByAdmin(c *fiber.Ctx) error {
 // @Failure      404 {object} map[string]string "error: Registro no encontrado"
 // @Router       /admin/psi/{id} [patch]
 func (h *PsiHandler) UpdatePsiByAdmin(c *fiber.Ctx) error {
-	admin := c.Locals("admin").(*domain.UserAdmin)
+	admin, err := middleware.GetAuthenticatedAdmin(c)
+	if err != nil {
+		return err
+	}
 	targetID, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "ID de psicólogo inválido"})
@@ -155,7 +163,10 @@ func (h *PsiHandler) UpdatePsiByAdmin(c *fiber.Ctx) error {
 // @Failure      404 {object} map[string]string "error: Registro no encontrado"
 // @Router       /admin/psi/{id} [delete]
 func (h *PsiHandler) DeletePsiByAdmin(c *fiber.Ctx) error {
-	admin := c.Locals("admin").(*domain.UserAdmin)
+	admin, err := middleware.GetAuthenticatedAdmin(c)
+	if err != nil {
+		return err
+	}
 	targetID, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "ID de psicólogo inválido"})
@@ -183,7 +194,10 @@ func (h *PsiHandler) DeletePsiByAdmin(c *fiber.Ctx) error {
 // @Failure      403        {object}  map[string]string
 // @Router       /admin/psi/list [get]
 func (h *PsiHandler) ListAllPsis(c *fiber.Ctx) error {
-	admin := c.Locals("admin").(*domain.UserAdmin)
+	admin, err := middleware.GetAuthenticatedAdmin(c)
+	if err != nil {
+		return err
+	}
 
 	// Construir el filtro desde la URL
 	page, _ := strconv.Atoi(c.Query("page", "1"))

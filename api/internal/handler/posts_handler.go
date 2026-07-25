@@ -7,6 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/middleware"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/request_structs"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/service"
 )
@@ -77,7 +78,10 @@ func (h *PostHandler) ListPosts(c *fiber.Ctx) error {
 // @Failure      500               {object}  map[string]string
 // @Router       /admin/posts [post]
 func (h *PostHandler) CreatePost(c *fiber.Ctx) error {
-	admin := c.Locals("admin").(*domain.UserAdmin)
+	admin, err := middleware.GetAuthenticatedAdmin(c)
+	if err != nil {
+		return err
+	}
 
 	var req request_structs.CreatePostRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -144,7 +148,10 @@ func (h *PostHandler) GetPost(c *fiber.Ctx) error {
 // @Failure      500               {object}  map[string]string
 // @Router       /admin/posts/{id} [patch]
 func (h *PostHandler) UpdatePost(c *fiber.Ctx) error {
-	admin := c.Locals("admin").(*domain.UserAdmin)
+	admin, err := middleware.GetAuthenticatedAdmin(c)
+	if err != nil {
+		return err
+	}
 
 	idParam := c.Params("id")
 	if idParam == "" {

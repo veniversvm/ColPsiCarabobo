@@ -8,6 +8,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/middleware"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/request_structs"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/service"
 )
@@ -80,7 +81,10 @@ func (h *SpecialtyHandler) GetSpecialtyByID(c *fiber.Ctx) error {
 // @Failure      403      {object}  map[string]string "error: permiso denegado"
 // @Router       /admin/specialties [post]
 func (h *SpecialtyHandler) CreateSpecialty(c *fiber.Ctx) error {
-	admin := c.Locals("admin").(*domain.UserAdmin)
+	admin, err := middleware.GetAuthenticatedAdmin(c)
+	if err != nil {
+		return err
+	}
 
 	var req request_structs.CreateSpecialtyRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -110,7 +114,10 @@ func (h *SpecialtyHandler) CreateSpecialty(c *fiber.Ctx) error {
 // @Failure      403      {object}  map[string]string "error: permiso denegado"
 // @Router       /admin/specialties/{id} [patch]
 func (h *SpecialtyHandler) UpdateSpecialty(c *fiber.Ctx) error {
-	admin := c.Locals("admin").(*domain.UserAdmin)
+	admin, err := middleware.GetAuthenticatedAdmin(c)
+	if err != nil {
+		return err
+	}
 
 	id, err := strconv.ParseUint(c.Params("id"), 10, 32)
 	if err != nil {
@@ -138,7 +145,10 @@ func (h *SpecialtyHandler) UpdateSpecialty(c *fiber.Ctx) error {
 // @Success      200  {object}  map[string]string "message: Especialidad desactivada"
 // @Router       /admin/specialties/{id} [delete]
 func (h *SpecialtyHandler) DeleteSpecialty(c *fiber.Ctx) error {
-	admin := c.Locals("admin").(*domain.UserAdmin)
+	admin, err := middleware.GetAuthenticatedAdmin(c)
+	if err != nil {
+		return err
+	}
 
 	id, err := strconv.ParseUint(c.Params("id"), 10, 32)
 	if err != nil {

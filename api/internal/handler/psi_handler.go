@@ -10,6 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/middleware"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/request_structs"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/service"
 )
@@ -86,7 +87,10 @@ func (h *PsiHandler) UploadCsv(c *fiber.Ctx) error {
 // @Failure      401 {object} map[string]string
 // @Router       /psi/me [patch]
 func (h *PsiHandler) UpdateOwnProfile(c *fiber.Ctx) error {
-	updater := c.Locals("psi_user").(*domain.PsiUserModel)
+	updater, err := middleware.GetAuthenticatedPsi(c)
+	if err != nil {
+		return err
+	}
 
 	var req request_structs.PsiUserUpdateRequestSelf
 	if err := c.BodyParser(&req); err != nil {
@@ -304,7 +308,10 @@ func (h *PsiHandler) LoginLibrary(c *fiber.Ctx) error {
 // @Success      200 {object} map[string]string
 // @Router       /psi/logout [post]
 func (h *PsiHandler) Logout(c *fiber.Ctx) error {
-	psi := c.Locals("psi_user").(*domain.PsiUserModel)
+	psi, err := middleware.GetAuthenticatedPsi(c)
+	if err != nil {
+		return err
+	}
 
 	if err := h.service.Logout(c.UserContext(), psi); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -336,7 +343,10 @@ func (h *PsiHandler) Logout(c *fiber.Ctx) error {
 // @Success      201 {object} map[string]string
 // @Router       /psi/me/postgrades [post]
 func (h *PsiHandler) AddPostGrade(c *fiber.Ctx) error {
-	psi := c.Locals("psi_user").(*domain.PsiUserModel)
+	psi, err := middleware.GetAuthenticatedPsi(c)
+	if err != nil {
+		return err
+	}
 
 	var req request_structs.CreatePostGradeRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -377,7 +387,10 @@ func (h *PsiHandler) UpdatePsi(c *fiber.Ctx) error { return nil }
 // @Failure      403 {object} map[string]string
 // @Router       /psi/me/postgrades/{id} [patch]
 func (h *PsiHandler) UpdatePostGrade(c *fiber.Ctx) error {
-	psi := c.Locals("psi_user").(*domain.PsiUserModel)
+	psi, err := middleware.GetAuthenticatedPsi(c)
+	if err != nil {
+		return err
+	}
 
 	pgID, err := uuid.Parse(c.Params("id"))
 	if err != nil {
@@ -429,7 +442,10 @@ func (h *PsiHandler) UpdatePostGrade(c *fiber.Ctx) error {
 // @Success      201 {object} map[string]string
 // @Router       /psi/me/social [post]
 func (h *PsiHandler) AddSocialNetwork(c *fiber.Ctx) error {
-	psi := c.Locals("psi_user").(*domain.PsiUserModel)
+	psi, err := middleware.GetAuthenticatedPsi(c)
+	if err != nil {
+		return err
+	}
 	var req request_structs.CreateSocialNetworkRequest
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "JSON inválido"})
@@ -451,7 +467,10 @@ func (h *PsiHandler) AddSocialNetwork(c *fiber.Ctx) error {
 // @Success      200 {object} map[string]string
 // @Router       /psi/me/social/{id} [patch]
 func (h *PsiHandler) UpdateSocialNetwork(c *fiber.Ctx) error {
-	psi := c.Locals("psi_user").(*domain.PsiUserModel)
+	psi, err := middleware.GetAuthenticatedPsi(c)
+	if err != nil {
+		return err
+	}
 	netID, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "ID inválido"})

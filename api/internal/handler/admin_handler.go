@@ -6,7 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/middleware"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/request_structs"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/service"
 )
@@ -74,14 +74,17 @@ func (h *AdminHandler) Login(c *fiber.Ctx) error {
 // @Failure      403      {object}  map[string]string      "error: violación de jerarquía"
 // @Router       /admin/create [post]
 func (h *AdminHandler) CreateAdmin(c *fiber.Ctx) error {
-	creator := c.Locals("admin").(*domain.UserAdmin)
+	creator, err := middleware.GetAuthenticatedAdmin(c)
+	if err != nil {
+		return err
+	}
 
 	var req request_structs.CreateAdminRequest
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Cuerpo de solicitud inválido"})
 	}
 
-	err := h.service.CreateAdmin(c.UserContext(), *creator, req)
+	err = h.service.CreateAdmin(c.UserContext(), *creator, req)
 	if err != nil {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -133,7 +136,10 @@ func (h *AdminHandler) GetAdmins(c *fiber.Ctx) error {
 // @Failure      403      {object}  map[string]string      "error: permiso denegado"
 // @Router       /admin/update [patch]
 func (h *AdminHandler) UpdateAdmin(c *fiber.Ctx) error {
-	updater := c.Locals("admin").(*domain.UserAdmin)
+	updater, err := middleware.GetAuthenticatedAdmin(c)
+	if err != nil {
+		return err
+	}
 
 	var req request_structs.UpdateAdminRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -159,7 +165,10 @@ func (h *AdminHandler) UpdateAdmin(c *fiber.Ctx) error {
 // @Failure      403  {object}  map[string]string      "error: permisos insuficientes"
 // @Router       /admin/delete/{id} [delete]
 func (h *AdminHandler) DeleteAdmin(c *fiber.Ctx) error {
-	updater := c.Locals("admin").(*domain.UserAdmin)
+	updater, err := middleware.GetAuthenticatedAdmin(c)
+	if err != nil {
+		return err
+	}
 
 	targetID, err := uuid.Parse(c.Params("id"))
 	if err != nil {
