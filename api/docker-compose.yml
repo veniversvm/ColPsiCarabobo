@@ -112,7 +112,22 @@ services:
     profiles:
       - dev
 
-  # 5. MinIO
+  # 5. MailHog (Solo Dev)
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: colpsi_mailhog
+    ports:
+      - "1025:1025"   # SMTP server
+      - "8025:8025"   # Web UI (http://localhost:8025)
+    environment:
+      - MH_API_BIND_ADDR=0.0.0.0:8025
+      - MH_SMTP_BIND_ADDR=0.0.0.0:1025
+    networks:
+      - colpsi_network
+    profiles:
+      - dev
+
+  # 6. MinIO
   s3:
     image: minio/minio
     container_name: colpsi_s3
@@ -129,7 +144,7 @@ services:
     networks:
       - colpsi_network
 
-  # 6. Helper MinIO
+  # 7. Helper MinIO
   createbuckets:
     image: minio/mc
     depends_on:

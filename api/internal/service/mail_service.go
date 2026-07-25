@@ -49,12 +49,17 @@ type MailService struct {
 
 // NewMailService inicializa el servicio SMTP y levanta el demonio de procesamiento.
 func NewMailService() (*MailService, error) {
+	tlsPolicy := mail.TLSMandatory
+	if config.Envs.Environment == "development" {
+		tlsPolicy = mail.TLSOpportunistic
+	}
+
 	c, err := mail.NewClient(config.Envs.SMTPHost,
 		mail.WithPort(config.Envs.SMTPPort),
 		mail.WithSMTPAuth(mail.SMTPAuthPlain),
 		mail.WithUsername(config.Envs.SMTPUser),
 		mail.WithPassword(config.Envs.SMTPPass),
-		mail.WithTLSPolicy(mail.TLSMandatory),
+		mail.WithTLSPolicy(tlsPolicy),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("fallo al crear cliente de correo: %w", err)
@@ -193,11 +198,9 @@ func (s *MailService) executeSend(job MailJob) error {
 	// 4. Envío físico al servidor SMTP
 	// DialAndSend se encarga automáticamente de abrir el Socket TCP, realizar el
 	// Handshake TLS, autenticar, enviar el payload y cerrar la conexión educadamente (QUIT).
-	//
-	// (Nota: Actualmente comentado por el autor, presumiblemente para entornos de desarrollo/pruebas).
-	// if err := s.client.DialAndSend(m); err != nil {
-	// 	return fmt.Errorf("fallo la conexión SMTP o el envío: %w", err)
-	// }
+	if err := s.client.DialAndSend(m); err != nil {
+		return fmt.Errorf("fallo el envío de email: %w", err)
+	}
 
 	return nil
 }
