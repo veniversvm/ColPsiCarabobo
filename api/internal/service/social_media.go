@@ -87,7 +87,7 @@ func (s *PsiService) UpdateSocialNetwork(ctx context.Context, psi *domain.PsiUse
 	// Bloquea el intento si un psicólogo inyecta en la URL el UUID de una red social
 	// perteneciente a otro colega (ID Spoofing).
 	if network.PsiUserID != psi.ID {
-		return errors.New("no tienes permiso para editar esta red social")
+		return domain.ErrSocialPermDenied
 	}
 
 	// Actualización de auditoría (Rastro Forense)
@@ -124,7 +124,7 @@ func (s *PsiService) DeleteSocialNetwork(ctx context.Context, executorRole strin
 	if executorRole == "psi" {
 		// Modo Autogestión: El psicólogo solo puede borrar sus propios registros (IDOR Prevention).
 		if network.PsiUserID != executorID {
-			return errors.New("no puedes borrar una red social que no te pertenece")
+			return domain.ErrSocialOwnDenied
 		}
 	} else if executorRole == "admin" {
 		// Modo Moderación: El administrador tiene autoridad global sobre el registro.

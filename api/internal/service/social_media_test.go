@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/google/uuid"
@@ -112,7 +113,7 @@ func TestPsiService_UpdateSocialNetwork_Ownership(t *testing.T) {
 		err := svc.UpdateSocialNetwork(ctx, psiA, netID, req)
 
 		// Aserción de Seguridad: El ataque debe ser interceptado en la capa lógica
-		if err == nil || err.Error() != "no tienes permiso para editar esta red social" {
+		if err == nil || !errors.Is(err, domain.ErrSocialPermDenied) {
 			t.Errorf("Se esperaba error de permiso, se obtuvo: %v", err)
 		}
 	})
@@ -147,7 +148,7 @@ func TestPsiService_DeleteSocialNetwork_Roles(t *testing.T) {
 	// Escenario 2: Intento de Sabotaje bloqueado (IDOR)
 	t.Run("Psi: No puede borrar red ajena", func(t *testing.T) {
 		err := svc.DeleteSocialNetwork(ctx, "psi", otherID, netID)
-		if err == nil || err.Error() != "no puedes borrar una red social que no te pertenece" {
+		if err == nil || !errors.Is(err, domain.ErrSocialOwnDenied) {
 			t.Error("Se debió denegar el borrado ajeno")
 		}
 	})

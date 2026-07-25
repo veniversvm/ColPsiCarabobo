@@ -2,9 +2,9 @@
 package handler
 
 import (
+	"errors"
 	"log"
 	"strconv"
-	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
@@ -92,7 +92,7 @@ func (h *SpecialtyHandler) CreateSpecialty(c *fiber.Ctx) error {
 	}
 
 	if err := h.service.Create(c.UserContext(), admin, req); err != nil {
-		if strings.Contains(err.Error(), "permiso") || strings.Contains(err.Error(), "rango") {
+		if errors.Is(err, domain.ErrInsufficientPerms) {
 			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": err.Error()})
 		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})

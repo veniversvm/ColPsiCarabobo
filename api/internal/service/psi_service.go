@@ -313,7 +313,7 @@ func (s *PsiService) UpdateProfileSelf(
 	// Defensa contra Session Hijacking: Aunque el usuario tenga el JWT válido,
 	// se exige su clave maestra para ejecutar mutaciones de perfil.
 	if err := bcrypt.CompareHashAndPassword([]byte(psi.Password), []byte(req.Password)); err != nil {
-		return nil, errors.New("contraseña actual incorrecta")
+		return nil, domain.ErrPasswordIncorrect
 	}
 
 	// 2. Cambio de contraseña (si se solicitó)
@@ -784,7 +784,7 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 	// 1. Obtener datos crudos de la DB
 	psi, err := s.repo.GetByFPV(ctx, id)
 	if err != nil {
-		return nil, uuid.Nil, errors.New("psicólogo no encontrado")
+		return nil, uuid.Nil, domain.ErrPsiNotFound
 	}
 
 	// 2. Verificar si está activo
@@ -1272,7 +1272,7 @@ func (s *PsiService) UpdatePostGrade(ctx context.Context, psi *domain.PsiUserMod
 	// 2. SEGURIDAD: Verificar Propiedad (Ownership Check)
 	// Impedir que el Psicólogo A edite el título del Psicólogo B
 	if pg.PsiUserID != psi.ID {
-		return errors.New("no tienes permiso para editar este registro")
+		return domain.ErrPermissionDenied
 	}
 
 	// 3. Auditoría

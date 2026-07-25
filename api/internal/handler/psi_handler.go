@@ -3,6 +3,7 @@
 package handler
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"mime/multipart"
@@ -117,7 +118,7 @@ func (h *PsiHandler) UpdateOwnProfile(c *fiber.Ctx) error {
 		titleImgThree,
 	)
 	if err != nil {
-		if err.Error() == "contraseña actual incorrecta" {
+		if errors.Is(err, domain.ErrPasswordIncorrect) {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
 		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
@@ -423,7 +424,7 @@ func (h *PsiHandler) UpdatePostGrade(c *fiber.Ctx) error {
 	}
 
 	if err := h.service.UpdatePostGrade(c.UserContext(), psi, pgID, req, fileMap); err != nil {
-		if err.Error() == "no tienes permiso para editar este registro" {
+		if errors.Is(err, domain.ErrPermissionDenied) {
 			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": err.Error()})
 		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})

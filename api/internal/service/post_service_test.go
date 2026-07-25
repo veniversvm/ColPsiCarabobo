@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"io"
 	"testing"
 
@@ -181,7 +182,7 @@ func TestPostService_Extensive(t *testing.T) {
 		err := svc.CreatePost(ctx, limitedAdmin, req, nil)
 
 		// Aserción de Bloqueo Jerárquico
-		if err == nil || err.Error() != "no tienes permiso para publicar" {
+		if err == nil || !errors.Is(err, domain.ErrPostPermDenied) {
 			t.Error("Se debió denegar la creación al admin sin permisos")
 		}
 	})

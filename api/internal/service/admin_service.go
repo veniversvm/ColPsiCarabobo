@@ -303,7 +303,7 @@ func (s *AdminService) CreateAdmin(
 	err = s.repo.Create(ctx, newAdmin)
 	if err != nil {
 		if strings.Contains(err.Error(), "idx_user_admins_unique_sudo") {
-			return errors.New("ya existe un usuario SUDO")
+			return domain.ErrSudoExists
 		}
 		return err
 	}

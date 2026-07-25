@@ -47,7 +47,7 @@ func NewSpecialtyService(repo domain.SpecialtyRepository) *SpecialtyService {
 func (s *SpecialtyService) Create(ctx context.Context, admin *domain.UserAdmin, req request_structs.CreateSpecialtyRequest) error {
 	// SEGURIDAD (Gatekeeping): Validación de permisos granulares (RBAC).
 	if !admin.CanCreateTags && !admin.Sudo {
-		return errors.New("no tienes permiso para crear especialidades")
+		return domain.ErrInsufficientPerms
 	}
 
 	newSpec := &domain.PsiSpecialtyModel{
@@ -77,7 +77,7 @@ func (s *SpecialtyService) Create(ctx context.Context, admin *domain.UserAdmin, 
 func (s *SpecialtyService) Update(ctx context.Context, admin *domain.UserAdmin, id uint32, req request_structs.UpdateSpecialtyRequest) error {
 	// SEGURIDAD: Control de acceso para modificación
 	if !admin.CanEditTags && !admin.Sudo {
-		return errors.New("no tienes permiso para editar especialidades")
+		return domain.ErrInsufficientPerms
 	}
 
 	// Lectura Previa (Read-before-Write): Necesaria para no perder datos al hacer Save.
@@ -114,7 +114,7 @@ func (s *SpecialtyService) Update(ctx context.Context, admin *domain.UserAdmin, 
 // quedarían huérfanos o corrompidos. El Soft-Delete simplemente la "apaga" de las búsquedas futuras.
 func (s *SpecialtyService) Delete(ctx context.Context, admin *domain.UserAdmin, id uint32) error {
 	if !admin.CanDeleteTags && !admin.Sudo {
-		return errors.New("no tienes permiso para eliminar especialidades")
+		return domain.ErrInsufficientPerms
 	}
 
 	return s.repo.Delete(ctx, id)

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/google/uuid"
@@ -65,29 +66,26 @@ func TestSpecialtyService_Create(t *testing.T) {
 		req     request_structs.CreateSpecialtyRequest
 		mockErr error
 		wantErr bool
-		errMsg  string
+		errIs   error
 	}{
 		{
-			// Escenario 1: Camino Feliz (Happy Path). El rol tiene el permiso exacto.
 			name:    "Éxito: Admin con permiso CanCreateTags",
 			admin:   &domain.UserAdmin{ID: adminID, Username: "admin1", CanCreateTags: true},
 			req:     request_structs.CreateSpecialtyRequest{Name: "Psicología Clínica"},
 			wantErr: false,
 		},
 		{
-			// Escenario 2: Bypass Jerárquico. El Superusuario hereda todos los accesos.
 			name:    "Éxito: Superusuario (Sudo) sin permiso explícito",
 			admin:   &domain.UserAdmin{ID: adminID, Username: "sudo_user", Sudo: true, CanCreateTags: false},
 			req:     request_structs.CreateSpecialtyRequest{Name: "Neuropsicología"},
 			wantErr: false,
 		},
 		{
-			// Escenario 3: Bloqueo de Seguridad (Principle of Least Privilege).
 			name:    "Error: Admin sin permisos",
 			admin:   &domain.UserAdmin{ID: adminID, Username: "pobre_admin", CanCreateTags: false, Sudo: false},
 			req:     request_structs.CreateSpecialtyRequest{Name: "Fake"},
 			wantErr: true,
-			errMsg:  "no tienes permiso para crear especialidades",
+			errIs:   domain.ErrInsufficientPerms,
 		},
 	}
 
@@ -100,13 +98,11 @@ func TestSpecialtyService_Create(t *testing.T) {
 
 			err := svc.Create(ctx, tt.admin, tt.req)
 
-			// Aserción de Bloqueo
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Create() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			// Aserción de Exactitud de Error (Previene falsos positivos en test)
-			if err != nil && tt.errMsg != "" && err.Error() != tt.errMsg {
-				t.Errorf("Create() error message = %v, want %v", err.Error(), tt.errMsg)
+			if tt.errIs != nil && !errors.Is(err, tt.errIs) {
+				t.Errorf("Create() error = %v, want errors.Is %v", err, tt.errIs)
 			}
 		})
 	}

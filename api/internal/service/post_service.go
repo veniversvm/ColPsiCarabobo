@@ -53,7 +53,7 @@ func NewPostService(repo domain.PostRepository, s3 *s3.S3Client) *PostService {
 func (s *PostService) CreatePost(ctx context.Context, admin *domain.UserAdmin, req request_structs.CreatePostRequest, file *multipart.FileHeader) error {
 	// 1. Gatekeeping de Autorización
 	if !admin.CanPublish && !admin.Sudo {
-		return errors.New("no tienes permiso para publicar")
+		return domain.ErrPostPermDenied
 	}
 
 	// 2. Validación de Estado (Máquina de Estados)

@@ -2,11 +2,13 @@
 package handler
 
 import (
+	"errors"
 	"log"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/middleware"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/request_structs"
 	utils "github.com/veniversvm/ColPsiCarabobo/api/internal/utils"
@@ -39,8 +41,7 @@ func (h *PsiHandler) GetPsiByIDAdmin(c *fiber.Ctx) error {
 	// 3. Consultar el servicio
 	profile, err := h.service.GetPsiByIDAdmin(c.UserContext(), admin, targetID)
 	if err != nil {
-		// Diferenciar entre "No encontrado" y "Falta de permisos"
-		if err.Error() == "psicólogo no encontrado" {
+		if errors.Is(err, domain.ErrPsiNotFound) {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": err.Error()})
 		}
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": err.Error()})

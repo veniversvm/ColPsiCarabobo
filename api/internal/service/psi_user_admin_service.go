@@ -38,12 +38,12 @@ func (s *PsiService) GetPsiByIDAdmin(ctx context.Context, admin *domain.UserAdmi
 	// Como es una operación de solo lectura para el panel interno,
 	// verificamos que sea Sudo o que al menos tenga un permiso administrativo básico.
 	if !admin.Sudo && !admin.CanUpdatePsi && !admin.CanCreatePsi {
-		return nil, errors.New("permisos insuficientes para ver expedientes detallados")
+		return nil, domain.ErrInsufficientPerms
 	}
 
 	psi, err := s.repo.GetByID(ctx, targetID)
 	if err != nil {
-		return nil, errors.New("psicólogo no encontrado")
+		return nil, domain.ErrPsiNotFound
 	}
 
 	// Recuperación del historial financiero asociado al expediente
