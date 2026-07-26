@@ -559,73 +559,98 @@ type mockAnalyticsRepo struct {
 
 ---
 
-## Fase 6: Tests de Integración End-to-End
+### ✅ Fase 6 COMPLETADA — Tests de Integración End-to-End (27 tests, 5 archivos)
 
-**Objetivo:** Flujo completo request → handler → service → repo → DB.
+**Resultado:** 27/27 tests pasan. Solo 2 pre-existing failures en service pkg (TestAdminService_All, TestSpecialtyService_Update).
 
-### 6.1 — `internal/integration/admin_flow_test.go` (NUEVO)
+### 6.0 — `internal/integration/setup_test.go` (NUEVO) — Infraestructura compartida
 
-```
-Flujo 1: Login → Crear Admin → Listar → Actualizar → Eliminar
-Flujo 2: Login → Crear Admin → Intentar borrar Sudo → 403
-Flujo 3: Login → Crear Admin sin permisos → Intentar crear psi → 403
-```
+Componentes:
+- `TestMain`: conexión a DB, AutoMigrate completo, seed de Sudo admin
+- `truncateAll()`: limpia todas las tablas con TRUNCATE CASCADE
+- `seedSudo()`, `seedAdmin()`, `seedPsi()`, `seedSpecialty()`, `seedPost()`: helpers con bcrypt
+- `buildTestApp()`: Fiber app con todos los routers reales (repos → services → handlers → middleware)
+- `generateToken()`: JWT firmado con la Key del usuario en DB
+- `makeRequest()`: wrapper para `app.Test()` con métodos HTTP
+- `hashPassword()`, `authHeader()`, `decodeBody()`, `ptrString()`, `ptrBool()`: helpers comunes
 
-### 6.2 — `internal/integration/psi_flow_test.go` (NUEVO)
+### 6.1 — `internal/integration/admin_flow_test.go` (NUEVO) — ~8 tests
 
-```
-Flujo 1: Admin crea psi → Admin lista → Admin edita → Admin borra
-Flujo 2: Admin crea psi → Psi login → Psi ve perfil → Psi actualiza → Psi logout
-Flujo 3: Admin crea psi → Psi login → Psi agrega postgrado → Psi agrega red social
-Flujo 4: Admin crea psi → Psi login → Psi cambia password → Token viejo invalidado
-```
+| Test | Flujo |
+|------|-------|
+| `TestAdminFlow_FullLifecycle` | Login → Crear Admin → Listar → Verificar count → Actualizar → Eliminar → Verificar 404 |
+| `TestAdminFlow_CannotDeleteSudo` | Login sudo → Intentar borrar sudo → 403 |
+| `TestAdminFlow_CannotDeleteSelf` | Login admin → Intentar borrar su propia cuenta → 403 |
+| `TestAdminFlow_HierarchyEnforced` | Admin sin CanCreateAdmin → Intentar crear admin → 403 |
+| `TestAdminFlow_InvalidCredentials` | Login con password incorrecta → 401 |
+| `TestAdminFlow_InvalidToken` | Request con token basura → 404 (obscurity) |
+| `TestAdminFlow_DashboardStats` | Login → GET /dashboard/stats → 200 |
+| `TestAdminFlow_ListPagination` | Login → Crear 3 admins → List con page=1&limit=2 → Verificar paginación |
 
-### 6.3 — `internal/integration/post_flow_test.go` (NUEVO)
+### 6.2 — `internal/integration/psi_flow_test.go` (NUEVO) — ~6 tests
 
-```
-Flujo 1: Admin crea post → Público ve post → Admin actualiza → Admin archiva
-Flujo 2: Admin crea post scheduled → PublishScheduled lo publica
-Flujo 3: Público intenta ver draft → No lo ve
-```
+| Test | Flujo |
+|------|-------|
+| `TestPsiFlow_AdminCRUD` | Admin crea psi → Admin lista → Admin edita → Admin borra |
+| `TestPsiFlow_SelfManagement` | Admin crea psi → Psi login → GetMe → UpdateOwnProfile → Logout |
+| `TestPsiFlow_SocialNetworks` | Admin crea psi → Psi login → AddSocialNetwork → Update → Delete |
+| `TestPsiFlow_PostGrades` | Admin crea psi → Psi login → AddPostGrade |
+| `TestPsiFlow_TokenInvalidation` | Admin crea psi → Psi login → Cambia password → Token viejo → 401 |
+| `TestPsiFlow_LoginInvalidCredentials` | Login con password incorrecta → 401 |
 
-### 6.4 — `internal/integration/directory_flow_test.go` (NUEVO)
+### 6.3 — `internal/integration/post_flow_test.go` (NUEVO) — ~5 tests
 
-```
-Flujo 1: Admin crea psi público → Directorio lo muestra → Búsqueda funciona
-Flujo 2: Admin crea psi oculto → Directorio no lo muestra
-Flujo 3: Admin crea psi → Cambia visibilidad → Verificar filtrado
-Flujo 4: Sitemap data incluye solo activos + solventes
-```
+| Test | Flujo |
+|------|-------|
+| `TestPostFlow_CreateAndView` | Admin crea post → Público ve post → 200 |
+| `TestPostFlow_UpdateAndArchive` | Admin crea → Admin update status=archived → Verificar |
+| `TestPostFlow_ScheduledPublish` | Admin crea post scheduled → PublishScheduled → Verificar publicado |
+| `TestPostFlow_DraftNotVisible` | Admin crea draft → Público lista → No lo ve |
+| `TestPostFlow_ListWithAuth` | Admin login → Lista posts → Ve drafts también |
 
-### 6.5 — `internal/integration/specialty_flow_test.go` (NUEVO)
+### 6.4 — `internal/integration/directory_flow_test.go` (NUEVO) — ~4 tests
 
-```
-Flujo 1: Admin crea especialidad → Asigna a psi → Psi aparece con especialidad
-Flujo 2: Admin desactiva especialidad → Directorio público no la muestra
-Flujo 3: Admin crea especialidad duplicada → Unique violation
-```
+| Test | Flujo |
+|------|-------|
+| `TestDirectoryFlow_PublicSearch` | Admin crea psi solvente → GET /psi/directory → Aparece |
+| `TestDirectoryFlow_InactiveHidden` | Admin crea psi → Lo desactiva → GET /directory → No aparece |
+| `TestDirectoryFlow_SitemapData` | Admin crea psi activo+solvente → GET /sitemap-data → Aparece |
+| `TestDirectoryFlow_SearchByName` | Admin crea psi "Maria" → GET /directory?q=Maria → Resultado |
+
+### 6.5 — `internal/integration/specialty_flow_test.go` (NUEVO) — ~4 tests
+
+| Test | Flujo |
+|------|-------|
+| `TestSpecialtyFlow_CreateAndList` | Admin crea specialty → GET público → Aparece |
+| `TestSpecialtyFlow_Deactivate` | Admin crea → Admin desactiva → GET público → No aparece |
+| `TestSpecialtyFlow_DuplicateName` | Admin crea "Clinica" → Crea "Clinica" de nuevo → 409/conflict |
+| `TestSpecialtyFlow_CountSpecialties` | Admin crea 2 specialties → GET /count → 2 |
 
 ---
 
-## Fase 7: Tests de Seguridad
+### ✅ Fase 7 COMPLETADA — Tests de Seguridad (43 tests E2E)
 
-**Objetivo:** Verificar que los mecanismos de seguridad funcionan correctamente.
+**Resultado:** 43/43 tests de seguridad pasan. Archivo: `internal/integration/security_flow_test.go`
 
-### 7.1 — `internal/security/auth_security_test.go` (NUEVO)
-
-| Test | Escenario |
-|------|-----------|
-| `TestJWT_none_algorithm_attack` | Token con alg:"none" → rechazado |
-| `TestJWT_firmado_con_otra_key` | Token firmado con key de otro usuario → rechazado |
-| `TestJWT_token_expirado` | Token exp → 401 |
-| `TestKeyRotation_logout_invalida_tokens` | Login → Logout → Token viejo → rechazado |
-| `TestKeyRotation_doble_login` | Login 1 → Login 2 → Token 1 → rechazado |
-| `TestRBAC/no_puede_dar_permisos_no_poseidos` | Admin sin CanDeleteAdmin → intentar crear admin con CanDeleteAdmin → 403 |
-| `TestRBAC/sudo_irrevocable` | Intentar borrar Sudo → 403 |
-| `TestRBAC/hierarchy_escalation` | Admin A intenta dar permiso que Admin B no tiene → 403 |
-| `TestAdmin404/obscurity` | Token inválido en admin endpoint → 404 (no 401) |
-| `TestPsiAuth/token_invalido` | Token inválido en psi endpoint → 401 |
-| `TestPassword/weak_rechazado` | Password débil → error de validación |
+| Categoría | Tests | Qué valida |
+|-----------|-------|-----------|
+| 7.1 JWT Token Attacks | 4 | `alg:none`, wrong key, expired, malformed header |
+| 7.2 Key Rotation | 3 | Logout invalida, double login invalida, password change invalida |
+| 7.3 RBAC | 4 | No escalation, sudo irrevocable, sudo不可edit, no create admin without perm |
+| 7.4 Password Policy | 3 | Weak, no special char, contains space |
+| 7.5 Info Leakage | 2 | Credenciales en JSON, admin404 obscurity |
+| 7.6 Email Validation | 2 | Invalid format, empty |
+| 7.7 SQL Injection | 3 | Login injection, search injection (table intact), XSS in specialty |
+| 7.8 HTTP Headers | 1 | Helmet `X-Content-Type-Options` present |
+| 7.9 Method/Content-Type | 2 | Wrong content-type, wrong HTTP method (405) |
+| 7.10 Empty/Malformed | 2 | Empty body, null fields |
+| 7.11 Idempotency | 2 | Replay same key (cached), different keys (2 records) |
+| 7.12 CSRF & Auth Headers | 3 | No auth header, missing Bearer prefix, empty Bearer |
+| 7.13 Token Wrong Location | 2 | Query params, wrong header name |
+| 7.14 Privilege Escalation Adv | 3 | Self-elevation blocked, non-sudo edit sudo blocked, sudo field ignored |
+| 7.15 Session Security | 3 | Dual login independent, password change kills token, logout clears key |
+| 7.16 Encoding Attacks | 3 | Unicode credentials, emoji search, 10K char string |
+| 7.17 Data Isolation | 1 | Audit trail (CreateBy/CreateById) set correctly |
 
 ---
 
