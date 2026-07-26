@@ -28,15 +28,31 @@
 - `internal/service/psi_service_auth_test.go` — Expandido: 4 functions (7 subtests) key rotation, UpdateKey error, email notification, audit trail
 - **Total suite:** 91 PASS, 2 FAIL (pre-existing en admin_service y specialty_service)
 
+### ✅ Fase 3 COMPLETADA — Middleware Tests (52 subtests, 4 archivos nuevos)
+- `internal/middleware/helpers_test.go` — 7 tests (GetAuthenticatedAdmin/Psi)
+- `internal/middleware/idempotency_test.go` — 11 tests (skip, cache hit/miss, TTL, concurrency)
+- `internal/middleware/analytics_test.go` — 24 tests (page views, debouncing, cookies, sessions)
+- `internal/middleware/rate_limiter_test.go` — 7 tests (skip paths, auth rate limiter, concurrent safety)
+
+### ✅ Fase 4 COMPLETADA — Handler Tests (57 subtests, 6 archivos nuevos)
+- `internal/handler/test_helpers_test.go` — shared mocks (5 repos + IMailService), JWT generator, fixtures, Fiber app builders
+- `internal/handler/admin_handler_test.go` — 16 tests (Login, Logout, CRUD, permissions)
+- `internal/handler/specialty_handler_test.go` — 10 tests (public/admin access, CRUD, count)
+- `internal/handler/analytics_handler_test.go` — 2 tests (DashboardStats, no_auth)
+- `internal/handler/posts_handler_test.go` — 11 tests (ListPosts with 3 roles, CRUD, sitemap)
+- `internal/handler/psi_handler_test.go` — 18 tests (Login, Profile, SocialNetworks, sitemap)
+- **Production bugfixes:** sentinel error pattern in helpers.go, 20 call sites updated, DeleteSocialNetwork nil-check
+- **Total suite:** 57 PASS handler + 52 PASS middleware = 109 new tests, zero regressions
+
 ### Lo que falta (gaps críticos)
-1. **0 tests de handlers/controllers** — No hay ningún test HTTP end-to-end
+1. ~~**0 tests de handlers/controllers**~~ — ✅ Fase 4 completa (57 tests)
 2. **0 tests de integración completos** — No hay tests que ejerciten la ruta completa request→handler→service→repo→DB
 3. **Repo sin tests:** analytics, solvency, social networks (standalone), observations, deontologia
-4. **Service sin tests:** error_mapper, rate_limiter, idempotency middleware, analytics middleware, helpers middleware, directory filter sanitizer
+4. ~~**Service sin tests:**~~ — Partialmente cubierto en Fase 2
 5. **Sin Makefile** de tests — No hay forma estandarizada de ejecutar tests
 6. **Sin CI/CD** — No hay pipeline automatizado
 7. **Sin test fixtures** — Datos de test duplicados inline en cada archivo
-8. **Sin test helpers compartidos** — Cada archivo de test repo duplica el setup de DB
+8. ~~**Sin test helpers compartidos**~~ — Creados en Fase 4 (test_helpers_test.go)
 
 ---
 
@@ -406,6 +422,28 @@ type mockAnalyticsRepo struct {
 ## Fase 4: Tests de Handlers (HTTP end-to-end con mocks)
 
 **Objetivo:** Tests de capa HTTP con `fiber.App.Test()`, mocks en services.
+
+### ✅ Fase 4 COMPLETADA — Handler Tests (57 subtests, 6 archivos nuevos)
+
+**Commit:** `b860481`
+
+| Archivo | Tests | Líneas | Estado |
+|---------|-------|--------|--------|
+| `test_helpers_test.go` | — | ~521 | Compartido: 5 mocks, JWT, fixtures, app builders |
+| `admin_handler_test.go` | 16 | ~438 | PASS |
+| `specialty_handler_test.go` | 10 | ~271 | PASS |
+| `analytics_handler_test.go` | 2 | ~66 | PASS |
+| `posts_handler_test.go` | 11 | ~279 | PASS |
+| `psi_handler_test.go` | 18 | ~359 | PASS |
+| **Total** | **57** | **~1,934** | **ALL PASS** |
+
+### Bugs de producción descubiertos y corregidos en Fase 4
+
+1. **`middleware/helpers.go`** — `GetAuthenticatedAdmin`/`GetAuthenticatedPsi` escribían HTTP 401 como side-effect pero retornaban `(nil, nil)`, envenenando el contexto de respuesta en handlers con auth dual (DeleteSocialNetwork). Fix: `ErrNotAuthenticated` sentinel error.
+2. **20 call sites** en 5 handler files actualizados para retornar 401 explícito.
+3. **`psi_handler.go:DeleteSocialNetwork`** — nil-check en admin/psi antes de acceder `.ID` para prevenir panic.
+
+### Implementación original (planes)
 
 ### 4.1 — `internal/handler/admin_handler_test.go` (NUEVO)
 
