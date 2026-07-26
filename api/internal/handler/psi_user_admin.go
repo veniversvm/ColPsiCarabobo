@@ -53,7 +53,7 @@ func (h *PsiHandler) GetPsiByIDAdmin(c *fiber.Ctx) error {
 		log.Printf("%v\n", err)
 	}
 
-	solvencies, err := h.service.GetPsiSOlvency(c.UserContext(), targetID)
+	solvencies, err := h.service.GetPsiSolvency(c.UserContext(), targetID)
 	if err != nil {
 		log.Printf("---- error al recuperar SOLVENCIES ----\n")
 		log.Printf("%v\n", err)

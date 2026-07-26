@@ -264,7 +264,7 @@ func (s *AdminService) CreateAdmin(
 	// Este paso normaliza caracteres antes de insertar (ej: elimina espacios en blanco inyectados)
 	validate_email, err := utils.ParseAndValidateEmail(req.Username)
 	if err != nil {
-		return errors.New("el email es invalido") // Nota: Posible typo en original, lo mantenemos intacto
+		return errors.New("email inválido")
 	}
 
 	// 3. Ensamblaje del Dominio y Trazabilidad (Audit Trail)

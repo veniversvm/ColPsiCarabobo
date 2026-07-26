@@ -160,7 +160,7 @@ func TestPsiService_GetSolvencies(t *testing.T) {
 			return []domain.PsiUserSolvency{{PsiUserModelID: psiID}}, nil
 		}
 
-		sol, err := svc.GetPsiSOlvency(context.Background(), psiID)
+		sol, err := svc.GetPsiSolvency(context.Background(), psiID)
 		if err != nil {
 			t.Fatalf("Error: %v", err)
 		}

@@ -146,6 +146,8 @@ type PsiUserModel struct {
 	PostGrades     []PsiUserPostGrade     `gorm:"foreignKey:PsiUserID" json:"post_grades"`
 	SocialNetworks []PsiUserSocialNetwork `gorm:"foreignKey:PsiUserID" json:"social_networks"`
 	Solvencies     []PsiUserSolvency      `gorm:"foreignKey:PsiUserModelID" json:"solvencies"`
+	Observations   []PsiObservations      `gorm:"foreignKey:PsiUserID" json:"-"`
+	Deontologia    []PsiODeontologia      `gorm:"foreignKey:PsiUserID" json:"-"`
 }
 
 func (PsiUserModel) TableName() string { return "psi_users" }

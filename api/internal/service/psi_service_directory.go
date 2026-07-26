@@ -250,7 +250,7 @@ func (s *PsiService) GetPsiBioByID(ctx context.Context, id uuid.UUID) (string, e
 	return bio, nil
 }
 
-func (s *PsiService) GetPsiSOlvency(ctx context.Context, id uuid.UUID) ([]domain.PsiUserSolvency, error) {
+func (s *PsiService) GetPsiSolvency(ctx context.Context, id uuid.UUID) ([]domain.PsiUserSolvency, error) {
 	bio, err := s.repo.GetSolvencies(ctx, id)
 	if err != nil {
 		return []domain.PsiUserSolvency{}, err

@@ -497,7 +497,7 @@ tx.Model(psi).Where("id = ?", psi.ID).
 | `PsiUserColData` | `psi_user_col_data` | Datos colegiales (1:1 con psi) |
 | `PsiUserPostGrade` | `psi_user_post_grades` | Títulos de postgrado (1:N) |
 | `PsiUserSocialNetwork` | `psi_user_social_networks` | Redes sociales (1:N) |
-| `PsiUSerSolvency` | `psi_user_solvencies` | Historial de solvencia (1:N) |
+| `PsiUserSolvency` | `psi_user_solvencies` | Historial de solvencia (1:N) |
 | `TextModel` | `text_models` | Contenido extenso (biografías, posts) |
 | `Post` | `posts` | Publicaciones CMS |
 | `UserAdmin` | `user_admins` | Administradores del sistema |

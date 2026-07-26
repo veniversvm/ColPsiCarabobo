@@ -101,7 +101,7 @@ La entidad central del sistema. Agrupa identidad legal, contacto, ubicación geo
 PsiUserModel ──1:1──→ PsiUserColData
 PsiUserModel ──1:N──→ PsiUserSocialNetwork
 PsiUserModel ──1:N──→ PsiUserPostGrade
-PsiUserModel ──1:N──→ PsiUSerSolvency
+PsiUserModel ──1:N──→ PsiUserSolvency
 PsiUserModel ──1:N──→ PsiObservations
 PsiUserModel ──1:N──→ PsiODeontologia
 PsiUserModel ──N:1──→ PsiSpecialtyModel (vía PrimaryWorkArea/SecondaryWorkArea)
@@ -163,7 +163,7 @@ Enlaces digitales del psicólogo. Relación **1:N** con `PsiUserModel`.
 
 ---
 
-### PsiUSerSolvency — Registro de Solvencias
+### PsiUserSolvency — Registro de Solvencias
 
 Historial de pagos de cuotas del psicólogo. Relación **1:N** con `PsiUserModel`.
 
@@ -328,7 +328,7 @@ type PsiUserRepository interface {
 
     // ── Solvencias ──
     CreateSolvency(ctx, pg) error
-    GetSolvencies(ctx, id) ([]PsiUSerSolvency, error)
+    GetSolvencies(ctx, id) ([]PsiUserSolvency, error)
     CreateOrUpdateSolvencies(ctx, solvencies) error
 
     // ── Redes Sociales ──
@@ -458,7 +458,7 @@ erDiagram
         bool IsActive
     }
 
-    PsiUSerSolvency {
+    PsiUserSolvency {
         uuid ID PK
         uuid PsiUserModelID FK
         date Date
@@ -553,7 +553,7 @@ erDiagram
 
     PsiUserModel ||--|| PsiUserColData : "1:1 col_data"
     PsiUserModel ||--o{ PsiUserSocialNetwork : "1:N social_networks"
-    PsiUserModel ||--o{ PsiUSerSolvency : "1:N solvencies"
+    PsiUserModel ||--o{ PsiUserSolvency : "1:N solvencies"
     PsiUserModel ||--o{ PsiUserPostGrade : "1:N post_grades"
     PsiUserModel ||--o{ PsiObservations : "1:N observations"
     PsiUserModel ||--o{ PsiODeontologia : "1:N deontologia"
@@ -571,7 +571,7 @@ erDiagram
 | 2 | PsiUserModel | `psi_users` | UUID | → TextModel |
 | 3 | PsiUserColData | `psi_user_col_data` | UUID | → PsiUserModel (1:1) |
 | 4 | PsiUserSocialNetwork | `psi_user_social_networks` | UUID | → PsiUserModel (1:N) |
-| 5 | PsiUSerSolvency | `psi_user_solvency` | UUID | → PsiUserModel (1:N) |
+| 5 | PsiUserSolvency | `psi_user_solvency` | UUID | → PsiUserModel (1:N) |
 | 6 | PsiUserPostGrade | `psi_user_post_grades` | UUID | → PsiUserModel (1:N) |
 | 7 | PsiObservations | `psi_observations` | UUID | → PsiUserModel (1:N) |
 | 8 | PsiODeontologia | `psi_deontologia` | UUID | → PsiUserModel (1:N) |
