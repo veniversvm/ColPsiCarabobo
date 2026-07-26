@@ -236,10 +236,12 @@ func (r *psiRepo) Update(
 			"service_address_out_side_venezuela": psi.ServiceAddressOutSideVenezuela,
 
 			// ── Perfil Profesional ────────────────────────────────────────
-			"primary_work_area":   psi.PrimaryWorkArea,   // Reemplaza a specialty
-			"secondary_work_area": psi.SecondaryWorkArea, // Reemplaza a specialty
-			"mini_bio":            psi.MiniBio,
-			"bio_text_id":         psi.BioTextID,
+			"primary_work_area":      psi.PrimaryWorkArea,
+			"secondary_work_area":    psi.SecondaryWorkArea,
+			"primary_specialty_id":   psi.PrimarySpecialtyID,
+			"secondary_specialty_id": psi.SecondarySpecialtyID,
+			"mini_bio":               psi.MiniBio,
+			"bio_text_id":            psi.BioTextID,
 
 			// ── Imagen de perfil ──────────────────────────────────────────
 			"profile_picture_s3_key": psi.ProfilePictureS3Key,
@@ -402,8 +404,10 @@ func (r *psiRepo) UpdatePublicProfile(
 			"service_address_out_side_venezuela": psi.ServiceAddressOutSideVenezuela,
 
 			// Profesional
-			"primary_work_area":      psi.PrimaryWorkArea,   // Reemplaza a primary_work_area
-			"secondary_work_area":    psi.SecondaryWorkArea, // Reemplaza a secondary_work_area
+			"primary_work_area":      psi.PrimaryWorkArea,
+			"secondary_work_area":    psi.SecondaryWorkArea,
+			"primary_specialty_id":   psi.PrimarySpecialtyID,
+			"secondary_specialty_id": psi.SecondarySpecialtyID,
 			"mini_bio":               psi.MiniBio,
 			"bio_text_id":            psi.BioTextID,
 			"profile_picture_s3_key": psi.ProfilePictureS3Key,
@@ -507,7 +511,7 @@ func (r *psiRepo) SearchDirectory(ctx context.Context, filter request_structs.Ps
 
 	// 1. Base: Siempre ACTIVOS
 	query := r.db.WithContext(ctx).Model(&domain.PsiUserModel{}).
-		Select("id, first_name, last_name, ci, fpv, profile_picture_s3_key, mini_bio, solvent, primary_work_area, secondary_work_area").
+		Select("id, first_name, last_name, ci, fpv, profile_picture_s3_key, mini_bio, solvent, primary_work_area, secondary_work_area, primary_specialty_id, secondary_specialty_id").
 		Where("is_active = ?", true)
 
 	// 2. Lógica de Búsqueda por Identidad
@@ -533,13 +537,10 @@ func (r *psiRepo) SearchDirectory(ctx context.Context, filter request_structs.Ps
 		query = query.Where("solvent = ?", true)
 	}
 
-	// 3. Filtro por Área de Desempeño (Especialidad)
+	// 3. Filtro por Área de Desempeño (Especialidad) — FK directa
 	if filter.SpecialtyID > 0 {
-		var specName string
-		r.db.Model(&domain.PsiSpecialtyModel{}).Select("name").Where("id = ?", filter.SpecialtyID).Scan(&specName)
-		if specName != "" {
-			query = query.Where("primary_work_area = ? OR secondary_work_area = ?", specName, specName)
-		}
+		query = query.Where("primary_specialty_id = ? OR secondary_specialty_id = ?",
+			filter.SpecialtyID, filter.SpecialtyID)
 	}
 
 	// 4. Filtro de Ubicación (Respetando Privacidad)
@@ -576,7 +577,7 @@ func (r *psiRepo) SearchAdmin(ctx context.Context, filter request_structs.PsiDir
 	var total int64
 
 	query := r.db.WithContext(ctx).Model(&domain.PsiUserModel{}).
-		Select("id, first_name, last_name, ci, fpv, email, solvent, is_active, primary_work_area, secondary_work_area")
+		Select("id, first_name, last_name, ci, fpv, email, solvent, is_active, primary_work_area, secondary_work_area, primary_specialty_id, secondary_specialty_id")
 
 	if filter.SearchTerm != "" {
 		// Limpiamos espacios
@@ -594,13 +595,10 @@ func (r *psiRepo) SearchAdmin(ctx context.Context, filter request_structs.PsiDir
 		)
 	}
 
-	// Filtro por Área de Desempeño
+	// Filtro por Área de Desempeño — FK directa
 	if filter.SpecialtyID > 0 {
-		var specName string
-		r.db.Model(&domain.PsiSpecialtyModel{}).Select("name").Where("id = ?", filter.SpecialtyID).Scan(&specName)
-		if specName != "" {
-			query = query.Where("primary_work_area = ? OR secondary_work_area = ?", specName, specName)
-		}
+		query = query.Where("primary_specialty_id = ? OR secondary_specialty_id = ?",
+			filter.SpecialtyID, filter.SpecialtyID)
 	}
 
 	// Filtro por Ubicación (también con unaccent, muy útil para nombres de municipios)

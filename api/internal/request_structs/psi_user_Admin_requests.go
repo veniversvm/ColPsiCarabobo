@@ -75,8 +75,10 @@ type CreatePsiAdminRequest struct {
 	ServiceAddressOutSideVenezuela string `json:"service_address_outside_venezuela"`
 
 	// ── Perfil Profesional ────────────────────────────────────────────────
-	PrimaryWorkArea   string `json:"primary_work_area"`
-	SecondaryWorkArea string `json:"secondary_work_area"`
+	PrimaryWorkArea      string  `json:"primary_work_area"`
+	SecondaryWorkArea    string  `json:"secondary_work_area"`
+	PrimarySpecialtyID   *uint32 `json:"primary_specialty_id"`
+	SecondarySpecialtyID *uint32 `json:"secondary_specialty_id"`
 
 	// ── Datos Colegiales: Pregrado e Inscripción ──────────────────────────
 	GuildInscriptionDate    string `json:"guild_inscription_date"`
@@ -182,10 +184,12 @@ type UpdatePsiAdminRequest struct {
 	ShowPublicServiceAddressOutSideVenezuelaRaw string  `json:"show_public_service_address_outside_venezuela" form:"show_public_service_address_outside_venezuela"`
 
 	// ── Perfil Profesional ────────────────────────────────────────────────
-	PrimaryWorkArea   *string `json:"primary_work_area" form:"primary_work_area"`
-	SecondaryWorkArea *string `json:"secondary_work_area" form:"secondary_work_area"`
-	MiniBio           *string `json:"mini_bio" form:"mini_bio"`
-	FullBio           *string `json:"full_bio" form:"full_bio"`
+	PrimaryWorkArea      *string `json:"primary_work_area" form:"primary_work_area"`
+	SecondaryWorkArea    *string `json:"secondary_work_area" form:"secondary_work_area"`
+	PrimarySpecialtyID   *uint32 `json:"primary_specialty_id" form:"primary_specialty_id"`
+	SecondarySpecialtyID *uint32 `json:"secondary_specialty_id" form:"secondary_specialty_id"`
+	MiniBio              *string `json:"mini_bio" form:"mini_bio"`
+	FullBio              *string `json:"full_bio" form:"full_bio"`
 
 	// ─────────────── Datos Colegiales ─────────────── //
 

@@ -401,6 +401,12 @@ func (s *PsiService) UpdatePsiByAdmin(
 	if req.SecondaryWorkArea != nil {
 		psi.SecondaryWorkArea = *req.SecondaryWorkArea
 	}
+	if req.PrimarySpecialtyID != nil {
+		psi.PrimarySpecialtyID = req.PrimarySpecialtyID
+	}
+	if req.SecondarySpecialtyID != nil {
+		psi.SecondarySpecialtyID = req.SecondarySpecialtyID
+	}
 	if req.MiniBio != nil {
 		runes := []rune(*req.MiniBio)
 		if len(runes) > 250 {
@@ -870,8 +876,10 @@ func createPsiUSerModel(req request_structs.CreatePsiAdminRequest, psiID uuid.UU
 		ServiceAddressOutSideVenezuela: req.ServiceAddressOutSideVenezuela,
 
 		// ── Perfil Profesional ────────────────────────────────────────────
-		PrimaryWorkArea:   req.PrimaryWorkArea,   // Reemplaza a PrimarySpecialty
-		SecondaryWorkArea: req.SecondaryWorkArea, // Reemplaza a SecondarySpecialty
+		PrimaryWorkArea:      req.PrimaryWorkArea,
+		SecondaryWorkArea:    req.SecondaryWorkArea,
+		PrimarySpecialtyID:   req.PrimarySpecialtyID,
+		SecondarySpecialtyID: req.SecondarySpecialtyID,
 	}
 }
 

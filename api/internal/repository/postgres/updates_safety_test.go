@@ -77,6 +77,18 @@ func setupDryRunDB(t *testing.T) *gorm.DB {
 			psi_user_id TEXT NOT NULL,
 			name text NOT NULL, url text NOT NULL, is_active numeric DEFAULT 1
 		)`,
+		`CREATE TABLE psi_users (
+			id TEXT PRIMARY KEY,
+			created_at datetime, updated_at datetime, deleted_at datetime,
+			create_by text, update_by text, create_by_id TEXT, update_by_id TEXT,
+			username text NOT NULL UNIQUE, email text NOT NULL UNIQUE,
+			password text NOT NULL, key text,
+			is_active numeric DEFAULT 1, must_change_password numeric DEFAULT 0,
+			primary_work_area text, secondary_work_area text,
+			primary_specialty_id INTEGER, secondary_specialty_id INTEGER,
+			FOREIGN KEY (primary_specialty_id) REFERENCES psi_specialty_models(id),
+			FOREIGN KEY (secondary_specialty_id) REFERENCES psi_specialty_models(id)
+		)`,
 		`CREATE TABLE posts (
 			id TEXT PRIMARY KEY,
 			created_at datetime, updated_at datetime, deleted_at datetime,
@@ -327,4 +339,49 @@ func TestPsiRepo_UpdateSocialNetwork_PreservesIsActiveFalse(t *testing.T) {
 	require.NoError(t, err)
 	assert.False(t, fetched.IsActive, "IsActive should be false")
 	assert.Equal(t, "https://instagram.com/test_updated", fetched.URL)
+}
+
+// TestPsiUsers_SpecialtyFK_PersistAndFilter valida que las FK de especialidad
+// se persisten correctamente y permiten filtrar usuarios por specialty_id.
+func TestPsiUsers_SpecialtyFK_PersistAndFilter(t *testing.T) {
+	db := setupDryRunDB(t)
+
+	// Crear especialidades en el catálogo
+	spec1 := &domain.PsiSpecialtyModel{Name: "Clínica", Active: true}
+	spec2 := &domain.PsiSpecialtyModel{Name: "Educación", Active: true}
+	require.NoError(t, db.Create(spec1).Error)
+	require.NoError(t, db.Create(spec2).Error)
+
+	// Crear psi_users con FKs apuntando a las especialidades
+	s1 := uint32(spec1.ID)
+	s2 := uint32(spec2.ID)
+	// Direct insert via SQL to avoid GORM model complexity
+	require.NoError(t, db.Exec(
+		"INSERT INTO psi_users (id, username, email, password, primary_work_area, secondary_work_area, primary_specialty_id, secondary_specialty_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+		uuid.New().String(), "user1", "user1@test.com", "pass", "Clínica", "Educación", spec1.ID, spec2.ID,
+	).Error)
+
+	psi2ID := uuid.New().String()
+	require.NoError(t, db.Exec(
+		"INSERT INTO psi_users (id, username, email, password, primary_work_area, primary_specialty_id) VALUES (?, ?, ?, ?, ?, ?)",
+		psi2ID, "user2", "user2@test.com", "pass", "Educación", spec2.ID,
+	).Error)
+
+	// Query: filtrar por specialty_id=1 (Clínica) — solo user1 tiene primary_specialty_id=1
+	var count1 int64
+	db.Model(&domain.PsiUserModel{}).Where("primary_specialty_id = ? OR secondary_specialty_id = ?", s1, s1).Count(&count1)
+	assert.Equal(t, int64(1), count1, "Should find 1 user with specialty_id=1 (Clínica)")
+
+	// Query: filtrar por specialty_id=2 (Educación) — user1 tiene secondary, user2 tiene primary
+	var count2 int64
+	db.Model(&domain.PsiUserModel{}).Where("primary_specialty_id = ? OR secondary_specialty_id = ?", s2, s2).Count(&count2)
+	assert.Equal(t, int64(2), count2, "Should find 2 users with specialty_id=2 (Educación)")
+
+	// Verificar que las FKs se persistieron correctamente
+	var fetched domain.PsiUserModel
+	err := db.Where("id = ?", psi2ID).First(&fetched).Error
+	require.NoError(t, err)
+	require.NotNil(t, fetched.PrimarySpecialtyID)
+	assert.Equal(t, spec2.ID, *fetched.PrimarySpecialtyID)
+	assert.Nil(t, fetched.SecondarySpecialtyID, "Secondary should be nil when not set")
 }

@@ -1680,70 +1680,24 @@ db.Model(admin).Updates(map[string]interface{}{
 
 ---
 
-### FIX-31: Búsqueda de especialidad por nombre, no por FK
+### FIX-31: Búsqueda de especialidad por nombre, no por FK — ✅ COMPLETADO
 
 | Campo | Valor |
 |-------|-------|
 | **Hallazgo** | MED-12 |
-| **Archivos** | `psi_repository.go:537-542` + `domain/user.model.go` + `migrations/` |
-| **Complejidad** | ALTA — requiere 7 pasos de migración |
+| **Archivos** | `psi_repository.go`, `user.model.go`, `migrations/` |
+| **Estado** | COMPLETADO (commit `docs`) |
 
-**Contexto:** `psi_users` NO tiene columna `specialty_id`. Las especialidades se almacenan como strings en `primary_work_area` y `secondary_work_area`. No hay FK a `specialties`. El fix requiere agregar la FK y migrar datos.
+**Fix:** Agregadas columnas `primary_specialty_id` y `secondary_specialty_id` (nullable FK) a `psi_users`, con migración de datos existentes desde strings. Las queries de búsqueda ahora usan FK directa en lugar del patrón N+1 anterior. Columnas string mantenidas por backwards compatibility.
 
-**Fix — 7 pasos:**
-
-**Paso 1:** Agregar campo `SpecialtyID` al modelo:
 ```go
-// internal/domain/user.model.go — en PsiUserModel
-SpecialtyID *uint32 `gorm:"column:specialty_id" json:"specialty_id,omitempty"`
+// ANTES (doble query — N+1):
+r.db.Model(&domain.PsiSpecialtyModel{}).Select("name").Where("id = ?", filter.SpecialtyID).Scan(&specName)
+query = query.Where("primary_work_area = ? OR secondary_work_area = ?", specName, specName)
+
+// DESPUÉS (query directa por FK):
+query = query.Where("primary_specialty_id = ? OR secondary_specialty_id = ?", filter.SpecialtyID, filter.SpecialtyID)
 ```
-
-**Paso 2:** Migración SQL para agregar columna:
-```sql
--- Paso 2a: Agregar columna nullable
-ALTER TABLE psi_users ADD COLUMN specialty_id INTEGER;
-
--- Paso 2b: Crear tabla specialties si no existe
-CREATE TABLE IF NOT EXISTS specialties (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL UNIQUE,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Paso 2c: Migrar datos existentes (mapear strings → IDs)
-INSERT INTO specialties (name)
-SELECT DISTINCT primary_work_area FROM psi_users
-WHERE primary_work_area IS NOT NULL AND primary_work_area != ''
-ON CONFLICT (name) DO NOTHING;
-
-UPDATE psi_users p
-SET specialty_id = s.id
-FROM specialties s
-WHERE p.primary_work_area = s.name;
-
--- Paso 2d: Agregar FK constraint
-ALTER TABLE psi_users
-    ADD CONSTRAINT fk_psi_users_specialty
-    FOREIGN KEY (specialty_id) REFERENCES specialties(id)
-    ON DELETE SET NULL;
-```
-
-**Paso 3:** Refactorizar repository para usar FK:
-```go
-// ANTES (psi_repository.go:537-542):
-WHERE psi.primary_work_area = ?
-
-// DESPUÉS:
-WHERE psi.specialty_id = ?
-```
-
-**Paso 4:** Actualizar handlers de importación CSV/XLSX para resolver nombre → ID.
-
-**Paso 5:** Actualizar `specialty_handler.go` para retornar `specialty_id` en listados.
-
-**Paso 6:** Frontend: cambiar de filtrar por nombre a filtrar por `specialty_id`.
-
-**Paso 7:** (Opcional futuro) Eliminar columnas `primary_work_area`/`secondary_work_area` una vez verificada la migración.
 
 ---
 

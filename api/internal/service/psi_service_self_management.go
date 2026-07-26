@@ -202,6 +202,12 @@ func (s *PsiService) UpdateProfileSelf(
 	if req.SecondaryWorkArea != nil {
 		psi.SecondaryWorkArea = *req.SecondaryWorkArea
 	}
+	if req.PrimarySpecialtyID != nil {
+		psi.PrimarySpecialtyID = req.PrimarySpecialtyID
+	}
+	if req.SecondarySpecialtyID != nil {
+		psi.SecondarySpecialtyID = req.SecondarySpecialtyID
+	}
 	if req.MiniBio != nil {
 		runes := []rune(*req.MiniBio)
 		if len(runes) > 250 {

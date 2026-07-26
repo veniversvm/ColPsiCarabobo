@@ -99,10 +99,12 @@ type PsiUserUpdateRequestSelf struct {
 	ShowPublicServiceAddressOutSideVenezuelaRaw string `form:"show_public_service_address_outside_venezuela"`
 
 	// ── Perfil Profesional y Biografía ───────────────────────────────────
-	PrimaryWorkArea   *string `json:"primary_work_area" form:"primary_work_area"`     // Cambiado de specialty a work_area
-	SecondaryWorkArea *string `json:"secondary_work_area" form:"secondary_work_area"` // Cambiado de specialty a work_area
-	MiniBio           *string `json:"mini_bio" form:"mini_bio"`
-	FullBio           *string `json:"full_bio" form:"full_bio"`
+	PrimaryWorkArea      *string `json:"primary_work_area" form:"primary_work_area"`
+	SecondaryWorkArea    *string `json:"secondary_work_area" form:"secondary_work_area"`
+	PrimarySpecialtyID   *uint32 `json:"primary_specialty_id" form:"primary_specialty_id"`
+	SecondarySpecialtyID *uint32 `json:"secondary_specialty_id" form:"secondary_specialty_id"`
+	MiniBio              *string `json:"mini_bio" form:"mini_bio"`
+	FullBio              *string `json:"full_bio" form:"full_bio"`
 
 	// ── Visibilidad de Datos Colegiales ──────────────────────────────────
 	ShowUniversityUndergraduateRaw string `form:"show_university_undergraduate"`
@@ -233,11 +235,13 @@ type PsiFullProfileDTO struct {
 	Location PsiLocationDTO `json:"location"`
 
 	// ── Perfil Profesional ────────────────────────────────────────────────
-	WorkAreas         []string `json:"work_areas"`
-	MiniBio           string   `json:"mini_bio,omitempty"`
-	FullBioContent    string   `json:"full_bio_content,omitempty"`
-	PrimaryWorkArea   string   `json:"primary_work_area"`
-	SecondaryWorkArea string   `json:"secondary_work_area"`
+	WorkAreas            []string `json:"work_areas"`
+	MiniBio              string   `json:"mini_bio,omitempty"`
+	FullBioContent       string   `json:"full_bio_content,omitempty"`
+	PrimaryWorkArea      string   `json:"primary_work_area"`
+	SecondaryWorkArea    string   `json:"secondary_work_area"`
+	PrimarySpecialtyID   *uint32  `json:"primary_specialty_id,omitempty"`
+	SecondarySpecialtyID *uint32  `json:"secondary_specialty_id,omitempty"`
 
 	// ── Datos de Pregrado (condicional por privacidad) ───────────────────
 	Undergraduate UndergraduateDTO `json:"undergraduate"`

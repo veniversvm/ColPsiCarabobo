@@ -125,11 +125,16 @@ type PsiUserModel struct {
 	ServiceAddressOutSideVenezuela           string `gorm:"size:255" json:"service_address_outside_venezuela"`
 	ShowPublicServiceAddressOutSideVenezuela bool   `gorm:"default:false" json:"show_public_service_address_outside_venezuela"`
 
-	// ── Especialidades profesionales ──────────────────────────────────────
-	// Almacenadas como strings para búsqueda directa en el directorio.
-	// Deben corresponder a entradas activas en el catálogo PsiSpecialtyModel.
+	// ── Áreas de desempeño (especialidades) ───────────────────────────────
+	// PrimaryWorkArea/SecondaryWorkArea: strings legacy mantenidos por backwards
+	// compatibility con el frontend. Se mantienen sincronizados con las FK.
 	PrimaryWorkArea   string `gorm:"size:50" json:"primary_work_area"`
 	SecondaryWorkArea string `gorm:"size:50" json:"secondary_work_area"`
+
+	// FKs al catálogo de especialidades. Nullable porque se setean manualmente
+	// por el usuario después de crear su perfil, no durante la importación.
+	PrimarySpecialtyID   *uint32 `gorm:"column:primary_specialty_id" json:"primary_specialty_id,omitempty"`
+	SecondarySpecialtyID *uint32 `gorm:"column:secondary_specialty_id" json:"secondary_specialty_id,omitempty"`
 
 	// ── Biografía profesional ─────────────────────────────────────────────
 	MiniBio   string    `json:"mini_bio"`              // Resumen corto (max 250 chars) para el directorio
