@@ -79,14 +79,15 @@ func (s *AdminService) Login(ctx context.Context, identifier, password string) (
 
 	// Renovación de la Key para invalidar tokens anteriores y proporcionar una capa extra de seguridad
 	newKey := uuid.Must(uuid.NewV7()).String()
-	admin.Key = newKey
+	hashedKey := utils.HashKey(newKey)
+	admin.Key = hashedKey
 
 	// Se persiste el nuevo Key en la base de datos
 	if err := s.repo.Update(ctx, admin); err != nil {
 		return "", nil, errors.New("error al procesar inicio de sesión")
 	}
 
-	// Emisión del Token JWT firmado con el nuevo Key
+	// Emisión del Token JWT firmado con el hash (no con el UUID raw)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id": admin.ID.String(),
 		"exp":     time.Now().Add(24 * time.Hour).Unix(),
@@ -107,7 +108,7 @@ func (s *AdminService) Login(ctx context.Context, identifier, password string) (
 		log.Warn().Err(err).Str("component", "admin_service").Msg("Error al preparar el correo (pero el admin se creó)")
 	}
 
-	signed, err := token.SignedString([]byte(newKey))
+	signed, err := token.SignedString([]byte(hashedKey))
 	return signed, admin, err
 }
 
@@ -404,7 +405,7 @@ func (s *AdminService) UpdateAdmin(
 			return err
 		}
 		target.Password = string(hashed)
-		target.Key = uuid.Must(uuid.NewV7()).String()
+		target.Key = utils.HashKey(uuid.Must(uuid.NewV7()).String())
 	}
 
 	// 4. Aplicación de mutaciones de permisos validadas en el paso 1

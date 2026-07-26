@@ -107,6 +107,12 @@ Se identificaron **47 hallazgos** de seguridad (7 criticos, 12 altos, 13 medios,
 **Solucion:** Password random en produccion (`GenerateSecureRandomString(16)`), hardcodeado solo en development.
 **Archivos:** `internal/service/psi_service_import.go`
 
+### FIX-03: HMAC Key en texto plano en DB (CRIT-03)
+**Hallazgo:** Las claves JWT (`Key` field) se almacenaban como UUIDs raw en la DB. Si la DB era comprometida, un atacante podia firmar JWTs validos.
+**Solucion:** `HashKey()` en `utils/sha256_key.go` calcula SHA-256 antes de almacenar. El JWT se firma con el hash, no con el UUID raw. Migracion SQL hashea claves existentes via `pgcrypto`.
+**Archivos:** `internal/utils/sha256_key.go` (nuevo), `internal/service/admin_service.go`, `internal/service/psi_service_auth.go`, `internal/service/psi_service_self_management.go`, `migrations/20260725050000_fix03_hash_hmac_keys.sql`
+**Tests:** 4 tests nuevos en `utils_test.go`
+
 ### FIX-08: Rate limiter in-memory (HIGH-01)
 **Hallazgo:** Rate limiter in-memory no sobrevive restarts ni escala multi-instancia.
 **Solucion:** Migrado a Valkey (Redis-compatible, BSD-3) con fallback a in-memory.
@@ -321,7 +327,7 @@ Se identificaron **47 hallazgos** de seguridad (7 criticos, 12 altos, 13 medios,
 
 ## Test Suite
 
-### Tests Nuevos (28)
+### Tests Nuevos (32)
 
 | Paquete | Tests | Que validan |
 |---------|-------|-------------|
@@ -329,6 +335,7 @@ Se identificaron **47 hallazgos** de seguridad (7 criticos, 12 altos, 13 medios,
 | `repository/postgres/updates_safety_test.go` | 7 | Updates() preserva booleanos, strings, FK |
 | `service/mail_service_test.go` | 2 | Close() lifecycle, initial state |
 | `domain/credentials_test.go` | 4 | Embedding en ambos modelos, key rotation, table names |
+| `utils/utils_test.go` | 4 | HashKey determinismo, longitud, unicidad |
 | `utils/image_sanitizer_test.go` | 1 | Fix test message |
 | `service/psi_service_directory_test.go` | 1 | Specialty FK persist/filter |
 | `repository/postgres/psi_repo_test.go` | 1 | Specialty FK in queries |
@@ -346,7 +353,7 @@ Se identificaron **47 hallazgos** de seguridad (7 criticos, 12 altos, 13 medios,
 ```
 go build ./...       → OK (sin errores)
 go vet ./...         → OK (sin warnings)
-go test ./...        → 28 nuevos PASS, 6 pre-existentes FAIL, 0 regressions
+go test ./...        → 32 nuevos PASS, 6 pre-existentes FAIL, 0 regressions
 ```
 
 ---
@@ -363,8 +370,9 @@ go test ./...        → 28 nuevos PASS, 6 pre-existentes FAIL, 0 regressions
 | `internal/repository/postgres/updates_safety_test.go` | FIX-30 | Tests de Updates safety |
 | `internal/service/mail_service_test.go` | FIX-35 | Tests de MailService |
 | `internal/logger/logger.go` | FIX-45 | Configuracion zerolog |
+| `internal/utils/sha256_key.go` | FIX-03 | Hash SHA-256 para HMAC keys |
 | `init-db/pg_hba.conf` | FIX-15b | Restriccion de conexiones |
-| 3 migraciones Atlas | FIX-18, 31, 37 | FK policy, specialty FK, phone type |
+| 4 migraciones Atlas | FIX-03, 18, 31, 37 | Hash keys, FK policy, specialty FK, phone type |
 
 ---
 
@@ -377,6 +385,7 @@ go test ./...        → 28 nuevos PASS, 6 pre-existentes FAIL, 0 regressions
 5. **Centralized DI** — Repos y MailService instanciados una vez en router.go
 6. **Graceful shutdown** — Signal handling + context cancellation + 10s timeout
 7. **Structured logging** — 85+ calls migrados a zerolog con campos estructurados
+8. **HMAC key hashing** — Keys JWT hasheadas con SHA-256 antes de almacenar en DB (previene compromise de claves de firma)
 8. **Safe type assertion** — Helpers nil-safe reemplazan 19 casts inseguros
 9. **Zero-value safety** — `Updates(map)` + `gorm.Expr` reemplazan `Save()` en 8 repos
 10. **Key lifecycle** — UUID v7 migration + key rotation + cleanup job
