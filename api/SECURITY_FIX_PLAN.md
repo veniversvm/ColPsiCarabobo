@@ -575,7 +575,17 @@ SMTP_FROM=info@colpsicarabobo.com
 | **Hallazgo** | HIGH-01 |
 | **Archivo** | `internal/middleware/rate_limiter.go` |
 | **Severidad** | 🟠 ALTO |
+| **Estado** | ✅ IMPLEMENTADO — Commit `64c2457` |
 | **Riesgo** | Multi-instancia: cada instancia tiene su propio contador |
+
+**Fix implementado — Valkey con fallback in-memory:**
+- Nuevo campo `ValkeyAddr` en config (`VALKEY_ADDR` env var)
+- Rate limiter usa `gofiber/storage/valkey` si `VALKEY_ADDR` está configurado
+- Panic recovery si Valkey no está disponible → fallback a in-memory
+- Nuevo servicio `valkey/valkey:9.1-alpine` en `docker-compose.yml`
+- Cero breaking changes: sin `VALKEY_ADDR`, funciona como antes
+
+**Detalle:** Ver `FIX_08_REPORT.md`
 
 **Fix a corto plazo (sin Redis):**
 ```go
