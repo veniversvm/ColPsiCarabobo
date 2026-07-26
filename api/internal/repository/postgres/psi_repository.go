@@ -521,13 +521,14 @@ func (r *psiRepo) SearchDirectory(ctx context.Context, filter request_structs.Ps
 
 		for _, word := range words {
 			w := "%" + word + "%"
-			// Definimos el bloque de nombre completo para comparar contra cada palabra
-			concatName := "unaccent(COALESCE(first_name, '') || ' ' || COALESCE(second_name, '') || ' ' || COALESCE(last_name, '') || ' ' || COALESCE(second_last_name, ''))"
-
-			// Aplicamos un WHERE por cada palabra (AND lógico entre palabras)
-			// Esto obliga a que CADA palabra buscada aparezca en algún lugar del nombre, CI o FPV
+			// Cada palabra debe aparecer en algún campo del registro.
+			// Se usa unaccent() individual por campo para aprovechar los expression indexes:
+			//   idx_psi_users_unaccent_first_name, idx_psi_users_unaccent_last_name
 			query = query.Where(
-				r.db.Where(concatName+" ILIKE unaccent(?)", w).
+				r.db.Where("unaccent(first_name) ILIKE unaccent(?)", w).
+					Or("unaccent(second_name) ILIKE unaccent(?)", w).
+					Or("unaccent(last_name) ILIKE unaccent(?)", w).
+					Or("unaccent(second_last_name) ILIKE unaccent(?)", w).
 					Or("CAST(ci AS TEXT) LIKE ?", w).
 					Or("CAST(fpv AS TEXT) LIKE ?", w),
 			)
@@ -583,8 +584,8 @@ func (r *psiRepo) SearchAdmin(ctx context.Context, filter request_structs.PsiDir
 		// Limpiamos espacios
 		term := "%" + strings.TrimSpace(filter.SearchTerm) + "%"
 
-		// Aplicamos unaccent a las columnas y al término de búsqueda
-		// Usamos un sub-Where para agrupar la lógica de búsqueda de identidad
+		// Usamos unaccent() individual por campo para aprovechar los expression indexes:
+		//   idx_psi_users_unaccent_first_name, idx_psi_users_unaccent_last_name
 		query = query.Where(
 			r.db.Where("unaccent(first_name) ILIKE unaccent(?)", term).
 				Or("unaccent(last_name) ILIKE unaccent(?)", term).
@@ -634,7 +635,7 @@ func (r *psiRepo) Count(ctx context.Context, active *bool) (int64, error) {
 	query := r.db.WithContext(ctx).Model(&domain.PsiUserModel{})
 
 	if active != nil {
-		query = query.Where("active = ?", *active)
+		query = query.Where("is_active = ?", *active)
 	}
 
 	if err := query.Count(&count).Error; err != nil {
@@ -659,7 +660,7 @@ func (r *psiRepo) Search(ctx context.Context, filters map[string]interface{}, pa
 	}
 	if name, ok := filters["name"]; ok && name != "" {
 		search := "%" + name.(string) + "%"
-		query = query.Where("first_name ILIKE ? OR last_name ILIKE ?", search, search)
+		query = query.Where("unaccent(first_name) ILIKE unaccent(?) OR unaccent(last_name) ILIKE unaccent(?)", search, search)
 	}
 	if active, ok := filters["active"]; ok && active != nil {
 		query = query.Where("active = ?", active)
@@ -810,11 +811,13 @@ func (r *psiRepo) GetTextContentByID(ctx context.Context, id uuid.UUID) (string,
 }
 
 // ValidateUniqueCredentials comprueba ambos campos y retorna un error descriptivo si fallan.
+// Usa comparación exacta (=) ya que username y email tienen UNIQUE constraints,
+// lo que permite aprovechar los índices únicos directamente.
 func (r *psiRepo) ValidateUniqueCredentials(ctx context.Context, username, email string, excludeID uuid.UUID) error {
 	if username != "" {
 		var count int64
 		r.db.WithContext(ctx).Model(&domain.PsiUserModel{}).
-			Where("username ILIKE ? AND id != ?", username, excludeID).
+			Where("username = ? AND id != ?", username, excludeID).
 			Count(&count)
 		if count > 0 {
 			return errors.New("el nombre de usuario ya está en uso")
@@ -823,7 +826,7 @@ func (r *psiRepo) ValidateUniqueCredentials(ctx context.Context, username, email
 	if email != "" {
 		var count int64
 		r.db.WithContext(ctx).Model(&domain.PsiUserModel{}).
-			Where("email ILIKE ? AND id != ?", email, excludeID).
+			Where("email = ? AND id != ?", email, excludeID).
 			Count(&count)
 		if count > 0 {
 			return errors.New("el email ya está en uso")
