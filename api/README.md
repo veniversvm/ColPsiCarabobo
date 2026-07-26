@@ -14,6 +14,7 @@ Backend REST API para la gestión del Colegio de Psicólogos de Carabobo (Venezu
 - [Seguridad](#-seguridad)
 - [Base de Datos](#-base-de-datos)
 - [Stack Tecnológico](#-stack-tecnológico)
+- [Testing](#-testing)
 - [Desarrollo](#-desarrollo)
 - [Documentación por Módulo](#-documentación-por-módulo)
 
@@ -318,7 +319,67 @@ atlas migrate apply --env local
 
 ---
 
-## 🧪 Desarrollo
+## 🧪 Testing
+
+Suite integral: **49 archivos de test, 253 funciones Test, 30 benchmarks, 62.3% cobertura global.**
+
+### Comandos Rápidos
+
+```bash
+# Tests unitarios (sin DB, rápidos)
+make test-unit
+
+# Tests de repositorio (PostgreSQL real)
+make test-repo
+
+# Tests de integración (full stack: DB + Fiber + JWT)
+make test-integration
+
+# Tests de seguridad (43 tests E2E)
+make test-security
+
+# Todos los tests (serial, -p 1)
+make test-all
+
+# Todos con race detector
+make test-race
+
+# Benchmarks
+make test-bench
+
+# Reporte de cobertura
+make coverage
+
+# Reporte HTML interactivo
+make coverage-html
+```
+
+### Infraestructura
+
+| Componente | Detalle |
+|:-----------|:--------|
+| DB de test | PostgreSQL 18 en puerto 5433 (`docker-compose.test.yml`) |
+| Aislamiento | Transacciones revertidas + `truncateAll()` al final de TestMain |
+| Mocks | Hand-rolled func override pattern (sin gomock/mockgen) |
+| Serial | `-p 1` para evitar race conditions entre paquetes |
+
+### Cobertura por Paquete
+
+| Paquete | Cobertura |
+|:--------|----------:|
+| `config`, `logger`, `request_structs` | **100%** |
+| `middleware` | 77.3% |
+| `domain` | 71.4% |
+| `repository/postgres` | 68.2% |
+| `handler` | 64.2% |
+| `utils` | 63.8% |
+| `database` | 55.1% |
+
+> Documentación completa en **[TESTING.md](./TESTING.md)**
+
+---
+
+## 🛠️ Desarrollo
 
 ### Comandos disponibles
 
@@ -385,6 +446,7 @@ Al agregar un nuevo dominio al proyecto, seguir este orden:
 
 | Módulo                             | Documentación                                            |
 | :--------------------------------- | :------------------------------------------------------- |
+| **Testing**                            | **[Suite de Testing](./TESTING.md)**                         |
 | `cmd/`                               | [Puntos de entrada](./cmd/README.md)                       |
 | `docs/`                              | [Swagger/OpenAPI](./docs/README.md)                        |
 | `internal/config/`                   | [Variables de entorno](./internal/config/README.md)        |
