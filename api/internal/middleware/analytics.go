@@ -73,7 +73,7 @@ func AnalyticsMiddleware(analytics *service.AnalyticsService) fiber.Handler {
 		// 5. Gestión de Sesión Anónima (Tracking Cookie)
 		sessionID := c.Cookies("_sid")
 		if sessionID == "" {
-			sessionID = uuid.NewString()
+			sessionID = uuid.Must(uuid.NewV7()).String()
 			c.Cookie(&fiber.Cookie{
 				Name:     "_sid",
 				Value:    sessionID,

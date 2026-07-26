@@ -1144,10 +1144,9 @@ func (s *PsiService) sincronizarConAudiobookshelf(ctx context.Context, username,
 }
 
 // Logout cierra la sesión de forma segura a nivel de servidor (Stateful Logout).
+// Al vaciar la Key, el middleware rechazará cualquier request futuro con el JWT anterior.
 func (s *PsiService) Logout(ctx context.Context, psi *domain.PsiUserModel) error {
-	// Rotar la key invalida físicamente el token actual
-	// — cualquier request posterior con el JWT viejo fallará en validateToken
-	psi.Key = uuid.Must(uuid.NewV7()).String()
+	psi.Key = ""
 	psi.UpdateBy = psi.Username
 	psi.UpdateById = &psi.ID
 	return s.repo.UpdateKey(ctx, psi)

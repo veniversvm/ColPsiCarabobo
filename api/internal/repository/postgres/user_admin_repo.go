@@ -84,6 +84,14 @@ func (r *adminRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	return r.db.WithContext(ctx).Delete(&domain.UserAdmin{}, "id = ?", id).Error
 }
 
+// UpdateKey actualiza exclusivamente la semilla de firma (Key) y auditoría.
+// Optimizado para logout/invalidación de sesiones — evita sobreescribir todo el modelo.
+func (r *adminRepo) UpdateKey(ctx context.Context, user *domain.UserAdmin) error {
+	return r.db.WithContext(ctx).Model(user).
+		Select("Key", "UpdatedAt", "UpdateBy", "UpdateById").
+		Updates(user).Error
+}
+
 // CountSudos cuenta cuántos administradores tienen privilegios de Superusuario activos.
 // Es vital para validaciones de seguridad (ej. evitar que el sistema se quede sin administradores).
 func (r *adminRepo) CountSudos(ctx context.Context) (int64, error) {

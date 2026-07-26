@@ -27,7 +27,7 @@ func (s *S3Client) UploadFile(ctx context.Context, fileHeader *multipart.FileHea
 	// 2. Generar nombre único (Seguridad y Unicidad)
 	ext := filepath.Ext(fileHeader.Filename)
 	// Ejemplo: "posts/550e8400-e29b-41d4-a716-446655440000.png"
-	filename := fmt.Sprintf("%s/%s%s", folder, uuid.New().String(), ext)
+		filename := fmt.Sprintf("%s/%s%s", folder, uuid.Must(uuid.NewV7()).String(), ext)
 
 	// 3. Subir a S3 usando Streaming (bajo consumo de RAM)
 	_, err = s.Client.PutObject(ctx, &s3.PutObjectInput{

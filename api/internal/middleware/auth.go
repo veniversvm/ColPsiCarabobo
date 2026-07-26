@@ -128,6 +128,9 @@ func (m *AuthMiddleware) ProtectedAdmin404() fiber.Handler {
 			// Inyección de Contexto: Permite a los controladores acceder al admin
 			// sin tener que hacer una segunda consulta a la base de datos.
 			c.Locals("admin", admin)
+			if admin.Key == "" {
+				return "", errors.New("session expired")
+			}
 			return admin.Key, nil
 		})
 
@@ -256,6 +259,9 @@ func (m *AuthMiddleware) ProtectedPsiUser() fiber.Handler {
 
 			// Inyección de Contexto en el ciclo de vida de Fiber
 			c.Locals("psi_user", psi)
+			if psi.Key == "" {
+				return "", errors.New("session expired")
+			}
 			return psi.Key, nil
 		})
 

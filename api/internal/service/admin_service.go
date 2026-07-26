@@ -78,7 +78,7 @@ func (s *AdminService) Login(ctx context.Context, identifier, password string) (
 	}
 
 	// Renovación de la Key para invalidar tokens anteriores y proporcionar una capa extra de seguridad
-	newKey := uuid.New().String()
+	newKey := uuid.Must(uuid.NewV7()).String()
 	admin.Key = newKey
 
 	// Se persiste el nuevo Key en la base de datos
@@ -108,6 +108,15 @@ func (s *AdminService) Login(ctx context.Context, identifier, password string) (
 	}
 
 	return token.SignedString([]byte(newKey))
+}
+
+// Logout invalida la sesión del administrador a nivel de servidor (Stateful Logout).
+// Al vaciar la Key, el middleware rechazará cualquier request futuro con el JWT anterior.
+func (s *AdminService) Logout(ctx context.Context, admin *domain.UserAdmin) error {
+	admin.Key = ""
+	admin.UpdateBy = admin.Username
+	admin.UpdateById = &admin.ID
+	return s.repo.UpdateKey(ctx, admin)
 }
 
 // =========================================================================

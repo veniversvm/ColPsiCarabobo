@@ -61,6 +61,27 @@ func (h *AdminHandler) Login(c *fiber.Ctx) error {
 	})
 }
 
+// Logout godoc
+// @Summary      Cerrar sesión administrativo
+// @Description  Invalida la sesión del administrador a nivel de servidor (Stateful Logout).
+// @Tags         Administración - Auth
+// @Security     BearerAuth
+// @Success      200      {object}  map[string]string      "message: sesión cerrada"
+// @Failure      401      {object}  map[string]string      "error: no autenticado"
+// @Router       /auth/logout [post]
+func (h *AdminHandler) Logout(c *fiber.Ctx) error {
+	admin, err := middleware.GetAuthenticatedAdmin(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "No autenticado"})
+	}
+
+	if err := h.service.Logout(c.UserContext(), admin); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Error al cerrar sesión"})
+	}
+
+	return c.JSON(fiber.Map{"message": "Sesión cerrada correctamente"})
+}
+
 // CreateAdmin godoc
 // @Summary      Crear un nuevo administrador
 // @Description  Registra un nuevo miembro del staff administrativo verificando la jerarquía de permisos.

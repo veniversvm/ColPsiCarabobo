@@ -44,6 +44,9 @@ func SetupAdminRoutes(router fiber.Router, adminRepo domain.UserAdminRepository,
 	// =========================================================================
 	admin := router.Group("/admin", authMid.ProtectedAdmin404())
 
+	// Logout — requiere sesión activa
+	admin.Post("/logout", h.Logout)
+
 	admin.Get("/metrics", monitor.New(monitor.Config{
 		Title: "ColPsiCarabobo - Panel de Control Administrativo",
 	}))

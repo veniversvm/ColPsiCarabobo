@@ -30,5 +30,9 @@ type UserAdminRepository interface {
 	// Delete realiza un borrado lógico del administrador.
 	Delete(ctx context.Context, id uuid.UUID) error
 
+	// UpdateKey actualiza exclusivamente la semilla de firma (Key) y auditoría.
+	// Optimizado para logout/invalidación de sesiones.
+	UpdateKey(ctx context.Context, user *UserAdmin) error
+
 	CountSudos(ctx context.Context) (int64, error)
 }

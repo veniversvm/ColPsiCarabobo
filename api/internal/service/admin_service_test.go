@@ -24,6 +24,7 @@ type mockAdminRepo struct {
 	GetByIdentifierFunc func(ctx context.Context, identifier string) (*domain.UserAdmin, error)
 	GetByIDFunc         func(ctx context.Context, id uuid.UUID) (*domain.UserAdmin, error)
 	UpdateFunc          func(ctx context.Context, admin *domain.UserAdmin) error
+	UpdateKeyFunc       func(ctx context.Context, admin *domain.UserAdmin) error
 	CreateFunc          func(ctx context.Context, admin *domain.UserAdmin) error
 	DeleteFunc          func(ctx context.Context, id uuid.UUID) error
 	ListFunc            func(ctx context.Context, active *bool, search string, page, limit int) ([]domain.UserAdmin, int64, error)
@@ -37,6 +38,12 @@ func (m *mockAdminRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.User
 }
 func (m *mockAdminRepo) Update(ctx context.Context, a *domain.UserAdmin) error {
 	return m.UpdateFunc(ctx, a)
+}
+func (m *mockAdminRepo) UpdateKey(ctx context.Context, a *domain.UserAdmin) error {
+	if m.UpdateKeyFunc != nil {
+		return m.UpdateKeyFunc(ctx, a)
+	}
+	return nil
 }
 func (m *mockAdminRepo) Create(ctx context.Context, a *domain.UserAdmin) error {
 	return m.CreateFunc(ctx, a)

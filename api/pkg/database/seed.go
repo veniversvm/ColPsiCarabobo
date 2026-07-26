@@ -31,7 +31,7 @@ func SeedAdmin(db *gorm.DB) {
 			return
 		}
 
-		adminID := uuid.New()
+		adminID := uuid.Must(uuid.NewV7())
 
 		admin := &domain.UserAdmin{
 			ID: adminID,
