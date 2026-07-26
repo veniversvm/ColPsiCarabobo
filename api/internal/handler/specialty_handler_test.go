@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -267,5 +268,54 @@ func TestCountSpecialties(t *testing.T) {
 		var result map[string]interface{}
 		json.NewDecoder(resp.Body).Decode(&result)
 		require.Equal(t, float64(15), result["count"])
+	})
+}
+
+// =========================================================================
+// GetAllAdmin
+// =========================================================================
+
+func TestGetAllAdmin(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		specs := []domain.PsiSpecialtyModel{
+			*testSpecialty(1, "Clinica"),
+			*testSpecialty(2, "Educacional"),
+			*testSpecialty(3, "Organizacional"),
+		}
+		repo := &mockSpecialtyRepo{
+			GetAllAdminFunc: func(_ context.Context) ([]domain.PsiSpecialtyModel, error) {
+				return specs, nil
+			},
+		}
+		svc := service.NewSpecialtyService(repo)
+		h := NewSpecialtyHandler(svc)
+
+		app := setupPublicRoute(fiber.MethodGet, "/admin/specialties/all", h.GetAllAdmin)
+		req := httptest.NewRequest(fiber.MethodGet, "/admin/specialties/all", nil)
+
+		resp, err := app.Test(req)
+		require.NoError(t, err)
+		require.Equal(t, fiber.StatusOK, resp.StatusCode)
+
+		var result []domain.PsiSpecialtyModel
+		json.NewDecoder(resp.Body).Decode(&result)
+		require.Len(t, result, 3)
+	})
+
+	t.Run("error", func(t *testing.T) {
+		repo := &mockSpecialtyRepo{
+			GetAllAdminFunc: func(_ context.Context) ([]domain.PsiSpecialtyModel, error) {
+				return nil, errors.New("database error")
+			},
+		}
+		svc := service.NewSpecialtyService(repo)
+		h := NewSpecialtyHandler(svc)
+
+		app := setupPublicRoute(fiber.MethodGet, "/admin/specialties/all", h.GetAllAdmin)
+		req := httptest.NewRequest(fiber.MethodGet, "/admin/specialties/all", nil)
+
+		resp, err := app.Test(req)
+		require.NoError(t, err)
+		require.Equal(t, fiber.StatusForbidden, resp.StatusCode)
 	})
 }
