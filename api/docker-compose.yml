@@ -81,6 +81,7 @@ services:
       - DB_HOST=pgbouncer
       - DB_PORT=5432
       - S3_ENDPOINT=http://s3:9000
+      - VALKEY_ADDR=valkey:6379
       - PORT=8080
     networks:
       - colpsi_network
@@ -127,7 +128,25 @@ services:
     profiles:
       - dev
 
-  # 6. MinIO
+  # 6. Valkey (rate limiting store)
+  valkey:
+    image: valkey/valkey:9.1-alpine
+    container_name: colpsi_valkey
+    ports:
+      - "6379:6379"
+    volumes:
+      - valkey_data:/data
+    command: valkey-server --save 60 1 --loglevel warning
+    networks:
+      - colpsi_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 7. MinIO
   s3:
     image: minio/minio
     container_name: colpsi_s3
@@ -144,7 +163,7 @@ services:
     networks:
       - colpsi_network
 
-  # 7. Helper MinIO
+  # 8. Helper MinIO
   createbuckets:
     image: minio/mc
     depends_on:
@@ -181,6 +200,7 @@ services:
 volumes:
   postgres_data:
   minio_data:
+  valkey_data:
 
 networks:
   colpsi_network:

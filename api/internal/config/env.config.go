@@ -47,6 +47,9 @@ type Config struct {
 	// Origins
 	AllowedOrigins string
 
+	// Valkey (rate limiting store)
+	ValkeyAddr string // Valkey/Redis address (e.g. "colpsi_valkey:6379"). Empty = in-memory fallback.
+
 	//
 	JwtLibrarySecret string
 	AbsAdminToken    string
@@ -105,6 +108,9 @@ func InitConfig() {
 
 		// Origins
 		AllowedOrigins: getEnv("ALLOWED_ORIGINS", "http://127.0.0.1:3000, http://localhost:3000"),
+
+		// Valkey
+		ValkeyAddr: getEnv("VALKEY_ADDR", ""),
 
 		// Library
 		JwtLibrarySecret: getEnv("JWT_LIBRARY_SECRET", ""),

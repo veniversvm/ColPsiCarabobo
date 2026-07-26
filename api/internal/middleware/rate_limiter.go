@@ -7,14 +7,58 @@
 // primera barrera defensiva en la capa HTTP para proteger las rutas críticas (Logins)
 // contra ataques de Fuerza Bruta (adivinar contraseñas) y Credential Stuffing (uso
 // automatizado de credenciales filtradas en otras brechas de seguridad).
+//
+// Almacenamiento: Si VALKEY_ADDR está configurado, los contadores persisten en Valkey
+// (compatible con Redis). Si no, se usa almacenamiento in-memory (Fiber default).
+// Valkey soporta despliegue multi-instancia (Docker replicas, K8s).
 package middleware
 
 import (
+	"log"
+	"sync"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
+	"github.com/gofiber/storage/valkey"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/config"
 )
+
+// rateLimiterStore es una instancia compartida de storage para rate limiting.
+// Se inicializa una vez al arrancar la aplicación.
+var (
+	rateLimiterStore fiber.Storage
+	once             sync.Once
+)
+
+// newRateLimiterStorage crea o retorna el storage para rate limiting.
+// Si VALKEY_ADDR está configurado, usa Valkey (persistente, multi-instancia).
+// Si no, retorna nil para usar el default in-memory de Fiber.
+func newRateLimiterStorage() fiber.Storage {
+	once.Do(func() {
+		if config.Envs == nil || config.Envs.ValkeyAddr == "" {
+			log.Println("[RATE-LIMIT] Modo: in-memory (sin VALKEY_ADDR configurado)")
+			return
+		}
+
+		// Intentar conectar a Valkey con panic recovery
+		// gofiber/storage/valkey panics si no puede conectar
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+					log.Printf("[RATE-LIMIT][WARN] No se pudo conectar a Valkey (%v). Usando in-memory.", r)
+				}
+			}()
+
+			store := valkey.New(valkey.Config{
+				InitAddress: []string{config.Envs.ValkeyAddr},
+			})
+			rateLimiterStore = store
+			log.Printf("[RATE-LIMIT] Modo: Valkey (%s) — persistente, multi-instancia", config.Envs.ValkeyAddr)
+		}()
+	})
+	return rateLimiterStore
+}
 
 // AuthRateLimiter aplica un escudo de protección estándar para los endpoints
 // de autenticación del usuario general (psicólogos).
@@ -28,6 +72,7 @@ func AuthRateLimiter() fiber.Handler {
 	return limiter.New(limiter.Config{
 		Max:        10,
 		Expiration: 15 * time.Minute,
+		Storage:    newRateLimiterStorage(),
 
 		// KeyGenerator define cómo se identifica a un "actor" único.
 		// Arquitectura de Red: c.IP() de Fiber resuelve automáticamente cabeceras como
@@ -69,6 +114,7 @@ func AdminAuthRateLimiter() fiber.Handler {
 	return limiter.New(limiter.Config{
 		Max:        5,
 		Expiration: 30 * time.Minute,
+		Storage:    newRateLimiterStorage(),
 		KeyGenerator: func(c *fiber.Ctx) string {
 			return c.IP()
 		},
