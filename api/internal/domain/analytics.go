@@ -86,8 +86,7 @@ func (s *ActiveSession) IsActive() bool {
 	return time.Now().Before(s.ExpiresAt)
 }
 
-// ── Dashboard Stats (Read Model para BI) ─────────────────────────────────────
-
+// DashboardStats holds aggregated analytics metrics for the admin dashboard.
 type DashboardStats struct {
 	LoginsTotal         int64       `json:"logins_total"`
 	LoginsToday         int64       `json:"logins_today"`
@@ -114,12 +113,14 @@ type DashboardStats struct {
 	ViewTrend           []DailyCount `json:"view_trend"`
 }
 
+// TopItem represents a ranked entry in a top-N analytics list.
 type TopItem struct {
 	Value string `json:"value"`
 	Count int64  `json:"count"`
 	Name  string `json:"name"`
 }
 
+// TopProfile represents a psychologist profile ranked by view count.
 type TopProfile struct {
 	PsiID    string `json:"psi_id"`
 	Name     string `json:"name"`
@@ -127,6 +128,7 @@ type TopProfile struct {
 	Count    int64  `json:"count"`
 }
 
+// DailyCount represents a metric count for a specific date.
 type DailyCount struct {
 	Date  string `json:"date"`
 	Count int64  `json:"count"`

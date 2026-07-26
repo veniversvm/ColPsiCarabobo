@@ -19,6 +19,7 @@ import (
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/utils"
 )
 
+// ImportFromCSV imports psychologist records from an Excel file, creating users and sending welcome emails.
 func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminID uuid.UUID) (int, []map[string]string) {
 	_ = os.Mkdir("logs", 0755)
 	logFileName := fmt.Sprintf("logs/import_%s.log", time.Now().Format("2006-01-02_15-04-05"))

@@ -1,4 +1,4 @@
-// api/internal/service/admin_service.go (Asumo que el paquete es service por el contexto)
+// api/internal/service/mail_service.go
 package service
 
 import (

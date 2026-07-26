@@ -1,3 +1,4 @@
+// Package router configures all HTTP routes for the ColPsiCarabobo API.
 package router
 
 import (
@@ -18,6 +19,7 @@ import (
 	_ "github.com/veniversvm/ColPsiCarabobo/api/docs"
 )
 
+// SetupRouter initializes all API routes, middleware, and dependency injection.
 func SetupRouter(app *fiber.App, db *gorm.DB, s3Client *s3.S3Client) {
 
 	// ── Analytics: instanciar repo, servicio y registrar middleware global ────

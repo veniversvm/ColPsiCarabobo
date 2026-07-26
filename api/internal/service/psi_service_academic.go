@@ -15,6 +15,7 @@ import (
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/utils"
 )
 
+// AddPostGrade creates a new academic post-grade record with optional certificate images uploaded to S3.
 func (s *PsiService) AddPostGrade(ctx context.Context, psi *domain.PsiUserModel, req request_structs.CreatePostGradeRequest, files []*multipart.FileHeader) error {
 
 	postGrade := &domain.PsiUserPostGrade{
@@ -77,6 +78,7 @@ func (s *PsiService) AddPostGrade(ctx context.Context, psi *domain.PsiUserModel,
 	return s.repo.CreatePostGrade(ctx, postGrade)
 }
 
+// UpdatePostGrade updates an existing academic post-grade record, replacing any provided certificate images.
 func (s *PsiService) UpdatePostGrade(ctx context.Context, psi *domain.PsiUserModel, pgID uuid.UUID, req request_structs.UpdatePostGradeRequest, fileMap map[string]*multipart.FileHeader) error {
 
 	pg, err := s.repo.GetPostGradeByID(ctx, pgID)

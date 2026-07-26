@@ -14,6 +14,7 @@ import (
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 )
 
+// Login authenticates a psychologist by identifier and password, rotating the session key and returning a signed JWT.
 func (s *PsiService) Login(ctx context.Context, identifier, password string) (string, *domain.PsiUserModel, error) {
 	psi, err := s.repo.GetByIdentifier(ctx, identifier)
 	if err != nil {
@@ -59,12 +60,14 @@ func (s *PsiService) Login(ctx context.Context, identifier, password string) (st
 	return signed, psi, err
 }
 
+// AudiobookshelfUserResponse represents the API response when creating or fetching an Audiobookshelf user.
 type AudiobookshelfUserResponse struct {
 	User struct {
 		ID string `json:"id"`
 	} `json:"user"`
 }
 
+// LoginLibrary authenticates a psychologist and syncs the account with Audiobookshelf, returning a library-specific JWT.
 func (s *PsiService) LoginLibrary(ctx context.Context, identifier, password string) (string, *domain.PsiUserModel, error) {
 	psi, err := s.repo.GetByIdentifier(ctx, identifier)
 	if err != nil {
@@ -106,6 +109,7 @@ func (s *PsiService) LoginLibrary(ctx context.Context, identifier, password stri
 	return signed, psi, nil
 }
 
+// Logout clears the session key for the given psychologist, effectively invalidating their JWT.
 func (s *PsiService) Logout(ctx context.Context, psi *domain.PsiUserModel) error {
 	psi.Key = ""
 	psi.UpdateBy = psi.Username

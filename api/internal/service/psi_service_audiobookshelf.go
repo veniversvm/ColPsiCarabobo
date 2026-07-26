@@ -12,6 +12,7 @@ import (
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/config"
 )
 
+// actualizarEnAudiobookshelf patches an existing Audiobookshelf user profile with the provided fields.
 func (s *PsiService) actualizarEnAudiobookshelf(ctx context.Context, absID string, username, password, email *string) error {
 	if absID == "" {
 		return nil
@@ -64,6 +65,7 @@ func (s *PsiService) actualizarEnAudiobookshelf(ctx context.Context, absID strin
 	return nil
 }
 
+// sincronizarConAudiobookshelf creates a new Audiobookshelf user and returns its ID.
 func (s *PsiService) sincronizarConAudiobookshelf(ctx context.Context, username, password, email string) (string, error) {
 	url := "http://audiobookshelf:80/api/users"
 

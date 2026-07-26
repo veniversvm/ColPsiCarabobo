@@ -1,3 +1,4 @@
+// Package domain defines the core business models and repository interfaces for the ColPsiCarabobo API.
 package domain
 
 import (
@@ -6,11 +7,10 @@ import (
 	"github.com/google/uuid"
 )
 
-// AnalyticsRepository define el contrato para persistencia de eventos de telemetría.
-// Desacopla la capa de servicio del motor de ORM (GORM), permitiendo testing
-// con mocks y cambiando la implementación de persistencia sin afectar el negocio.
+// AnalyticsRepository defines the persistence contract for analytics telemetry events.
+// It decouples the service layer from the ORM, enabling mock-based testing and
+// allowing the storage implementation to change without affecting business logic.
 type AnalyticsRepository interface {
-	// Escritura de eventos
 	CreateLoginEvent(event LoginEvent) error
 	UpsertActiveSession(session ActiveSession) error
 	DeleteActiveSession(userID uuid.UUID) error
@@ -20,10 +20,8 @@ type AnalyticsRepository interface {
 	CreatePageView(view PageView) error
 	CountRecentPageViews(sessionID string, since time.Time) (int64, error)
 
-	// Lectura / Dashboard
 	GetDashboardStats() (*DashboardStats, error)
 
-	// Mantenimiento
 	DeletePageViewsOlderThan(cutoff time.Time) error
 	DeleteSearchEventsOlderThan(cutoff time.Time) error
 	DeleteProfileViewsOlderThan(cutoff time.Time) error

@@ -13,6 +13,7 @@ import (
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/request_structs"
 )
 
+// GetPublicDirectory returns a paginated list of psychologist mini-profiles matching the given filters.
 func (s *PsiService) GetPublicDirectory(ctx context.Context, filter request_structs.PsiDirectoryFilterDTO) (interface{}, error) {
 	if filter.Page < 1 {
 		filter.Page = 1
@@ -63,6 +64,7 @@ func (s *PsiService) GetPublicDirectory(ctx context.Context, filter request_stru
 	}, nil
 }
 
+// GetPublicProfile returns the full public profile of a psychologist by their FPV number.
 func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_structs.PsiFullProfileDTO, uuid.UUID, error) {
 	psi, err := s.repo.GetByFPV(ctx, id)
 	if err != nil {
@@ -242,6 +244,7 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 	return dto, psi.ID, nil
 }
 
+// GetPsiBioByID retrieves the extended biography text content for a psychologist by its text model ID.
 func (s *PsiService) GetPsiBioByID(ctx context.Context, id uuid.UUID) (string, error) {
 	bio, err := s.repo.GetTextContentByID(ctx, id)
 	if err != nil {
@@ -250,6 +253,7 @@ func (s *PsiService) GetPsiBioByID(ctx context.Context, id uuid.UUID) (string, e
 	return bio, nil
 }
 
+// GetPsiSolvency returns the solvency payment history for a psychologist.
 func (s *PsiService) GetPsiSolvency(ctx context.Context, id uuid.UUID) ([]domain.PsiUserSolvency, error) {
 	bio, err := s.repo.GetSolvencies(ctx, id)
 	if err != nil {
@@ -258,6 +262,7 @@ func (s *PsiService) GetPsiSolvency(ctx context.Context, id uuid.UUID) ([]domain
 	return bio, nil
 }
 
+// GetSitemapPsis returns minimal psychologist data for sitemap generation.
 func (s *PsiService) GetSitemapPsis(ctx context.Context) (interface{}, error) {
 	return s.repo.GetSitemapData(ctx)
 }

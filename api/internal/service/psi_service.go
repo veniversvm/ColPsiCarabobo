@@ -7,6 +7,7 @@ import (
 	"github.com/veniversvm/ColPsiCarabobo/api/pkg/s3"
 )
 
+// PsiService provides business operations for psychologist users including authentication, profile management, and academic data.
 type PsiService struct {
 	repo        domain.PsiUserRepository
 	s3Client    *s3.S3Client
@@ -14,6 +15,7 @@ type PsiService struct {
 	sanitizer   *bluemonday.Policy
 }
 
+// NewPsiService creates a new PsiService with the given repository, S3 client, and mail service.
 func NewPsiService(repo domain.PsiUserRepository, s3Client *s3.S3Client, mailService IMailService) *PsiService {
 	policy := bluemonday.UGCPolicy()
 	policy.AllowStyles("text-align").OnElements("p", "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "li", "blockquote")

@@ -1,5 +1,4 @@
-// api/internal/handler/psi_handler.go
-
+// Package handler implements HTTP request handlers for the ColPsiCarabobo API.
 package handler
 
 import (
@@ -17,13 +16,13 @@ import (
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/service"
 )
 
-// ── Struct: se añade analytics ────────────────────────────────────────────────
+// PsiHandler handles HTTP requests related to psychologist profiles and self-management.
 type PsiHandler struct {
 	service   *service.PsiService
 	analytics *service.AnalyticsService // 👈 NUEVO
 }
 
-// ── Constructor: acepta el segundo parámetro ──────────────────────────────────
+// NewPsiHandler creates a new PsiHandler with the given services.
 func NewPsiHandler(svc *service.PsiService, analytics *service.AnalyticsService) *PsiHandler {
 	return &PsiHandler{
 		service:   svc,
@@ -395,8 +394,13 @@ func (h *PsiHandler) AddPostGrade(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "Postgrado y documentos registrados exitosamente"})
 }
 
-func (h *PsiHandler) ListPsis(c *fiber.Ctx) error  { return nil }
-func (h *PsiHandler) GetPsi(c *fiber.Ctx) error    { return nil }
+// ListPsis returns a list of all psychologist users.
+func (h *PsiHandler) ListPsis(c *fiber.Ctx) error { return nil }
+
+// GetPsi retrieves a single psychologist user by ID.
+func (h *PsiHandler) GetPsi(c *fiber.Ctx) error { return nil }
+
+// UpdatePsi updates a psychologist user by ID.
 func (h *PsiHandler) UpdatePsi(c *fiber.Ctx) error { return nil }
 
 // UpdatePostGrade godoc
@@ -549,6 +553,7 @@ func (h *PsiHandler) DeleteSocialNetwork(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"message": "Red social eliminada correctamente"})
 }
 
+// GetSitemapData returns psychologist data for generating the public sitemap.
 func (h *PsiHandler) GetSitemapData(c *fiber.Ctx) error {
 	// Pedimos al repo solo los que deben ser indexados (Activos y Solventes)
 	// Usamos el UserContext para que sea compatible con timeouts

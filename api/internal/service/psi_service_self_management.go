@@ -17,6 +17,7 @@ import (
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/utils"
 )
 
+// UpdateProfileSelf updates a psychologist's own profile including credentials, personal data, images, and bio.
 func (s *PsiService) UpdateProfileSelf(
 	ctx context.Context,
 	psi *domain.PsiUserModel,

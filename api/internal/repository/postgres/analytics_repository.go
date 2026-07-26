@@ -12,26 +12,29 @@ type analyticsRepo struct {
 	db *gorm.DB
 }
 
+// NewAnalyticsRepository creates a new analytics repository backed by the given database.
 func NewAnalyticsRepository(db *gorm.DB) domain.AnalyticsRepository {
 	return &analyticsRepo{db: db}
 }
 
-// ── Escritura de eventos ─────────────────────────────────────────────────────
-
+// CreateLoginEvent persists a new login event record.
 func (r *analyticsRepo) CreateLoginEvent(event domain.LoginEvent) error {
 	return r.db.Create(&event).Error
 }
 
+// UpsertActiveSession creates or updates the active session for a user.
 func (r *analyticsRepo) UpsertActiveSession(session domain.ActiveSession) error {
 	return r.db.Where(domain.ActiveSession{UserID: session.UserID}).
 		Assign(session).
 		FirstOrCreate(&session).Error
 }
 
+// DeleteActiveSession removes the active session record for a user.
 func (r *analyticsRepo) DeleteActiveSession(userID uuid.UUID) error {
 	return r.db.Where("user_id = ?", userID).Delete(&domain.ActiveSession{}).Error
 }
 
+// UpdateSessionHeartbeat updates the last-seen and expiry timestamps for a session.
 func (r *analyticsRepo) UpdateSessionHeartbeat(userID uuid.UUID, lastSeen, expiresAt time.Time) error {
 	return r.db.Model(&domain.ActiveSession{}).
 		Where("user_id = ?", userID).
@@ -41,18 +44,22 @@ func (r *analyticsRepo) UpdateSessionHeartbeat(userID uuid.UUID, lastSeen, expir
 		}).Error
 }
 
+// CreateSearchEvent persists a directory search event.
 func (r *analyticsRepo) CreateSearchEvent(event domain.SearchEvent) error {
 	return r.db.Create(&event).Error
 }
 
+// CreateProfileView persists a profile view event.
 func (r *analyticsRepo) CreateProfileView(event domain.ProfileView) error {
 	return r.db.Create(&event).Error
 }
 
+// CreatePageView persists a page view event.
 func (r *analyticsRepo) CreatePageView(view domain.PageView) error {
 	return r.db.Create(&view).Error
 }
 
+// CountRecentPageViews returns the number of page views for a session since the given time.
 func (r *analyticsRepo) CountRecentPageViews(sessionID string, since time.Time) (int64, error) {
 	var count int64
 	err := r.db.Model(&domain.PageView{}).
@@ -61,8 +68,7 @@ func (r *analyticsRepo) CountRecentPageViews(sessionID string, since time.Time) 
 	return count, err
 }
 
-// ── Lectura / Dashboard ──────────────────────────────────────────────────────
-
+// GetDashboardStats returns aggregated analytics metrics for the admin dashboard.
 func (r *analyticsRepo) GetDashboardStats() (*domain.DashboardStats, error) {
 	stats := &domain.DashboardStats{}
 
@@ -173,20 +179,22 @@ func (r *analyticsRepo) GetDashboardStats() (*domain.DashboardStats, error) {
 	return stats, nil
 }
 
-// ── Mantenimiento ────────────────────────────────────────────────────────────
-
+// DeletePageViewsOlderThan removes page view records older than the cutoff time.
 func (r *analyticsRepo) DeletePageViewsOlderThan(cutoff time.Time) error {
 	return r.db.Where("created_at < ?", cutoff).Delete(&domain.PageView{}).Error
 }
 
+// DeleteSearchEventsOlderThan removes search event records older than the cutoff time.
 func (r *analyticsRepo) DeleteSearchEventsOlderThan(cutoff time.Time) error {
 	return r.db.Where("created_at < ?", cutoff).Delete(&domain.SearchEvent{}).Error
 }
 
+// DeleteProfileViewsOlderThan removes profile view records older than the cutoff time.
 func (r *analyticsRepo) DeleteProfileViewsOlderThan(cutoff time.Time) error {
 	return r.db.Where("created_at < ?", cutoff).Delete(&domain.ProfileView{}).Error
 }
 
+// DeleteExpiredSessions removes active sessions that have expired.
 func (r *analyticsRepo) DeleteExpiredSessions(now time.Time) error {
 	return r.db.Where("expires_at < ?", now).Delete(&domain.ActiveSession{}).Error
 }

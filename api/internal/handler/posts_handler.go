@@ -12,10 +12,12 @@ import (
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/service"
 )
 
+// PostHandler handles HTTP requests related to news posts and publications.
 type PostHandler struct {
 	service *service.PostService
 }
 
+// NewPostHandler creates a new PostHandler with the given service.
 func NewPostHandler(svc *service.PostService) *PostHandler {
 	return &PostHandler{service: svc}
 }
@@ -179,6 +181,7 @@ func (h *PostHandler) UpdatePost(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"message": "Publicación actualizada correctamente"})
 }
 
+// GetSiteMapHandler returns post data for generating the public sitemap.
 func (h *PostHandler) GetSiteMapHandler(c *fiber.Ctx) error {
 	// 1. Llamamos al servicio usando c.UserContext() para respetar timeouts
 	data, err := h.service.GetSitemapData(c.UserContext())
