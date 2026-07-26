@@ -42,7 +42,7 @@ func (s *PsiService) UpdateProfileSelf(
 		}
 		hashed, _ := bcrypt.GenerateFromPassword([]byte(*req.NewPassword1), bcrypt.DefaultCost)
 		psi.Password = string(hashed)
-		psi.Key = utils.HashKey(uuid.Must(uuid.NewV7()).String())
+		psi.Key = uuid.Must(uuid.NewV7()).String()
 	}
 
 	// Pre-allocate with worst-case capacity: 1 profile pic + 3 title images

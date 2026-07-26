@@ -152,31 +152,6 @@ func TestGenerateSecureRandomString(t *testing.T) {
 }
 
 // =========================================================================
-// TEST: HashKey (SHA-256 HMAC Key Hashing)
-// =========================================================================
-
-func TestHashKey(t *testing.T) {
-	t.Run("Retorna hash SHA-256 de 64 caracteres hex", func(t *testing.T) {
-		result := HashKey("test-uuid-v7-key")
-		require.Len(t, result, 64, "El hash SHA-256 hex debe tener 64 caracteres")
-	})
-
-	t.Run("Determinista: misma entrada produce mismo hash", func(t *testing.T) {
-		key := "0192e4b8-7c3a-7b5c-9d1e-2f3a4b5c6d7e"
-		require.Equal(t, HashKey(key), HashKey(key))
-	})
-
-	t.Run("Diferentes entradas producen diferentes hashes", func(t *testing.T) {
-		require.NotEqual(t, HashKey("key-a"), HashKey("key-b"))
-	})
-
-	t.Run("String vacío produce hash válido", func(t *testing.T) {
-		result := HashKey("")
-		require.Len(t, result, 64)
-	})
-}
-
-// =========================================================================
 // TEST: Fortaleza de Contraseñas
 // =========================================================================
 

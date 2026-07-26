@@ -12,7 +12,6 @@ import (
 
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/config"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
-	"github.com/veniversvm/ColPsiCarabobo/api/internal/utils"
 )
 
 // Login authenticates a psychologist by identifier and password, rotating the session key and returning a signed JWT.
@@ -31,8 +30,7 @@ func (s *PsiService) Login(ctx context.Context, identifier, password string) (st
 	}
 
 	newKey := uuid.Must(uuid.NewV7()).String()
-	hashedKey := utils.HashKey(newKey)
-	psi.Key = hashedKey
+	psi.Key = newKey
 
 	psi.UpdateBy = psi.Username
 	psi.UpdateById = &psi.ID
@@ -58,7 +56,7 @@ func (s *PsiService) Login(ctx context.Context, identifier, password string) (st
 		log.Warn().Err(err).Str("component", "psi_service_auth").Msg("Error al preparar el correo (pero el psicólogo se logueó)")
 	}
 
-	signed, err := token.SignedString([]byte(hashedKey))
+	signed, err := token.SignedString([]byte(newKey))
 	return signed, psi, err
 }
 

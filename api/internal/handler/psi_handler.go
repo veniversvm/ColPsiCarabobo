@@ -43,11 +43,9 @@ func NewPsiHandler(svc *service.PsiService, analytics *service.AnalyticsService)
 // @Router       /admin/psi/upload-csv [post]
 func (h *PsiHandler) UploadCsv(c *fiber.Ctx) error {
 	log.Debug().Str("component", "handler").Msg("Entrando a UploadCsv")
-	admin, ok := c.Locals("admin").(*domain.UserAdmin)
-	if !ok || admin == nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"message": "Cannot POST /api/v1/psi/upload-csv",
-		})
+	admin, err := middleware.GetAuthenticatedAdmin(c)
+	if err != nil {
+		return err
 	}
 
 	file, err := c.FormFile("xlsx")
@@ -539,10 +537,10 @@ func (h *PsiHandler) DeleteSocialNetwork(c *fiber.Ctx) error {
 	role := ""
 	var execID uuid.UUID
 
-	if admin, ok := c.Locals("admin").(*domain.UserAdmin); ok && admin != nil {
+	if admin, err := middleware.GetAuthenticatedAdmin(c); err == nil {
 		role = "admin"
 		execID = admin.ID
-	} else if psi, ok := c.Locals("psi_user").(*domain.PsiUserModel); ok && psi != nil {
+	} else if psi, err := middleware.GetAuthenticatedPsi(c); err == nil {
 		role = "psi"
 		execID = psi.ID
 	}
