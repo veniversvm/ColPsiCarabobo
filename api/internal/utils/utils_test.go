@@ -155,6 +155,156 @@ func TestGenerateSecureRandomString(t *testing.T) {
 // TEST: Fortaleza de Contraseñas
 // =========================================================================
 
+// =========================================================================
+// TEST: NORMALIZACIÓN GEOGRÁFICA
+// =========================================================================
+
+func TestNormalizeMunicipioCarabobo(t *testing.T) {
+	tests := []struct {
+		name      string
+		input     string
+		want      string
+		wantValid bool
+	}{
+		{"nombre exacto", "Valencia", "Valencia", true},
+		{"case insensitive", "valencia", "Valencia", true},
+		{"con tilde extra", "Naguanagua", "Naguanagua", true},
+		{"con espacios extra", "  San Diego  ", "San Diego", true},
+		{"tilde tolerant", "San Joaquin", "San Joaquín", true},
+		{"municipio real con tilde", "San Joaquín", "San Joaquín", true},
+		{"todos los municipios", "Bejuma", "Bejuma", true},
+		{"todos los municipios 2", "Carlos Arvelo", "Carlos Arvelo", true},
+		{"todos los municipios 3", "Diego Ibarra", "Diego Ibarra", true},
+		{"todos los municipios 4", "Guacara", "Guacara", true},
+		{"todos los municipios 5", "Juan José Mora", "Juan José Mora", true},
+		{"todos los municipios 6", "Libertador", "Libertador", true},
+		{"todos los municipios 7", "Los Guayos", "Los Guayos", true},
+		{"todos los municipios 8", "Miranda", "Miranda", true},
+		{"todos los municipios 9", "Montalbán", "Montalbán", true},
+		{"todos los municipios 10", "Puerto Cabello", "Puerto Cabello", true},
+		{"municipio inexistente", "FalsoMunicipio", "", false},
+		{"string vacio", "", "", false},
+		{"solo espacios", "   ", "", false},
+		{"estado en vez de municipio", "Carabobo", "", false},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got, ok := NormalizeMunicipioCarabobo(tc.input)
+			require.Equal(t, tc.wantValid, ok, "ok mismatch")
+			require.Equal(t, tc.want, got, "valor mismatch")
+		})
+	}
+}
+
+func TestNormalizeEstadoVenezuela(t *testing.T) {
+	tests := []struct {
+		name      string
+		input     string
+		want      string
+		wantValid bool
+	}{
+		{"estado exacto", "Lara", "Lara", true},
+		{"case insensitive", "lara", "Lara", true},
+		{"con tilde", "Anzoategui", "Anzoátegui", true},
+		{"con tilde real", "Anzoátegui", "Anzoátegui", true},
+		{"espacios extra", "  Zulia  ", "Zulia", true},
+		{"distrito capital", "Distrito Capital", "Distrito Capital", true},
+		{"delta amacuro", "Delta Amacuro", "Delta Amacuro", true},
+		{"la guaira", "La Guaira", "La Guaira", true},
+		{"carabobo no esta", "Carabobo", "", false},
+		{"municipio en vez de estado", "Valencia", "", false},
+		{"string vacio", "", "", false},
+		{"solo espacios", "   ", "", false},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got, ok := NormalizeEstadoVenezuela(tc.input)
+			require.Equal(t, tc.wantValid, ok, "ok mismatch")
+			require.Equal(t, tc.want, got, "valor mismatch")
+		})
+	}
+}
+
+// =========================================================================
+// TEST: PARSEO DE BOOLEANOS TRI-ESTADO
+// =========================================================================
+
+func TestBoolFromForm(t *testing.T) {
+	tests := []struct {
+		name   string
+		input  string
+		expect *bool
+	}{
+		{"true", "true", boolPtr(true)},
+		{"TRUE mayusculas", "TRUE", boolPtr(true)},
+		{"1 entero", "1", boolPtr(true)},
+		{"yes", "yes", boolPtr(true)},
+		{"false", "false", boolPtr(false)},
+		{"FALSE mayusculas", "FALSE", boolPtr(false)},
+		{"0 entero", "0", boolPtr(false)},
+		{"no", "no", boolPtr(false)},
+		{"con espacios true", "  true  ", boolPtr(true)},
+		{"con espacios false", "  false  ", boolPtr(false)},
+		{"con espacios 1", "  1  ", boolPtr(true)},
+		{"string vacio", "", nil},
+		{"solo espacios", "   ", nil},
+		{"texto aleatorio", "abc", nil},
+		{"string null", "null", nil},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result := BoolFromForm(tc.input)
+			if tc.expect == nil {
+				require.Nil(t, result, "se esperaba nil")
+			} else {
+				require.NotNil(t, result, "no debia ser nil")
+				require.Equal(t, *tc.expect, *result, "valor mismatch")
+			}
+		});
+	}
+}
+
+// boolPtr es un helper para crear punteros a bool en tests
+func boolPtr(b bool) *bool {
+	return &b
+}
+
+// =========================================================================
+// TEST: LIMPIEZA ALFANUMERICA
+// =========================================================================
+
+func TestCleanAlphaNumeric(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{"string limpio", "Hello123", "Hello123"},
+		{"con caracteres especiales", "Hello@World!", "HelloWorld"},
+		{"con inyeccion sql", "'; DROP TABLE users; --", "DROPTABLEusers"},
+		{"con espacios", "a b c", "abc"},
+		{"con guiones y parentesis", "test-(1)", "test1"},
+		{"caracteres unicode preservados", "José María Ñoño", "JoséMaríaÑoño"},
+		{"string vacio", "", ""},
+		{"solo simbolos", "!@#$%^&*()", ""},
+		{"mixto complejo", "user@email.com (Work)", "useremailcomWork"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result := CleanAlphaNumeric(tc.input)
+			require.Equal(t, tc.expected, result)
+		})
+	}
+}
+
+// =========================================================================
+// TEST: FORTALEZA DE CONTRASEÑAS
+// =========================================================================
+
 func TestIsStrongPassword(t *testing.T) {
 	// Definimos los casos de prueba
 	tests := []struct {
