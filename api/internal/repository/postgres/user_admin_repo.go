@@ -68,13 +68,49 @@ func (r *adminRepo) Create(ctx context.Context, user *domain.UserAdmin) error {
 // =========================================================================
 
 // Update actualiza todos los campos de un administrador existente.
-// Utiliza Save(), lo cual incluye los campos de auditoría automáticos de GORM.
-//
-// Advertencia Técnica: Save() sobreescribe TODOS los campos incluyendo zero-values.
-// El caller DEBE obtener el modelo completo vía GetByID antes de modificar campos.
-// Nunca pasar un modelo parcialmente construido a este método.
+// Utiliza Updates() con un mapa explícito para evitar que GORM sobreescriba
+// booleanos con zero-values (false) — un error común con Save().
+// Los campos booleanos usan gorm.Expr para forzar la escritura del valor real.
 func (r *adminRepo) Update(ctx context.Context, user *domain.UserAdmin) error {
-	return r.db.WithContext(ctx).Save(user).Error
+	return r.db.WithContext(ctx).Model(user).Updates(map[string]interface{}{
+		// ── Credenciales ──────────────────────────────────────────────
+		"username": user.Username,
+		"email":    user.Email,
+		"password": user.Password,
+		"key":      user.Key,
+
+		// ── Estatus y Contraseña ─────────────────────────────────────
+		"is_active":            gorm.Expr("?", user.IsActive),
+		"must_change_password": gorm.Expr("?", user.MustChangePassword),
+		"sudo":                 gorm.Expr("?", user.Sudo),
+
+		// ── Permisos: Colegiados ─────────────────────────────────────
+		"can_create_psi": gorm.Expr("?", user.CanCreatePsi),
+		"can_update_psi": gorm.Expr("?", user.CanUpdatePsi),
+		"can_delete_psi": gorm.Expr("?", user.CanDeletePsi),
+
+		// ── Permisos: Personal Administrativo ────────────────────────
+		"can_create_admin": gorm.Expr("?", user.CanCreateAdmin),
+		"can_update_admin": gorm.Expr("?", user.CanUpdateAdmin),
+		"can_delete_admin": gorm.Expr("?", user.CanDeleteAdmin),
+
+		// ── Permisos: Contenido y Comunicación ───────────────────────
+		"can_publish":              gorm.Expr("?", user.CanPublish),
+		"can_update_publish":       gorm.Expr("?", user.CanUpdatePublish),
+		"can_delete_publish":       gorm.Expr("?", user.CanDeletePublish),
+		"can_send_notifications":   gorm.Expr("?", user.CanSendNotifications),
+		"can_manage_notifications": gorm.Expr("?", user.CanManageNotifications),
+		"can_read_notifications":   gorm.Expr("?", user.CanReadNotifications),
+
+		// ── Permisos: Catálogo de Especialidades ─────────────────────
+		"can_create_tags": gorm.Expr("?", user.CanCreateTags),
+		"can_edit_tags":   gorm.Expr("?", user.CanEditTags),
+		"can_delete_tags": gorm.Expr("?", user.CanDeleteTags),
+
+		// ── Auditoría ────────────────────────────────────────────────
+		"update_by":    user.UpdateBy,
+		"update_by_id": user.UpdateById,
+	}).Error
 }
 
 // Delete realiza un borrado lógico (Soft Delete).

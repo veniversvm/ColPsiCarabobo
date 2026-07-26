@@ -178,7 +178,9 @@ func (r *psiRepo) Update(
 
 		// 1. Guardar Bio Extensa
 		if bioText != nil {
-			if err := tx.Session(&gorm.Session{FullSaveAssociations: false}).Save(bioText).Error; err != nil {
+			if err := tx.Model(bioText).Updates(map[string]interface{}{
+				"content": bioText.Content,
+			}).Error; err != nil {
 				return err
 			}
 			psi.BioTextID = bioText.ID
@@ -364,7 +366,9 @@ func (r *psiRepo) UpdatePublicProfile(
 
 		// 1. Guardar Bio Extensa
 		if bioText != nil {
-			if err := tx.Save(bioText).Error; err != nil {
+			if err := tx.Model(bioText).Updates(map[string]interface{}{
+				"content": bioText.Content,
+			}).Error; err != nil {
 				return err
 			}
 			psi.BioTextID = bioText.ID
@@ -694,9 +698,21 @@ func (r *psiRepo) GetPostGradeByID(ctx context.Context, id uuid.UUID) (*domain.P
 }
 
 // UpdatePostGrade actualiza los datos de un registro académico existente.
-// Advertencia: Save() sobreescribe todos los campos. El caller DEBE obtener el modelo completo vía GetByID primero.
+// Utiliza Updates() con mapa explícito para proteger booleanos e int contra zero-values.
 func (r *psiRepo) UpdatePostGrade(ctx context.Context, pg *domain.PsiUserPostGrade) error {
-	return r.db.WithContext(ctx).Save(pg).Error
+	return r.db.WithContext(ctx).Model(pg).Updates(map[string]interface{}{
+		"type":            pg.Type,
+		"title":           pg.Title,
+		"university":      pg.University,
+		"graduation_year": pg.GraduationYear,
+		"description":     pg.Description,
+		"active":          gorm.Expr("?", pg.Active),
+		"pic_one_s3_key":  pg.PicOneS3Key,
+		"pic_two_s3_key":  pg.PicTwoS3Key,
+		"pic_three_s3_key": pg.PicThreeS3Key,
+		"update_by":       pg.UpdateBy,
+		"update_by_id":    pg.UpdateById,
+	}).Error
 }
 
 // =========================================================================
@@ -746,9 +762,15 @@ func (r *psiRepo) GetSocialNetworkByID(ctx context.Context, id uuid.UUID) (*doma
 }
 
 // UpdateSocialNetwork modifica el enlace o tipo de una red social existente.
-// Advertencia: Save() sobreescribe todos los campos. El caller DEBE obtener el modelo completo vía GetByID primero.
+// Utiliza Updates() con mapa explícito para proteger el booleano IsActive contra zero-values.
 func (r *psiRepo) UpdateSocialNetwork(ctx context.Context, sn *domain.PsiUserSocialNetwork) error {
-	return r.db.WithContext(ctx).Save(sn).Error
+	return r.db.WithContext(ctx).Model(sn).Updates(map[string]interface{}{
+		"name":        sn.Name,
+		"url":         sn.URL,
+		"is_active":   gorm.Expr("?", sn.IsActive),
+		"update_by":   sn.UpdateBy,
+		"update_by_id": sn.UpdateById,
+	}).Error
 }
 
 // DeleteSocialNetwork elimina una red social (aplica Soft Delete si el modelo lo soporta).

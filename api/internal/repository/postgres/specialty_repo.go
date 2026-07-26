@@ -95,13 +95,17 @@ func (r *specialtyRepo) GetByAdminID(ctx context.Context, id uint32) (*domain.Ps
 	return &s, err
 }
 
-// Update persiste todas las modificaciones de una especialidad.
-//
-// Advertencia Técnica: Al usar tx.Save(), GORM reemplazará todos los campos de la fila
-// con los valores del modelo proporcionado (incluyendo zero-values). Es mandatorio
-// que el modelo 's' provenga de una consulta previa (GetByID) para evitar pérdida de datos.
+// Update persiste las modificaciones de una especialidad usando Updates() con mapa explícito.
+// El campo Active usa gorm.Expr para forzar la escritura del valor real (true/false),
+// evitando que GORM lo omita por ser un zero-value.
 func (r *specialtyRepo) Update(ctx context.Context, s *domain.PsiSpecialtyModel) error {
-	return r.db.WithContext(ctx).Save(s).Error
+	return r.db.WithContext(ctx).Model(s).Updates(map[string]interface{}{
+		"name":        s.Name,
+		"description": s.Description,
+		"active":      gorm.Expr("?", s.Active),
+		"update_by":   s.UpdateBy,
+		"update_by_id": s.UpdateById,
+	}).Error
 }
 
 // Delete ejecuta un borrado lógico (Desactivación) por regla de negocio.

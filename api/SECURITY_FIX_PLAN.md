@@ -1652,25 +1652,31 @@ router.InitRouter(app, adminRepo, psiRepo, postRepo, specialtyRepo, s3Client, an
 
 ---
 
-### FIX-30: `Save()` para updates parciales (sobreescribe zero-values)
+### FIX-30: `Save()` para updates parciales (sobreescribe zero-values) — ✅ COMPLETADO
 
 | Campo | Valor |
 |-------|-------|
 | **Hallazgo** | MED-11 |
-| **Archivos** | `user_admin_repo.go:73`, `specialty_repo.go:103` |
+| **Archivos** | `user_admin_repo.go`, `specialty_repo.go`, `psi_repository.go`, `post_repo.go` |
+| **Estado** | COMPLETADO (commit `docs`) |
 
-**Fix:**
+**Fix:** 8 llamadas `Save()` → `Updates(map)` con `gorm.Expr("?", value)` para booleanos:
+
 ```go
 // ANTES (sobreescribe campos no enviados con zero-values):
 db.Save(&admin)
 
-// DESPUÉS (solo actualiza campos no-zero):
-db.Model(&admin).Updates(map[string]interface{}{
-    "email":    admin.Email,
-    "username": admin.Username,
-    // ... solo campos que realmente cambiaron
+// DESPUÉS (solo actualiza campos explícitos, booleanos protegidos con gorm.Expr):
+db.Model(admin).Updates(map[string]interface{}{
+    "email":       admin.Email,
+    "is_active":   gorm.Expr("?", admin.IsActive),  // ← fuerza escritura de false
+    "sudo":        gorm.Expr("?", admin.Sudo),
+    "can_publish": gorm.Expr("?", admin.CanPublish),
+    // ... todos los campos del modelo
 })
 ```
+
+**Conservada 1 llamada:** `CreateSolvency` usa `Save()` intencionalmente (upsert por `(psi_user_model_id, date)`).
 
 ---
 

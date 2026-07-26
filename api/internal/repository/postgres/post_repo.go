@@ -122,22 +122,31 @@ func (r *postRepo) List(ctx context.Context, filter domain.PostFilter, page, lim
 
 // Update modifica de forma transaccional los datos de una publicación existente.
 //
+// Utiliza Updates() con mapas explícitos para proteger strings contra zero-value overwrites.
 // Admite actualizaciones parciales:
 //   - Siempre actualiza la metadata del [domain.Post] (título, estado, imagen, etc.).
-//   - Solo actualiza el [domain.TextModel] si el parámetro text no es nil,
-//     permitiendo editar únicamente la metadata sin tocar el contenido extenso.
+//   - Solo actualiza el [domain.TextModel] si el parámetro text no es nil.
 //
 // La operación completa se revierte si cualquiera de las actualizaciones falla.
 func (r *postRepo) Update(ctx context.Context, post *domain.Post, text *domain.TextModel) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Actualizar siempre la metadata del post.
-		if err := tx.Save(post).Error; err != nil {
+		if err := tx.Model(post).Updates(map[string]interface{}{
+			"title":             post.Title,
+			"short_description": post.ShortDescription,
+			"type":              post.Type,
+			"image_s3_key":      post.ImageS3Key,
+			"status":            post.Status,
+			"publish_at":        post.PublishAt,
+			"update_by":         post.UpdateBy,
+			"update_by_id":      post.UpdateById,
+		}).Error; err != nil {
 			return err
 		}
 
-		// Actualizar el contenido extenso solo si se provee un nuevo modelo.
 		if text != nil {
-			if err := tx.Save(text).Error; err != nil {
+			if err := tx.Model(text).Updates(map[string]interface{}{
+				"content": text.Content,
+			}).Error; err != nil {
 				return err
 			}
 		}
