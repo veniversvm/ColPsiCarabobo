@@ -103,7 +103,7 @@ func TestAdminService_All(t *testing.T) {
 			return nil
 		}
 
-		token, err := svc.Login(context.Background(), "admin_test", pass)
+		token, _, err := svc.Login(context.Background(), "admin_test", pass)
 		if err != nil || token == "" {
 			t.Errorf("Error en login exitoso: %v", err)
 		}

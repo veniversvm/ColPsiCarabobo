@@ -176,10 +176,11 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 		psi := &domain.PsiUserModel{
 			ID: psiID, AuditModel: audit,
 			Credentials: domain.Credentials{
-				Key:      sessionKey,
-				Username: generateSecureUsername(emailToProcess, strconv.Itoa(fpvInt), firstName),
-				Email:    emailToProcess, Password: hashedPassword,
-				IsActive: getValorSeguro(row, 45) == "Activo",
+				Key:                sessionKey,
+				Username:           generateSecureUsername(emailToProcess, strconv.Itoa(fpvInt), firstName),
+				Email:              emailToProcess, Password: hashedPassword,
+				IsActive:           getValorSeguro(row, 45) == "Activo",
+				MustChangePassword: true,
 			},
 			AudioBookShellId: psiID.String(),
 			FirstName:        firstName, LastName: lastName,

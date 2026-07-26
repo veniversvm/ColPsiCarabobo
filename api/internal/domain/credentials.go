@@ -20,4 +20,8 @@ type Credentials struct {
 
 	// IsActive controla si la cuenta puede iniciar sesión.
 	IsActive bool `gorm:"column:is_active;default:true" json:"is_active"`
+
+	// MustChangePassword indica que el usuario debe cambiar su contraseña en el próximo login.
+	// Se activa automáticamente cuando se crea una cuenta con contraseña temporal (imports masivos).
+	MustChangePassword bool `gorm:"column:must_change_password;default:false" json:"-"`
 }

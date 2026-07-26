@@ -280,8 +280,9 @@ func (h *PsiHandler) Login(c *fiber.Ctx) error {
 	// ─────────────────────────────────────────────────────────────────────────
 
 	return c.JSON(fiber.Map{
-		"message": "Bienvenido colega",
-		"token":   token,
+		"message":              "Bienvenido colega",
+		"token":                token,
+		"must_change_password": user.MustChangePassword,
 	})
 }
 

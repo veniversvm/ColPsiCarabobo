@@ -48,7 +48,7 @@ func (h *AdminHandler) Login(c *fiber.Ctx) error {
 		})
 	}
 
-	token, err := h.service.Login(c.UserContext(), req.Identifier, req.Password)
+	token, admin, err := h.service.Login(c.UserContext(), req.Identifier, req.Password)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": err.Error(),
@@ -56,8 +56,9 @@ func (h *AdminHandler) Login(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{
-		"message": "Bienvenido al sistema",
-		"token":   token,
+		"message":              "Bienvenido al sistema",
+		"token":                token,
+		"must_change_password": admin.MustChangePassword,
 	})
 }
 

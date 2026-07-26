@@ -1095,7 +1095,19 @@ return db, nil
 | **Hallazgo** | HIGH-09 |
 | **Archivos** | `internal/templates/welcome_psi.html:16`, `internal/templates/welcome_admin.html:15` |
 | **Severidad** | 🟠 ALTO |
+| **Estado** | ✅ IMPLEMENTADO |
 | **Riesgo** | Contraseña temporal en texto plano en email sin indicar que debe cambiarse |
+
+**Fix implementado:**
+- `{{.TempPassword}}` → `{{.Password}}` (corregido bug funcional: password renderizaba vacío)
+- Agregado aviso amarillo: "IMPORTANTE: Esta es una contraseña temporal..."
+- Nuevo campo `MustChangePassword bool` en `Credentials` struct
+- Marcado automático `true` en imports masivos + CreatePsiByAdmin
+- Login retorna `must_change_password` en JSON response
+- Validación `IsStrongPassword()` agregada en CreatePsiByAdmin
+- Migración: `ALTER TABLE` para ambas tablas
+
+**Detalle:** Ver `FIX_16_REPORT.md`
 
 **Código actual (templates):**
 ```html

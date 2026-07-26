@@ -69,7 +69,12 @@ func (s *PsiService) CreatePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 		return errors.New("no tienes permiso para registrar psicólogos")
 	}
 
-	// 2. Geo-validación y normalización
+	// 2. Validación de fuerza de contraseña
+	if !utils.IsStrongPassword(req.Password) {
+		return errors.New("la contraseña no cumple con los estándares de seguridad")
+	}
+
+	// 3. Geo-validación y normalización
 	// Los campos opcionales solo se validan si vienen en el request.
 	var municipioCarabobo string
 	if req.MunicipalityCarabobo != "" {
@@ -89,23 +94,23 @@ func (s *PsiService) CreatePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 		estadoOutside = estado
 	}
 
-	// 3. Hash de Password (Criptografía)
+	// 4. Hash de Password (Criptografía)
 	hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return errors.New("error al procesar seguridad")
 	}
 
-	// 4. Parsear fechas
+	// 5. Parsear fechas
 	bornDate, _ := time.Parse("2006-01-02", req.BornDate)
 	gradDate, _ := time.Parse("2006-01-02", req.GraduateDate)
 	solvDate, _ := time.Parse("2006-01-02", req.DateOfLastSolvency)
 	regDate, _ := time.Parse("2006-01-02", req.RegisterTitleDate)
 
-	// 5. Mapeo de Identidades (UUIDs frescos v7 para indexación optimizada en B-Trees)
+	// 6. Mapeo de Identidades (UUIDs frescos v7 para indexación optimizada en B-Trees)
 	psiID := uuid.Must(uuid.NewV7())
 	colDataID := uuid.Must(uuid.NewV7())
 
-	// 6. Crear un audit model (Inmutabilidad Forense)
+	// 7. Crear un audit model (Inmutabilidad Forense)
 	audit_moodel := domain.AuditModel{
 		CreateBy:   admin.Username,
 		CreateById: &admin.ID,
@@ -122,13 +127,13 @@ func (s *PsiService) CreatePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 	//── Datos colegiales ────────────────────────────────────────────
 	colData := createColdata(req, psiID, colDataID, audit_moodel, gradDate, regDate, solvDate)
 
-	// 6. Persistencia transaccional — un solo punto de fallo.
+	// 8. Persistencia transaccional — un solo punto de fallo.
 	// MapDBError actúa como escudo para no filtrar metadatos de Postgres al cliente.
 	if err := s.repo.CreateWithColData(ctx, psi, colData, solvencies, []domain.PsiUserPostGrade{}); err != nil {
 		return MapDBError(err)
 	}
 
-	// 7. Notificación de bienvenida — no bloqueante, fallo silencioso intencional
+	// 9. Notificación de bienvenida — no bloqueante, fallo silencioso intencional
 	// Si el SMTP falla, la creación del registro no hace Rollback.
 	mailData := map[string]interface{}{
 		"Name":     psi.Username,
@@ -814,11 +819,12 @@ func createPsiUSerModel(req request_structs.CreatePsiAdminRequest, psiID uuid.UU
 		ID:         psiID,
 		AuditModel: audit_moodel,
 		Credentials: domain.Credentials{
-			Key:      uuid.Must(uuid.NewV7()).String(),
-			Username: req.Username,
-			Email:    req.Email,
-			Password: string(hashed),
-			IsActive: req.IsActive,
+			Key:                uuid.Must(uuid.NewV7()).String(),
+			Username:           req.Username,
+			Email:              req.Email,
+			Password:           string(hashed),
+			IsActive:           req.IsActive,
+			MustChangePassword: true,
 		},
 
 		// ── Identidad Legal ───────────────────────────────────────────────

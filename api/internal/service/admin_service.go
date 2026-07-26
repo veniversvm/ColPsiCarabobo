@@ -57,7 +57,7 @@ func NewAdminService(repo domain.UserAdminRepository, mailService *MailService) 
 // Esto garantiza el patrón "Single Session Enforcement" (Solo 1 dispositivo activo a la vez):
 // al cambiar el Key, cualquier JWT robado o emitido anteriormente en otro dispositivo
 // queda criptográficamente inservible de manera instantánea.
-func (s *AdminService) Login(ctx context.Context, identifier, password string) (string, error) {
+func (s *AdminService) Login(ctx context.Context, identifier, password string) (string, *domain.UserAdmin, error) {
 
 	// Sanitización de entrada (Evita fallos por Capitalization en DB)
 	lowercased := strings.ToLower(identifier)
@@ -65,16 +65,16 @@ func (s *AdminService) Login(ctx context.Context, identifier, password string) (
 	admin, err := s.repo.GetByIdentifier(ctx, lowercased)
 	if err != nil {
 		// Mensaje genérico: Prevención de fuga de información (Username Enumeration Attack)
-		return "", errors.New("credenciales inválidas")
+		return "", nil, errors.New("credenciales inválidas")
 	}
 
 	if !admin.IsActive {
-		return "", errors.New("la cuenta está desactivada")
+		return "", nil, errors.New("la cuenta está desactivada")
 	}
 
 	// Costosa validación criptográfica (Prevención de ataques Timing)
 	if err := bcrypt.CompareHashAndPassword([]byte(admin.Password), []byte(password)); err != nil {
-		return "", errors.New("credenciales inválidas")
+		return "", nil, errors.New("credenciales inválidas")
 	}
 
 	// Renovación de la Key para invalidar tokens anteriores y proporcionar una capa extra de seguridad
@@ -83,7 +83,7 @@ func (s *AdminService) Login(ctx context.Context, identifier, password string) (
 
 	// Se persiste el nuevo Key en la base de datos
 	if err := s.repo.Update(ctx, admin); err != nil {
-		return "", errors.New("error al procesar inicio de sesión")
+		return "", nil, errors.New("error al procesar inicio de sesión")
 	}
 
 	// Emisión del Token JWT firmado con el nuevo Key
@@ -107,7 +107,8 @@ func (s *AdminService) Login(ctx context.Context, identifier, password string) (
 		log.Printf("[WARN] Error al preparar el correo (pero el admin se creó): %v", err)
 	}
 
-	return token.SignedString([]byte(newKey))
+	signed, err := token.SignedString([]byte(newKey))
+	return signed, admin, err
 }
 
 // Logout invalida la sesión del administrador a nivel de servidor (Stateful Logout).

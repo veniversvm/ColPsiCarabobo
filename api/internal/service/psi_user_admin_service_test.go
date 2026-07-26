@@ -92,13 +92,27 @@ func TestPsiService_CreateByAdmin(t *testing.T) {
 		req := request_structs.CreatePsiAdminRequest{
 			Username: "lic_perez",
 			Email:    "perez@test.com",
-			Password: "secure_password",
+			Password: "Secure1!password",
 			BornDate: "1990-05-20",
 		}
 
 		err := svc.CreatePsiByAdmin(ctx, admin, req)
 		if err != nil {
 			t.Fatalf("No se esperaba error: %v", err)
+		}
+	})
+
+	t.Run("Rechazo: Contraseña débil", func(t *testing.T) {
+		req := request_structs.CreatePsiAdminRequest{
+			Username: "lic_debil",
+			Email:    "debil@test.com",
+			Password: "12345",
+			BornDate: "1990-05-20",
+		}
+
+		err := svc.CreatePsiByAdmin(ctx, admin, req)
+		if err == nil || err.Error() != "la contraseña no cumple con los estándares de seguridad" {
+			t.Errorf("Se esperaba rechazo por contraseña débil, se obtuvo: %v", err)
 		}
 	})
 }

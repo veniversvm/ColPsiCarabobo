@@ -149,11 +149,12 @@ func (s *PsiService) ImportFromXLSX(ctx context.Context, reader io.Reader, admin
 			ID:         psiID,
 			AuditModel: audit,
 			Credentials: domain.Credentials{
-				Key:        uuid.Must(uuid.NewV7()).String(),
-				IsActive: getValorSeguro(row, 45) == "Activo",
-				Username: username,
-				Email:    email,
-				Password: hashedPassword,
+				Key:                uuid.Must(uuid.NewV7()).String(),
+				IsActive:           getValorSeguro(row, 45) == "Activo",
+				Username:           username,
+				Email:              email,
+				Password:           hashedPassword,
+				MustChangePassword: true,
 			},
 
 			FirstName:      firstName,
