@@ -225,56 +225,181 @@ AWS_S3_BUCKET=colpsi-test-bucket
 ## Fase 3: Tests de Middleware (Con Fiber app.Test)
 
 **Objetivo:** Cubrir toda la lógica de middleware que no tiene tests.
+**Estado:** Pendiente (0/4 archivos)
+**Dependencias:** Solo stdlib + Fiber + crypto/sha256. Sin DB. Sin S3.
 
-### 3.1 — `internal/middleware/idempotency_test.go` (NUEVO)
+### Orden de implementación (menor a mayor complejidad)
 
-| Test | Escenario |
-|------|-----------|
-| `TestUserScopedIdempotency/sin_header` | Sin `X-Idempotency-Key` → pasa sin caching |
-| `TestUserScopedIdempotency/cache_miss` | Header nuevo → ejecuta handler, cachea 2xx |
-| `TestUserScopedIdempotency/cache_hit` | Segunda request con mismo key + user → respuesta cacheada + header `X-Idempotent-Replayed: true` |
-| `TestUserScopedIdempotency/respuesta_error_no_cacheada` | 4xx/5xx → no se cachea |
-| `TestUserScopedIdempotency/usuarios_diferentes` | Mismo key + user diferente → cache miss |
-| `TestUserScopedIdempotency/ttl_expiry` | Entrada expira después del TTL |
-| `TestUserScopedIdempotency/concurrente` | 100 goroutines con mismo key → solo 1 ejecuta handler |
+#### 3.0 — Pre-requisito: Config de test
 
-### 3.2 — `internal/middleware/analytics_test.go` (NUEVO)
+`analytics.go` accede a `config.Envs.Environment` sin nil-check → paniquea si `config.Envs == nil`.
+**Solución:** En cada test file que necesite config, inicializar:
+```go
+config.Envs = &config.Config{Environment: "test"}
+```
 
-| Test | Escenario |
-|------|-----------|
-| `TestAnalyticsMiddleware/metodo_no_get_saltado` | POST/PUT/DELETE → no registra page view |
-| `TestAnalyticsMiddleware/path_skipped` | `/health`, `/static/`, `/metrics` → no registra |
-| `TestAnalyticsMiddleware/status_no_2xx` | 404, 500 → no registra |
-| `TestAnalyticsMiddleware/admin_saltado` | `c.Locals("admin")` seteado → no registra |
-| `TestAnalyticsMiddleware/primera_visita_cookie` | Sin `_sid` cookie → genera cookie UUIDv7 |
-| `TestAnalyticsMiddleware/cookie_existente_reutilizada` | Con `_sid` cookie → reutiliza session ID |
-| `TestAnalyticsMiddleware/debouncing_dentro_ventana` | 2da request en 30min → no registra |
-| `TestAnalyticsMiddleware/debouncing_fuera_ventana` | Request después de 30min → sí registra |
-| `TestAnalyticsMiddleware/usuario_logueado` | `c.Locals("userID")` seteado → registra con userID |
+### 3.1 — `internal/middleware/helpers_test.go` (NUEVO) — TRIVIAL
 
-### 3.3 — `internal/middleware/helpers_test.go` (NUEVO)
+**Objetivo:** Testear extracción de usuario autenticado desde `c.Locals`.
+**Complejidad:** MUY BAJA. Sin dependencias externas. Solo `fiber.Ctx`.
 
-| Test | Escenario |
-|------|-----------|
-| `TestGetAuthenticatedAdmin/admin_valido` | Retorna admin sin error |
-| `TestGetAuthenticatedAdmin/admin_missing` | Sin locals → 401 JSON |
-| `TestGetAuthenticatedAdmin/admin_nil` | Admin nil → 401 JSON |
-| `TestGetAuthenticatedAdmin/tipo_incorrecto` | String en locals → 401 JSON |
-| `TestGetAuthenticatedPsi/psi_valido` | Retorna psi sin error |
-| `TestGetAuthenticatedPsi/psi_missing` | Sin locals → 401 JSON |
-| `TestGetAuthenticatedPsi/psi_nil` | Psi nil → 401 JSON |
+| Test | Escenario | Assert |
+|------|-----------|--------|
+| `TestGetAuthenticatedAdmin/admin_valido` | `c.Locals("admin", &domain.UserAdmin{...})` | Retorna admin, err == nil |
+| `TestGetAuthenticatedAdmin/admin_missing` | Sin locals seteados | Retorna nil, err != nil, status 401 |
+| `TestGetAuthenticatedAdmin/admin_nil` | `c.Locals("admin", nil)` | Retorna nil, err != nil, status 401 |
+| `TestGetAuthenticatedAdmin/tipo_incorrecto` | `c.Locals("admin", "string")` | Retorna nil, err != nil, status 401 |
+| `TestGetAuthenticatedPsi/psi_valido` | `c.Locals("psi_user", &domain.PsiUserModel{...})` | Retorna psi, err == nil |
+| `TestGetAuthenticatedPsi/psi_missing` | Sin locals seteados | Retorna nil, err != nil, status 401 |
+| `TestGetAuthenticatedPsi/psi_nil` | `c.Locals("psi_user", nil)` | Retorna nil, err != nil, status 401 |
 
-### 3.4 — `internal/middleware/rate_limiter_test.go` (NUEVO)
+**Patrón de test:**
+```go
+app := fiber.New()
+app.Get("/test", func(c *fiber.Ctx) error {
+    admin, err := GetAuthenticatedAdmin(c)
+    if err != nil { return err }
+    return c.JSON(fiber.Map{"id": admin.ID.String()})
+})
+// Usar app.Test(httptest.NewRequest(...)) para cada caso
+```
 
-| Test | Escenario |
-|------|-----------|
-| `TestAuthRateLimiter/10_requests_ok` | 10 POST → todas pasan |
-| `TestAuthRateLimiter/11_request bloqueado` | 11º POST → 429 |
-| `TestAuthRateLimiter/get_no_cuenta` | GET no incrementa contador |
-| `TestAuthRateLimiter/options_bypass` | OPTIONS (CORS preflight) → no cuenta |
-| `TestAdminAuthRateLimiter/5_requests_ok` | 5 POST → todas pasan |
-| `TestAdminAuthRateLimiter/6_request bloqueado` | 6º POST → 429 |
-| `TestAdminAuthRateLimiter/mensaje_espanol` | 429 body contiene "demasiadas peticiones" |
+**Estimación:** ~80 líneas, 7 tests, ~15 min
+
+---
+
+### 3.2 — `internal/middleware/idempotency_test.go` (NUEVO) — AUTOCONTENIDO
+
+**Objetivo:** Testear cache de respuestas idempotentes por usuario.
+**Complejidad:** MEDIA. Estructura autocontenida (in-memory map + mutex). Sin dependencias externas.
+**Clave:** `IdempotencyStore` es un struct exportado con constructor → se puede testear directamente.
+
+| Test | Escenario | Setup | Assert |
+|------|-----------|-------|--------|
+| `TestUserScopedIdempotency/sin_header` | Request sin `X-Idempotency-Key` | Handler retorna 200 | 200, handler ejecutado, sin header `X-Idempotent-Replayed` |
+| `TestUserScopedIdempotency/cache_miss` | Header nuevo | Handler retorna 200 | 200, handler ejecutado 1 vez |
+| `TestUserScopedIdempotency/cache_hit` | 2da request misma key + mismo user | Handler retorna 200 | 200, handler ejecutado SOLO 1 vez, `X-Idempotent-Replayed: true` |
+| `TestUserScopedIdempotency/respuesta_error_no_cacheada` | Handler retorna 500 | Misma key | 500, 2da request ejecuta handler de nuevo (no cached) |
+| `TestUserScopedIdempotency/usuarios_diferentes` | Misma key, users distintos | Handler retorna 200 | 200, handler ejecutado 2 veces (scope different) |
+| `TestUserScopedIdempotency/ttl_expiry` | TTL = 1ms, esperar 10ms | Handler retorna 200 | 2da request ejecuta handler de nuevo (expired) |
+| `TestUserScopedIdempotency/concurrente` | 100 goroutines, misma key | Handler con atomic counter | Counter == 1 (solo 1 ejecuta) |
+| `TestScopeKey/consistencia` | Mismo input → mismo hash | N/A | SHA-256 determinístico |
+| `TestScopeKey/usuarios_diferentes` | User A + User B, misma key | N/A | Hashes diferentes |
+| `TestNewIdempotencyStore/state_inicial` | Constructor | N/A | Store no nil, 0 entries |
+| `TestIdempotencyStore_Cleanup/ttl_expiry` | entries expiradas | Set con TTL 1ms, esperar 10ms, trigger cleanup | entries eliminadas |
+
+**Patrón de test:**
+```go
+store := NewIdempotencyStore()
+app := fiber.New()
+app.Post("/test", UserScopedIdempency(store, 5*time.Minute), handler)
+// Para cache_hit: enviar 2 requests con mismo X-Idempotency-Key
+// Para usuarios_diferentes: variar el c.Locals("admin") ID
+```
+
+**Mock para user context:**
+```go
+// Helper para inyectar admin ID en el contexto
+func injectAdminID(c *fiber.Ctx, id uuid.UUID) error {
+    c.Locals("admin", &domain.UserAdmin{ID: id})
+    return c.Next()
+}
+```
+
+**Estimación:** ~200 líneas, 11 tests, ~45 min
+
+---
+
+### 3.3 — `internal/middleware/analytics_test.go` (NUEVO) — MEDIUM
+
+**Objetivo:** Testear tracking de page views y debouncing.
+**Complejidad:** MEDIA. Goroutines + config global + cookies.
+**Dependencias:** `*service.AnalyticsService` (con mocks), `config.Envs`.
+
+**Pre-requisito:**
+```go
+func TestMain(m *testing.M) {
+    config.Envs = &config.Config{Environment: "test"}
+    os.Exit(m.Run())
+}
+```
+
+**Mock necesario:**
+```go
+type mockAnalyticsRepo struct {
+    domain.AnalyticsRepository
+    CountRecentPageViewsFunc func(sessionID uuid.UUID, since time.Time) (int64, error)
+    CreatePageViewFunc       func(view domain.PageView) error
+    // ... otros métodos con nil-check default
+}
+```
+
+| Test | Escenario | Setup | Assert |
+|------|-----------|-------|--------|
+| `TestShouldSkip/health` | path = "/health" | N/A | true |
+| `TestShouldSkip/static` | path = "/static/app.js" | N/A | true |
+| `TestShouldSkip/metrics` | path = "/metrics" | N/A | true |
+| `TestShouldSkip/normal` | path = "/api/users" | N/A | false |
+| `TestShouldSkip/favicon` | path = "/favicon.ico" | N/A | true |
+| `TestAnalyticsMiddleware/metodo_no_get_saltado` | POST request | Handler retorna 200 | CreatePageView NO llamado |
+| `TestAnalyticsMiddleware/path_skipped` | GET /health | Handler retorna 200 | CreatePageView NO llamado |
+| `TestAnalyticsMiddleware/admin_saltado` | GET / con `c.Locals("admin")` | Handler retorna 200 | CreatePageView NO llamado |
+| `TestAnalyticsMiddleware/primera_visita_genera_cookie` | GET / sin `_sid` cookie | Handler retorna 200 | Response tiene Set-Cookie `_sid` |
+| `TestAnalyticsMiddleware/cookie_existente_reutilizada` | GET / con `_sid` cookie | Handler retorna 200 | Misma cookie value en response |
+| `TestAnalyticsMiddleware/registra_page_view` | GET /api/users | CreatePageView retorna nil | CreatePageView llamado con path correcto |
+| `TestAnalyticsMiddleware/debouncing_dentro_ventana` | 2 GETs en <30min | CountRecentPageViews retorna 1 | CreatePageView NO llamado en 2da request |
+| `TestAnalyticsMiddleware/debouncing_fuera_ventana` | 2 GETs >30min aparte | CountRecentPageViews retorna 0 | CreatePageView llamado en ambas |
+| `TestAnalyticsMiddleware/usuario_logueado` | `c.Locals("userID")` seteado | Handler retorna 200 | PageView.UserID no nil |
+
+**Nota sobre goroutines:** El `go func()` en analytics.go hace fire-and-forget. Usar `time.Sleep(50ms)` después de `app.Test()` para asegurar que el goroutine complete.
+
+**Estimación:** ~280 líneas, 14 tests, ~60 min
+
+---
+
+### 3.4 — `internal/middleware/rate_limiter_test.go` (NUEVO) — COMPLICADO POR sync.Once
+
+**Objetivo:** Testear limitación de tasa por IP.
+**Complejidad:** ALTA debida a `sync.Once` (el storage se inicializa una sola vez).
+**Estrategia:** Testear solo el comportamiento observable (HTTP responses) sin resetear el storage.
+
+**Limitación conocida:** No se puede testear `newRateLimiterStorage()` directamente. Los tests deben correr en orden o aceptar que el rate limiter state persiste entre sub-tests.
+
+| Test | Escenario | Setup | Assert |
+|------|-----------|-------|--------|
+| `TestAuthRateLimiter/10_requests_ok` | 10 POSTs desde misma IP | Limpiar storage (si es in-memory) | Todas retornan 200 |
+| `TestAuthRateLimiter/11_request_bloqueado` | 11 POSTs | Misma IP | 11ª retorna 429 |
+| `TestAuthRateLimiter/get_no_cuenta` | GET request | N/A | 200 (GET no incrementa) |
+| `TestAuthRateLimiter/options_bypass` | OPTIONS request | N/A | 200 (CORS preflight) |
+| `TestAdminAuthRateLimiter/5_requests_ok` | 5 POSTs | Limpiar storage | Todas 200 |
+| `TestAdminAuthRateLimiter/6_request_bloqueado` | 6 POSTs | Misma IP | 6ª retorna 429 |
+| `TestAdminAuthRateLimiter/mensaje_espanol` | 6 POSTs | Leer body del 429 | Body contiene "demasiadas peticiones" |
+
+**Desafío técnico:**
+- `sync.Once` impide reinicializar el storage entre tests
+- **Solución:** Usar `t.Cleanup` +Aceptar que los tests de rate_limiter deben correr en un solo `TestRateLimiterSuite` secuencial, o crear un test helper que resetee el state interno (si el storage es in-memory `limiter.New` de Fiber, esto no es trivial)
+- **Alternativa pragmática:** Testear con una sola suite que acumule requests, o usar `httptest` con IPs diferentes para simular clientes distintos
+
+**Estimación:** ~150 líneas, 7 tests, ~40 min
+
+---
+
+### Resumen Fase 3
+
+| Archivo | Tests | Líneas estimadas | Tiempo |
+|---------|-------|-----------------|--------|
+| `helpers_test.go` | 7 | ~80 | 15 min |
+| `idempotency_test.go` | 11 | ~200 | 45 min |
+| `analytics_test.go` | 14 | ~280 | 60 min |
+| `rate_limiter_test.go` | 7 | ~150 | 40 min |
+| **Total** | **39** | **~710** | **~2.5 hrs** |
+
+### Riesgos conocidos
+
+1. **`config.Envs` nil panic** en `analytics.go:95` — Se resuelve con `TestMain` o setup por test
+2. **`sync.Once` en rate_limiter.go** — No resettable. Tests secuenciales o IPs diferentes
+3. **Goroutines fire-and-forget** — Requieren `time.Sleep` para sincronización
+4. **Cookie `_sid` en analytics** — Requiere inspeccionar `Response.Header` de Fiber
 
 ---
 
