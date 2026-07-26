@@ -3,11 +3,13 @@ package service
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"html/template"
 	"log"
 	"math/rand"
+	"sync"
 	"time"
 
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/config"
@@ -71,6 +73,9 @@ type MailService struct {
 	client *mail.Client
 	from   string
 	queue  chan MailJob // Nuestra cola de mensajes en memoria (Thread-safe por naturaleza en Go)
+	cancel context.CancelFunc
+	closeOnce sync.Once
+	closed    bool
 }
 
 // NewMailService inicializa el servicio SMTP y levanta el demonio de procesamiento.
@@ -104,7 +109,9 @@ func NewMailService() (*MailService, error) {
 
 	// Iniciamos el worker en segundo plano (Daemon) al arrancar el servicio.
 	// Este hilo vivirá durante toda la ejecución de la aplicación.
-	go ms.startWorker()
+	ctx, cancel := context.WithCancel(context.Background())
+	ms.cancel = cancel
+	go ms.startWorker(ctx)
 
 	return ms, nil
 }
@@ -119,37 +126,72 @@ func NewMailService() (*MailService, error) {
 //     para simular el patrón de envío de un operador humano y evitar algoritmos heurísticos.
 //  3. Rate Limiting por Socket: Una pausa microscópica (500ms) entre correos para evitar
 //     el agotamiento de los file descriptors (Socket Exhaustion) del servidor de origen.
-func (s *MailService) startWorker() {
+func (s *MailService) startWorker(ctx context.Context) {
 	log.Println("[INFO] Mail Worker iniciado y escuchando cola...")
 
 	sentInBatch := 0
 
-	for job := range s.queue {
-		// 1. Intentar enviar el correo
-		if err := s.executeSend(job); err != nil {
-			log.Printf("ERROR critico en Worker al enviar a %s: %v", maskEmail(job.To), err)
-		} else {
-			log.Printf("Correo procesado por Worker: %s", maskEmail(job.To))
-			sentInBatch++
+	for {
+		select {
+		case <-ctx.Done():
+			log.Println("[INFO] Mail Worker detenido por señal de cierre")
+			return
+		case job, ok := <-s.queue:
+			if !ok {
+				log.Println("[INFO] Mail Worker detenido: canal cerrado")
+				return
+			}
+			// 1. Intentar enviar el correo
+			if err := s.executeSend(job); err != nil {
+				log.Printf("ERROR critico en Worker al enviar a %s: %v", maskEmail(job.To), err)
+			} else {
+				log.Printf("Correo procesado por Worker: %s", maskEmail(job.To))
+				sentInBatch++
+			}
+
+			// 2. LOGICA DE PAUSA (Evasión de Filtros de Spam y Límites de Cuota)
+			// Cada 30 correos, el worker se toma un descanso aleatorio.
+			if sentInBatch >= 30 {
+				// Generar tiempo aleatorio entre 60 y 180 segundos (1 a 3 min) -> Jitter Pattern
+				waitTime := rand.Intn(120) + 60
+				log.Printf("[INFO] Límite de ráfaga (30) alcanzado. El Worker descansará %d segundos para evitar spam...", waitTime)
+
+				select {
+				case <-ctx.Done():
+					log.Println("[INFO] Mail Worker detenido durante pausa de spam")
+					return
+				case <-time.After(time.Duration(waitTime) * time.Second):
+				}
+
+				sentInBatch = 0 // Reiniciar contador de ráfaga para el siguiente ciclo
+				log.Println("[INFO] Worker reanudado.")
+			}
+
+			// Pequeña pausa de cortesía entre correos individuales para no saturar el socket
+			// de red ni activar las alarmas de "Conexiones Concurrentes" del proveedor SMTP.
+			select {
+			case <-ctx.Done():
+				log.Println("[INFO] Mail Worker detenido")
+				return
+			case <-time.After(500 * time.Millisecond):
+			}
 		}
-
-		// 2. LOGICA DE PAUSA (Evasión de Filtros de Spam y Límites de Cuota)
-		// Cada 30 correos, el worker se toma un descanso aleatorio.
-		if sentInBatch >= 30 {
-			// Generar tiempo aleatorio entre 60 y 180 segundos (1 a 3 min) -> Jitter Pattern
-			waitTime := rand.Intn(120) + 60
-			log.Printf("[INFO] Límite de ráfaga (30) alcanzado. El Worker descansará %d segundos para evitar spam...", waitTime)
-
-			time.Sleep(time.Duration(waitTime) * time.Second)
-
-			sentInBatch = 0 // Reiniciar contador de ráfaga para el siguiente ciclo
-			log.Println("[INFO] Worker reanudado.")
-		}
-
-		// Pequeña pausa de cortesía entre correos individuales para no saturar el socket
-		// de red ni activar las alarmas de "Conexiones Concurrentes" del proveedor SMTP.
-		time.Sleep(500 * time.Millisecond)
 	}
+}
+
+// Close detiene el worker y cierra el canal de correos.
+// Debe invocarse durante el graceful shutdown para evitar goroutine leaks.
+// Seguro para múltiples llamadas gracias a sync.Once.
+func (s *MailService) Close() {
+	s.closeOnce.Do(func() {
+		s.closed = true
+		if s.cancel != nil {
+			s.cancel()
+		}
+		if s.queue != nil {
+			close(s.queue)
+		}
+	})
 }
 
 // SendEmail es el método público utilizado por los Controladores y otros Servicios.
@@ -160,7 +202,7 @@ func (s *MailService) startWorker() {
 // endpoints HTTP (como el Registro o Login) respondan en ~10ms en lugar de esperar
 // los ~2000ms que normalmente tarda un Handshake SMTP completo.
 func (s *MailService) SendEmail(to string, subject string, templateName string, data interface{}) error {
-	if s == nil || s.queue == nil {
+	if s == nil || s.queue == nil || s.closed {
 		return errors.New("el servicio de correo no está listo")
 	}
 

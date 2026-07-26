@@ -2,7 +2,6 @@
 package router
 
 import (
-	"log"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -13,12 +12,7 @@ import (
 	"github.com/veniversvm/ColPsiCarabobo/api/pkg/s3"
 )
 
-func SetupPsiRoutes(router fiber.Router, psiRepo domain.PsiUserRepository, adminRepo domain.UserAdminRepository, s3Client *s3.S3Client, analyticsSvc *service.AnalyticsService) {
-	mailService, err := service.NewMailService()
-	if err != nil {
-		log.Printf("[WARN] Advertencia: No se pudo conectar al servidor SMTP: %v", err)
-	}
-
+func SetupPsiRoutes(router fiber.Router, psiRepo domain.PsiUserRepository, adminRepo domain.UserAdminRepository, s3Client *s3.S3Client, analyticsSvc *service.AnalyticsService, mailService *service.MailService) {
 	svc := service.NewPsiService(psiRepo, s3Client, mailService)
 	h := handler.NewPsiHandler(svc, analyticsSvc)
 	authMid := middleware.NewAuthMiddleware(adminRepo, psiRepo, analyticsSvc)

@@ -31,6 +31,12 @@ func SetupRouter(app *fiber.App, db *gorm.DB, s3Client *s3.S3Client) {
 	postRepo := postgres.NewPostRepository(db)
 	specialtyRepo := postgres.NewSpecialtyRepository(db)
 
+	// ── MailService: una sola instancia compartida entre todos los routers ────
+	mailSvc, err := service.NewMailService()
+	if err != nil {
+		log.Printf("[WARN] Advertencia: No se pudo conectar al servidor SMTP: %v", err)
+	}
+
 	// Agrupación principal
 	api := app.Group("/api/v1")
 
@@ -40,9 +46,9 @@ func SetupRouter(app *fiber.App, db *gorm.DB, s3Client *s3.S3Client) {
 		api.Get("/swagger/*", swagger.HandlerDefault)
 	}
 
-	// Rutas de dominio — se pasan repos e analyticsSvc
-	SetupAdminRoutes(api, adminRepo, psiRepo, analyticsSvc)
-	SetupPsiRoutes(api, psiRepo, adminRepo, s3Client, analyticsSvc)
+	// Rutas de dominio — se pasan repos, analyticsSvc y mailSvc
+	SetupAdminRoutes(api, adminRepo, psiRepo, analyticsSvc, mailSvc)
+	SetupPsiRoutes(api, psiRepo, adminRepo, s3Client, analyticsSvc, mailSvc)
 	SetupSpecialtyRoutes(api, psiRepo, adminRepo, specialtyRepo, analyticsSvc)
 	SetupPostRoutes(api, adminRepo, psiRepo, postRepo, s3Client, analyticsSvc)
 

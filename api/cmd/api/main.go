@@ -5,7 +5,10 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
+	"os/signal"
 	"runtime"
+	"syscall"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -106,21 +109,35 @@ func main() {
 		s3Client,
 	)
 
+	// ── Contexto raíz para goroutines de background ────────────────────────────
+	bgCtx, bgCancel := context.WithCancel(context.Background())
+	defer bgCancel()
+
 	// ── Limpieza periódica de sesiones expiradas ──────────────────────────────
 	// Corre cada hora en background — elimina ActiveSession con expires_at < now
 	go func() {
 		ticker := time.NewTicker(1 * time.Hour)
 		defer ticker.Stop()
-		for range ticker.C {
-			analyticsSvc.CleanExpiredSessions()
-			log.Println("[Analytics] Sesiones expiradas limpiadas")
+		for {
+			select {
+			case <-bgCtx.Done():
+				return
+			case <-ticker.C:
+				analyticsSvc.CleanExpiredSessions()
+				log.Println("[Analytics] Sesiones expiradas limpiadas")
+			}
 		}
 	}()
 	go func() {
 		ticker := time.NewTicker(5 * time.Minute)
 		defer ticker.Stop()
-		for range ticker.C {
-			postSvc.PublishScheduled(context.Background())
+		for {
+			select {
+			case <-bgCtx.Done():
+				return
+			case <-ticker.C:
+				postSvc.PublishScheduled(bgCtx)
+			}
 		}
 	}()
 	// ─────────────────────────────────────────────────────────────────────────
@@ -187,10 +204,51 @@ func main() {
 		})
 	})
 
-	// 9. ARRANQUE
+	// 9. ARRANQUE + GRACEFUL SHUTDOWN
 	port := config.Envs.Port
 	utils.PrintColpsiASCII()
 	log.Println("¡Bendito Jesus el rey que viene en el nombre del Señor!")
 	log.Printf("Ψ ColPsiCarabobo Backend listo en puerto: %s Ψ", port)
-	log.Fatal(app.Listen(":" + port))
+
+	// Canal para capturar señales del sistema operativo
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	// Arrancar el servidor en una goroutine para no bloquear
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- app.Listen(":" + port)
+	}()
+
+	// Esperar señal de apagado o error del servidor
+	select {
+	case sig := <-quit:
+		log.Printf("[SHUTDOWN] Señal %v recibida, cerrando servidor...", sig)
+	case err := <-errCh:
+		log.Fatalf("[ERROR] Servidor falló al arrancar: %v", err)
+	}
+
+	// Crear contexto con timeout para el cierre ordenado (10 segundos)
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer shutdownCancel()
+
+	// Detener goroutines de background
+	bgCancel()
+
+	// Cerrar Fiber (espera conexiones activas)
+	if err := app.ShutdownWithContext(shutdownCtx); err != nil {
+		log.Printf("[SHUTDOWN] Error al cerrar Fiber: %v", err)
+	}
+
+	// Cerrar conexión a base de datos
+	sqlDB, err := db.DB()
+	if err == nil {
+		if err := sqlDB.Close(); err != nil {
+			log.Printf("[SHUTDOWN] Error al cerrar DB: %v", err)
+		} else {
+			log.Println("[SHUTDOWN] Conexión a DB cerrada")
+		}
+	}
+
+	log.Println("[SHUTDOWN] Servidor cerrado correctamente")
 }
