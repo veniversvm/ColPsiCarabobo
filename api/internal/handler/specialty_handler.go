@@ -83,7 +83,7 @@ func (h *SpecialtyHandler) GetSpecialtyByID(c *fiber.Ctx) error {
 func (h *SpecialtyHandler) CreateSpecialty(c *fiber.Ctx) error {
 	admin, err := middleware.GetAuthenticatedAdmin(c)
 	if err != nil {
-		return err
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	var req request_structs.CreateSpecialtyRequest
@@ -116,7 +116,7 @@ func (h *SpecialtyHandler) CreateSpecialty(c *fiber.Ctx) error {
 func (h *SpecialtyHandler) UpdateSpecialty(c *fiber.Ctx) error {
 	admin, err := middleware.GetAuthenticatedAdmin(c)
 	if err != nil {
-		return err
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	id, err := strconv.ParseUint(c.Params("id"), 10, 32)
@@ -147,7 +147,7 @@ func (h *SpecialtyHandler) UpdateSpecialty(c *fiber.Ctx) error {
 func (h *SpecialtyHandler) DeleteSpecialty(c *fiber.Ctx) error {
 	admin, err := middleware.GetAuthenticatedAdmin(c)
 	if err != nil {
-		return err
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	id, err := strconv.ParseUint(c.Params("id"), 10, 32)

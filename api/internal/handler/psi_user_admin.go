@@ -29,7 +29,7 @@ import (
 func (h *PsiHandler) GetPsiByIDAdmin(c *fiber.Ctx) error {
 	admin, err := middleware.GetAuthenticatedAdmin(c)
 	if err != nil {
-		return err
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	// 2. Parsear el UUID solicitado
@@ -80,7 +80,7 @@ func (h *PsiHandler) GetPsiByIDAdmin(c *fiber.Ctx) error {
 func (h *PsiHandler) CreatePsiByAdmin(c *fiber.Ctx) error {
 	admin, err := middleware.GetAuthenticatedAdmin(c)
 	if err != nil {
-		return err
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
 	}
 	var req request_structs.CreatePsiAdminRequest
 
@@ -112,7 +112,7 @@ func (h *PsiHandler) CreatePsiByAdmin(c *fiber.Ctx) error {
 func (h *PsiHandler) UpdatePsiByAdmin(c *fiber.Ctx) error {
 	admin, err := middleware.GetAuthenticatedAdmin(c)
 	if err != nil {
-		return err
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
 	}
 	targetID, err := uuid.Parse(c.Params("id"))
 	if err != nil {
@@ -166,7 +166,7 @@ func (h *PsiHandler) UpdatePsiByAdmin(c *fiber.Ctx) error {
 func (h *PsiHandler) DeletePsiByAdmin(c *fiber.Ctx) error {
 	admin, err := middleware.GetAuthenticatedAdmin(c)
 	if err != nil {
-		return err
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
 	}
 	targetID, err := uuid.Parse(c.Params("id"))
 	if err != nil {
@@ -197,7 +197,7 @@ func (h *PsiHandler) DeletePsiByAdmin(c *fiber.Ctx) error {
 func (h *PsiHandler) ListAllPsis(c *fiber.Ctx) error {
 	admin, err := middleware.GetAuthenticatedAdmin(c)
 	if err != nil {
-		return err
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	// Construir el filtro desde la URL

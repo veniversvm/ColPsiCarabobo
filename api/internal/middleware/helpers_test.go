@@ -49,7 +49,10 @@ func TestGetAuthenticatedAdmin(t *testing.T) {
 	t.Run("admin missing retorna 401", func(t *testing.T) {
 		app.Get("/test-admin-missing", func(c *fiber.Ctx) error {
 			_, err := GetAuthenticatedAdmin(c)
-			return err
+			if err != nil {
+				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
+			}
+			return nil
 		})
 
 		req := httptest.NewRequest("GET", "/test-admin-missing", nil)
@@ -61,7 +64,7 @@ func TestGetAuthenticatedAdmin(t *testing.T) {
 			t.Errorf("StatusCode = %d, want 401", resp.StatusCode)
 		}
 		body, _ := io.ReadAll(resp.Body)
-		if !contains(string(body), "Sesión administrativa inválida") {
+		if !contains(string(body), "not authenticated") {
 			t.Errorf("Body should contain error message, got: %s", string(body))
 		}
 	})
@@ -70,7 +73,10 @@ func TestGetAuthenticatedAdmin(t *testing.T) {
 		app.Get("/test-admin-nil", func(c *fiber.Ctx) error {
 			c.Locals("admin", nil)
 			_, err := GetAuthenticatedAdmin(c)
-			return err
+			if err != nil {
+				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
+			}
+			return nil
 		})
 
 		req := httptest.NewRequest("GET", "/test-admin-nil", nil)
@@ -87,7 +93,10 @@ func TestGetAuthenticatedAdmin(t *testing.T) {
 		app.Get("/test-admin-wrong-type", func(c *fiber.Ctx) error {
 			c.Locals("admin", "this is a string, not an admin")
 			_, err := GetAuthenticatedAdmin(c)
-			return err
+			if err != nil {
+				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
+			}
+			return nil
 		})
 
 		req := httptest.NewRequest("GET", "/test-admin-wrong-type", nil)
@@ -139,7 +148,10 @@ func TestGetAuthenticatedPsi(t *testing.T) {
 	t.Run("psi missing retorna 401", func(t *testing.T) {
 		app.Get("/test-psi-missing", func(c *fiber.Ctx) error {
 			_, err := GetAuthenticatedPsi(c)
-			return err
+			if err != nil {
+				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
+			}
+			return nil
 		})
 
 		req := httptest.NewRequest("GET", "/test-psi-missing", nil)
@@ -151,7 +163,7 @@ func TestGetAuthenticatedPsi(t *testing.T) {
 			t.Errorf("StatusCode = %d, want 401", resp.StatusCode)
 		}
 		body, _ := io.ReadAll(resp.Body)
-		if !contains(string(body), "Sesión de psicólogo inválida") {
+		if !contains(string(body), "not authenticated") {
 			t.Errorf("Body should contain error message, got: %s", string(body))
 		}
 	})
@@ -160,7 +172,10 @@ func TestGetAuthenticatedPsi(t *testing.T) {
 		app.Get("/test-psi-nil", func(c *fiber.Ctx) error {
 			c.Locals("psi_user", nil)
 			_, err := GetAuthenticatedPsi(c)
-			return err
+			if err != nil {
+				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
+			}
+			return nil
 		})
 
 		req := httptest.NewRequest("GET", "/test-psi-nil", nil)

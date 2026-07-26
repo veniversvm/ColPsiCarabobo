@@ -98,7 +98,7 @@ func (h *AdminHandler) Logout(c *fiber.Ctx) error {
 func (h *AdminHandler) CreateAdmin(c *fiber.Ctx) error {
 	creator, err := middleware.GetAuthenticatedAdmin(c)
 	if err != nil {
-		return err
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	var req request_structs.CreateAdminRequest
@@ -160,7 +160,7 @@ func (h *AdminHandler) GetAdmins(c *fiber.Ctx) error {
 func (h *AdminHandler) UpdateAdmin(c *fiber.Ctx) error {
 	updater, err := middleware.GetAuthenticatedAdmin(c)
 	if err != nil {
-		return err
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	var req request_structs.UpdateAdminRequest
@@ -189,7 +189,7 @@ func (h *AdminHandler) UpdateAdmin(c *fiber.Ctx) error {
 func (h *AdminHandler) DeleteAdmin(c *fiber.Ctx) error {
 	updater, err := middleware.GetAuthenticatedAdmin(c)
 	if err != nil {
-		return err
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	targetID, err := uuid.Parse(c.Params("id"))

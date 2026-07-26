@@ -82,7 +82,7 @@ func (h *PostHandler) ListPosts(c *fiber.Ctx) error {
 func (h *PostHandler) CreatePost(c *fiber.Ctx) error {
 	admin, err := middleware.GetAuthenticatedAdmin(c)
 	if err != nil {
-		return err
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	var req request_structs.CreatePostRequest
@@ -153,7 +153,7 @@ func (h *PostHandler) GetPost(c *fiber.Ctx) error {
 func (h *PostHandler) UpdatePost(c *fiber.Ctx) error {
 	admin, err := middleware.GetAuthenticatedAdmin(c)
 	if err != nil {
-		return err
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	idParam := c.Params("id")

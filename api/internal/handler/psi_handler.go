@@ -45,7 +45,7 @@ func (h *PsiHandler) UploadCsv(c *fiber.Ctx) error {
 	log.Debug().Str("component", "handler").Msg("Entrando a UploadCsv")
 	admin, err := middleware.GetAuthenticatedAdmin(c)
 	if err != nil {
-		return err
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	file, err := c.FormFile("xlsx")
@@ -88,7 +88,7 @@ func (h *PsiHandler) UploadCsv(c *fiber.Ctx) error {
 func (h *PsiHandler) UpdateOwnProfile(c *fiber.Ctx) error {
 	updater, err := middleware.GetAuthenticatedPsi(c)
 	if err != nil {
-		return err
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	var req request_structs.PsiUserUpdateRequestSelf
@@ -331,7 +331,7 @@ func (h *PsiHandler) LoginLibrary(c *fiber.Ctx) error {
 func (h *PsiHandler) Logout(c *fiber.Ctx) error {
 	psi, err := middleware.GetAuthenticatedPsi(c)
 	if err != nil {
-		return err
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	if err := h.service.Logout(c.UserContext(), psi); err != nil {
@@ -366,7 +366,7 @@ func (h *PsiHandler) Logout(c *fiber.Ctx) error {
 func (h *PsiHandler) AddPostGrade(c *fiber.Ctx) error {
 	psi, err := middleware.GetAuthenticatedPsi(c)
 	if err != nil {
-		return err
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	var req request_structs.CreatePostGradeRequest
@@ -421,7 +421,7 @@ func (h *PsiHandler) UpdatePsi(c *fiber.Ctx) error { return nil }
 func (h *PsiHandler) UpdatePostGrade(c *fiber.Ctx) error {
 	psi, err := middleware.GetAuthenticatedPsi(c)
 	if err != nil {
-		return err
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	pgID, err := uuid.Parse(c.Params("id"))
@@ -478,7 +478,7 @@ func (h *PsiHandler) UpdatePostGrade(c *fiber.Ctx) error {
 func (h *PsiHandler) AddSocialNetwork(c *fiber.Ctx) error {
 	psi, err := middleware.GetAuthenticatedPsi(c)
 	if err != nil {
-		return err
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
 	}
 	var req request_structs.CreateSocialNetworkRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -503,7 +503,7 @@ func (h *PsiHandler) AddSocialNetwork(c *fiber.Ctx) error {
 func (h *PsiHandler) UpdateSocialNetwork(c *fiber.Ctx) error {
 	psi, err := middleware.GetAuthenticatedPsi(c)
 	if err != nil {
-		return err
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
 	}
 	netID, err := uuid.Parse(c.Params("id"))
 	if err != nil {
@@ -537,10 +537,11 @@ func (h *PsiHandler) DeleteSocialNetwork(c *fiber.Ctx) error {
 	role := ""
 	var execID uuid.UUID
 
-	if admin, err := middleware.GetAuthenticatedAdmin(c); err == nil {
+	admin, adminErr := middleware.GetAuthenticatedAdmin(c)
+	if adminErr == nil && admin != nil {
 		role = "admin"
 		execID = admin.ID
-	} else if psi, err := middleware.GetAuthenticatedPsi(c); err == nil {
+	} else if psi, psiErr := middleware.GetAuthenticatedPsi(c); psiErr == nil && psi != nil {
 		role = "psi"
 		execID = psi.ID
 	}
