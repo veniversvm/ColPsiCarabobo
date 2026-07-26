@@ -2236,5 +2236,43 @@ grep -rn "fmt.Printf\|fmt.Println\|println(" internal/ --include="*.go" | grep -
 
 ---
 
-*Plan generado por análisis cruzado del reporte de auditoría contra el código fuente real (59 archivos .go).*
+## Estado Actual — Key Lifecycle Management (25 Julio 2026)
+
+**Commit:** `b511d43` | **Reporte completo:** `KEY_LIFECYCLE_REPORT.md`
+
+### Completado
+
+| Componente | Archivos | Estado |
+|------------|----------|--------|
+| UUID v7 en producción | 4 archivos (`admin_service.go`, `seed.go`, `s3/upload.go`, `analytics.go`) | ✅ 0 `uuid.New()` restantes |
+| Empty key guard | `auth.go:130,260` | ✅ Admin 404 + Psi 401, sin crypto innecesaria |
+| Admin logout | `admin_handler.go`, `admin_router.go`, `admin_service.go`, `user_admin_repo.go` | ✅ `POST /admin/logout` |
+| PsiUser logout | `psi_service.go:1148` | ✅ key → `""` (eliminación, no rotación) |
+| Cleanup job | `cmd/cleanup/main.go`, `pkg/job/key_cleanup.go` | ✅ Binario independiente, tick 30min |
+| Tests nuevos | `pkg/job/key_cleanup_test.go` | ✅ 4 tests, todos pasan |
+| Admin mock actualizado | `admin_service_test.go` | ✅ `UpdateKey` agregado |
+| CRUDAdmin key rotation | `admin_service.go:406` | ✅ Ya usa `uuid.Must(uuid.NewV7())` |
+
+### Pendiente
+
+| Fix | Descripción | Prioridad |
+|-----|-------------|-----------|
+| CRIT-03 (hashing) | Hashear keys con SHA-256 antes de almacenar (seguridad DB comprometida) | Alta |
+| docker-compose cleanup | Agregar servicio `cleanup` al `docker-compose.yml` | Media |
+| Tests integración logout | Tests E2E para endpoints de logout | Media |
+
+### Métricas actualizadas
+
+| Métrica | Antes | Después |
+|---------|-------|---------|
+| `uuid.New()` en producción | 4 | **0** |
+| `uuid.NewString()` en producción | 1 | **0** |
+| Rutas de logout | 1 (solo PsiUser) | **2** (Admin + PsiUser) |
+| Binarios | 1 (`cmd/api`) | **2** (`cmd/api` + `cmd/cleanup`) |
+| Tests unitarios | ~15 | **~19** (+4 en pkg/job) |
+
+---
+
+*Plan original generado por análisis cruzado del reporte de auditoría contra el código fuente real (59 archivos .go).*
+*Actualizado el 25 de Julio de 2026 tras implementación de Key Lifecycle Management.*
 *Fecha: 24 de Julio, 2026*

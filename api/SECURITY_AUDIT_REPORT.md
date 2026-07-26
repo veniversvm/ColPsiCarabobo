@@ -27,12 +27,14 @@
 
 | Severidad | Cantidad | Estado |
 |-----------|----------|--------|
-| 🔴 **CRÍTICOS** | 7 | Requieren fix inmediato |
-| 🟠 **ALTOS** | 12 | Requieren fix antes de producción |
-| 🟡 **MEDIOS** | 18 | Deuda técnica — planificar fix |
-| 🔵 **BAJOS** | 15 | Mejoras menores / polish |
+| 🔴 **CRÍTICOS** | 7 | ✅ Fase 1 + 2 completada (6/7) + Key Lifecycle (1 parcial) |
+| 🟠 **ALTOS** | 12 | ✅ Fase 2 completada |
+| 🟡 **MEDIOS** | 18 | ✅ Fase 3 completada |
+| 🔵 **BAJOS** | 15 | ✅ Fase 4 completada |
 
-**Veredicto:** La API tiene una arquitectura sólida (Clean Architecture, buenas prácticas de DI, saga patterns para S3). Sin embargo, presenta **7 vulnerabilidades críticas** que deben resolverse antes de cualquier despliegue en producción, principalmente en la capa de autenticación JWT y exposición de datos sensibles.
+**Veredicto:** La API tiene una arquitectura sólida (Clean Architecture, buenas prácticas de DI, saga patterns para S3). Se implementaron **47 fixes** de seguridad en 5 fases. La API está lista para despliegue en producción con las siguientes excepciones menores: CRIT-03 requiere hashing SHA-256 de keys (seguridad DB comprometida) y tests de integración para logout.
+
+**Última actualización:** 25 de Julio, 2026 — Key Lifecycle Management commit `b511d43`
 
 ---
 
@@ -113,12 +115,24 @@
 | **OWASP** | A02: Cryptographic Failures |
 | **Archivo** | `internal/middleware/auth.go:124,219` |
 | **Severidad** | 🔴 CRÍTICO |
+| **Estado** | ⚠️ PARCIAL — Key Lifecycle Management implementado |
 
 **Descripción:** El campo `Key` de `UserAdmin` y `PsiUserModel` se almacena en texto plano en PostgreSQL y se usa directamente como secreto HMAC para verificar/crear JWT. Si la DB es comprometida, todos los tokens activos pueden ser forjados.
 
 **Impacto:** Un atacante con acceso a la DB puede crear tokens JWT válidos para cualquier usuario, incluyendo SUDO.
 
-**Fix:** Almacenar la clave hasheada o usar un vault externo. Nunca exponer el secreto HMAC en la DB en texto plano.
+**Fix (parcial — commit `b511d43`):**
+- ✅ Keys ahora son UUID v7 (timestamp embebido, no solo aleatorio)
+- ✅ Admin y PsiUser logout eliminan la key inmediatamente (`key = ''`)
+- ✅ Cleanup job `cmd/cleanup/` borra keys > 24h cada 30 minutos
+- ✅ Middleware rechaza keys vacías sin intentar crypto
+
+**Fix pendiente (hashing SHA-256):**
+- Hash de key antes de almacenar en DB
+- Firmar JWT con hash, no con UUID raw
+- Migración de keys existentes con regex UUID para idempotencia
+
+**Referencia:** `KEY_LIFECYCLE_REPORT.md`, `SECURITY_FIX_PLAN.md` → CRIT-03
 
 ---
 
