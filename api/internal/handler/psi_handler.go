@@ -5,7 +5,7 @@ package handler
 import (
 	"errors"
 	"fmt"
-	"log"
+	"github.com/rs/zerolog/log"
 	"mime/multipart"
 	"strconv"
 
@@ -43,7 +43,7 @@ func NewPsiHandler(svc *service.PsiService, analytics *service.AnalyticsService)
 // @Failure      404  {object}  map[string]string
 // @Router       /admin/psi/upload-csv [post]
 func (h *PsiHandler) UploadCsv(c *fiber.Ctx) error {
-	fmt.Println("Entrando a UploadCsv")
+	log.Debug().Str("component", "handler").Msg("Entrando a UploadCsv")
 	admin, ok := c.Locals("admin").(*domain.UserAdmin)
 	if !ok || admin == nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -234,12 +234,11 @@ func (h *PsiHandler) GetMe(c *fiber.Ctx) error {
 		})
 	}
 
-	log.Printf("PSI Profile loaded: id=%s, username=%s", psi.ID, psi.Username)
+	log.Info().Str("component", "psi-handler").Str("id", psi.ID.String()).Str("username", psi.Username).Msg("PSI Profile loaded")
 
 	bio, err := h.service.GetPsiBioByID(c.UserContext(), psi.BioTextID)
 	if err != nil {
-		log.Printf("---- error al recuperar la BIO ----\n")
-		log.Printf("%v\n", err)
+		log.Error().Err(err).Str("component", "psi-handler").Msg("Error al recuperar la BIO")
 	}
 
 	psi.FullBio.Content = bio

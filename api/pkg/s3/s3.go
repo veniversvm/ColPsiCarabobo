@@ -5,11 +5,11 @@ package s3
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsConfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/rs/zerolog/log"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	appConfig "github.com/veniversvm/ColPsiCarabobo/api/internal/config"
@@ -80,7 +80,7 @@ func (s *S3Client) VerifyConnection() {
 	})
 
 	if err != nil {
-		log.Printf("[WARN] S3: El bucket '%s' no fue encontrado. Intentando crear...", s.Bucket)
+		log.Warn().Str("component", "s3").Str("bucket", s.Bucket).Msg("S3: El bucket no fue encontrado. Intentando crear...")
 
 		// Intento de creación automática
 		_, err := s.Client.CreateBucket(ctx, &s3.CreateBucketInput{
@@ -88,11 +88,11 @@ func (s *S3Client) VerifyConnection() {
 		})
 
 		if err != nil {
-			log.Printf("[ERROR] S3 Error: No se pudo crear ni acceder al bucket: %v", err)
+			log.Error().Err(err).Str("component", "s3").Msg("S3 Error: No se pudo crear ni acceder al bucket")
 			return
 		}
-		log.Printf("[OK] S3: Bucket '%s' creado y listo para usar", s.Bucket)
+		log.Info().Str("component", "s3").Str("bucket", s.Bucket).Msg("S3: Bucket creado y listo para usar")
 	} else {
-		log.Printf("[OK] S3: Conexión establecida con el bucket '%s'", s.Bucket)
+		log.Info().Str("component", "s3").Str("bucket", s.Bucket).Msg("S3: Conexión establecida con el bucket")
 	}
 }

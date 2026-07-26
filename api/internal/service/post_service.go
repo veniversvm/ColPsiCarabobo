@@ -10,7 +10,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"github.com/rs/zerolog/log"
 	"mime/multipart"
 	"time"
 
@@ -305,7 +305,7 @@ func (s *PostService) UpdatePost(ctx context.Context, admin *domain.UserAdmin, r
 func (s *PostService) PublishScheduled(ctx context.Context) error {
 	result := s.repo.PublishScheduled(ctx)
 	if result > 0 {
-		log.Printf("[CMS] %d post(s) programados publicados automáticamente", result)
+		log.Info().Int64("count", result).Str("component", "post_service").Msg("posts programados publicados automáticamente")
 	}
 	return nil
 }

@@ -2,8 +2,7 @@
 package database
 
 import (
-	"log"
-
+	"github.com/rs/zerolog/log"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 	"gorm.io/gorm"
 )
@@ -11,12 +10,12 @@ import (
 // RunMigrations sincroniza los modelos de dominio con PostgreSQL e inyecta reglas de integridad.
 // Esta función garantiza que la base de datos sea "self-healing" al arrancar.
 func RunMigrations(db *gorm.DB) error {
-	log.Println("[INFO] Iniciando proceso de sincronización de esquema...")
+	log.Info().Str("component", "migrate").Msg("Iniciando proceso de sincronización de esquema...")
 
 	// 1. EXTENSIONES DE POSTGRES
 	// Habilitamos 'pgcrypto' para generación nativa de UUIDs (gen_random_uuid).
 	if err := db.Exec("CREATE EXTENSION IF NOT EXISTS \"pgcrypto\";").Error; err != nil {
-		log.Printf("[ERROR] Error crítico: No se pudo habilitar la extensión pgcrypto: %v", err)
+		log.Error().Err(err).Str("component", "migrate").Msg("Error crítico: No se pudo habilitar la extensión pgcrypto")
 		return err
 	}
 
@@ -33,7 +32,7 @@ func RunMigrations(db *gorm.DB) error {
 	)
 
 	if err != nil {
-		log.Printf("[ERROR] Error crítico: Falló la ejecución de AutoMigrate: %v", err)
+		log.Error().Err(err).Str("component", "migrate").Msg("Error crítico: Falló la ejecución de AutoMigrate")
 		return err
 	}
 
@@ -49,10 +48,10 @@ func RunMigrations(db *gorm.DB) error {
 		WHERE (sudo IS TRUE AND deleted_at IS NULL);
 	`
 	if err := db.Exec(sudoIndexSQL).Error; err != nil {
-		log.Printf("[ERROR] Error al crear restricción de SUDO único: %v", err)
+		log.Error().Err(err).Str("component", "migrate").Msg("Error al crear restricción de SUDO único")
 		return err
 	}
 
-	log.Println("[OK] Esquema y reglas de integridad sincronizados exitosamente")
+	log.Info().Str("component", "migrate").Msg("Esquema y reglas de integridad sincronizados exitosamente")
 	return nil
 }

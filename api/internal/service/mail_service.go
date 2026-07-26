@@ -7,11 +7,11 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
-	"log"
 	"math/rand"
 	"sync"
 	"time"
 
+	"github.com/rs/zerolog/log"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/config"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/templates"
 	"github.com/wneessen/go-mail"
@@ -127,25 +127,25 @@ func NewMailService() (*MailService, error) {
 //  3. Rate Limiting por Socket: Una pausa microscópica (500ms) entre correos para evitar
 //     el agotamiento de los file descriptors (Socket Exhaustion) del servidor de origen.
 func (s *MailService) startWorker(ctx context.Context) {
-	log.Println("[INFO] Mail Worker iniciado y escuchando cola...")
+	log.Info().Str("component", "mail").Msg("Mail Worker iniciado y escuchando cola...")
 
 	sentInBatch := 0
 
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println("[INFO] Mail Worker detenido por señal de cierre")
+			log.Info().Str("component", "mail").Msg("Mail Worker detenido por señal de cierre")
 			return
 		case job, ok := <-s.queue:
 			if !ok {
-				log.Println("[INFO] Mail Worker detenido: canal cerrado")
+				log.Info().Str("component", "mail").Msg("Mail Worker detenido: canal cerrado")
 				return
 			}
 			// 1. Intentar enviar el correo
 			if err := s.executeSend(job); err != nil {
-				log.Printf("ERROR critico en Worker al enviar a %s: %v", maskEmail(job.To), err)
+				log.Error().Err(err).Str("component", "mail").Str("to", maskEmail(job.To)).Msg("ERROR critico en Worker al enviar")
 			} else {
-				log.Printf("Correo procesado por Worker: %s", maskEmail(job.To))
+				log.Info().Str("component", "mail").Str("to", maskEmail(job.To)).Msg("Correo procesado por Worker")
 				sentInBatch++
 			}
 
@@ -154,24 +154,24 @@ func (s *MailService) startWorker(ctx context.Context) {
 			if sentInBatch >= 30 {
 				// Generar tiempo aleatorio entre 60 y 180 segundos (1 a 3 min) -> Jitter Pattern
 				waitTime := rand.Intn(120) + 60
-				log.Printf("[INFO] Límite de ráfaga (30) alcanzado. El Worker descansará %d segundos para evitar spam...", waitTime)
+				log.Info().Str("component", "mail").Int("seconds", waitTime).Msg("Limite de rafaga (30) alcanzado. Worker descansara para evitar spam...")
 
 				select {
 				case <-ctx.Done():
-					log.Println("[INFO] Mail Worker detenido durante pausa de spam")
+					log.Info().Str("component", "mail").Msg("Mail Worker detenido durante pausa de spam")
 					return
 				case <-time.After(time.Duration(waitTime) * time.Second):
 				}
 
 				sentInBatch = 0 // Reiniciar contador de ráfaga para el siguiente ciclo
-				log.Println("[INFO] Worker reanudado.")
+				log.Info().Str("component", "mail").Msg("Worker reanudado.")
 			}
 
 			// Pequeña pausa de cortesía entre correos individuales para no saturar el socket
 			// de red ni activar las alarmas de "Conexiones Concurrentes" del proveedor SMTP.
 			select {
 			case <-ctx.Done():
-				log.Println("[INFO] Mail Worker detenido")
+				log.Info().Str("component", "mail").Msg("Mail Worker detenido")
 				return
 			case <-time.After(500 * time.Millisecond):
 			}
@@ -216,7 +216,7 @@ func (s *MailService) SendEmail(to string, subject string, templateName string, 
 		Data:         data,
 	}
 
-	log.Printf("Correo encolado: %s, subject=%s", maskEmail(to), subject)
+	log.Info().Str("component", "mail").Str("to", maskEmail(to)).Str("subject", subject).Msg("Correo encolado")
 	return nil
 }
 

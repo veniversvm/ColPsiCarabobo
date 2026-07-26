@@ -3,7 +3,7 @@ package handler
 
 import (
 	"errors"
-	"log"
+	"github.com/rs/zerolog/log"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -198,7 +198,7 @@ func (h *SpecialtyHandler) CountSpecialties(c *fiber.Ctx) error {
 // @Failure      403      {object}  map[string]string "error: permisos insuficientes"
 // @Router       /admin/specialties/all [get]
 func (h *SpecialtyHandler) GetAllAdmin(c *fiber.Ctx) error {
-	log.Printf("[DEBUG] GetAllAdmin called")
+	log.Debug().Str("component", "specialty-handler").Msg("GetAllAdmin called")
 
 	list, err := h.service.GetAllAdmin(c.UserContext())
 	if err != nil {

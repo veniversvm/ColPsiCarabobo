@@ -3,10 +3,10 @@ package main
 
 import (
 	"io"
-	"log"
 	"os"
 
 	"ariga.io/atlas-provider-gorm/gormschema"
+	"github.com/rs/zerolog/log"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 )
 
@@ -31,7 +31,7 @@ func main() {
 		&domain.ActiveSession{},
 	)
 	if err != nil {
-		log.Fatalf("failed to load gorm schema: %v", err)
+		log.Fatal().Err(err).Str("component", "migrate").Msg("Failed to load gorm schema")
 	}
 	// Esto imprime el esquema SQL que Atlas comparará
 	io.WriteString(os.Stdout, stmts)

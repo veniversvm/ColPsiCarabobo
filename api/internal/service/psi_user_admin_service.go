@@ -11,7 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
+	"github.com/rs/zerolog/log"
 	"mime/multipart"
 	"strings"
 	"time"
@@ -144,7 +144,7 @@ func (s *PsiService) CreatePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 		"Password": req.Password,
 	}
 	if err := s.mailService.SendEmail(psi.Email, "Bienvenido", "welcome_psi", mailData); err != nil {
-		log.Printf("[WARN] Error al enviar correo de bienvenida (psi creado correctamente): %v", err)
+		log.Warn().Err(err).Str("component", "psi_user_admin_service").Msg("Error al enviar correo de bienvenida (psi creado correctamente)")
 	}
 
 	return nil
@@ -449,7 +449,7 @@ func (s *PsiService) UpdatePsiByAdmin(
 		// 1. Decodificar el string JSON a un slice de structs
 		var incomingSolvencies []request_structs.SolvenciesUpdate
 		if err := json.Unmarshal([]byte(req.SolvenciesRaw), &incomingSolvencies); err != nil {
-			fmt.Printf("[ERROR] Error al decodificar solvencias JSON: %v\n", err)
+			log.Error().Err(err).Str("component", "psi_admin").Msg("Error al decodificar solvencias JSON")
 			// Podrías retornar error aquí o simplemente loguear y continuar
 		}
 
@@ -701,7 +701,7 @@ func (s *PsiService) UpdatePsiByAdmin(
 		if absErr := s.actualizarEnAudiobookshelf(ctx, psi.AudioBookShellId, absUsername, nil, absEmail); absErr != nil {
 			// Logueamos el error interno pero no bloqueamos el retorno exitoso de la petición
 			// (Degradación Elegante)
-			log.Printf("WARN: Error al sincronizar actualización del administrador con Audiobookshelf: %v", absErr)
+			log.Warn().Err(absErr).Str("component", "psi_user_admin_service").Msg("Error al sincronizar actualización del administrador con Audiobookshelf")
 		}
 	}
 
@@ -804,12 +804,12 @@ func createSolvencieModel(date time.Time, userId uuid.UUID, audit_moodel domain.
 
 	// Validaciones de Consistencia de Datos
 	if currentYear > nowYear {
-		fmt.Printf("Error: solvency year %d is in the future\n", currentYear)
+		log.Warn().Int("year", currentYear).Str("component", "psi_admin").Msg("Solvency year is in the future")
 		return domain.PsiUserSolvency{}
 	}
 
 	if currentYear < 2024 {
-		fmt.Printf("Error: solvency year %d is before the 2024 limit\n", currentYear)
+		log.Warn().Int("year", currentYear).Str("component", "psi_admin").Msg("Solvency year is before the 2024 limit")
 		return domain.PsiUserSolvency{}
 	}
 

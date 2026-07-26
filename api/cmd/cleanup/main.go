@@ -4,12 +4,12 @@ package main
 
 import (
 	"context"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"github.com/rs/zerolog/log"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/config"
 	"github.com/veniversvm/ColPsiCarabobo/api/pkg/database"
 	"github.com/veniversvm/ColPsiCarabobo/api/pkg/job"
@@ -17,13 +17,13 @@ import (
 )
 
 func main() {
-	log.Println("[CLEANUP] Iniciando servicio de limpieza de keys...")
+	log.Info().Str("component", "cleanup").Msg("Iniciando servicio de limpieza de keys...")
 
 	config.InitConfig()
 
 	db, err := database.ConnectDB()
 	if err != nil {
-		log.Fatalf("[CLEANUP][ERROR] No se pudo conectar a la DB: %v", err)
+		log.Fatal().Err(err).Str("component", "cleanup").Msg("No se pudo conectar a la DB")
 	}
 	defer func() {
 		sqlDB, _ := db.DB()
@@ -43,14 +43,14 @@ func main() {
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 
-	log.Printf("[CLEANUP] Tick cada %v | Keys > %v serán borradas", interval, maxAge)
+	log.Info().Str("component", "cleanup").Dur("interval", interval).Dur("max_age", maxAge).Msg("Tick configurado, keys expiradas serán borradas")
 
 	for {
 		select {
 		case <-ticker.C:
 			runCleanup(db, maxAge)
 		case sig := <-sigCh:
-			log.Printf("[CLEANUP] Señal %v recibida, cerrando...", sig)
+			log.Info().Str("component", "cleanup").Str("signal", sig.String()).Msg("Señal recibida, cerrando...")
 			return
 		}
 	}
@@ -59,11 +59,11 @@ func main() {
 func runCleanup(db *gorm.DB, maxAge time.Duration) {
 	result, err := job.CleanExpiredKeys(context.Background(), db, maxAge)
 	if err != nil {
-		log.Printf("[CLEANUP][ERROR] %v", err)
+		log.Error().Err(err).Str("component", "cleanup").Msg("Error durante limpieza de keys")
 		return
 	}
 	total := result.AdminsCleaned + result.PsiCleaned
 	if total > 0 {
-		log.Printf("[CLEANUP] %d keys expiradas borradas (admins: %d, psi: %d)", total, result.AdminsCleaned, result.PsiCleaned)
+		log.Info().Str("component", "cleanup").Int64("total", total).Int64("admins", result.AdminsCleaned).Int64("psi", result.PsiCleaned).Msg("Keys expiradas borradas")
 	}
 }

@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"errors"
-	"log"
+	"github.com/rs/zerolog/log"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -52,7 +52,7 @@ func (s *PsiService) Login(ctx context.Context, identifier, password string) (st
 	}
 
 	if err := s.mailService.SendEmail(psi.Email, "Colegio de Psicólogos de Carabobo - Inicio de sesión en la plataforma.", "login_psi", mailData); err != nil {
-		log.Printf("[WARN] Error al preparar el correo (pero el psicólogo se logueó): %v", err)
+		log.Warn().Err(err).Str("component", "psi_service_auth").Msg("Error al preparar el correo (pero el psicólogo se logueó)")
 	}
 
 	signed, err := token.SignedString([]byte(newKey))
@@ -94,13 +94,13 @@ func (s *PsiService) LoginLibrary(ctx context.Context, identifier, password stri
 
 	absID, absErr := s.sincronizarConAudiobookshelf(ctx, psi.Username, password, psi.Email)
 	if absErr != nil {
-		log.Printf("WARN: Error sincronizando con Audiobookshelf: %v", absErr)
+		log.Warn().Err(absErr).Str("component", "psi_service_auth").Msg("Error sincronizando con Audiobookshelf")
 	} else if absID != "" {
 		psi.AudioBookShellId = absID
 		s.repo.Update(ctx, psi, nil, nil, nil)
-		log.Printf("INFO: Usuario creado en Audiobookshelf con ID: %s", absID)
+		log.Info().Str("component", "psi_service_auth").Str("abs_id", absID).Msg("Usuario creado en Audiobookshelf")
 	} else {
-		log.Printf("INFO: El usuario ya existía en Audiobookshelf, no se generó un nuevo ID.")
+		log.Info().Str("component", "psi_service_auth").Msg("El usuario ya existía en Audiobookshelf, no se generó un nuevo ID")
 	}
 
 	return signed, psi, nil

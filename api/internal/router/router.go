@@ -2,10 +2,10 @@ package router
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/swagger"
+	"github.com/rs/zerolog/log"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/config"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/middleware"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/repository/postgres"
@@ -34,7 +34,7 @@ func SetupRouter(app *fiber.App, db *gorm.DB, s3Client *s3.S3Client) {
 	// ── MailService: una sola instancia compartida entre todos los routers ────
 	mailSvc, err := service.NewMailService()
 	if err != nil {
-		log.Printf("[WARN] Advertencia: No se pudo conectar al servidor SMTP: %v", err)
+		log.Warn().Err(err).Str("component", "router").Msg("Advertencia: No se pudo conectar al servidor SMTP")
 	}
 
 	// Agrupación principal
@@ -42,7 +42,7 @@ func SetupRouter(app *fiber.App, db *gorm.DB, s3Client *s3.S3Client) {
 
 	// OpenAPI: Documentación Swagger
 	if config.Envs.Environment == "development" {
-		log.Println("=== OPEN API ===")
+		log.Info().Str("component", "router").Msg("=== OPEN API ===")
 		api.Get("/swagger/*", swagger.HandlerDefault)
 	}
 

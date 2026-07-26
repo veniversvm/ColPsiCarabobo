@@ -4,7 +4,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"runtime"
@@ -21,12 +20,15 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/requestid"
 	_ "github.com/veniversvm/ColPsiCarabobo/api/docs"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/config"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/logger"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/repository/postgres"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/router"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/service"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/utils"
 	"github.com/veniversvm/ColPsiCarabobo/api/pkg/database"
 	"github.com/veniversvm/ColPsiCarabobo/api/pkg/s3"
+
+	"github.com/rs/zerolog/log"
 )
 
 // @title                       ColPsiCarabobo API
@@ -49,22 +51,24 @@ func main() {
 		runtime.GOMAXPROCS(numCPU)
 	}
 
-	log.Printf("INFO: Intentando cargar configuración...")
 	config.InitConfig()
+	logger.Init(config.Envs.Environment)
+
+	log.Info().Str("component", "config").Msg("Intentando cargar configuracion")
 
 	if config.Envs.JwtLibrarySecret == "" {
-		log.Fatal("[ERROR] JWT_LIBRARY_SECRET no está configurado. Defina la variable de entorno.")
+		log.Fatal().Str("component", "config").Msg("JWT_LIBRARY_SECRET no esta configurado. Defina la variable de entorno.")
 	}
 	if config.Envs.AbsAdminToken == "" {
-		log.Fatal("[ERROR] ABS_ADMIN_TOKEN no está configurado. Defina la variable de entorno.")
+		log.Fatal().Str("component", "config").Msg("ABS_ADMIN_TOKEN no esta configurado. Defina la variable de entorno.")
 	}
 
-	log.Printf("INFO: Configuración cargada. Intentando conectar a DB...")
+	log.Info().Str("component", "config").Msg("Configuracion cargada. Intentando conectar a DB...")
 
 	// 2. PERSISTENCIA
 	db, err := database.ConnectDB()
 	if err != nil {
-		log.Fatalf("[ERROR] Error crítico: Falló la conexión a PostgreSQL: %v", err)
+		log.Fatal().Err(err).Str("component", "database").Msg("Error critico: fallo la conexion a PostgreSQL")
 	}
 
 	// 3. MIGRACIÓN
@@ -97,7 +101,7 @@ func main() {
 	// 4. S3
 	s3Client, err := s3.ConnectS3(context.Background())
 	if err != nil {
-		log.Printf("[WARN] Advertencia: S3 no disponible: %v", err)
+		log.Warn().Err(err).Str("component", "s3").Msg("S3 no disponible")
 	} else {
 		s3Client.VerifyConnection()
 	}
@@ -124,7 +128,7 @@ func main() {
 				return
 			case <-ticker.C:
 				analyticsSvc.CleanExpiredSessions()
-				log.Println("[Analytics] Sesiones expiradas limpiadas")
+				log.Info().Str("component", "analytics").Msg("Sesiones expiradas limpiadas")
 			}
 		}
 	}()
@@ -164,7 +168,7 @@ func main() {
 
 	app.Use(requestid.New())
 	var origins string = config.Envs.AllowedOrigins
-	log.Printf("Allowed origins: %v", origins)
+	log.Info().Str("component", "cors").Str("origins", origins).Msg("Allowed origins configurados")
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     origins, // desde .env
 		AllowHeaders:     "Origin, Content-Type, Accept, Authorization, X-Idempotency-Key",
@@ -207,8 +211,8 @@ func main() {
 	// 9. ARRANQUE + GRACEFUL SHUTDOWN
 	port := config.Envs.Port
 	utils.PrintColpsiASCII()
-	log.Println("¡Bendito Jesus el rey que viene en el nombre del Señor!")
-	log.Printf("Ψ ColPsiCarabobo Backend listo en puerto: %s Ψ", port)
+	log.Info().Str("component", "server").Msg("Bendito Jesus el rey que viene en el nombre del Señor!")
+	log.Info().Str("component", "server").Str("port", port).Msg("ColPsiCarabobo Backend listo")
 
 	// Canal para capturar señales del sistema operativo
 	quit := make(chan os.Signal, 1)
@@ -223,9 +227,9 @@ func main() {
 	// Esperar señal de apagado o error del servidor
 	select {
 	case sig := <-quit:
-		log.Printf("[SHUTDOWN] Señal %v recibida, cerrando servidor...", sig)
+		log.Warn().Str("component", "shutdown").Str("signal", sig.String()).Msg("Senal recibida, cerrando servidor...")
 	case err := <-errCh:
-		log.Fatalf("[ERROR] Servidor falló al arrancar: %v", err)
+		log.Fatal().Err(err).Str("component", "server").Msg("Servidor fallo al arrancar")
 	}
 
 	// Crear contexto con timeout para el cierre ordenado (10 segundos)
@@ -237,18 +241,18 @@ func main() {
 
 	// Cerrar Fiber (espera conexiones activas)
 	if err := app.ShutdownWithContext(shutdownCtx); err != nil {
-		log.Printf("[SHUTDOWN] Error al cerrar Fiber: %v", err)
+		log.Error().Err(err).Str("component", "shutdown").Msg("Error al cerrar Fiber")
 	}
 
 	// Cerrar conexión a base de datos
 	sqlDB, err := db.DB()
 	if err == nil {
 		if err := sqlDB.Close(); err != nil {
-			log.Printf("[SHUTDOWN] Error al cerrar DB: %v", err)
+			log.Error().Err(err).Str("component", "shutdown").Msg("Error al cerrar DB")
 		} else {
-			log.Println("[SHUTDOWN] Conexión a DB cerrada")
+			log.Info().Str("component", "shutdown").Msg("Conexion a DB cerrada")
 		}
 	}
 
-	log.Println("[SHUTDOWN] Servidor cerrado correctamente")
+	log.Info().Str("component", "shutdown").Msg("Servidor cerrado correctamente")
 }

@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"errors"
-	"log"
+	"github.com/rs/zerolog/log"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -94,7 +94,7 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 
 	fullBio, err := s.repo.GetTextContentByID(ctx, psi.BioTextID)
 	if err != nil {
-		log.Printf("[WARN] Error al obtener la biografía extensa del psicólogo %d: %v", id, err)
+		log.Warn().Err(err).Int("psi_id", id).Str("component", "psi_service_directory").Msg("Error al obtener la biografía extensa del psicólogo")
 	}
 
 	dto := &request_structs.PsiFullProfileDTO{
@@ -230,14 +230,14 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 		}
 	}
 
-	log.Printf("##### #### Undergraduate data being sent: University=%v, Date=%v, Mention=%v, Images=[%v, %v, %v]",
-		dto.Undergraduate.University,
-		dto.Undergraduate.Date,
-		dto.Undergraduate.Mention,
-		dto.Undergraduate.TitleImageOneURL,
-		dto.Undergraduate.TitleImageTwoURL,
-		dto.Undergraduate.TitleImageThreeURL,
-	)
+	log.Debug().Str("component", "psi_service_directory").
+		Str("university", dto.Undergraduate.University).
+		Str("date", dto.Undergraduate.Date).
+		Str("mention", dto.Undergraduate.Mention).
+		Str("img_one", dto.Undergraduate.TitleImageOneURL).
+		Str("img_two", dto.Undergraduate.TitleImageTwoURL).
+		Str("img_three", dto.Undergraduate.TitleImageThreeURL).
+		Msg("Undergraduate data being sent")
 
 	return dto, psi.ID, nil
 }

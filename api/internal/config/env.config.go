@@ -5,12 +5,11 @@
 package config
 
 import (
-	"fmt"
-	"log"
 	"os"
 	"strconv"
 
 	"github.com/joho/godotenv"
+	"github.com/rs/zerolog/log"
 )
 
 // Config define la estructura de las variables de entorno necesarias para que
@@ -68,13 +67,13 @@ func InitConfig() {
 	if err != nil {
 		// No lanzamos Fatal aquí porque en entornos como Docker/Heroku/AWS
 		// las variables suelen estar ya inyectadas en el sistema.
-		log.Println("[WARN] No .env file found, using system environment variables")
+		log.Warn().Str("component", "config").Msg("No .env file found, using system environment variables")
 	}
 
 	// Poblamos el struct Envs con valores del entorno o sus fallbacks (valores por defecto)
 	email_port, err := strconv.Atoi(getEnv("SMTP_PORT", "1025"))
 	if err != nil {
-		fmt.Println("ERROR for EMAIL PORT:", err)
+		log.Error().Err(err).Str("component", "config").Msg("Puerto de email invalido")
 	}
 	Envs = &Config{
 		// Configuración del Servidor

@@ -10,7 +10,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"github.com/rs/zerolog/log"
 	"net/mail"
 	"strings"
 	"time"
@@ -104,7 +104,7 @@ func (s *AdminService) Login(ctx context.Context, identifier, password string) (
 	// Invocación dinámica y no-bloqueante del servicio de mensajería.
 	// Si el servidor SMTP falla, la autenticación sigue adelante ("Graceful Degradation").
 	if err := s.mailService.SendEmail(admin.Email, "Inicio de sesión en el sistema", "login_admin", mailData); err != nil {
-		log.Printf("[WARN] Error al preparar el correo (pero el admin se creó): %v", err)
+		log.Warn().Err(err).Str("component", "admin_service").Msg("Error al preparar el correo (pero el admin se creó)")
 	}
 
 	signed, err := token.SignedString([]byte(newKey))
@@ -328,7 +328,7 @@ func (s *AdminService) CreateAdmin(
 	}
 
 	if err := s.mailService.SendEmail(newAdmin.Email, "Bienvenido al Colegio de Psicólogos", "welcome_admin", mailData); err != nil {
-		log.Printf("[WARN] Error al preparar el correo (pero el admin se creó): %v", err)
+		log.Warn().Err(err).Str("component", "admin_service").Msg("Error al preparar el correo (pero el admin se creó)")
 	}
 
 	// 7. Mantenimiento del Caché (Purge Completo)

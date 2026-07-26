@@ -21,11 +21,11 @@ import (
 	_ "image/jpeg" // Registra el decodificador JPEG
 	_ "image/png"  // Registra el decodificador PNG
 	"io"
-	"log"
 
 	_ "golang.org/x/image/webp"
 
 	"github.com/kolesa-team/go-webp/encoder"
+	"github.com/rs/zerolog/log"
 	"github.com/kolesa-team/go-webp/webp"
 	"golang.org/x/image/draw"
 )
@@ -81,7 +81,7 @@ func processImage(file io.Reader, maxDimension int, maxSizeBytes int) ([]byte, s
 	img, _, err := image.Decode(file)
 	if err != nil {
 		// Log interno para trazabilidad forense
-		log.Printf("Error decodificando imagen: %v", err)
+		log.Error().Err(err).Str("component", "image").Msg("Error decodificando imagen")
 		// Mensaje genérico para el cliente (Security by Obscurity)
 		return nil, "", "", errors.New("el servidor no reconoce este formato de imagen")
 	}

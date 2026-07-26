@@ -3,7 +3,7 @@ package handler
 
 import (
 	"errors"
-	"log"
+	"github.com/rs/zerolog/log"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -49,14 +49,12 @@ func (h *PsiHandler) GetPsiByIDAdmin(c *fiber.Ctx) error {
 
 	bio, err := h.service.GetPsiBioByID(c.UserContext(), profile.BioTextID)
 	if err != nil {
-		log.Printf("---- error al recuperar la BIO ----\n")
-		log.Printf("%v\n", err)
+		log.Error().Err(err).Str("component", "psi-admin").Msg("Error al recuperar la BIO")
 	}
 
 	solvencies, err := h.service.GetPsiSolvency(c.UserContext(), targetID)
 	if err != nil {
-		log.Printf("---- error al recuperar SOLVENCIES ----\n")
-		log.Printf("%v\n", err)
+		log.Error().Err(err).Str("component", "psi-admin").Msg("Error al recuperar solvencias")
 	}
 
 	profile.FullBio.Content = bio

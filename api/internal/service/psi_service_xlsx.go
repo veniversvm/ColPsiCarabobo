@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
+	"github.com/rs/zerolog/log"
 	"strings"
 
 	"github.com/google/uuid"
@@ -277,7 +277,7 @@ func (s *PsiService) ImportFromXLSX(ctx context.Context, reader io.Reader, admin
 				"Password": defaultPassword, // Envío de credencial temporal en plano (Plain-text transitorio)
 			}
 			if err := s.mailService.SendEmail(psi.Email, "Bienvenido a la plataforma Colegio de Psicólogos", "welcome_psi", mailData); err != nil {
-				log.Printf("WARN: Error sending welcome email for user_id=%s: %v", psi.ID, err)
+				log.Warn().Err(err).Str("component", "psi_service_xlsx").Str("user_id", psi.ID.String()).Msg("Error sending welcome email")
 			}
 		}
 

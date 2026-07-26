@@ -1,9 +1,8 @@
 package database
 
 import (
-	"log"
-
 	"github.com/google/uuid"
+	"github.com/rs/zerolog/log"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/config"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/utils"
@@ -17,7 +16,7 @@ func SeedAdmin(db *gorm.DB) {
 	db.Model(&domain.UserAdmin{}).Count(&count)
 
 	if count == 0 {
-		log.Println("[INFO] No se encontraron administradores. Creando Super Admin por defecto...")
+		log.Info().Str("component", "seed").Msg("No se encontraron administradores. Creando Super Admin por defecto...")
 
 		var defaultPass string
 		if config.Envs.Environment == "development" {
@@ -27,7 +26,7 @@ func SeedAdmin(db *gorm.DB) {
 		}
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(defaultPass), bcrypt.DefaultCost)
 		if err != nil {
-			log.Printf("[ERROR] Error al hashear contraseña de seed: %v", err)
+			log.Error().Err(err).Str("component", "seed").Msg("Error al hashear contraseña de seed")
 			return
 		}
 
@@ -67,14 +66,14 @@ func SeedAdmin(db *gorm.DB) {
 		}
 
 		if err := db.Create(admin).Error; err != nil {
-			log.Printf("[ERROR] Error al crear el Super Admin: %v", err)
+			log.Error().Err(err).Str("component", "seed").Msg("Error al crear el Super Admin")
 		} else {
-			log.Println("[OK] Super Admin creado exitosamente.")
+			log.Info().Str("component", "seed").Msg("Super Admin creado exitosamente.")
 			if config.Envs.Environment == "development" {
-				log.Printf("[INFO] [DEV] User: %s | Pass: %s | ID: %s", admin.Username, defaultPass, admin.ID)
+				log.Info().Str("component", "seed").Str("user", admin.Username).Str("pass", defaultPass).Str("id", admin.ID.String()).Msg("Super Admin dev credentials")
 			} else {
-				log.Printf("[INFO] Super Admin creado — User: %s | ID: %s", admin.Username, admin.ID)
-				log.Println("[WARN] La contraseña fue generada automáticamente. Cámbiela al iniciar sesión.")
+				log.Info().Str("component", "seed").Str("user", admin.Username).Str("id", admin.ID.String()).Msg("Super Admin creado")
+				log.Warn().Str("component", "seed").Msg("La contraseña fue generada automáticamente. Cámbiela al iniciar sesión.")
 			}
 		}
 	}

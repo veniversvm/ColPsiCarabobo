@@ -4,10 +4,10 @@ package job
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )
 
@@ -30,7 +30,7 @@ func CleanExpiredKeys(ctx context.Context, db *gorm.DB, maxAge time.Duration) (K
 	for _, k := range adminKeys {
 		if isKeyExpired(k.Key, cutoff) {
 			if err := clearKey(ctx, db, "user_admins", k.ID); err != nil {
-				log.Printf("[CLEANUP][WARN] Error borrando key de admin %s: %v", k.ID, err)
+				log.Warn().Err(err).Str("component", "cleanup").Str("admin_id", k.ID).Msg("Error borrando key de admin")
 				continue
 			}
 			result.AdminsCleaned++
@@ -44,7 +44,7 @@ func CleanExpiredKeys(ctx context.Context, db *gorm.DB, maxAge time.Duration) (K
 	for _, k := range psiKeys {
 		if isKeyExpired(k.Key, cutoff) {
 			if err := clearKey(ctx, db, "psi_users", k.ID); err != nil {
-				log.Printf("[CLEANUP][WARN] Error borrando key de psi %s: %v", k.ID, err)
+				log.Warn().Err(err).Str("component", "cleanup").Str("psi_id", k.ID).Msg("Error borrando key de psi")
 				continue
 			}
 			result.PsiCleaned++

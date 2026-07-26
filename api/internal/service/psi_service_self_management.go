@@ -5,7 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"github.com/rs/zerolog/log"
 	"mime/multipart"
 	"strings"
 
@@ -330,7 +330,7 @@ func (s *PsiService) UpdateProfileSelf(
 
 	if absUsername != nil || absEmail != nil || absPassword != nil {
 		if absErr := s.actualizarEnAudiobookshelf(ctx, psi.AudioBookShellId, absUsername, absPassword, absEmail); absErr != nil {
-			log.Printf("WARN: Error al sincronizar actualización con Audiobookshelf: %v", absErr)
+			log.Warn().Err(absErr).Str("component", "psi_service_self_management").Msg("Error al sincronizar actualización con Audiobookshelf")
 		}
 	}
 

@@ -14,7 +14,8 @@
 package middleware
 
 import (
-	"log"
+	"github.com/rs/zerolog/log"
+	"fmt"
 	"sync"
 	"time"
 
@@ -37,7 +38,7 @@ var (
 func newRateLimiterStorage() fiber.Storage {
 	once.Do(func() {
 		if config.Envs == nil || config.Envs.ValkeyAddr == "" {
-			log.Println("[RATE-LIMIT] Modo: in-memory (sin VALKEY_ADDR configurado)")
+			log.Info().Str("component", "rate-limit").Msg("Modo: in-memory (sin VALKEY_ADDR configurado)")
 			return
 		}
 
@@ -46,7 +47,7 @@ func newRateLimiterStorage() fiber.Storage {
 		func() {
 			defer func() {
 				if r := recover(); r != nil {
-					log.Printf("[RATE-LIMIT][WARN] No se pudo conectar a Valkey (%v). Usando in-memory.", r)
+					log.Warn().Err(fmt.Errorf("%v", r)).Str("component", "rate-limit").Msg("No se pudo conectar a Valkey. Usando in-memory.")
 				}
 			}()
 
@@ -54,7 +55,7 @@ func newRateLimiterStorage() fiber.Storage {
 				InitAddress: []string{config.Envs.ValkeyAddr},
 			})
 			rateLimiterStore = store
-			log.Printf("[RATE-LIMIT] Modo: Valkey (%s) — persistente, multi-instancia", config.Envs.ValkeyAddr)
+			log.Info().Str("component", "rate-limit").Str("addr", config.Envs.ValkeyAddr).Msg("Modo: Valkey — persistente, multi-instancia")
 		}()
 	})
 	return rateLimiterStore

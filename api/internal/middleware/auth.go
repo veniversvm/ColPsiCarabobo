@@ -10,7 +10,7 @@ package middleware
 import (
 	"errors"
 	"fmt"
-	"log"
+	"github.com/rs/zerolog/log"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -65,14 +65,14 @@ func (m *AuthMiddleware) validateToken(c *fiber.Ctx, getKeyFunc func(string) (st
 	authHeader := c.Get("Authorization")
 	if authHeader == "" {
 		if config.Envs != nil && config.Envs.Environment == "development" {
-			log.Println("[DEBUG AUTH] Error: Cabecera Authorization vacía")
+			log.Debug().Str("component", "auth").Msg("Error: Cabecera Authorization vacía")
 		}
 		return nil, errors.New("missing JWT")
 	}
 
 	if !strings.HasPrefix(authHeader, "Bearer ") {
 		if config.Envs != nil && config.Envs.Environment == "development" {
-			log.Println("[DEBUG AUTH] Error: Formato de cabecera inválido (falta Bearer)")
+			log.Debug().Str("component", "auth").Msg("Error: Formato de cabecera inválido (falta Bearer)")
 		}
 		return nil, errors.New("malformed JWT")
 	}
@@ -83,7 +83,7 @@ func (m *AuthMiddleware) validateToken(c *fiber.Ctx, getKeyFunc func(string) (st
 		// Verificación estricta del algoritmo de firma (Defensa contra vulnerabilidades de librerías JWT)
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			if config.Envs != nil && config.Envs.Environment == "development" {
-				log.Printf("[DEBUG AUTH] Error: Algoritmo inesperado: %v", token.Header["alg"])
+				log.Debug().Str("component", "auth").Interface("alg", token.Header["alg"]).Msg("Algoritmo de firma inesperado")
 			}
 			return nil, fmt.Errorf("unexpected signing method")
 		}
