@@ -33,6 +33,10 @@ type mockPsiRepoSvc struct {
 	CreatePostGradeFunc           func(ctx context.Context, pg *domain.PsiUserPostGrade) error
 	GetTextContentByIDFunc        func(ctx context.Context, id uuid.UUID) (string, error)
 	ValidateUniqueCredentialsFunc func(ctx context.Context, username, email string, excludeID uuid.UUID) error
+	SearchDirectoryFunc           func(ctx context.Context, filter request_structs.PsiDirectoryFilterDTO) ([]domain.PsiUserModel, int64, error)
+	GetSitemapDataFunc            func(ctx context.Context) ([]domain.PsiUserModel, error)
+	GetSolvenciesFunc             func(ctx context.Context, id uuid.UUID) ([]domain.PsiUserSolvency, error)
+	CreateWithColDataFunc         func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error
 }
 
 func (m *mockPsiRepoSvc) GetByID(ctx context.Context, id uuid.UUID) (*domain.PsiUserModel, error) {
@@ -70,6 +74,18 @@ func (m *mockPsiRepoSvc) GetTextContentByID(ctx context.Context, id uuid.UUID) (
 }
 func (m *mockPsiRepoSvc) ValidateUniqueCredentials(ctx context.Context, u, e string, ex uuid.UUID) error {
 	return m.ValidateUniqueCredentialsFunc(ctx, u, e, ex)
+}
+func (m *mockPsiRepoSvc) SearchDirectory(ctx context.Context, filter request_structs.PsiDirectoryFilterDTO) ([]domain.PsiUserModel, int64, error) {
+	return m.SearchDirectoryFunc(ctx, filter)
+}
+func (m *mockPsiRepoSvc) GetSitemapData(ctx context.Context) ([]domain.PsiUserModel, error) {
+	return m.GetSitemapDataFunc(ctx)
+}
+func (m *mockPsiRepoSvc) GetSolvencies(ctx context.Context, id uuid.UUID) ([]domain.PsiUserSolvency, error) {
+	return m.GetSolvenciesFunc(ctx, id)
+}
+func (m *mockPsiRepoSvc) CreateWithColData(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
+	return m.CreateWithColDataFunc(ctx, psi, col, sol, pg)
 }
 
 // mockMailSvc simula la pasarela de envíos SMTP (Protocolo Fire-and-Forget).

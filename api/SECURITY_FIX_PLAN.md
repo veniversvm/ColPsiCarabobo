@@ -1392,9 +1392,10 @@ adminGroup.Post(
 | Campo | Valor |
 |-------|-------|
 | **Hallazgo** | MED-01 |
-| **Archivo** | `internal/service/psi_service.go` (1860 líneas, 18+ métodos) |
+| **Archivo** | `internal/service/psi_service.go` (1439 líneas, 18+ métodos) |
+| **Estado** | ✅ IMPLEMENTADO — Split en 7 archivos por dominio funcional |
 
-**Plan de refactorización en 4 servicios:**
+**Implementación: 7 archivos + tests (ver `FIX_20_REPORT.md`)**
 
 | Nuevo servicio | Métodos a migrar | Responsabilidad |
 |---------------|------------------|-----------------|
