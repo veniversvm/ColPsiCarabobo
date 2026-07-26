@@ -28,7 +28,7 @@ import (
 func setupAdminTestDB(t *testing.T) *gorm.DB {
 	dsn := os.Getenv("TEST_DB_DSN")
 	if dsn == "" {
-		dsn = "host=localhost port=5432 user=postgres password=postgres dbname=postgres sslmode=disable"
+		dsn = "host=localhost port=5433 user=postgres password=postgres dbname=postgres sslmode=disable"
 	}
 
 	// Paso 1: Conexión administrativa temporal
@@ -208,5 +208,47 @@ func TestAdminRepo_ComprehensiveSuite(t *testing.T) {
 		// Verificación de Orden (DESC)
 		require.Equal(t, "charlie", res[0].Username, "El ordenamiento debe priorizar a los registros más recientes (DESC)")
 		require.Equal(t, "bravo", res[1].Username)
+	})
+
+	t.Run("UpdateKey rotation", func(t *testing.T) {
+		tx := mainDB.Begin()
+		defer tx.Rollback()
+		r := NewAdminRepository(tx)
+
+		admin := &domain.UserAdmin{
+			ID: uuid.New(),
+			Credentials: domain.Credentials{
+				Username: "key_admin", Email: "key@t.com", Password: "hashed", Key: "old_key",
+			},
+		}
+		require.NoError(t, r.Create(ctx, admin))
+
+		admin.Key = "rotated_key"
+		require.NoError(t, r.UpdateKey(ctx, admin))
+
+		found, err := r.GetByID(ctx, admin.ID)
+		require.NoError(t, err)
+		require.Equal(t, "rotated_key", found.Key)
+	})
+
+	t.Run("GetByID success and failure", func(t *testing.T) {
+		tx := mainDB.Begin()
+		defer tx.Rollback()
+		r := NewAdminRepository(tx)
+
+		admin := &domain.UserAdmin{
+			ID: uuid.New(),
+			Credentials: domain.Credentials{
+				Username: "getbyid_admin", Email: "getbyid@t.com", Password: "pass",
+			},
+		}
+		require.NoError(t, r.Create(ctx, admin))
+
+		found, err := r.GetByID(ctx, admin.ID)
+		require.NoError(t, err)
+		require.Equal(t, "getbyid_admin", found.Username)
+
+		_, err = r.GetByID(ctx, uuid.New())
+		require.Error(t, err)
 	})
 }

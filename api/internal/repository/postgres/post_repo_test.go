@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -26,7 +27,7 @@ import (
 func setupTestDB(t *testing.T) *gorm.DB {
 	dsn := os.Getenv("TEST_DB_DSN")
 	if dsn == "" {
-		dsn = "host=localhost port=5432 user=postgres password=postgres dbname=postgres sslmode=disable"
+		dsn = "host=localhost port=5433 user=postgres password=postgres dbname=postgres sslmode=disable"
 	}
 
 	// Paso 1: Conexión administrativa para garantizar la base de datos de pruebas.
@@ -125,5 +126,155 @@ func TestPostRepo_FullLifecycle(t *testing.T) {
 		err = tx.First(&check, "id = ?", post.ID).Error
 		require.Error(t, err, "GORM debe retornar error porque el registro tiene fecha en deleted_at")
 		require.ErrorIs(t, err, gorm.ErrRecordNotFound)
+	})
+
+	t.Run("Create and GetByID with Eager Loading", func(t *testing.T) {
+		tx := mainDB.Begin()
+		defer tx.Rollback()
+		repo := repoFactory(tx)
+
+		text := &domain.TextModel{ID: uuid.New(), Content: "<p>Contenido Completo</p>"}
+		post := &domain.Post{
+			ID:    uuid.New(),
+			Title: "Post con Contenido",
+			Type:  "public",
+		}
+
+		err := repo.Create(ctx, post, text)
+		require.NoError(t, err)
+		require.Equal(t, text.ID, post.TextID, "Create debe vincular el TextID automáticamente")
+
+		found, err := repo.GetByID(ctx, post.ID)
+		require.NoError(t, err)
+		require.Equal(t, "Post con Contenido", found.Title)
+		require.Equal(t, "<p>Contenido Completo</p>", found.Text.Content)
+	})
+
+	t.Run("PublishScheduled transitions due posts", func(t *testing.T) {
+		tx := mainDB.Begin()
+		defer tx.Rollback()
+		repo := repoFactory(tx)
+
+		text := &domain.TextModel{ID: uuid.New(), Content: "scheduled content"}
+		tx.Create(text)
+
+		past := time.Now().Add(-1 * time.Hour)
+		future := time.Now().Add(1 * time.Hour)
+
+		// Post scheduled in the past — should be published
+		scheduledPast := domain.Post{
+			ID: uuid.New(), Title: "Due Post", Type: "public",
+			Status: domain.PostStatusScheduled, TextID: text.ID, PublishAt: &past,
+		}
+		tx.Create(&scheduledPast)
+
+		// Post scheduled in the future — should stay scheduled
+		text2 := &domain.TextModel{ID: uuid.New(), Content: "future content"}
+		tx.Create(text2)
+		scheduledFuture := domain.Post{
+			ID: uuid.New(), Title: "Future Post", Type: "public",
+			Status: domain.PostStatusScheduled, TextID: text2.ID, PublishAt: &future,
+		}
+		tx.Create(&scheduledFuture)
+
+		affected := repo.PublishScheduled(ctx)
+		require.Equal(t, int64(1), affected, "Solo el post vencido debe ser publicado")
+
+		var checkPast domain.Post
+		tx.First(&checkPast, scheduledPast.ID)
+		require.Equal(t, domain.PostStatusPublished, checkPast.Status)
+
+		var checkFuture domain.Post
+		tx.First(&checkFuture, scheduledFuture.ID)
+		require.Equal(t, domain.PostStatusScheduled, checkFuture.Status)
+	})
+
+	t.Run("GetSitemapPosts returns only published public posts", func(t *testing.T) {
+		tx := mainDB.Begin()
+		defer tx.Rollback()
+		repo := repoFactory(tx)
+
+		text := &domain.TextModel{ID: uuid.New(), Content: "sitemap content"}
+		tx.Create(text)
+
+		tx.Create(&domain.Post{
+			ID: uuid.New(), Title: "Published Public", Type: "public",
+			Status: domain.PostStatusPublished, TextID: text.ID,
+		})
+		tx.Create(&domain.Post{
+			ID: uuid.New(), Title: "Published Psi", Type: "psi",
+			Status: domain.PostStatusPublished, TextID: text.ID,
+		})
+		tx.Create(&domain.Post{
+			ID: uuid.New(), Title: "Draft Public", Type: "public",
+			Status: domain.PostStatusDraft, TextID: text.ID,
+		})
+
+		posts, err := repo.GetSitemapPosts(ctx)
+		require.NoError(t, err)
+		require.Len(t, posts, 1, "Solo publicaciones publicadas y públicas")
+		require.Equal(t, "Published Public", posts[0].Title)
+	})
+
+	t.Run("List with Search filter", func(t *testing.T) {
+		tx := mainDB.Begin()
+		defer tx.Rollback()
+		repo := repoFactory(tx)
+
+		text := &domain.TextModel{ID: uuid.New(), Content: "search content"}
+		tx.Create(text)
+
+		tx.Create(&domain.Post{
+			ID: uuid.New(), Title: "Aviso Importante", Type: "public",
+			Status: domain.PostStatusPublished, TextID: text.ID,
+		})
+		tx.Create(&domain.Post{
+			ID: uuid.New(), Title: "Otro Aviso", Type: "public",
+			Status: domain.PostStatusPublished, TextID: text.ID,
+		})
+		tx.Create(&domain.Post{
+			ID: uuid.New(), Title: "Noticia General", Type: "public",
+			Status: domain.PostStatusPublished, TextID: text.ID,
+		})
+
+		res, total, err := repo.List(ctx, domain.PostFilter{
+			Search: "Importante",
+			Status: []domain.PostStatus{domain.PostStatusPublished},
+		}, 1, 10)
+		require.NoError(t, err)
+		require.Equal(t, int64(1), total)
+		require.Equal(t, "Aviso Importante", res[0].Title)
+	})
+
+	t.Run("List pagination and all_visible type", func(t *testing.T) {
+		tx := mainDB.Begin()
+		defer tx.Rollback()
+		repo := repoFactory(tx)
+
+		text := &domain.TextModel{ID: uuid.New(), Content: "page content"}
+		tx.Create(text)
+
+		tx.Create(&domain.Post{
+			ID: uuid.New(), Title: "Public 1", Type: "public",
+			Status: domain.PostStatusPublished, TextID: text.ID,
+		})
+		tx.Create(&domain.Post{
+			ID: uuid.New(), Title: "Psi 1", Type: "psi",
+			Status: domain.PostStatusPublished, TextID: text.ID,
+		})
+
+		// all_visible should return both public and psi
+		res, total, err := repo.List(ctx, domain.PostFilter{
+			Type: "all_visible",
+		}, 1, 10)
+		require.NoError(t, err)
+		require.Equal(t, int64(2), total)
+		require.Len(t, res, 2)
+
+		// Page 1, limit 1
+		res, total, err = repo.List(ctx, domain.PostFilter{}, 1, 1)
+		require.NoError(t, err)
+		require.Equal(t, int64(2), total)
+		require.Len(t, res, 1)
 	})
 }

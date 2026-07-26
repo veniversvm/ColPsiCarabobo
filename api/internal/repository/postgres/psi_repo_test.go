@@ -28,7 +28,7 @@ import (
 func setupFullTestDB(t *testing.T) *gorm.DB {
 	dsn := os.Getenv("TEST_DB_DSN")
 	if dsn == "" {
-		dsn = "host=localhost port=5432 user=postgres password=postgres dbname=postgres sslmode=disable"
+		dsn = "host=localhost port=5433 user=postgres password=postgres dbname=postgres sslmode=disable"
 	}
 
 	// Paso 1: Asegurar la existencia de la base de datos de pruebas
@@ -44,6 +44,7 @@ func setupFullTestDB(t *testing.T) *gorm.DB {
 
 	// Paso 3: Infraestructura y Esquemas
 	db.Exec("CREATE EXTENSION IF NOT EXISTS \"pgcrypto\";")
+	db.Exec("CREATE EXTENSION IF NOT EXISTS unaccent;")
 	err = db.AutoMigrate(
 		&domain.TextModel{},
 		&domain.PsiUserModel{},
@@ -51,8 +52,17 @@ func setupFullTestDB(t *testing.T) *gorm.DB {
 		&domain.PsiUserPostGrade{},
 		&domain.PsiUserSocialNetwork{},
 		&domain.PsiSpecialtyModel{},
+		&domain.PsiUserSolvency{},
 	)
 	require.NoError(t, err)
+
+	// TRUCO SENIOR: Limpiar tablas antes de correr los tests
+	db.Exec("TRUNCATE TABLE psi_user_social_networks RESTART IDENTITY CASCADE")
+	db.Exec("TRUNCATE TABLE psi_user_post_grades RESTART IDENTITY CASCADE")
+	db.Exec("TRUNCATE TABLE psi_user_col_data RESTART IDENTITY CASCADE")
+	db.Exec("TRUNCATE TABLE psi_users RESTART IDENTITY CASCADE")
+	db.Exec("TRUNCATE TABLE text_models RESTART IDENTITY CASCADE")
+	db.Exec("TRUNCATE TABLE psi_specialty_models RESTART IDENTITY CASCADE")
 
 	return db
 }
@@ -91,7 +101,8 @@ func TestPsiRepo_ComprehensiveSuite(t *testing.T) {
 			ContactEmail: "p1@t.com", ContactPhone: "04141234567",
 			MunicipalityCarabobo: "Valencia", ShowMunicipalityCarabobo: true, // Visible
 			PrimaryWorkArea:      "Neuropsicología",
-			BornDate: now, BioTextID: dummyBio.ID,
+			PrimarySpecialtyID:   &spec.ID,
+			BornDate: now, BioTextID: dummyBio.ID, AudioBookShellId: "abs_p1",
 			Credentials: domain.Credentials{
 				IsActive: true,
 				Username: "p1", Email: "p1@t.com",
@@ -103,7 +114,7 @@ func TestPsiRepo_ComprehensiveSuite(t *testing.T) {
 			Solvent: true, Genre: "F", Nationality: "V",
 			ContactEmail: "m2@t.com", ContactPhone: "04120000000",
 			MunicipalityCarabobo: "San Diego", ShowMunicipalityCarabobo: false, // Oculta
-			BornDate: now, BioTextID: dummyBio.ID,
+			BornDate: now, BioTextID: dummyBio.ID, AudioBookShellId: "abs_m2",
 			Credentials: domain.Credentials{
 				IsActive: true,
 				Username: "m2", Email: "m2@t.com",
@@ -113,7 +124,7 @@ func TestPsiRepo_ComprehensiveSuite(t *testing.T) {
 			// Insolvente: No debe aparecer en búsquedas por navegación general
 			ID: uuid.New(), FirstName: "Insolvente", LastName: "Busquedame", CI: 30, FPV: 30,
 			Solvent: false, Genre: "M", Nationality: "V",
-			ContactEmail: "i3@t.com", BornDate: now, BioTextID: dummyBio.ID,
+			ContactEmail: "i3@t.com", BornDate: now, BioTextID: dummyBio.ID, AudioBookShellId: "abs_i3",
 			Credentials: domain.Credentials{
 				IsActive: true,
 				Username: "i3", Email: "i3@t.com",
@@ -123,7 +134,7 @@ func TestPsiRepo_ComprehensiveSuite(t *testing.T) {
 			// Baneado/Inactivo: Jamás debe aparecer en el directorio público
 			ID: uuid.New(), FirstName: "Baneado", LastName: "Invisible", CI: 40, FPV: 40,
 			Solvent: true, Genre: "M", Nationality: "V",
-			ContactEmail: "b4@t.com", BornDate: now, BioTextID: dummyBio.ID,
+			ContactEmail: "b4@t.com", BornDate: now, BioTextID: dummyBio.ID, AudioBookShellId: "abs_b4",
 			Credentials: domain.Credentials{
 				IsActive: false,
 				Username: "b4", Email: "b4@t.com",
@@ -162,7 +173,7 @@ func TestPsiRepo_ComprehensiveSuite(t *testing.T) {
 		psi := domain.PsiUserModel{
 			ID: uuid.New(), CI: 999, FPV: 999, BornDate: time.Now(), BioTextID: dummyBio.ID,
 			Genre: "M", Nationality: "V", ContactEmail: "del@t.com", ContactPhone: "123",
-			FirstName: "Del", LastName: "Me",
+			FirstName: "Del", LastName: "Me", AudioBookShellId: "abs_del",
 			Credentials: domain.Credentials{
 				Username: "delete_me", Email: "del@t.com",
 			},
@@ -195,7 +206,7 @@ func TestPsiRepo_ComprehensiveSuite(t *testing.T) {
 		psi := domain.PsiUserModel{
 			ID: uuid.New(), CI: 77, FPV: 77, BornDate: time.Now(), MiniBio: "Original",
 			Genre: "F", Nationality: "V", ContactEmail: "upd@t.com", ContactPhone: "123",
-			FirstName: "Upd", LastName: "User",
+			FirstName: "Upd", LastName: "User", AudioBookShellId: "abs_upd",
 			BioTextID: bio.ID, // Asignación de FK obligatoria
 			Credentials: domain.Credentials{
 				Username: "upd", Email: "upd@t.com",
@@ -242,6 +253,7 @@ func TestPsiRepo_ComprehensiveSuite(t *testing.T) {
 			ID: uuid.New(), CI: 1, FPV: 100,
 			Solvent: false, BornDate: now, Genre: "M",
 			Nationality: "V", ContactEmail: "a1@t.com", ContactPhone: "111", FirstName: "A1", LastName: "T1", BioTextID: dummyBio.ID,
+			AudioBookShellId: "abs_a1",
 			Credentials: domain.Credentials{
 				Username: "a1", Email: "a1@t.com", IsActive: true,
 			},
@@ -252,6 +264,7 @@ func TestPsiRepo_ComprehensiveSuite(t *testing.T) {
 			ID: uuid.New(), CI: 2, FPV: 200,
 			Solvent: true, BornDate: now, Genre: "F",
 			Nationality: "V", ContactEmail: "a2@t.com", ContactPhone: "222", FirstName: "A2", LastName: "T2", BioTextID: dummyBio.ID,
+			AudioBookShellId: "abs_a2",
 			Credentials: domain.Credentials{
 				Username: "a2", Email: "a2@t.com", IsActive: false,
 			},
@@ -263,5 +276,225 @@ func TestPsiRepo_ComprehensiveSuite(t *testing.T) {
 		require.NoError(t, err)
 		require.GreaterOrEqual(t, total, int64(2), "El conteo total debe incluir usuarios inactivos o insolventes")
 		require.Len(t, res, 2, "La paginación debe recuperar a ambos usuarios sin importar sus banderas")
+	})
+
+	t.Run("CreateWithColData Atomic Insert", func(t *testing.T) {
+		tx := mainDB.Begin()
+		defer tx.Rollback()
+		r := NewPsiRepository(tx)
+
+		psi := &domain.PsiUserModel{
+			ID: uuid.New(), CI: 5000, FPV: 5000, BornDate: time.Now(),
+			Genre: "M", Nationality: "V", ContactEmail: "atomic@t.com", ContactPhone: "555",
+			FirstName: "Atomic", LastName: "Test", AudioBookShellId: "abs_atomic",
+			Credentials: domain.Credentials{Username: "atomic", Email: "atomic@t.com", IsActive: true},
+		}
+		col := &domain.PsiUserColData{
+			UniversityUndergraduate: "UC",
+		}
+		solvency := domain.PsiUserSolvency{
+			ID:   uuid.New(),
+			Date: time.Now(),
+		}
+
+		err := r.CreateWithColData(ctx, psi, col, solvency, nil)
+		require.NoError(t, err)
+
+		// Verify user, col data, and solvency all exist
+		var user domain.PsiUserModel
+		err = tx.First(&user, "id = ?", psi.ID).Error
+		require.NoError(t, err)
+		require.Equal(t, "Atomic", user.FirstName)
+
+		var colCheck domain.PsiUserColData
+		err = tx.First(&colCheck, "psi_user_model_id = ?", psi.ID).Error
+		require.NoError(t, err)
+		require.Equal(t, "UC", colCheck.UniversityUndergraduate)
+
+		var solCheck domain.PsiUserSolvency
+		err = tx.First(&solCheck, "psi_user_model_id = ?", psi.ID).Error
+		require.NoError(t, err)
+	})
+
+	t.Run("GetByID Eager Loading", func(t *testing.T) {
+		tx := mainDB.Begin()
+		defer tx.Rollback()
+		r := NewPsiRepository(tx)
+
+		bio := domain.TextModel{ID: uuid.New(), Content: "<p>Full Bio</p>"}
+		tx.Create(&bio)
+
+		psi := domain.PsiUserModel{
+			ID: uuid.New(), CI: 6000, FPV: 6000, BornDate: time.Now(),
+			Genre: "F", Nationality: "V", ContactEmail: "eager@t.com", ContactPhone: "666",
+			FirstName: "Eager", LastName: "Load", BioTextID: bio.ID, AudioBookShellId: "abs_eager",
+			Credentials: domain.Credentials{Username: "eager", Email: "eager@t.com"},
+		}
+		tx.Create(&psi)
+
+		col := domain.PsiUserColData{PsiUserModelID: psi.ID, UniversityUndergraduate: "UCV"}
+		tx.Create(&col)
+
+		sn := domain.PsiUserSocialNetwork{PsiUserID: psi.ID, Name: "LinkedIn", URL: "https://linkedin.com/test"}
+		tx.Create(&sn)
+
+		found, err := r.GetByID(ctx, psi.ID)
+		require.NoError(t, err)
+		require.Equal(t, "Eager", found.FirstName)
+		require.Equal(t, "UCV", found.ColData.UniversityUndergraduate)
+		require.Len(t, found.SocialNetworks, 1)
+		require.Equal(t, "LinkedIn", found.SocialNetworks[0].Name)
+	})
+
+	t.Run("GetByIdentifier Login Logic", func(t *testing.T) {
+		tx := mainDB.Begin()
+		defer tx.Rollback()
+		r := NewPsiRepository(tx)
+
+		bio := domain.TextModel{ID: uuid.New(), Content: ""}
+		tx.Create(&bio)
+
+		psi := domain.PsiUserModel{
+			ID: uuid.New(), CI: 7000, FPV: 7000, BornDate: time.Now(),
+			Genre: "M", Nationality: "V", ContactEmail: "login@t.com", ContactPhone: "777",
+			FirstName: "Login", LastName: "User", BioTextID: bio.ID, AudioBookShellId: "abs_login",
+			Credentials: domain.Credentials{Username: "login_user", Email: "login@t.com"},
+		}
+		tx.Create(&psi)
+
+		// Find by username
+		found, err := r.GetByIdentifier(ctx, "login_user")
+		require.NoError(t, err)
+		require.Equal(t, psi.ID, found.ID)
+
+		// Find by email
+		found, err = r.GetByIdentifier(ctx, "login@t.com")
+		require.NoError(t, err)
+		require.Equal(t, psi.ID, found.ID)
+
+		// Not found
+		_, err = r.GetByIdentifier(ctx, "ghost")
+		require.Error(t, err)
+	})
+
+	t.Run("UpdateKey Rotation", func(t *testing.T) {
+		tx := mainDB.Begin()
+		defer tx.Rollback()
+		r := NewPsiRepository(tx)
+
+		bio := domain.TextModel{ID: uuid.New(), Content: ""}
+		tx.Create(&bio)
+
+		psi := domain.PsiUserModel{
+			ID: uuid.New(), CI: 8000, FPV: 8000, BornDate: time.Now(),
+			Genre: "M", Nationality: "V", ContactEmail: "key@t.com", ContactPhone: "888",
+			FirstName: "Key", LastName: "User", BioTextID: bio.ID, AudioBookShellId: "abs_key",
+			Credentials: domain.Credentials{Username: "key_user", Email: "key@t.com", Key: "old_key_value"},
+		}
+		tx.Create(&psi)
+
+		psi.Key = "new_secret_key"
+		err := r.UpdateKey(ctx, &psi)
+		require.NoError(t, err)
+
+		var check domain.PsiUserModel
+		tx.First(&check, psi.ID)
+		require.Equal(t, "new_secret_key", check.Key)
+	})
+
+	t.Run("GetPsiUserColData and GetTextContentByID", func(t *testing.T) {
+		tx := mainDB.Begin()
+		defer tx.Rollback()
+		r := NewPsiRepository(tx)
+
+		bio := domain.TextModel{ID: uuid.New(), Content: "<p>Bio Content</p>"}
+		tx.Create(&bio)
+
+		psi := domain.PsiUserModel{
+			ID: uuid.New(), CI: 9000, FPV: 9000, BornDate: time.Now(),
+			Genre: "F", Nationality: "V", ContactEmail: "coldata@t.com", ContactPhone: "999",
+			FirstName: "ColData", LastName: "Test", BioTextID: bio.ID, AudioBookShellId: "abs_coldata",
+			Credentials: domain.Credentials{Username: "coldata", Email: "coldata@t.com"},
+		}
+		tx.Create(&psi)
+
+		col := domain.PsiUserColData{PsiUserModelID: psi.ID, UniversityUndergraduate: "LUZ"}
+		tx.Create(&col)
+
+		foundCol, err := r.GetPsiUserColData(ctx, psi.ID)
+		require.NoError(t, err)
+		require.Equal(t, "LUZ", foundCol.UniversityUndergraduate)
+
+		content, err := r.GetTextContentByID(ctx, bio.ID)
+		require.NoError(t, err)
+		require.Equal(t, "<p>Bio Content</p>", content)
+
+		_, err = r.GetTextContentByID(ctx, uuid.New())
+		require.Error(t, err)
+	})
+
+	t.Run("ValidateUniqueCredentials", func(t *testing.T) {
+		tx := mainDB.Begin()
+		defer tx.Rollback()
+		r := NewPsiRepository(tx)
+
+		bio := domain.TextModel{ID: uuid.New(), Content: ""}
+		tx.Create(&bio)
+
+		psi := domain.PsiUserModel{
+			ID: uuid.New(), CI: 11000, FPV: 11000, BornDate: time.Now(),
+			Genre: "M", Nationality: "V", ContactEmail: "uniq@t.com", ContactPhone: "1111",
+			FirstName: "Unique", LastName: "Test", BioTextID: bio.ID, AudioBookShellId: "abs_uniq",
+			Credentials: domain.Credentials{Username: "unique_user", Email: "uniq@t.com"},
+		}
+		tx.Create(&psi)
+
+		// Duplicate username
+		err := r.ValidateUniqueCredentials(ctx, "unique_user", "", uuid.Nil)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "nombre de usuario")
+
+		// Duplicate email
+		err = r.ValidateUniqueCredentials(ctx, "", "uniq@t.com", uuid.Nil)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "email")
+
+		// Unique (excluding self)
+		err = r.ValidateUniqueCredentials(ctx, "unique_user", "uniq@t.com", psi.ID)
+		require.NoError(t, err)
+	})
+
+	t.Run("GetSitemapData", func(t *testing.T) {
+		tx := mainDB.Begin()
+		defer tx.Rollback()
+		r := NewPsiRepository(tx)
+
+		bio := domain.TextModel{ID: uuid.New(), Content: ""}
+		tx.Create(&bio)
+
+		// Active + Solvent — should appear
+		tx.Create(&domain.PsiUserModel{
+			ID: uuid.New(), CI: 12000, FPV: 12000, BornDate: time.Now(),
+			Genre: "M", Nationality: "V", ContactEmail: "s1@t.com", ContactPhone: "1212",
+			FirstName: "Sitemap", LastName: "One", BioTextID: bio.ID,
+			AudioBookShellId: "abs_sm1", Solvent: true,
+			Credentials: domain.Credentials{Username: "sm1", Email: "s1@t.com", IsActive: true},
+		})
+
+		// Inactive — should NOT appear
+		inactive := domain.PsiUserModel{
+			ID: uuid.New(), CI: 13000, FPV: 13000, BornDate: time.Now(),
+			Genre: "F", Nationality: "V", ContactEmail: "s2@t.com", ContactPhone: "1313",
+			FirstName: "Hidden", LastName: "Two", BioTextID: bio.ID,
+			AudioBookShellId: "abs_sm2", Solvent: true,
+			Credentials: domain.Credentials{Username: "sm2", Email: "s2@t.com", IsActive: true},
+		}
+		tx.Create(&inactive)
+		tx.Model(&inactive).UpdateColumn("is_active", false)
+
+		users, err := r.GetSitemapData(ctx)
+		require.NoError(t, err)
+		require.Len(t, users, 1)
+		require.Equal(t, "Sitemap", users[0].FirstName)
 	})
 }

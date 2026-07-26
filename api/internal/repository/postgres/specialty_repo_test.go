@@ -16,7 +16,7 @@ import (
 func setupSpecialtyTestDB(t *testing.T) *gorm.DB {
 	dsn := os.Getenv("TEST_DB_DSN")
 	if dsn == "" {
-		dsn = "host=localhost port=5432 user=postgres password=postgres dbname=postgres sslmode=disable"
+		dsn = "host=localhost port=5433 user=postgres password=postgres dbname=postgres sslmode=disable"
 	}
 
 	tmpDb, _ := gorm.Open(postgres.Open(dsn), &gorm.Config{})
@@ -157,5 +157,48 @@ func TestSpecialtyRepo_ComprehensiveSuite(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, adminList, 1)
 		require.False(t, adminList[0].Active, "El admin debe verla como inactiva")
+	})
+
+	t.Run("GetByAdminID bypasses active filter", func(t *testing.T) {
+		tx := mainDB.Begin()
+		defer tx.Rollback()
+		r := NewSpecialtyRepository(tx)
+
+		spec := domain.PsiSpecialtyModel{Name: "AdminHidden", Active: true}
+		tx.Create(&spec)
+		tx.Model(&spec).UpdateColumn("active", false)
+
+		// GetByID with active=true should NOT find it
+		_, err := r.GetByID(ctx, spec.ID, true)
+		require.Error(t, err)
+
+		// GetByAdminID should find it regardless of active status
+		found, err := r.GetByAdminID(ctx, spec.ID)
+		require.NoError(t, err)
+		require.Equal(t, "AdminHidden", found.Name)
+		require.False(t, found.Active)
+	})
+
+	t.Run("Delete sets active false, does not hard delete", func(t *testing.T) {
+		tx := mainDB.Begin()
+		defer tx.Rollback()
+		r := NewSpecialtyRepository(tx)
+
+		spec := domain.PsiSpecialtyModel{Name: "ToSoftDelete", Active: true}
+		tx.Create(&spec)
+
+		err := r.Delete(ctx, spec.ID)
+		require.NoError(t, err)
+
+		// Should not be found with active filter
+		_, err = r.GetByID(ctx, spec.ID, true)
+		require.Error(t, err)
+
+		// Should be found via GetAllAdmin (hard delete would not be found)
+		all, err := r.GetAllAdmin(ctx)
+		require.NoError(t, err)
+		require.Len(t, all, 1)
+		require.Equal(t, "ToSoftDelete", all[0].Name)
+		require.False(t, all[0].Active)
 	})
 }
