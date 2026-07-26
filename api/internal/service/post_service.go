@@ -147,6 +147,11 @@ func (s *PostService) GetPostsList(ctx context.Context, page, limit int, userRol
 		return nil, err
 	}
 
+	// Convertir S3 keys a URLs públicas
+	for i := range posts {
+		s.resolvePostURLs(&posts[i])
+	}
+
 	return map[string]interface{}{
 		"data":  posts,
 		"total": total,
@@ -165,6 +170,7 @@ func (s *PostService) GetPostByID(ctx context.Context, id uuid.UUID, userRole st
 	// Validación estricta de la Lista de Control de Acceso (ACL)
 	switch userRole {
 	case "admin":
+		s.resolvePostURLs(post)
 		return post, nil
 
 	case "psi":
@@ -181,6 +187,7 @@ func (s *PostService) GetPostByID(ctx context.Context, id uuid.UUID, userRole st
 		}
 	}
 
+	s.resolvePostURLs(post)
 	return post, nil
 }
 
@@ -307,4 +314,12 @@ func (s *PostService) PublishScheduled(ctx context.Context) error {
 // de los motores de búsqueda (Googlebot), abstrayendo la complejidad de la tabla Post.
 func (s *PostService) GetSitemapData(ctx context.Context) (interface{}, error) {
 	return s.repo.GetSitemapPosts(ctx)
+}
+
+// resolvePostURLs convierte la S3 key de un Post en URL pública completa.
+func (s *PostService) resolvePostURLs(post *domain.Post) {
+	if s.s3Client == nil || post == nil {
+		return
+	}
+	post.ImageS3Key = s.s3Client.GetPublicURL(post.ImageS3Key)
 }

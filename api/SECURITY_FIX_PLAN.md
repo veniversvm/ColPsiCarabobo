@@ -1165,7 +1165,17 @@ go s.mailService.SendEmail(
 | **Hallazgo** | HIGH-10 |
 | **Archivo** | `internal/domain/user.model.go` (múltiples campos) |
 | **Severidad** | 🟠 ALTO |
+| **Estado** | ✅ IMPLEMENTADO |
 | **Riesgo** | Estructura del bucket S3 expuesta al cliente |
+
+**Fix implementado:**
+- Nuevo método `S3Client.GetPublicURL(key)` construye URL completa (`endpoint/bucket/key`)
+- `PsiService.ResolvePsiModelURLs()` convierte todas las S3 keys de un modelo
+- `PostService.resolvePostURLs()` convierte ImageS3Key de posts
+- Wrapper nil-safe `publicURL()` para compatibilidad con tests
+- 6 endpoints actualizados: directory, profile, admin view, /me, posts list, post detail
+
+**Detalle:** Ver `FIX_17_REPORT.md`
 
 **Campos a proteger:**
 

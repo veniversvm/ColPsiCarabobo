@@ -244,6 +244,9 @@ func (h *PsiHandler) GetMe(c *fiber.Ctx) error {
 
 	psi.FullBio.Content = bio
 
+	// Convertir S3 keys a URLs públicas antes de serializar
+	h.service.ResolvePsiModelURLs(psi)
+
 	return c.JSON(psi)
 }
 

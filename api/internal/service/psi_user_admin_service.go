@@ -51,6 +51,9 @@ func (s *PsiService) GetPsiByIDAdmin(ctx context.Context, admin *domain.UserAdmi
 
 	psi.Solvencies = solvencies
 
+	// Convertir S3 keys a URLs públicas antes de retornar al handler
+	s.ResolvePsiModelURLs(psi)
+
 	return psi, nil
 }
 

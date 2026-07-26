@@ -4,6 +4,7 @@ package s3
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -53,6 +54,16 @@ func ConnectS3(ctx context.Context) (*S3Client, error) {
 		Client: client,
 		Bucket: appConfig.Envs.S3Bucket,
 	}, nil
+}
+
+// GetPublicURL construye la URL pública completa de un objeto almacenado en S3/MinIO.
+// Utiliza el formato Path-Style: {endpoint}/{bucket}/{key}
+// Retorna string vacío si la key está vacía (previene URLs rotas).
+func (s *S3Client) GetPublicURL(key string) string {
+	if key == "" {
+		return ""
+	}
+	return fmt.Sprintf("%s/%s/%s", appConfig.Envs.S3Endpoint, s.Bucket, key)
 }
 
 // VerifyConnection realiza una verificación de disponibilidad del bucket.

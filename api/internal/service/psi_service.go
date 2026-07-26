@@ -717,7 +717,7 @@ func (s *PsiService) GetPublicDirectory(ctx context.Context, filter request_stru
 			LastName:       u.LastName,
 			CI:             u.CI,
 			FPV:            u.FPV,
-			ProfilePicture: u.ProfilePictureS3Key,
+			ProfilePicture: s.publicURL(u.ProfilePictureS3Key),
 			MiniBio:        u.MiniBio,
 			// Solvent:        u.Solvent, // no mostrar al publico
 		}
@@ -776,7 +776,7 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 			FPV:            psi.FPV,
 			CI:             psi.CI,
 			Gender:         psi.Genre,
-			ProfilePicture: psi.ProfilePictureS3Key,
+			ProfilePicture: s.publicURL(psi.ProfilePictureS3Key),
 			Solvent:        false,
 			Undergraduate: request_structs.UndergraduateDTO{
 				University: psi.ColData.UniversityUndergraduate,
@@ -804,7 +804,7 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 		FPV:            psi.FPV,
 		CI:             psi.CI,
 		Gender:         psi.Genre,
-		ProfilePicture: psi.ProfilePictureS3Key,
+		ProfilePicture: s.publicURL(psi.ProfilePictureS3Key),
 		Solvent:        true,
 		MiniBio:        psi.MiniBio,
 		FullBioContent: fullBio,
@@ -920,9 +920,9 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 	if psi.ColData.ShowMentionUndergraduate {
 		dto.Undergraduate.Mention = psi.ColData.MentionUndergraduate
 	}
-	dto.Undergraduate.TitleImageOneURL = psi.ColData.TitleImageOneS3Key
-	dto.Undergraduate.TitleImageTwoURL = psi.ColData.TitleImageTwoS3Key
-	dto.Undergraduate.TitleImageThreeURL = psi.ColData.TitleImageThreeS3Key
+	dto.Undergraduate.TitleImageOneURL = s.publicURL(psi.ColData.TitleImageOneS3Key)
+	dto.Undergraduate.TitleImageTwoURL = s.publicURL(psi.ColData.TitleImageTwoS3Key)
+	dto.Undergraduate.TitleImageThreeURL = s.publicURL(psi.ColData.TitleImageThreeS3Key)
 
 	// ── Redes Sociales ────────────────────────────────────────────────────
 	for _, sn := range psi.SocialNetworks {
@@ -936,14 +936,14 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 	for _, pg := range psi.PostGrades {
 		if pg.Active {
 			dto.PostGrades = append(dto.PostGrades, request_structs.PostGradeDTO{
-				Type:        string(pg.Type), // 👈 Añadido el tipo (Especialización, Doctorado, etc)
+				Type:        string(pg.Type),
 				Title:       pg.Title,
 				University:  pg.University,
 				Year:        pg.GraduationYear,
 				Description: pg.Description,
-				PicOneURL:   pg.PicOneS3Key,
-				PicTwoURL:   pg.PicTwoS3Key,
-				PicThreeURL: pg.PicThreeS3Key,
+				PicOneURL:   s.publicURL(pg.PicOneS3Key),
+				PicTwoURL:   s.publicURL(pg.PicTwoS3Key),
+				PicThreeURL: s.publicURL(pg.PicThreeS3Key),
 			})
 		}
 	}
@@ -1408,4 +1408,32 @@ func (s *PsiService) GetPsiSOlvency(ctx context.Context, id uuid.UUID) ([]domain
 func (s *PsiService) GetSitemapPsis(ctx context.Context) (interface{}, error) {
 	// Solo traemos los campos mínimos para el sitemap
 	return s.repo.GetSitemapData(ctx)
+}
+
+// ResolvePsiModelURLs convierte las S3 keys internas de un PsiUserModel en URLs públicas completas.
+// Se invoca antes de serializar a JSON para que el frontend reciba URLs listas para usar.
+func (s *PsiService) ResolvePsiModelURLs(psi *domain.PsiUserModel) {
+	if s.s3Client == nil || psi == nil {
+		return
+	}
+	psi.ProfilePictureS3Key = s.s3Client.GetPublicURL(psi.ProfilePictureS3Key)
+	if psi.ColData.PsiUserModelID != uuid.Nil {
+		psi.ColData.TitleImageOneS3Key = s.s3Client.GetPublicURL(psi.ColData.TitleImageOneS3Key)
+		psi.ColData.TitleImageTwoS3Key = s.s3Client.GetPublicURL(psi.ColData.TitleImageTwoS3Key)
+		psi.ColData.TitleImageThreeS3Key = s.s3Client.GetPublicURL(psi.ColData.TitleImageThreeS3Key)
+	}
+	for i := range psi.PostGrades {
+		psi.PostGrades[i].PicOneS3Key = s.s3Client.GetPublicURL(psi.PostGrades[i].PicOneS3Key)
+		psi.PostGrades[i].PicTwoS3Key = s.s3Client.GetPublicURL(psi.PostGrades[i].PicTwoS3Key)
+		psi.PostGrades[i].PicThreeS3Key = s.s3Client.GetPublicURL(psi.PostGrades[i].PicThreeS3Key)
+	}
+}
+
+// publicURL es un wrapper nil-safe para s3Client.GetPublicURL.
+// Si el s3Client no está inicializado (tests, modo degradado), retorna el key original.
+func (s *PsiService) publicURL(key string) string {
+	if s.s3Client == nil {
+		return key
+	}
+	return s.s3Client.GetPublicURL(key)
 }
