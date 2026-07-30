@@ -1,4 +1,10 @@
-// api/internal/service/admin_service.go (Asumo que el paquete es service por el contexto)
+// api/internal/service/mail_service.go
+
+// Package service implementa la lógica de negocio central de la aplicación.
+//
+// Este archivo gestiona la infraestructura de mensajería saliente (Outbound Messaging).
+// Está diseñado para absorber cargas masivas (ej. 3,000 correos simultáneos)
+// delegando el envío a la API de Resend sin bloquear los hilos HTTP del servidor.
 package service
 
 import (
@@ -8,11 +14,12 @@ import (
 	"html/template"
 	"log"
 	"math/rand"
+	"strings"
 	"time"
 
+	"github.com/resend/resend-go/v2"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/config"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/templates"
-	"github.com/wneessen/go-mail"
 )
 
 // IMailService define el contrato público para el envío de correos electrónicos.
@@ -21,14 +28,14 @@ import (
 // Al exponer una interfaz en lugar del struct concreto, permitimos que otras capas
 // (como los Controladores o los Tests Unitarios) dependan de este contrato.
 // Esto hace que el servicio sea "Mockeable" (testeable) sin necesidad de enviar
-// correos reales durante la ejecución de las pruebas.
+// correos reales ni gastar cuota de la API durante la ejecución de las pruebas.
 type IMailService interface {
 	SendEmail(to string, subject string, templateName string, data interface{}) error
 }
 
 // MailJob representa la unidad de trabajo (Payload) que viajará a través del canal.
 // Encapsula toda la información necesaria para que el Worker de fondo pueda
-// construir y despachar el correo de forma independiente.
+// compilar la plantilla HTML y despachar el correo de forma independiente.
 type MailJob struct {
 	To           string
 	Subject      string
@@ -39,103 +46,103 @@ type MailJob struct {
 // MailService es el motor de despacho de correos electrónicos.
 //
 // Patrón Arquitectónico: Productor-Consumidor (Producer-Consumer).
-// Mantiene una conexión SMTP configurada y un canal (queue) que actúa como un
-// amortiguador (Buffer) entre las peticiones HTTP rápidas y el lento protocolo SMTP.
+// Mantiene un cliente HTTP persistente hacia Resend y un canal (queue) que actúa como un
+// amortiguador (Buffer) entre las peticiones rápidas de Go y los límites de la API externa.
 type MailService struct {
-	client *mail.Client
+	client *resend.Client
 	from   string
-	queue  chan MailJob // Nuestra cola de mensajes en memoria (Thread-safe por naturaleza en Go)
+	queue  chan MailJob // Cola de mensajes en memoria (Thread-safe nativo en Go)
 }
 
-// NewMailService inicializa el servicio SMTP y levanta el demonio de procesamiento.
+// NewMailService inicializa la integración con Resend y levanta el demonio de procesamiento.
 func NewMailService() (*MailService, error) {
-	c, err := mail.NewClient(config.Envs.SMTPHost,
-		mail.WithPort(config.Envs.SMTPPort),
-		mail.WithSMTPAuth(mail.SMTPAuthPlain),
-		mail.WithUsername(config.Envs.SMTPUser),
-		mail.WithPassword(config.Envs.SMTPPass),
-		mail.WithTLSPolicy(mail.TLSMandatory),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("fallo al crear cliente de correo: %w", err)
+	// Failsafe: Aborta el arranque del servidor si faltan credenciales críticas.
+	if config.Envs.ResendAPIKey == "" {
+		return nil, errors.New("la clave de API de Resend no está configurada")
 	}
 
+	client := resend.NewClient(config.Envs.ResendAPIKey)
+
+	// Formateamos el remitente según el estándar RFC 5322.
+	// (Ej: "Colegio de Psicólogos <no-reply@dominio.com>")
+	fromFormatted := fmt.Sprintf("%s <%s>", config.Envs.SMTPFromName, config.Envs.SMTPFrom)
+
 	ms := &MailService{
-		client: c,
-		from:   config.Envs.SMTPFrom,
-		// Manejo de Contrapresión (Backpressure):
-		// Un buffer de 5000 permite al servidor absorber ráfagas masivas de eventos
-		// (ej. un administrador enviando un boletín a todos los psicólogos) sin
-		// bloquear la interfaz web. Si la cola se llena, las peticiones HTTP empezarán
-		// a bloquearse, protegiendo al servidor de quedarse sin memoria RAM (OOM).
+		client: client,
+		from:   fromFormatted,
+		// Buffer Masivo (Manejo de Contrapresión):
+		// Capaz de alojar los 3,000 correos de la importación inicial en memoria RAM,
+		// evitando que el Importador CSV se bloquee esperando a la red.
 		queue: make(chan MailJob, 5000),
 	}
 
-	// Iniciamos el worker en segundo plano (Daemon) al arrancar el servicio.
-	// Este hilo vivirá durante toda la ejecución de la aplicación.
+	// Levantamos el demonio (Daemon) de envíos en background
 	go ms.startWorker()
 
 	return ms, nil
 }
 
-// startWorker es el consumidor perpetuo de la cola de correos.
+// startWorker procesa la cola protegiendo la reputación del dominio (Deliverability).
 //
-// Tácticas Avanzadas de Evasión Anti-Spam (Throttling y Jittering):
-// Los proveedores de correo modernos (Gmail, Outlook) penalizan o bloquean IPs que
-// envían cientos de correos por segundo (comportamiento de botnet). Este worker implementa:
-//  1. Throttling (Estrangulamiento): Límites de ráfagas (Batch de 30 correos).
-//  2. Jittering (Aleatoriedad): Introduce pausas matemáticas impredecibles (60 a 180 seg)
-//     para simular el patrón de envío de un operador humano y evitar algoritmos heurísticos.
-//  3. Rate Limiting por Socket: Una pausa microscópica (500ms) entre correos para evitar
-//     el agotamiento de los file descriptors (Socket Exhaustion) del servidor de origen.
+// Estrategia para la Carga de 3,000 Correos (Warm-up Strategy & Anti-Spam):
+// Enviar 3k correos de golpe desde un dominio nuevo casi siempre dispara los filtros
+// anti-spam de Gmail y Hotmail. Este worker procesa la cola inyectando Jittering
+// (pausas aleatorias) y micro-retrasos. Esto simula tráfico orgánico humano y
+// "calienta" tu dominio e IP compartida en Resend de forma segura.
 func (s *MailService) startWorker() {
-	log.Println("🚀 Mail Worker iniciado y escuchando cola...")
+	log.Println("🚀 Resend Mail Worker iniciado y escuchando cola...")
 
 	sentInBatch := 0
 
 	for job := range s.queue {
-		// 1. Intentar enviar el correo
 		if err := s.executeSend(job); err != nil {
-			log.Printf("❌ ERROR critico en Worker al enviar a %s: %v", job.To, err)
+			log.Printf("❌ ERROR critico en Resend Worker al enviar a %s: %v", job.To, err)
 		} else {
-			log.Printf("📧 Correo procesado por Worker: %s", job.To)
+			log.Printf("📧 Correo procesado y enviado via Resend a: %s", job.To)
 			sentInBatch++
 		}
 
-		// 2. LOGICA DE PAUSA (Evasión de Filtros de Spam y Límites de Cuota)
-		// Cada 30 correos, el worker se toma un descanso aleatorio.
+		// Lógica de "Domain Warm-up" y Evasión de Filtros Heurísticos
 		if sentInBatch >= 30 {
-			// Generar tiempo aleatorio entre 60 y 180 segundos (1 a 3 min) -> Jitter Pattern
+			// Jittering: Descanso aleatorio entre 60 y 180 segundos
 			waitTime := rand.Intn(120) + 60
-			log.Printf("🕒 Límite de ráfaga (30) alcanzado. El Worker descansará %d segundos para evitar spam...", waitTime)
+			log.Printf("🕒 Límite de ráfaga (30) alcanzado. El Worker descansará %d segundos para evitar filtros de Spam...", waitTime)
 
 			time.Sleep(time.Duration(waitTime) * time.Second)
 
-			sentInBatch = 0 // Reiniciar contador de ráfaga para el siguiente ciclo
+			sentInBatch = 0
 			log.Println("🔄 Worker reanudado.")
 		}
 
-		// Pequeña pausa de cortesía entre correos individuales para no saturar el socket
-		// de red ni activar las alarmas de "Conexiones Concurrentes" del proveedor SMTP.
+		// Rate Limiting Activo: Micro-pausa para respetar los límites de la API
+		// de Resend (que suele limitar peticiones concurrentes agresivas por segundo).
 		time.Sleep(500 * time.Millisecond)
 	}
 }
 
-// SendEmail es el método público utilizado por los Controladores y otros Servicios.
+// SendEmail gestiona el ingreso de mensajes a la cola de despacho asíncrono.
 //
-// Patrón "Fire-and-Forget":
-// Ahora NO envía el correo físicamente, solo lo encola en la memoria. Al ser una
-// operación estrictamente no-bloqueante (inserción en canal), garantiza que los
-// endpoints HTTP (como el Registro o Login) respondan en ~10ms en lugar de esperar
-// los ~2000ms que normalmente tarda un Handshake SMTP completo.
+// Lógica de Omisión (Silent Skip):
+// Implementa un filtro de "Higiene de Datos" que detecta direcciones placeholder.
+// Si el destinatario contiene la cadena "sincorreo", el sistema aborta el envío
+// devolviendo un error 'nil'. Esto es crítico para:
+//  1. Evitar "Hard Bounces" en Resend que degradarían la reputación del dominio.
+//  2. Optimizar el flujo de importación masiva al no saturar la cola con datos técnicos.
 func (s *MailService) SendEmail(to string, subject string, templateName string, data interface{}) error {
+	// 1. Verificación de Disponibilidad (Readiness Check)
 	if s == nil || s.queue == nil {
 		return errors.New("el servicio de correo no está listo")
 	}
 
-	// Ponemos el trabajo en la cola.
-	// Nota: Si la cola (buffer 5000) estuviera llena, esta línea se bloquearía
-	// temporalmente (Backpressure), lo cual es el comportamiento correcto en Go.
+	// 2. Filtro de Integridad de Destinatario
+	// Detecta correos generados sintéticamente para usuarios sin email real.
+	if strings.Contains(to, "sincorreo") {
+		log.Printf("📥 INFO: %s detectado como placeholder. Envío omitido por integridad.", to)
+		return nil // Se retorna nil para no interrumpir procesos masivos (Batch Processes)
+	}
+
+	// 3. Encolado Asíncrono (Non-blocking Push)
+	// Se coloca el trabajo en el canal para que el Worker lo procese según su ritmo de throttling.
 	s.queue <- MailJob{
 		To:           to,
 		Subject:      subject,
@@ -143,12 +150,12 @@ func (s *MailService) SendEmail(to string, subject string, templateName string, 
 		Data:         data,
 	}
 
-	log.Printf("📥 Correo encolado para %s", to)
+	log.Printf("📥 Correo encolado exitosamente para: %s", to)
 	return nil
 }
 
 // executeSend realiza la orquestación, renderización de plantillas y el envío
-// físico de forma síncrona. Es invocado exclusivamente por el Worker de fondo.
+// físico a la API REST de Resend. Es invocado EXCLUSIVAMENTE por la Goroutine del Worker.
 func (s *MailService) executeSend(job MailJob) error {
 	// 1. Preparar la plantilla HTML
 	// Se aprovecha `embed.FS` de Go para leer la plantilla directamente de la memoria RAM
@@ -160,44 +167,31 @@ func (s *MailService) executeSend(job MailJob) error {
 	}
 
 	// 2. Renderizar contenido dinámico
-	// Se inyecta la estructura `job.Data` en la plantilla de forma segura (previniendo XSS).
+	// Inyección segura (XSS Prevention inherente en html/template) de las variables.
 	var body bytes.Buffer
 	if err := tmpl.Execute(&body, job.Data); err != nil {
 		return fmt.Errorf("error al inyectar datos en la plantilla: %w", err)
 	}
 
-	// 3. Configurar el mensaje
-	m := mail.NewMsg()
-
-	// Seteamos el remitente con nombre amigable para la Experiencia de Usuario (UX)
-	// (Ej: Colegio de Psicólogos de Carabobo <no-reply@...>)
-	// Nota Arquitectónica: NO uses m.From() después de esto o perderás el formato amigable.
-	if err := m.FromFormat(config.Envs.SMTPFromName, s.from); err != nil {
-		return fmt.Errorf("error en formato del remitente: %w", err)
+	// 3. Ensamblar la petición (Request Payload) para Resend
+	params := &resend.SendEmailRequest{
+		From:    s.from,
+		To:      []string{job.To},
+		Subject: job.Subject,
+		Html:    body.String(),
 	}
 
-	// Aplicar Reply-To si está configurado.
-	// Mejora operativa: Evita que los usuarios respondan al correo 'no-reply' y
-	// redirige sus respuestas al correo real de soporte del colegio.
+	// Aplicar Reply-To si existe en el entorno.
+	// Mejora de UX: Redirige las respuestas de los usuarios al correo de soporte real.
 	if config.Envs.SMTPReplyTo != "" {
-		m.ReplyTo(config.Envs.SMTPReplyTo)
+		params.ReplyTo = config.Envs.SMTPReplyTo
 	}
 
-	// Destinatario y Asunto
-	if err := m.To(job.To); err != nil {
-		return fmt.Errorf("error en formato del destinatario: %w", err)
+	// 4. Disparar API de Resend (Ejecución de Red)
+	_, err = s.client.Emails.Send(params)
+	if err != nil {
+		return fmt.Errorf("fallo la API de Resend: %w", err)
 	}
-	m.Subject(job.Subject)
-	m.SetBodyString(mail.TypeTextHTML, body.String())
-
-	// 4. Envío físico al servidor SMTP
-	// DialAndSend se encarga automáticamente de abrir el Socket TCP, realizar el
-	// Handshake TLS, autenticar, enviar el payload y cerrar la conexión educadamente (QUIT).
-	//
-	// (Nota: Actualmente comentado por el autor, presumiblemente para entornos de desarrollo/pruebas).
-	// if err := s.client.DialAndSend(m); err != nil {
-	// 	return fmt.Errorf("fallo la conexión SMTP o el envío: %w", err)
-	// }
 
 	return nil
 }

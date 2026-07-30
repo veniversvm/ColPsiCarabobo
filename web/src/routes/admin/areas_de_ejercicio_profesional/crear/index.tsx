@@ -25,13 +25,11 @@ export default function AdminCrearAreaEjercicioPage() {
     setError(null);
 
     try {
-      // Mantenemos el endpoint técnico /admin/specialties del backend
       await apiPost("/admin/specialties", {
         name: name().trim(),
         description: description().trim(),
       });
       
-      // Redirigir al nuevo catálogo uniforme
       navigate("/admin/areas_de_ejercicio_profesional");
     } catch (err: any) {
       setError(err.message || "Error al registrar el área. Intenta de nuevo.");
@@ -39,6 +37,17 @@ export default function AdminCrearAreaEjercicioPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  // Función para filtrar caracteres especiales en tiempo real
+  const handleNameInput = (e: Event) => {
+    const input = e.currentTarget as HTMLInputElement;
+    // Permite: letras, números, espacios, acentos, ñ, guiones (-) y barras (/)
+    const sanitizedValue = input.value.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\/\-]/g, "");
+    
+    setName(sanitizedValue);
+    // Forzamos el input visual para que borre el caracter inválido instantáneamente
+    input.value = sanitizedValue; 
   };
 
   return (
@@ -90,10 +99,11 @@ export default function AdminCrearAreaEjercicioPage() {
               maxLength={100}
               placeholder="Ej: Psicología Clínica, Organizacional, etc."
               value={name()}
-              onInput={(e) => setName(e.currentTarget.value)}
+              onInput={handleNameInput} // 👈 AQUÍ USAMOS LA NUEVA FUNCIÓN
               class={IC}
             />
-            <div class="flex justify-end mt-2">
+            <div class="flex justify-between mt-2 px-1">
+               <p class="text-[9px] text-gray-400 italic">No se admiten símbolos especiales.</p>
                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{name().length}/100</p>
             </div>
           </div>

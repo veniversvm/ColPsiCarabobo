@@ -1,0 +1,69 @@
+=============================================================================
+PLAN DE ACCION: LANZAMIENTO PLATAFORMA COLEGIO DE PSICOLOGOS CARABOBO (2026)
+=============================================================================
+Objetivo: Migracion segura de 3,000 agremiados a la nueva plataforma y 
+notificacion masiva evitando caer en listas negras de Spam.
+
+-----------------------------------------------------------------------------
+FASE 1: HIGIENE DE DATOS (PRE-REQUISITO ESTRICTO)
+-----------------------------------------------------------------------------
+[ ] 1. Exportar la base de datos actual de los 3,000 psicologos a formato CSV/Excel.
+[ ] 2. Contratar un servicio de validacion de correos (Recomendado: ZeroBounce o Bouncer. Costo aprox: $15 - $20).
+[ ] 3. Subir el Excel al servicio de validacion para detectar correos rebotados (Hard Bounces), cuentas eliminadas o errores tipograficos (ej. @gmil.com).
+[ ] 4. Descargar el Excel "Limpio" (Solo correos validos). 
+    * Nota: Los psicologos con correos invalidos tendran que contactar al colegio manualmente por redes sociales para actualizar sus datos.
+
+-----------------------------------------------------------------------------
+FASE 2: CONFIGURACION DE INFRAESTRUCTURA (RESEND)
+-----------------------------------------------------------------------------
+[ ] 1. Crear/Ingresar a la cuenta de Resend.com.
+[ ] 2. Hacer upgrade al Plan Pro ($20) + Addon de Marketing ($40) para desbloquear envios masivos.
+[ ] 3. Agregar el dominio oficial del Colegio en el panel de Resend (Domains).
+[ ] 4. Copiar los registros DNS (TXT, CNAME, MX) generados por Resend y pegarlos en el proveedor de dominio (Cloudflare, GoDaddy, etc.).
+[ ] 5. Esperar a que Resend marque el estado del dominio como "Verified" (Verde). NO AVANZAR SIN ESTO.
+
+-----------------------------------------------------------------------------
+FASE 3: CAMPAÑA DE EXPECTATIVA (MARKETING BROADCAST)
+-----------------------------------------------------------------------------
+[ ] 1. Ir a la seccion "Audiences" o "Broadcasts" en el panel de Resend.
+[ ] 2. Importar el Excel "Limpio" (Fase 1) solo con las columnas de Nombre y Correo.
+[ ] 3. Diseñar el correo de expectativa usando el editor visual de Resend.
+    * Asunto sugerido: "Muy pronto: Tu nueva plataforma del Colegio de Psicologos de Carabobo".
+    * Contenido: Aviso sobre la modernizacion, nueva biblioteca virtual, y que pronto recibiran sus credenciales.
+[ ] 4. CONFIGURAR DESUSCRIPCION (ZERO-CODE):
+    * OBLIGATORIO: El correo debe tener un enlace/boton de "Unsubscribe" configurado desde el mismo panel de Resend.
+    * Magia de Infraestructura: Esto lo gestiona Resend automaticamente. No se requiere escribir codigo en Go ni pantallas en SolidJS.
+    * Aclaratoria: Si un psicologo se desuscribe por aqui, Resend dejara de enviarle publicidad, pero NO se borra de tu base de datos de PostgreSQL.
+[ ] 5. Realizar el envio masivo a traves del panel de Resend.
+[ ] 6. Monitorear durante 24 horas la tasa de apertura y posibles quejas de spam.
+
+-----------------------------------------------------------------------------
+FASE 4: DESPLIEGUE TRANSACCIONAL E INGESTA (BACKEND GO)
+-----------------------------------------------------------------------------
+[ ] 1. Configurar las variables de entorno en el servidor de produccion:
+    * RESEND_API_KEY asignado correctamente.
+    * Base de datos Postgres en blanco y lista.
+    * Audiobookshelf corriendo y sincronizado.
+[ ] 2. REGLA TRANSACCIONAL: 
+    * Los correos que salen desde Go (mail_service.go) son criticos (ej. contraseñas de acceso). 
+    * Estos correos NO LLEVAN boton de desuscripcion. El usuario no puede desuscribirse de recibir las llaves de su cuenta, al igual que no puede desuscribirse de un banco.
+[ ] 3. PRUEBA PILOTO (El mismo dia del lanzamiento, en la mañana):
+    * Entrar al panel administrativo de SolidJS.
+    * Subir un Excel de prueba con 5 registros (Directiva o equipo IT).
+    * Validar que los 5 correos con contraseñas lleguen a la Bandeja de Entrada.
+    * Validar que los usuarios se crearon en Audiobookshelf.
+[ ] 4. PRUEBA DE VOLUMEN MEDIO:
+    * Subir un Excel con 100 psicologos al endpoint de importacion.
+    * Monitorear los logs del backend de Go para verificar que el Worker funciona sin errores.
+[ ] 5. DESPLIEGUE FINAL (En la tarde/noche):
+    * Subir el Excel "Limpio" final con los 2,800+ registros restantes a traves del panel Administrativo.
+    * La UI indicara "Exito". El servidor Go tomara el control en segundo plano (Fire-and-Forget).
+    * Dejar el servidor trabajar sin interrupciones. Por el Jittering y el Throttling anti-spam configurado en el Worker, el envio total tomara entre 3 y 4 horas.
+
+-----------------------------------------------------------------------------
+FASE 5: MONITOREO Y SOPORTE POST-LANZAMIENTO
+-----------------------------------------------------------------------------
+[ ] 1. Mantener monitoreo del panel de Resend para ver correos "Delivered".
+[ ] 2. Revisar el archivo "logs/import_XYZ.log" en el servidor para identificar si algun registro especifico (ej. C.I. duplicada) fallo durante la creacion en Base de Datos.
+[ ] 3. Preparar al equipo administrativo para atender soporte via WhatsApp/Redes Sociales para los colegiados cuyos correos fueron filtrados en la Fase 1 o cayeron en Spam.
+=============================================================================

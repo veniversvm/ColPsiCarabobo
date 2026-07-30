@@ -1,6 +1,6 @@
 // web/src/components/psi/profile/AvatarUploader.tsx
 import { Show, createSignal } from "solid-js";
-import { Portal } from "solid-js/web"; // Importante para renderizar el modal sobre todo el DOM
+import { Portal } from "solid-js/web"; 
 import QRCodeGenerator from "./QrCode";
 
 interface AvatarUploaderProps {
@@ -18,7 +18,8 @@ interface AvatarUploaderProps {
 }
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/jpg"];
+// 1. Agregamos image/gif a los tipos permitidos
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/jpg", "image/gif"];
 const BUCKET_URL =
   import.meta.env.VITE_BUCKET_URL || "http://localhost:9000/colpsi-bucket";
 
@@ -54,7 +55,8 @@ export function AvatarUploader(props: AvatarUploaderProps) {
 
   const validateFile = (file: File): string | null => {
     if (!ALLOWED_TYPES.includes(file.type))
-      return "Formato no permitido. Usa JPG o PNG.";
+      // 2. Actualizamos el mensaje de error
+      return "Formato no permitido. Usa JPG, PNG o GIF.";
     if (file.size > MAX_FILE_SIZE) {
       const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
       return `La imagen es demasiado grande (${sizeMB}MB). Máximo 5MB.`;
@@ -114,10 +116,11 @@ export function AvatarUploader(props: AvatarUploaderProps) {
                 class="absolute bottom-0 right-0 bg-colpsi-blue text-white p-3 rounded-full cursor-pointer shadow-lg hover:bg-colpsi-yellow hover:text-colpsi-blue transition-all group-hover:scale-110 border-2 border-white"
                 title="Cambiar foto de perfil (máx 5MB)"
               >
+                {/* 3. Agregamos image/gif al atributo accept del input */}
                 <input
                   type="file"
                   class="sr-only"
-                  accept="image/jpeg, image/png, image/jpg"
+                  accept="image/jpeg, image/png, image/jpg, image/gif"
                   onChange={(e) => {
                     const file = e.currentTarget.files?.[0];
                     handleFileChange(file || null);
@@ -132,8 +135,9 @@ export function AvatarUploader(props: AvatarUploaderProps) {
               <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">
                 Foto de Perfil
               </p>
+              {/* 4. Actualizamos el texto de ayuda visual */}
               <p class="text-[10px] text-gray-400 mt-1 bg-gray-50 px-3 py-1 rounded-full">
-                JPG, PNG • Máx 5MB
+                JPG, PNG, GIF • Máx 5MB
               </p>
             </div>
           </div>
@@ -215,7 +219,6 @@ export function AvatarUploader(props: AvatarUploaderProps) {
               <img
                 src={previewUrl()!}
                 alt={`Foto de perfil ampliada`}
-                // Clases CLAVE: w-full fuerza a la imagen a ocupar el ancho del max-w-2xl
                 class="w-full max-h-[85vh] min-h-[300px] object-contain rounded-2xl shadow-2xl bg-gray-50 cursor-default"
                 onClick={(e) => e.stopPropagation()}
               />

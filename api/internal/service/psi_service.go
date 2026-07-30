@@ -67,39 +67,24 @@ func NewPsiService(repo domain.PsiUserRepository, s3Client *s3.S3Client, mailSer
 // GESTIÓN MASIVA (CSV / EXCEL IMPORT)
 // =========================================================================
 
-// ImportFromCSV procesa la carga masiva de agremiados desde un flujo de datos TSV/CSV.
-// Implementa geo-normalización, hashing de credenciales y escritura transaccional
-// atómica por cada registro. Los fallos individuales no interrumpen el lote completo.
+// ImportFromCSV orquesta la ingesta masiva de psicólogos agremiados desde un archivo Excel (XLSX).
 //
-// Columnas esperadas (separadas por tab, índice base 0):
+// Arquitectura de Alto Rendimiento (Massive Ingestion):
+// Este método está diseñado para procesar lotes de miles de registros (ej. 3,000) de forma eficiente:
 //
-//	[0]  UserName                  [15] PublicPhone
-//	[1]  Email                     [16] ShowPublicPhone
-//	[2]  Password                  [17] ServiceAddress
-//	[3]  FirstName                 [18] ShowPublicServiceAddress
-//	[4]  SecondName                [19] Solvent
-//	[5]  LastName                  [20] MunicipalityCarabobo
-//	[6]  SecondLastName            [21] PhoneCarabobo
-//	[7]  FPV                       [22] CelPhoneCarabobo
-//	[8]  CI                        [23] State (fuera de Carabobo)
-//	[9]  Letter (ignorado)         [24] MunicipalityOutSideCarabobo
-//	[10] Nationality               [25] PhoneOutSideCarabobo
-//	[11] BornDate                  [26] CelPhoneOutSideCarabobo
-//	[12] Genre                     [27] UniversityUndergraduate
-//	[13] ContactEmail              [28] GraduateDate
-//	[14] ShowContactEmail          [29] MentionUndergraduate
-//	[30] RegisterTitleState        [37] GuildCollaborator
-//	[31] RegisterTitleDate         [38] PublicEmployee
-//	[32] RegisterNumber            [39] UniversityProfessor
-//	[33] RegisterFolio             [40] DateOfLastSolvency
-//	[34] RegisterTome              [41] DoubleGuild
-//	[35] GuildDirector             [42] CPSM
-//	[36] SixtyFiveOrPlus
+//  1. Optimización Criptográfica:
+//     Calcula el Hash de la contraseña predeterminada UNA SOLA VEZ fuera del bucle. Dado que
+//     Bcrypt es computacionalmente costoso, esto reduce el tiempo de importación de minutos a segundos.
 //
-// Arquitectura de Tolerancia a Fallos (ETL Pipeline):
-// Si una fila contiene errores de formato, colisión de FPV u omisión de datos,
-// el motor la empuja al array 'failedRecords' y continúa procesando el documento
-// ininterrumpidamente, garantizando alta disponibilidad.
+//  2. Tolerancia a Fallos y Auditoría:
+//     Implementa un registro de errores detallado (failedRecords). Si un registro falla (ej. CI duplicada),
+//     el sistema lo anota en un log físico y continúa con el siguiente, garantizando que un error
+//     individual no bloquee la migración del gremio completo.
+//
+//  3. Notificación Asíncrona (Fire-and-Forget):
+//     Utiliza Goroutines para despachar los correos electrónicos. Al integrarse con el Worker de
+//     Resend (que maneja su propia cola), el hilo principal de la base de datos no se detiene,
+//     permitiendo una respuesta instantánea al administrador mientras los correos se envían en background.
 func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminID uuid.UUID) (int, []map[string]string) {
 	// 1. Logs (Igual que antes)
 	_ = os.Mkdir("logs", 0755)
@@ -123,6 +108,7 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 	successCount := 0
 	var failedRecords []map[string]string
 	defaultPassword := "Colpsi2025!"
+	// defaultPassword := utils.GenerateSecureRandomString(12)
 	hashedPasswordBytes, _ := bcrypt.GenerateFromPassword([]byte(defaultPassword), bcrypt.DefaultCost)
 	hashedPassword := string(hashedPasswordBytes)
 
@@ -209,16 +195,24 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 		// 6. ENVÍO DE EMAIL NO BLOQUEANTE
 		// Al estar en una goroutine, el bucle principal de la DB sigue a toda velocidad
 		if psi.ProofOfLife && validEmail {
-			go s.mailService.SendEmail(
-				psi.Email,
+			// NOTA: Quitamos el 'go' porque SendEmail ya maneja su propia goroutine interna
+			err := s.mailService.SendEmail(
+				email, // Usamos la variable 'email' original que sabemos que es válida
 				"Bienvenido(a) a la plataforma COLPSI Carabobo",
 				"welcome_psi",
 				map[string]interface{}{
 					"Name":     psi.FirstName,
-					"Email":    psi.Email,
+					"Email":    email,
 					"Password": defaultPassword,
 				},
 			)
+			if err != nil {
+				log.Printf("❌ Error al encolar email para %s: %v", email, err)
+			}
+		} else {
+			// Este log te dirá por qué no entró al bloque de envío
+			log.Printf("ℹ️ Fila %d: Envío omitido. Vivo: %v, Email Válido: %v (Valor: %s)",
+				rowIdx, psi.ProofOfLife, validEmail, email)
 		}
 
 		successCount++

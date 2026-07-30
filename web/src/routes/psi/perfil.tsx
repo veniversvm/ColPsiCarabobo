@@ -26,7 +26,7 @@ import { MessageAlert } from "~/components/psi/profile/MessageAlert";
 import { AcademicSection } from "~/components/psi/profile/AcademicSection";
 import { SocialNetworksSection } from "~/components/psi/profile/SocialNetworksSection";
 import { SaveButton } from "~/components/psi/profile/SaveButton";
-import { AvatarUploader } from "~/components/psi/profile/vatarUploader";
+import { AvatarUploader } from "~/components/psi/profile/AvatarUploader";
 
 const updateProfileServer = action(async (formData: FormData) => {
   "use server";

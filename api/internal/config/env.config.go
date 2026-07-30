@@ -47,9 +47,12 @@ type Config struct {
 	// Origins
 	AllowedOrigins string
 
-	//
+	// Library
 	JwtLibrarySecret string
 	AbsAdminToken    string
+
+	// Resend
+	ResendAPIKey string
 }
 
 // Envs es una instancia global (Singleton) que contiene la configuración cargada.
@@ -109,6 +112,9 @@ func InitConfig() {
 		// Library
 		JwtLibrarySecret: getEnv("JWT_LIBRARY_SECRET", "secret-for-psi-library"),
 		AbsAdminToken:    getEnv("ABS_ADMIN_TOKEN", "deaful_ABS_ADMIN_TOKEN"),
+
+		// Resend
+		ResendAPIKey: getEnv("RESEND_API_KEY", "deaful_ABS_ADMIN_TOKEN"),
 	}
 }
 

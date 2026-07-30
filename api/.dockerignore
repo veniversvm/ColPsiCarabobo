@@ -1,0 +1,13 @@
+# Ignorar datos de base de datos
+db_data/
+pgdata/
+
+# Ignorar archivos locales de Go y logs
+logs/
+bin/
+api
+
+# Ignorar carpetas de Docker y Git
+.git
+.gitignore
+docker-compose.override.yml

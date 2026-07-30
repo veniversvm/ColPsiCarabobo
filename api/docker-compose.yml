@@ -7,8 +7,9 @@ services:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
+      - PGDATA=/var/lib/postgresql/data/pgdata
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./db_data:/var/lib/postgresql/data
       - ./init-db:/docker-entrypoint-initdb.d 
     ports:
       - "${POSTGRES_HOST_PORT:-5432}:5432"
@@ -162,7 +163,7 @@ services:
       - colpsi_network
 
 volumes:
-  postgres_data:
+  # postgres_data:
   minio_data:
 
 networks:
