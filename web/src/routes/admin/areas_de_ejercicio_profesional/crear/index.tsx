@@ -26,10 +26,13 @@ export default function AdminCrearAreaEjercicioPage() {
     setError(null);
 
     try {
+      const idempotencyKey = crypto.randomUUID();
       // Mantenemos el endpoint técnico /admin/specialties del backend
       await apiPost("/admin/specialties", {
         name: name().trim(),
         description: description().trim(),
+      }, {
+        headers: { "X-Idempotency-Key": idempotencyKey },
       });
       
       // Redirigir al nuevo catálogo uniforme
