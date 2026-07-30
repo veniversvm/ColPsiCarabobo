@@ -2,6 +2,7 @@
 import { createResource, createSignal, For, Show, Suspense, ErrorBoundary } from "solid-js";
 import { A, action, useAction } from "@solidjs/router";
 import { apiDelete, apiGet, apiPatch } from "~/lib/api";
+import { PaginatedResponse } from "~/types/admin";
 import {
   Post,
   NoticiasHeader,
@@ -34,13 +35,9 @@ export default function AdminNoticiasPage() {
   const [confirmDelete, setConfirmDelete] = createSignal<string | null>(null);
   const [busy, setBusy] = createSignal<string | null>(null);
 
-  const [posts, { refetch }] = createResource(() => apiGet<Post[]>("/posts"));
+  const [posts, { refetch }] = createResource(() => apiGet<PaginatedResponse<Post>>("/posts?page=1&limit=50"));
 
-  const postList = () => {
-    const data = posts();
-    if (!data) return [];
-    return Array.isArray(data) ? data : (data as any).data || (data as any).posts || [];
-  };
+  const postList = () => posts()?.data ?? [];
 
   const filtered = () => {
     const q = search().toLowerCase().trim();
