@@ -1,5 +1,7 @@
 # 📖 Documentación API (docs/)
 
+> **[⬆ API](../)** — `api/docs/`
+
 Especificaciones Swagger/OpenAPI de la API.
 
 ## Archivos
@@ -30,3 +32,5 @@ Los endpoints de Swagger están disponibles en `/swagger/*` (si están habilitad
 | **Posts** | CMS y publicaciones |
 | **Specialties** | Especialidades |
 | **Analytics** | Métricas y eventos |
+
+**[⬆ Volver a API](../)**

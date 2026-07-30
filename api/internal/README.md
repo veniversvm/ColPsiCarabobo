@@ -1,5 +1,7 @@
 # 🧠 Lógica Interna (internal/)
 
+> **[⬆ API](../)** — `api/internal/`
+
 This directory contains ALL business logic for the ColPsiCarabobo API, following **Clean Architecture** principles. The Go `internal` package keyword ensures no external packages can import this code.
 
 ---
@@ -144,3 +146,22 @@ Package A may not import Package B if Package B imports Package A. The dependenc
 | Request Validation | `request_structs/` | DTO validation via `validator` tags |
 | Business Rules | `service/` | Authorization logic, data integrity |
 | SQL Injection Prevention | `repository/postgres/` | Parameterized queries via GORM |
+
+---
+
+## 🧭 Subdirectorios
+
+| Paquete | Descripción |
+|---------|-------------|
+| [`config/`](./config/) | Variables de entorno (singleton) |
+| [`domain/`](./domain/) | Modelos de dominio + interfaces de repositorio |
+| [`handler/`](./handler/) | Handlers HTTP (Fiber) |
+| [`middleware/`](./middleware/) | Seguridad: JWT, rate limiter, idempotency, analytics |
+| [`repository/postgres/`](./repository/postgres/) | Implementaciones GORM de los repositorios |
+| [`request_structs/`](./request_structs/) | DTOs con validación |
+| [`router/`](./router/) | Definición de rutas y montaje de middleware |
+| [`service/`](./service/) | Lógica de negocio |
+| [`templates/`](./templates/) | Plantillas HTML de correos embebidas |
+| [`utils/`](./utils/) | Funciones utilitarias puras |
+
+**[⬆ Volver a API](../)**

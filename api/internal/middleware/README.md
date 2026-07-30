@@ -1,5 +1,7 @@
 # 🛡️ Middleware de Seguridad (middleware/)
 
+> **[⬆ internal](../)** — `api/internal/middleware/`
+
 El perímetro de seguridad de la API. Cada request debe atravesar estos 4 módulos antes de llegar a los handlers.
 
 ## Arquitectura de Seguridad
@@ -230,3 +232,5 @@ Analytics → RequestID → CORS → RateLimiter → Idempotency → Auth (per-r
 - El Rate Limiter se resetea con el servidor (in-memory)
 - Las goroutines de Analytics son fire-and-forget (no afectan la respuesta)
 - La Idempotency key incluye el userId para evitar falsos positivos entre usuarios
+
+**[⬆ Volver a internal](../)**

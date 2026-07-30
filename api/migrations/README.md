@@ -1,5 +1,7 @@
 # 🗃️ Migraciones de Base de Datos (migrations/)
 
+> **[⬆ API](../)** — `api/migrations/`
+
 Migraciones de base de datos gestionadas por **Atlas**.
 
 ## Archivos
@@ -20,3 +22,5 @@ Migraciones de base de datos gestionadas por **Atlas**.
 2. Ejecutar `go run cmd/exp/migrate/main.go` para generar el esquema
 3. Ejecutar `atlas migrate diff` para generar el SQL de migración
 4. Ejecutar `atlas migrate apply` para aplicar los cambios
+
+**[⬆ Volver a API](../)**

@@ -1,5 +1,7 @@
 # ⚙️ Servicios de Negocio (service/)
 
+> **[⬆ internal](../)** — `api/internal/service/`
+>
 > **Capa central de lógica de negocio** — orquesta reglas de seguridad, validación, persistencia y comunicación externa. Es la capa más compleja del sistema.
 
 ## Arquitectura General
@@ -673,3 +675,5 @@ if err := s.mailService.SendEmail(...); err != nil {
 | `github.com/veniversvm/ColPsiCarabobo/api/pkg/s3` | Cliente S3 personalizado |
 | `github.com/veniversvm/ColPsiCarabobo/api/internal/config` | Variables de entorno |
 | `github.com/veniversvm/ColPsiCarabobo/api/internal/templates` | Plantillas HTML embebidas |
+
+**[⬆ Volver a internal](../)**

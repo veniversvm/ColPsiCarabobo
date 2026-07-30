@@ -1,5 +1,7 @@
 # 📦 Paquetes Compartidos (pkg/)
 
+> **[⬆ API](../)** — `api/pkg/`
+
 ## Descripción
 
 La capa `pkg/` contiene las **bibliotecas reutilizables externas** del proyecto. Estos paquetes proveen funcionalidad genérica — conexión a base de datos, almacenamiento en S3 — sin depender de ningún componente interno del negocio.
@@ -77,3 +79,13 @@ url, err := pkgs3.UploadImage(file, "avatars")
 - La conexión a PostgreSQL usa **PgBouncer en modo transacción** para eficiencia de conexiones.
 - El cliente S3 soporta tanto **AWS S3** como **MinIO** para desarrollo local.
 - Los archivos subidos usan **nombres UUID** para prevenir path traversal y colisiones.
+
+---
+
+**Subdirectorios:**
+| Directorio | Descripción |
+|------------|-------------|
+| [`database/`](./database/) | Conexión PostgreSQL, seed y migraciones |
+| [`s3/`](./s3/) | Cliente AWS S3/MinIO y upload de archivos |
+
+**[⬆ Volver a API](../)**

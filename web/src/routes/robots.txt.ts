@@ -1,5 +1,9 @@
 import { siteUrl } from "~/lib/bucket";
 
+/**
+ * Ruta que genera robots.txt dinámico para que la URL del Sitemap
+ * use SITE_URL en vez de localhost.
+ */
 export async function GET() {
   const body = `Sitemap: ${siteUrl("/sitemap.xml")}
 

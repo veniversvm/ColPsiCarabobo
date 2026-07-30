@@ -1,5 +1,7 @@
 # 📝 Estructuras de Request (request_structs/)
 
+> **[⬆ internal](../)** — `api/internal/request_structs/`
+>
 > **Anti-Corruption Layer** — DTOs que validan y sanitizan TODOS los datos entrantes.
 
 ## Design Principles
@@ -29,3 +31,5 @@ Usa tags de **validator/v10**: `required`, `min`, `max`, `email`, `oneof`
 ## Seguridad
 
 Proyección JSON con `json:"-"` para campos internos que nunca deben exponerse al cliente.
+
+**[⬆ Volver a internal](../)**

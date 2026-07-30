@@ -1,5 +1,7 @@
 # 🔧 Utilidades (utils/)
 
+> **[⬆ internal](../)** — `api/internal/utils/`
+
 Funciones puras de utilidad sin dependencias de lógica de negocio. Todas son **stateless**, no acceden a DB, y pueden ser usadas desde cualquier capa de la aplicación.
 
 ## Funciones
@@ -198,4 +200,6 @@ Todas las funciones en utils siguen el principio de **funciones puras**:
 utils/ ← service layer (validaciones, transformaciones)
 utils/ ← handler layer (input sanitization)
 utils/ ← middleware (analytics, auth helpers)
+
+**[⬆ Volver a internal](../)**
 ```

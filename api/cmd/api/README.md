@@ -1,5 +1,7 @@
 # cmd/api — Servidor API Principal
 
+> **[⬆ cmd](../)** — `api/cmd/api/`
+
 Punto de entrada principal de la aplicación. `main.go` orquesta toda la inicialización del sistema y arranca el servidor HTTP con Fiber.
 
 ## Flujo de Arranque
@@ -111,3 +113,5 @@ Las siguientes variables se inicializan en `main.go` y se pasan como dependencia
 - `analyticsService` — Servicio de analíticas
 
 > **Nota:** La base de datos y el cliente S3 se pasan como constructores de repositorio, no como globals. Esto facilita el testing y la separación de concerns.
+
+**[⬆ Volver a cmd](../)**

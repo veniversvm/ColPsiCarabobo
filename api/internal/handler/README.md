@@ -1,5 +1,7 @@
 # 🔗 Handlers HTTP (handler/)
 
+> **[⬆ internal](../)** — `api/internal/handler/`
+>
 > Capa de interfaz HTTP. Cada handler traduce peticiones HTTP en llamadas a servicios y mapea las respuestas a JSON. Usa **Fiber v2** como framework HTTP.
 
 ## Arquitectura
@@ -264,3 +266,5 @@ Las imágenes se suben a S3/MinIO. Solo se almacenan las S3 keys en la base de d
 | SpecialtyHandler | 7 | 3 | 4 |
 | AnalyticsHandler | 1 | 0 | 1 |
 | **Total** | **33** | **11** | **22** |
+
+**[⬆ Volver a internal](../)**

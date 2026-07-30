@@ -5,6 +5,10 @@ const KNOWN_MESSAGES: Record<string, string> = {
   "Error al publicar.": "Ocurrió un error al publicar. Intente de nuevo.",
 };
 
+/**
+ * Traduce errores internos (err.message) a mensajes amigables para el usuario final.
+ * Si el mensaje no está en el mapa, retorna un mensaje genérico.
+ */
 export function getUserFacingError(error: unknown): string {
   const msg = (error as any)?.message || String(error);
   return KNOWN_MESSAGES[msg] || "Ocurrió un error inesperado. Si persiste, contacte al administrador.";

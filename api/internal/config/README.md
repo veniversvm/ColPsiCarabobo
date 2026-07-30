@@ -1,5 +1,7 @@
 # ⚙️ Configuración (config/)
 
+> **[⬆ internal](../)** — `api/internal/config/`
+
 Configuración centralizada del sistema. Usa **singleton pattern** para garantizar una sola instancia de configuración en toda la aplicación.
 
 ## Patrón Singleton
@@ -159,3 +161,5 @@ func main() {
 | Archivo      | Descripción                              |
 |--------------|------------------------------------------|
 | `config.go`  | Struct Config + InitConfig() + getEnv()  |
+
+**[⬆ Volver a internal](../)**

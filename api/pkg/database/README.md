@@ -1,5 +1,7 @@
 # 📦 pkg/database/
 
+> **[⬆ pkg](../)** — `api/pkg/database/`
+
 ## Descripción
 
 Gestiona el **ciclo de vida completo** de la base de datos: conexión, seeding de datos iniciales y migraciones del esquema. Utiliza GORM como ORM y se conecta a PostgreSQL a través de PgBouncer en modo transacción.
@@ -135,3 +137,5 @@ flowchart TD
 
 - `cmd/api/main.go` — Punto de entrada que orquesta Init → Seed → Migrate
 - `internal/repository/postgres/*` — Repositorios que usan la instancia `*gorm.DB`
+
+**[⬆ Volver a pkg](../)**

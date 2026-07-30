@@ -1,5 +1,7 @@
 # 📦 pkg/s3/
 
+> **[⬆ pkg](../)** — `api/pkg/s3/`
+
 ## Descripción
 
 Proporciona una **abstracción de almacenamiento de archivos** en S3 (AWS o MinIO para desarrollo local). Maneja la inicialización del cliente, subida de imágenes con validación, generación de nombres únicos y detección automática de content-type.
@@ -134,3 +136,5 @@ func UploadHandler(c *gin.Context) {
 
 - `internal/service/post_service.go` — Upload de imágenes para publicaciones
 - `internal/service/psi_service.go` — Upload de imágenes de perfil
+
+**[⬆ Volver a pkg](../)**

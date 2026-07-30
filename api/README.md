@@ -1,5 +1,7 @@
 # 🏛️ ColPsiCarabobo API
 
+> **[⬆ Raíz](../)** — `api/`
+
 Backend REST API para la gestión del Colegio de Psicólogos de Carabobo (Venezuela) — directorio de psicólogos, publicaciones, analytics y administración. Construida con Clean Architecture en Go, desplegada con Docker Compose y documentada con Swagger/OpenAPI.
 
 ---
@@ -442,35 +444,14 @@ Al agregar un nuevo dominio al proyecto, seguir este orden:
 
 ---
 
-## 📚 Documentación por Módulo
+## 🧭 Navegación
 
-| Módulo                             | Documentación                                            |
-| :--------------------------------- | :------------------------------------------------------- |
-| **Testing**                            | **[Suite de Testing](./TESTING.md)**                         |
-| `cmd/`                               | [Puntos de entrada](./cmd/README.md)                       |
-| `docs/`                              | [Swagger/OpenAPI](./docs/README.md)                        |
-| `internal/config/`                   | [Variables de entorno](./internal/config/README.md)        |
-| `internal/domain/`                   | [Modelos y dominio](./internal/domain/README.md)           |
-| `internal/handler/`                  | [Handlers HTTP](./internal/handler/README.md)              |
-| `internal/middleware/`               | [Middleware y seguridad](./internal/middleware/README.md)   |
-| `internal/repository/postgres/`      | [Acceso a datos](./internal/repository/README.md)          |
-| `internal/service/`                  | [Lógica de negocio](./internal/service/README.md)          |
-| `internal/utils/`                    | [Utilidades](./internal/utils/README.md)                   |
-| `pkg/database/`                      | [Conexión DB y migraciones](./pkg/README.md)               |
-| `pkg/s3/`                            | [Almacenamiento S3/MinIO](./pkg/README.md)                 |
-| `migrations/`                        | [Historial de esquemas](./migrations/README.md)            |
+| Subdirectorio                       | Descripción                                    |
+| :---------------------------------- | :--------------------------------------------- |
+| [`cmd/`](./cmd/)                    | Puntos de entrada (servidor API, herramientas) |
+| [`docs/`](./docs/)                  | Documentación Swagger/OpenAPI                  |
+| [`internal/`](./internal/)          | Lógica de negocio (Clean Architecture)         |
+| [`migrations/`](./migrations/)      | Migraciones de base de datos (Atlas)           |
+| [`pkg/`](./pkg/)                    | Paquetes compartidos (DB, S3)                  |
 
-### Archivos AI Context
-
-| Archivo                              | Propósito                                                |
-| :----------------------------------- | :------------------------------------------------------- |
-| `.ai-context.md`                     | Contexto general del proyecto para asistentes IA         |
-| `internal/domain/.ai-context.md`     | Modelos de datos y relaciones                             |
-| `internal/handler/.ai-context.md`    | Estructura de handlers y convenciones HTTP               |
-| `internal/service/.ai-context.md`    | Lógica de negocio y reglas de dominio                    |
-
----
-
-## 📄 Licencia
-
-Este proyecto es privado y confidencial. Derechos reservados © Colegio de Psicólogos de Carabobo.
+**[⬆ Volver a raíz](../)**

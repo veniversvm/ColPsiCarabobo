@@ -1,5 +1,7 @@
 # 🛣️ Router Package (`internal/router/`)
 
+> **[⬆ internal](../)** — `api/internal/router/`
+
 This package defines ALL API routes using **Fiber v2** and mounts middleware per route group.
 
 ---
@@ -144,4 +146,6 @@ graph TD
 - **Total endpoints:** ~22
 - **Route groups:** 6
 - **Router files:** 5
+
+**[⬆ Volver a internal](../)**
 - **Framework:** Fiber v2

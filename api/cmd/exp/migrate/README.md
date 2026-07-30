@@ -1,5 +1,7 @@
 # cmd/exp/migrate — Generador de Esquema para Atlas
 
+> **[⬆ exp](../)** — `api/cmd/exp/migrate/`
+
 Herramienta que genera el esquema SQL de referencia a partir de los modelos GORM, utilizado por **Atlas** para calcular migraciones automáticas.
 
 ## generateSchema()
@@ -44,3 +46,5 @@ atlas genera archivo de migración en migrations/
         ↓
 atlas migrate apply --env local
 ```
+
+**[⬆ Volver a exp](../)**

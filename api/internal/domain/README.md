@@ -1,5 +1,7 @@
 # 📋 Modelo de Dominio (domain/)
 
+> **[⬆ internal](../)** — `api/internal/domain/`
+>
 > El **corazón del sistema**. Define qué sabe el sistema: entidades, modelos de datos y contratos de persistencia. Este paquete NO tiene dependencias de infraestructura — solo define acuerdos.
 
 ## Arquitectura
@@ -596,3 +598,5 @@ erDiagram
 - **JSON:** Password y Key siempre `json:"-"` — jamás se exponen en respuestas API
 - **Visibilidad:** Los campos sensibles de PsiUserModel tienen flags `Show*` que controlan el filtrado en el directorio público
 - **S3:** Las imágenes se almacenan como S3 keys, nunca como URLs completas (flexibilidad de bucket)
+
+**[⬆ Volver a internal](../)**

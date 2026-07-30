@@ -1,5 +1,7 @@
 # 🚀 Puntos de Entrada (cmd/)
 
+> **[⬆ API](../)** — `api/cmd/`
+
 El directorio `cmd/` contiene los puntos de entrada de la aplicación, siguiendo la convención de layout de proyectos en Go donde todos los ejecutables residen bajo `cmd/`.
 
 ## Estructura
@@ -44,3 +46,13 @@ go run cmd/exp/migrate/main.go > schema.sql
 Siguiendo la convención estándar de proyectos Go, todos los ejecutables viven bajo `cmd/`. Cada subdirectorio contiene su propio `main.go` con una función `main()` independiente. Esto permite mantener múltiples binarios en un solo repositorio sin conflicto de dependencias.
 
 Los paquetes internos (`internal/`, `pkg/`, o paquetes de dominio en la raíz) se comparten entre ejecutables, pero cada punto de entrada tiene su propia cadena de inicialización.
+
+---
+
+**Subdirectorios:**
+| Directorio | Descripción |
+|------------|-------------|
+| [`api/`](./api/) | Servidor API principal (Fiber) |
+| [`exp/`](./exp/) | Herramientas experimentales |
+
+**[⬆ Volver a API](../)**

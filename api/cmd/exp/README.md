@@ -1,5 +1,7 @@
 # cmd/exp — Herramientas Experimentales
 
+> **[⬆ cmd](../)** — `api/cmd/exp/`
+
 El directorio `cmd/exp/` contiene herramientas utilitarias y experimentales que no forman parte del servidor principal pero son esenciales para el workflow de desarrollo.
 
 ## Herramientas
@@ -37,3 +39,12 @@ make migrate-generate
 ```
 
 > **Nota:** El SQLite se utiliza como base temporal porque GORM necesita un dialecto válido para generar el DDL. El esquema resultante es lo suficientemente cercano a PostgreSQL para que Atlas pueda calcular los diffs correctamente.
+
+---
+
+**Subdirectorios:**
+| Directorio | Descripción |
+|------------|-------------|
+| [`migrate/`](./migrate/) | Generador de esquema SQL para Atlas |
+
+**[⬆ Volver a cmd](../)**

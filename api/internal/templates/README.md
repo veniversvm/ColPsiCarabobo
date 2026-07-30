@@ -1,5 +1,7 @@
 # 📧 Plantillas HTML (templates/)
 
+> **[⬆ internal](../)** — `api/internal/templates/`
+
 Contiene plantillas HTML embebidas usando el paquete `embed` de Go.
 
 ## Archivos
@@ -17,3 +19,5 @@ Las plantillas se cargan como strings embebidos al inicio de la aplicación. El 
 - **Password reset** — Correo de restablecimiento de contraseña
 - **Welcome** — Correo de bienvenida
 - **Notifications** — Correos de notificación
+
+**[⬆ Volver a internal](../)**

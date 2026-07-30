@@ -1,5 +1,7 @@
 # 🗄️ Repositorio PostgreSQL (repository/postgres/)
 
+> **[⬆ internal](../)** — `api/internal/repository/postgres/`
+>
 > **Capa de acceso a datos** — implementa todas las interfaces del dominio usando GORM sobre PostgreSQL. Cada repositorio recibe `*gorm.DB` y expone métodos que la capa de servicio consume a través de interfaces.
 
 ## Arquitectura
@@ -519,3 +521,5 @@ tx.Model(psi).Where("id = ?", psi.ID).
 | `github.com/google/uuid` | Identificadores únicos |
 | `github.com/veniversvm/ColPsiCarabobo/api/internal/domain` | Interfaces y modelos |
 | `github.com/veniversvm/ColPsiCarabobo/api/internal/request_structs` | DTOs de filtro |
+
+**[⬆ Volver a internal](../)**
