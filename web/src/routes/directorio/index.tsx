@@ -58,7 +58,7 @@ export default function DirectoryPage() {
   const executeSearch = async (params: { q: string, area: string, loc: string }) => {
     setLoading(true);
     try {
-      const url = `/psi/directory?q=${encodeURIComponent(params.q)}&specialty=${params.area}&location=${encodeURIComponent(params.loc)}&limit=${LIMIT}&page=1`;
+      const url = `/psi/directory?q=${encodeURIComponent(params.q)}&specialty=${encodeURIComponent(params.area)}&location=${encodeURIComponent(params.loc)}&limit=${LIMIT}&page=1`;
       const res = await apiGet<DirectoryResponse>(url);
       
       setAllItems(res.data ?? []);
