@@ -103,7 +103,7 @@ export function AuthProvider(props: { children: JSX.Element }) {
 
   const login = (token: string, userData: AuthUser) => {
     sessionStorage.setItem("jwt", token);
-    Cookies.set("user_data", JSON.stringify(userData), { expires: 1 });
+    Cookies.set("user_data", JSON.stringify(userData), { expires: 1, secure: true, sameSite: "strict" });
     setUser(userData);
 
     // Arrancar timer también en login
