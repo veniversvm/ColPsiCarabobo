@@ -1,4 +1,5 @@
 import { Show } from "solid-js";
+import { sanitizeHtml } from "~/lib/sanitize-html";
 
 interface FullBioSectionProps {
   content?: string;
@@ -24,7 +25,7 @@ export function FullBioSection(props: FullBioSectionProps) {
                  prose-headings:text-colpsi-blue prose-headings:font-black
                  prose-a:text-colpsi-yellow hover:prose-a:text-colpsi-blue transition-colors 
                  prose-li:marker:text-colpsi-yellow prose-strong:text-colpsi-blue"
-          innerHTML={props.content} 
+          innerHTML={sanitizeHtml(props.content)} 
         />
       </div>
     </Show>

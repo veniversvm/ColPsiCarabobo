@@ -1,6 +1,7 @@
 // web/src/components/ui/RichTextEditor.tsx
 import { onMount, onCleanup, Show, createSignal, createEffect } from "solid-js";
 import { Editor } from "@tiptap/core";
+import { sanitizeHtml } from "~/lib/sanitize-html";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
@@ -355,7 +356,7 @@ export function RichTextEditor(props: RichTextEditorProps) {
             <div class="overflow-y-auto p-8">
               <div
                 class="prose prose-blue max-w-none text-gray-800"
-                innerHTML={previewHtml()}
+                innerHTML={sanitizeHtml(previewHtml())}
               />
             </div>
 

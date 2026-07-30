@@ -44,7 +44,8 @@ const updateProfileServer = action(async (formData: FormData) => {
 
     if (typeof value === "string") {
       if (key === "full_bio") {
-        cleanFd.append(key, value);
+        const { sanitizeHtml } = await import("~/lib/sanitize-html");
+        cleanFd.append(key, sanitizeHtml(value));
         continue;
       }
 

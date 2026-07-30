@@ -1,5 +1,6 @@
 import { Show, onCleanup, createEffect, onMount } from "solid-js";
 import { isServer } from "solid-js/web";
+import { sanitizeHtml } from "~/lib/sanitize-html";
 
 interface FullBioModalProps {
   isOpen: boolean;
@@ -55,7 +56,7 @@ export function FullBioModal(props: FullBioModalProps) {
           <div class="overflow-y-auto p-6 md:p-10 bg-white">
             <div 
               class="prose prose-slate max-w-none text-colpsi-text prose-headings:text-colpsi-blue prose-a:text-colpsi-yellow hover:prose-a:text-colpsi-blue transition-colors prose-li:marker:text-colpsi-yellow prose-img:rounded-xl"
-              innerHTML={props.content} 
+              innerHTML={sanitizeHtml(props.content)} 
             />
           </div>
           

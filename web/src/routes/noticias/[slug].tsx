@@ -3,6 +3,7 @@ import { createEffect, createResource, Show } from "solid-js";
 import { useParams, useLocation, A } from "@solidjs/router";
 import { apiGet, ApiError } from "~/lib/api";
 import { Meta, Title, Link } from "@solidjs/meta";
+import { sanitizeHtml } from "~/lib/sanitize-html";
 
 export const ssr = true;
 
@@ -236,7 +237,7 @@ export default function PublicNoticiaDetailPage() {
                       prose-blockquote:rounded-r-xl prose-blockquote:py-2 prose-blockquote:not-italic
                       prose-blockquote:text-gray-700 prose-li:text-gray-700
                       prose-img:rounded-2xl prose-img:shadow-md"
-                    innerHTML={data().text.content}
+                    innerHTML={sanitizeHtml(data().text.content)}
                   />
                 </Show>
 
