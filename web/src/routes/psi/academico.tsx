@@ -3,6 +3,7 @@ import { createResource, For, Show, Suspense, createSignal } from "solid-js";
 import { createStore } from "solid-js/store";
 import { A } from "@solidjs/router";
 import { apiGet, apiPost, apiPatch, apiDelete } from "~/lib/api";
+import { bucketUrl } from "~/lib/bucket";
 import { FileUploader } from "~/components/ui/fileUploader";
 
 export default function AcademicoPage() {
@@ -252,11 +253,11 @@ export default function AcademicoPage() {
                         {(url) => (
                           <Show when={url}>
                             <a
-                              href={`http://localhost:9000/colpsi-bucket/${url}`}
+                              href={bucketUrl(url)}
                               target="_blank"
                               class="w-16 h-20 bg-gray-50 rounded-xl border border-gray-200 overflow-hidden hover:ring-2 hover:ring-colpsi-yellow transition-all"
                             >
-                              <img src={`http://localhost:9000/colpsi-bucket/${url}`} class="w-full h-full object-cover" />
+                              <img src={bucketUrl(url)} class="w-full h-full object-cover" />
                             </a>
                           </Show>
                         )}

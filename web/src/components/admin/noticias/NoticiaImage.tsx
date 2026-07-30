@@ -1,5 +1,6 @@
 // web/src/components/admin/noticias/NoticiaImage.tsx
 import { Show } from "solid-js";
+import { bucketUrl } from "~/lib/bucket";
 
 interface Props {
   imageUrl?: string;
@@ -14,7 +15,7 @@ export function NoticiaImage(props: Props) {
         fallback={<div class="w-full h-full flex items-center justify-center text-gray-300 text-2xl">📄</div>}
       >
         <img
-          src={`http://localhost:9000/colpsi-bucket/${props.imageUrl}`}
+          src={bucketUrl(props.imageUrl)}
           alt={props.alt}
           class="w-full h-full object-cover"
           loading="lazy"

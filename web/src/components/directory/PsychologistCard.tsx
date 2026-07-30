@@ -1,6 +1,7 @@
 // web/src/components/directory/PsychologistCard.tsx
 import { Show, For } from "solid-js";
 import { A } from "@solidjs/router";
+import { bucketUrl } from "~/lib/bucket";
 import { DirectoryPsychologist } from "~/types/psi";
 import { createProfileSlug } from "~/lib/utils";
 
@@ -52,7 +53,7 @@ export function PsychologistCard(props: PsychologistCardProps) {
             fallback={<div class="flex h-full items-center justify-center text-3xl">👤</div>}
           >
             <img 
-              src={`http://localhost:9000/colpsi-bucket/${psychologist.profile_picture}`} 
+              src={bucketUrl(psychologist.profile_picture)} 
               alt={fullName}
               class="w-full h-full object-cover" 
             />

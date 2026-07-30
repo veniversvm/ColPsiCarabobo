@@ -1,5 +1,6 @@
 // web/src/components/psi/PostGradeModal.tsx (actualizado para usar ImageModal)
 import { Show, For, createSignal } from "solid-js";
+import { bucketUrl } from "~/lib/bucket";
 import { Portal } from "solid-js/web";
 import { PostGrade } from "~/types/psi";
 import { ImageModal } from "~/components/ui/ImageModal";
@@ -28,7 +29,7 @@ export function PostGradeModal(props: PostGradeModalProps) {
   const hasImages = () => images().length > 0;
 
   const getImageUrl = (url: string) => {
-    return `http://localhost:9000/colpsi-bucket/${url}`;
+    return bucketUrl(url);
   };
 
   const openImageModal = (url: string, label: string) => {

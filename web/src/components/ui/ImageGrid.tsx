@@ -8,7 +8,7 @@ interface ImageGridProps {
 }
 
 export function ImageGrid(props: ImageGridProps) {
-  const baseUrl = props.baseUrl || "http://localhost:9000/colpsi-bucket/";
+  const baseUrl = props.baseUrl || "";
 
   return (
     <div class="grid grid-cols-2 md:grid-cols-3 gap-3">

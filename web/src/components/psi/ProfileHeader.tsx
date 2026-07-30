@@ -5,7 +5,7 @@ import { Portal } from "solid-js/web";
 import QRCodeGenerator from "./profile/QrCode";
 
 // ── Variable de entorno con fallback al entorno de desarrollo ──
-const BUCKET_URL = import.meta.env.VITE_BUCKET_URL || "http://localhost:9000/colpsi-bucket";
+const BUCKET_URL = import.meta.env.VITE_BUCKET_URL || "";
 
 interface ProfileHeaderProps {
   firstName: string;

@@ -26,7 +26,7 @@ export const STATUS_BADGE: Record<PostStatus, string> = {
   scheduled: "bg-purple-100 text-purple-700",
 };
 
-export const BUCKET_URL = import.meta.env.VITE_BUCKET_URL || "http://localhost:9000/colpsi-bucket";
+export const BUCKET_URL = import.meta.env.VITE_BUCKET_URL || "";
 export const imgUrl = (key: string) => (key ? `${BUCKET_URL}/${key}` : "");
 
 export const IC = "w-full bg-white border-2 border-gray-200 focus:border-blue-500 rounded-xl px-4 py-2.5 outline-none transition-all text-gray-800 text-sm";

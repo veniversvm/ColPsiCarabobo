@@ -1,5 +1,6 @@
 // web/src/components/psi/UndergraduateCard.tsx
 import { Show, createSignal, For } from "solid-js";
+import { bucketUrl } from "~/lib/bucket";
 import { Undergraduate } from "~/types/psi";
 import { ImageModal } from "~/components/ui/ImageModal";
 
@@ -13,7 +14,7 @@ export function UndergraduateCard(props: UndergraduateCardProps) {
 
   const getImageUrl = (url?: string) => {
     if (!url) return "";
-    return `http://localhost:9000/colpsi-bucket/${url}`;
+    return bucketUrl(url);
   };
 
   const hasImages = () => {

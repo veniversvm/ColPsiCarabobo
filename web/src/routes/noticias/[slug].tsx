@@ -18,7 +18,7 @@ interface PostDetail {
   text: { id: string; content: string };
 }
 
-const BUCKET_URL = import.meta.env.VITE_BUCKET_URL || "http://localhost:9000/colpsi-bucket";
+const BUCKET_URL = import.meta.env.VITE_BUCKET_URL || "";
 const SITE_URL = import.meta.env.VITE_SITE_URL || "https://colpsi-carabobo.org";
 const imgUrl = (key: string) => (key ? `${BUCKET_URL}/${key}` : "");
 

@@ -9,6 +9,7 @@
 import { createResource, For, Show, Suspense } from "solid-js";
 import { useAuth } from "~/lib/auth";
 import { apiGet } from "~/lib/api";
+import { bucketUrl } from "~/lib/bucket";
 import { A } from "@solidjs/router";
 
 export default function PsiDashboard() {
@@ -80,7 +81,7 @@ export default function PsiDashboard() {
                 {(post) => (
                   <div class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex gap-4 items-center">
                     <Show when={post.image_url} fallback={<div class="w-16 h-16 bg-gray-100 rounded-2xl shrink-0" />}>
-                       <img src={`http://localhost:9000/colpsi-bucket/${post.image_url}`} class="w-16 h-16 object-cover rounded-2xl shrink-0" />
+                       <img src={bucketUrl(post.image_url)} class="w-16 h-16 object-cover rounded-2xl shrink-0" />
                     </Show>
                     <div class="overflow-hidden">
                       <h4 class="font-bold text-sm text-gray-800 truncate">{post.title}</h4>

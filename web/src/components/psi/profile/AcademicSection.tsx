@@ -1,5 +1,6 @@
 // web/src/components/psi/profile/AcademicSection.tsx
 import { Show, createSignal } from "solid-js";
+import { bucketUrl } from "~/lib/bucket";
 import { FileUploader } from "~/components/ui/fileUploader";
 import { ImageModal } from "~/components/ui/ImageModal";
 
@@ -67,7 +68,7 @@ export function AcademicSection(props: AcademicSectionProps) {
 
   const getImageUrl = (url?: string) => {
     if (!url) return "";
-    return `http://localhost:9000/colpsi-bucket/${url}`;
+    return bucketUrl(url);
   };
 
   const openModal = (url: string, title: string) => {

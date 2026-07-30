@@ -1,6 +1,7 @@
 // web/src/components/admin/psicologos/edit/EditPageHeader.tsx
 
 import { Show } from "solid-js";
+import { bucketUrl } from "~/lib/bucket";
 import { useNavigate } from "@solidjs/router";
 import type { PsiProfile } from "./types";
 
@@ -22,7 +23,7 @@ export function EditPageHeader(props: Props) {
         </button>
         <Show when={props.profile?.profile_picture_url}>
           <img
-            src={`http://localhost:9000/colpsi-bucket/${props.profile?.profile_picture_url}`}
+            src={bucketUrl(props.profile?.profile_picture_url)}
             class="w-14 h-14 rounded-2xl object-cover border-2 border-gray-100 shadow"
             alt="Foto de perfil"
           />

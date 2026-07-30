@@ -8,6 +8,7 @@ import { useParams, A } from "@solidjs/router";
 import { apiGet, ApiError } from "~/lib/api";
 import { Meta, Title, Link } from "@solidjs/meta";
 import { PsiProfile } from "~/types/psi";
+import { bucketUrl } from "~/lib/bucket";
 import { ProfileHeader } from "~/components/psi/ProfileHeader";
 import { ContactCard } from "~/components/psi/ContactCard";
 import { AcademicSection } from "~/components/psi/AcademicSection";
@@ -18,7 +19,7 @@ import { FullBioModal } from "~/components/directory/FullBioModal";
 export const ssr = true;
 
 const SITE_URL = import.meta.env.VITE_SITE_URL || "http://localhost:3000";
-const BUCKET_URL = import.meta.env.VITE_BUCKET_URL || "http://localhost:9000/colpsi-bucket";
+const BUCKET_URL = import.meta.env.VITE_BUCKET_URL || "";
 const imgUrl = (key: string) => (key ? `${BUCKET_URL}/${key}` : "");
 
 // ✅ Server function para obtener el perfil desde la API

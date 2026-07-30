@@ -20,7 +20,7 @@ interface AvatarUploaderProps {
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/jpg"];
 const BUCKET_URL =
-  import.meta.env.VITE_BUCKET_URL || "http://localhost:9000/colpsi-bucket";
+  import.meta.env.VITE_BUCKET_URL || "";
 
 export function AvatarUploader(props: AvatarUploaderProps) {
   // ── ESTADO DEL MODAL ──
