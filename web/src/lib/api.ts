@@ -1,5 +1,4 @@
 // web/src/lib/api.ts
-import Cookies from "js-cookie";
 import { isServer } from "solid-js/web";
 import { getRequestEvent } from "solid-js/web";
 
@@ -20,7 +19,7 @@ export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): 
     headers.set("Content-Type", "application/json");
   }
 
-  // Token isomórfico: servidor lee la cookie del request, cliente usa js-cookie
+  // Token isomórfico: servidor lee la cookie HttpOnly, cliente usa sessionStorage
   let token = "";
   if (isServer) {
     const event = getRequestEvent();
@@ -28,7 +27,7 @@ export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): 
     const match = cookieHeader.match(/(^| )jwt=([^;]+)/);
     if (match) token = match[2];
   } else {
-    token = Cookies.get("jwt") || "";
+    token = sessionStorage.getItem("jwt") || "";
   }
 
   if (token) headers.set("Authorization", `Bearer ${token}`);
@@ -41,7 +40,7 @@ export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): 
       try { errorData = await response.json(); } catch { /* no JSON */ }
 
       if (response.status === 401 && !isServer) {
-        Cookies.remove("jwt");
+        sessionStorage.removeItem("jwt");
       }
 
       const msg = errorData?.error || errorData?.message || "Error inesperado";

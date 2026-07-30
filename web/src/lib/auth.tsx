@@ -42,13 +42,13 @@ export function AuthProvider(props: { children: JSX.Element }) {
   const [user, setUser] = createSignal<AuthUser | null>(null);
 
   const clearLocalSession = () => {
-    Cookies.remove("jwt");
+    sessionStorage.removeItem("jwt");
     Cookies.remove("user_data");
     setUser(null);
   };
 
   const logout = async () => {
-    const token = Cookies.get("jwt");
+    const token = sessionStorage.getItem("jwt");
     const currentRole = user()?.role;
 
     if (token && currentRole === "psi") {
@@ -74,7 +74,7 @@ export function AuthProvider(props: { children: JSX.Element }) {
 
   onMount(() => {
     const savedUser = Cookies.get("user_data");
-    const token     = Cookies.get("jwt");
+    const token     = sessionStorage.getItem("jwt");
 
     if (!savedUser || !token) {
       clearLocalSession();
@@ -102,7 +102,7 @@ export function AuthProvider(props: { children: JSX.Element }) {
   });
 
   const login = (token: string, userData: AuthUser) => {
-    Cookies.set("jwt", token, { expires: 1, secure: true, sameSite: "strict" });
+    sessionStorage.setItem("jwt", token);
     Cookies.set("user_data", JSON.stringify(userData), { expires: 1 });
     setUser(userData);
 
