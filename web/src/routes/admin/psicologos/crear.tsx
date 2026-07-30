@@ -114,9 +114,9 @@ export default function CreatePsychologistPage() {
     // Tipado correcto para el envío
     const payload = {
       ...form,
-      ci:              parseInt(String(form.ci))              || 0,
-      fpv:             parseInt(String(form.fpv))             || 0,
-      register_number: parseInt(String(form.register_number)) || 0,
+ci:              parseInt(String(form.ci), 10)              || 0,
+fpv:             parseInt(String(form.fpv), 10)             || 0,
+register_number: parseInt(String(form.register_number), 10) || 0,
     };
 
     try {

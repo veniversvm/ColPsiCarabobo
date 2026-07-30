@@ -58,6 +58,6 @@ export function sortPostGradesByYear(postGrades: any[] | undefined): any[] {
   return [...postGrades].sort((a, b) => {
     if (!a.year) return 1;
     if (!b.year) return -1;
-    return parseInt(a.year) - parseInt(b.year);
+    return parseInt(a.year, 10) - parseInt(b.year, 10);
   });
 }
