@@ -255,7 +255,7 @@ export default function AcademicoPage() {
                           <Show when={url}>
                             <a
                               href={bucketUrl(url)}
-                              target="_blank"
+                              target="_blank" rel="noopener noreferrer"
                               class="w-16 h-20 bg-gray-50 rounded-xl border border-gray-200 overflow-hidden hover:ring-2 hover:ring-colpsi-yellow transition-all"
                             >
                               <img src={bucketUrl(url)} class="w-full h-full object-cover" />
