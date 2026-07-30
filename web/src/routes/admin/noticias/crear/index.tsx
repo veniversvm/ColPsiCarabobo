@@ -67,6 +67,7 @@ export default function AdminCrearNoticiaPage() {
       if (imageFile()) fd.append("image", imageFile()!);
 
       const { apiPost } = await import("~/lib/api");
+      const { getUserFacingError } = await import("~/lib/errors");
 
       // La key va en el header — el middleware de Go la valida contra el user ID
       await apiPost("/admin/posts", fd, {
@@ -75,7 +76,7 @@ export default function AdminCrearNoticiaPage() {
 
       navigate("/admin/noticias");
     } catch (err: any) {
-      setError(err.message || "Error al publicar. Intenta de nuevo.");
+        setError(getUserFacingError(err));
       window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setSaving(false);

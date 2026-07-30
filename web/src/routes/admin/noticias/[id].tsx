@@ -2,6 +2,7 @@
 import { createResource, createSignal, Show } from "solid-js";
 import { useNavigate, useParams } from "@solidjs/router";
 import { apiGet, apiPatch } from "~/lib/api";
+import { getUserFacingError } from "~/lib/errors";
 import {
   PostDetail,
   EditHeader,
@@ -108,7 +109,7 @@ export default function AdminEditarNoticiaPage() {
       window.scrollTo({ top: 0, behavior: "smooth" });
       setTimeout(() => navigate("/admin/noticias"), 1200);
     } catch (err: any) {
-      setError(err.message || "Error al guardar. Intenta de nuevo.");
+      setError(getUserFacingError(err));
       window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setSaving(false);

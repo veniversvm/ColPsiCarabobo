@@ -2,6 +2,7 @@
 import { createResource, createSignal, Show } from "solid-js";
 import { useNavigate, useParams } from "@solidjs/router";
 import { apiGet, apiPatch } from "~/lib/api";
+import { getUserFacingError } from "~/lib/errors";
 
 const IC = "w-full bg-white border-2 border-gray-200 focus:border-blue-500 rounded-xl px-4 py-2.5 outline-none transition-all text-gray-800 text-sm";
 const labelClass = "block text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1";
@@ -184,7 +185,7 @@ export default function AdminEditarStaffPage() {
       window.scrollTo({ top: 0, behavior: "smooth" });
       setTimeout(() => navigate("/admin/staff"), 1200);
     } catch (err: any) {
-      setError(err.message || "Error al guardar. Intenta de nuevo.");
+      setError(getUserFacingError(err));
       window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setSaving(false);

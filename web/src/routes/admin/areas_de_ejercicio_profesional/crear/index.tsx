@@ -2,6 +2,7 @@
 import { createSignal, Show } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import { apiPost } from "~/lib/api";
+import { getUserFacingError } from "~/lib/errors";
 
 const IC = "w-full bg-white border-2 border-gray-100 focus:border-blue-500 rounded-2xl px-5 py-3.5 outline-none transition-all text-gray-800 text-sm shadow-sm";
 const labelClass = "block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2 mb-2";
@@ -34,7 +35,7 @@ export default function AdminCrearAreaEjercicioPage() {
       // Redirigir al nuevo catálogo uniforme
       navigate("/admin/areas_de_ejercicio_profesional");
     } catch (err: any) {
-      setError(err.message || "Error al registrar el área. Intenta de nuevo.");
+      setError(getUserFacingError(err));
       window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setSaving(false);

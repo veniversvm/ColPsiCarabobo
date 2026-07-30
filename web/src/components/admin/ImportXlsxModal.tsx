@@ -1,6 +1,7 @@
 // web/src/components/admin/ImportXlsxModal.tsx
 import { createSignal, Show, For } from "solid-js";
 import { apiPost } from "~/lib/api";
+import { getUserFacingError } from "~/lib/errors";
 
 interface FailedRecord {
   fila: string;
@@ -74,7 +75,7 @@ export function ImportXlsxModal(props: ImportXlsxModalProps) {
       // Si se importaron registros con éxito, notificar al padre
       if (res.imported > 0) props.onSuccess();
     } catch (err: any) {
-      setError(err.message || "Error crítico al procesar el archivo Excel.");
+      setError(getUserFacingError(err));
       setStep("confirm"); 
     }
   };

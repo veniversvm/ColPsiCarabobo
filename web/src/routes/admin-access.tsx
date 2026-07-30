@@ -2,6 +2,7 @@ import { createSignal, Show } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import { useAuth } from "~/lib/auth";
 import { apiPost, ApiError } from "~/lib/api";
+import { getUserFacingError } from "~/lib/errors";
 import { PasswordInputComponent } from "~/components/ui/PasswordInput";
 
 export default function AdminLoginPage() {
@@ -46,7 +47,7 @@ export default function AdminLoginPage() {
       
     } catch (err: any) {
       if (err instanceof ApiError) {
-        setError(err.message || "Credenciales inválidas.");
+        setError(getUserFacingError(err));
       } else {
         console.error("Error interno:", err); // <-- Útil para ver errores de JS en la consola
         setError("Error interno al procesar la sesión.");

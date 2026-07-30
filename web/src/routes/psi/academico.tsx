@@ -4,6 +4,7 @@ import { createStore } from "solid-js/store";
 import { A } from "@solidjs/router";
 import { apiGet, apiPost, apiPatch, apiDelete } from "~/lib/api";
 import { bucketUrl } from "~/lib/bucket";
+import { getUserFacingError } from "~/lib/errors";
 import { FileUploader } from "~/components/ui/fileUploader";
 
 export default function AcademicoPage() {
@@ -82,7 +83,7 @@ export default function AcademicoPage() {
       setShowForm(false);
       refetch();
     } catch (err: any) {
-      setFormError(err.message || "Error al guardar. Intenta de nuevo.");
+        setFormError(getUserFacingError(err));
       window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setLoading(false);
@@ -99,7 +100,7 @@ export default function AcademicoPage() {
       setDeleteId(null);
       refetch();
     } catch (err: any) {
-      setDeleteError(err.message || "Error al eliminar. Intenta de nuevo.");
+        setDeleteError(getUserFacingError(err));
     }
   };
 

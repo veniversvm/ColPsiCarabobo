@@ -4,6 +4,7 @@ import { createSignal, Show } from "solid-js";
 import { useNavigate, A } from "@solidjs/router";
 import { useAuth } from "~/lib/auth";
 import { apiPost, apiGet, ApiError } from "~/lib/api";
+import { getUserFacingError } from "~/lib/errors";
 import { PasswordInputComponent } from "~/components/ui/PasswordInput";
 
 export default function LoginPage() {
@@ -53,7 +54,7 @@ export default function LoginPage() {
     } catch (err) {
       if (err instanceof ApiError) {
         // Mostrar el mensaje real que viene de Go (ej. "credenciales inválidas")
-        setError(err.message);
+        setError(getUserFacingError(err));
       } else {
         setError("Ocurrió un error inesperado al intentar conectar.");
       }

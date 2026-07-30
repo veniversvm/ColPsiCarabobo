@@ -2,6 +2,7 @@
 import { createResource, createSignal, For, Show, Suspense } from "solid-js";
 import { A, useNavigate } from "@solidjs/router";
 import { apiGet, apiDelete } from "~/lib/api";
+import { getUserFacingError } from "~/lib/errors";
 
 interface Admin {
   id: string;
@@ -91,7 +92,7 @@ export default function AdminStaffPage() {
       setConfirmDelete(null);
       refetch();
     } catch (err: any) {
-      setDeleteError(err.message || "No se pudo eliminar el administrador.");
+        setDeleteError(getUserFacingError(err));
     } finally {
       setBusy(null);
     }
