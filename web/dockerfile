@@ -36,5 +36,5 @@ EXPOSE 3000
 # Variables de entorno por defecto (Docker Compose las sobreescribirá)
 ENV PORT=3000
 
-# Permisos: -A permite red y lectura de archivos necesarios para SSR
-CMD ["run", "-A", ".output/server/index.mjs"]
+# Permisos específicos: red, directorios de lectura, variables de entorno necesarias
+CMD ["run", "--allow-net", "--allow-read=.output,public", "--allow-env=PORT,VITE_API_URL,VITE_SITE_URL,VITE_BUCKET_URL", ".output/server/index.mjs"]
