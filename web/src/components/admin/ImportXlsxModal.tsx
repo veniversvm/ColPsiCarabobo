@@ -51,6 +51,23 @@ export function ImportXlsxModal(props: ImportXlsxModalProps) {
       return;
     }
 
+    // Validar tipo MIME
+    const allowedMimes = [
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/vnd.ms-excel",
+    ];
+    if (!allowedMimes.includes(f.type)) {
+      setError("El archivo no parece ser un documento de Excel válido.");
+      return;
+    }
+
+    // Validar tamaño (5MB max)
+    const MAX_SIZE = 5 * 1024 * 1024;
+    if (f.size > MAX_SIZE) {
+      setError("El archivo excede el límite de 5MB.");
+      return;
+    }
+
     setFile(f);
     setError(null);
     setStep("confirm");
