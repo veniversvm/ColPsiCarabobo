@@ -37,4 +37,4 @@ EXPOSE 3000
 ENV PORT=3000
 
 # Permisos específicos: red, directorios de lectura, variables de entorno necesarias
-CMD ["run", "--allow-net", "--allow-read=.output,public", "--allow-env=PORT,VITE_API_URL,VITE_SITE_URL,VITE_BUCKET_URL", ".output/server/index.mjs"]
+CMD ["run", "--allow-net", "--allow-read=.output,public", "--allow-env", ".output/server/index.mjs"]

@@ -8,7 +8,8 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      # PostgreSQL 18+ requiere montar en /var/lib/postgresql (usa subdirectorio por versión)
+      - postgres_data:/var/lib/postgresql
       - ./init-db:/docker-entrypoint-initdb.d 
       - ./init-db/pg_hba.conf:/etc/postgresql/pg_hba.conf
     command: postgres -c hba_file=/etc/postgresql/pg_hba.conf

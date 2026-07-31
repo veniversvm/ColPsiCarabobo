@@ -1,15 +1,29 @@
 // web/src/routes/login.tsx
 
 import { createSignal, Show } from "solid-js";
-import { useNavigate, A } from "@solidjs/router";
+import { getRequestEvent } from "solid-js/web";
+import { useNavigate, A, useAction, action } from "@solidjs/router";
 import { useAuth } from "~/lib/auth";
 import { apiPost, apiGet, ApiError } from "~/lib/api";
 import { getUserFacingError } from "~/lib/errors";
 import { PasswordInputComponent } from "~/components/ui/PasswordInput";
 
+const syncJwtCookie = action(async (token: string) => {
+  "use server";
+  if (!token) return { error: "Token requerido." };
+  const event = getRequestEvent();
+  const secure = import.meta.env.PROD === true;
+  event?.response?.headers?.set(
+    "Set-Cookie",
+    `jwt=${token}; HttpOnly; Path=/; Max-Age=86400; SameSite=Strict${secure ? "; Secure" : ""}`,
+  );
+  return { ok: true };
+});
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const syncJwt = useAction(syncJwtCookie);
 
   const [identifier, setIdentifier] = createSignal("");
   const [password, setPassword] = createSignal("");
@@ -47,6 +61,9 @@ export default function LoginPage() {
         firstName: userProfile.first_name,
         lastName: userProfile.last_name,
       });
+
+      // Persistir el JWT en la cookie HttpOnly para que SSR/Server Actions autentiquen contra Go
+      await syncJwt(authResponse.token);
 
       // 4. Redirigir al Dashboard personal
       navigate("/psi", { replace: true });

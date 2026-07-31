@@ -11,6 +11,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -116,12 +117,12 @@ func TestAdminRepo_ComprehensiveSuite(t *testing.T) {
 		sudoActive := domain.UserAdmin{ID: uuid.New(), Credentials: domain.Credentials{Username: "sudo_real", Email: "2@t.com"}, Sudo: true}
 		tx.Create(&sudoActive)
 
-		// 3. SUDO Eliminado (Soft Delete)
-		sudoDeleted := domain.UserAdmin{ID: uuid.New(), Credentials: domain.Credentials{Username: "sudo_ghost", Email: "3@t.com"}, Sudo: true}
-		tx.Create(&sudoDeleted)
-
-		err := r.Delete(ctx, sudoDeleted.ID) // Aplicamos el Soft Delete
-		require.NoError(t, err)
+	// 3. SUDO Eliminado (Soft Delete) - insertamos directamente con deleted_at
+	// para no violar el índice único parcial idx_user_admins_unique_sudo
+	sudoDeleted := domain.UserAdmin{ID: uuid.New(), Credentials: domain.Credentials{Username: "sudo_ghost", Email: "3@t.com"}, Sudo: true}
+	sudoDeleted.DeletedAt = gorm.DeletedAt{Time: time.Now(), Valid: true}
+	err := tx.Create(&sudoDeleted).Error
+	require.NoError(t, err)
 
 		// Validación
 		count, err := r.CountSudos(ctx)

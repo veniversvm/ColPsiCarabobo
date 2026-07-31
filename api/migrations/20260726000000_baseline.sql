@@ -6,9 +6,30 @@
 -- ═══════════════════════════════════════════════════════════════════════
 
 -- ── Extensiones ─────────────────────────────────────────────────────
+-- Nota: PostgreSQL 18 incluye uuidv7() como función nativa, por lo que
+-- la extensión externa pg_uuidv7 ya no es necesaria.
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-CREATE EXTENSION IF NOT EXISTS "pg_uuidv7";
 CREATE EXTENSION IF NOT EXISTS "unaccent";
+
+-- PostgreSQL exige funciones IMMUTABLE en expresiones de índice, pero
+-- unaccent(text) viene declarada como STABLE. La redefinimos como un
+-- wrapper IMMUTABLE sobre la versión de 2 argumentos (mismo resultado).
+DO $block$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_catalog.pg_proc p
+    JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public' AND p.proname = 'unaccent'
+      AND pg_get_function_arguments(p.oid) = 'text'
+      AND p.provolatile <> 'i'
+  ) THEN
+    ALTER EXTENSION unaccent DROP FUNCTION unaccent(text);
+    DROP FUNCTION public.unaccent(text);
+    CREATE FUNCTION public.unaccent(text) RETURNS text
+      LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT
+      AS $func$ SELECT public.unaccent('public.unaccent'::regdictionary, $1) $func$;
+  END IF;
+END $block$;
 
 -- ═══════════════════════════════════════════════════════════════════════
 -- TABLAS
@@ -449,8 +470,8 @@ CREATE INDEX "idx_psi_users_unaccent_first_name" ON "psi_users" (unaccent("first
 CREATE INDEX "idx_psi_users_unaccent_last_name" ON "psi_users" (unaccent("last_name"));
 
 -- Búsqueda por CI/FPV como texto (CAST en queries Go)
-CREATE INDEX "idx_psi_users_ci_text" ON "psi_users" (("ci")::text);
-CREATE INDEX "idx_psi_users_fpv_text" ON "psi_users" (("fpv")::text);
+CREATE INDEX "idx_psi_users_ci_text" ON "psi_users" ((ci::text));
+CREATE INDEX "idx_psi_users_fpv_text" ON "psi_users" ((fpv::text));
 
 
 -- ═══════════════════════════════════════════════════════════════════════

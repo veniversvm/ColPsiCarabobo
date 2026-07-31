@@ -4,7 +4,11 @@
 import { action, redirect } from "@solidjs/router";
 import { setCookie, deleteCookie, getCookie } from "vinxi/http";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8080/api/v1";
+declare const process: { env?: Record<string, string | undefined> };
+const API_BASE =
+  process?.env?.API_URL_INTERNAL ||
+  import.meta.env.VITE_API_URL ||
+  "http://localhost:8080/api/v1";
 
 // ── Constantes de cookie ──────────────────────────────────────────────────────
 const COOKIE_JWT      = "jwt";

@@ -2,7 +2,7 @@
   "tasks": {
     "dev": "deno run -A --node-modules-dir npm:vinxi dev",
     "build": "deno run -A --node-modules-dir npm:vinxi build",
-    "start": "deno run --allow-net --allow-read=.output,public --allow-env=PORT,VITE_API_URL,VITE_SITE_URL,VITE_BUCKET_URL .output/server/index.mjs"
+    "start": "deno run --allow-net --allow-read=.output,public --allow-env .output/server/index.mjs"
   },
   "compilerOptions": {
     "jsx": "react-jsx",

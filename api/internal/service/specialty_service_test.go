@@ -23,6 +23,7 @@ type mockSpecialtyRepo struct {
 	domain.SpecialtyRepository // Embedding para cumplir la interfaz implícitamente
 	CreateFunc                 func(ctx context.Context, s *domain.PsiSpecialtyModel) error
 	GetByIDFunc                func(ctx context.Context, id uint32, includeInactive bool) (*domain.PsiSpecialtyModel, error)
+	GetByAdminIDFunc           func(ctx context.Context, id uint32) (*domain.PsiSpecialtyModel, error)
 	UpdateFunc                 func(ctx context.Context, s *domain.PsiSpecialtyModel) error
 	GetAllFunc                 func(ctx context.Context, status string) ([]domain.PsiSpecialtyModel, error)
 	CountFunc                  func(ctx context.Context, active *bool) (int64, error)
@@ -33,6 +34,9 @@ func (m *mockSpecialtyRepo) Create(ctx context.Context, s *domain.PsiSpecialtyMo
 }
 func (m *mockSpecialtyRepo) GetByID(ctx context.Context, id uint32, includeInactive bool) (*domain.PsiSpecialtyModel, error) {
 	return m.GetByIDFunc(ctx, id, includeInactive)
+}
+func (m *mockSpecialtyRepo) GetByAdminID(ctx context.Context, id uint32) (*domain.PsiSpecialtyModel, error) {
+	return m.GetByAdminIDFunc(ctx, id)
 }
 func (m *mockSpecialtyRepo) Update(ctx context.Context, s *domain.PsiSpecialtyModel) error {
 	return m.UpdateFunc(ctx, s)
@@ -125,7 +129,7 @@ func TestSpecialtyService_Update(t *testing.T) {
 		existingSpec := &domain.PsiSpecialtyModel{ID: 10, Name: "Viejo Nombre"}
 
 		// Simulamos la lectura previa (Read-Before-Write)
-		repo.GetByIDFunc = func(ctx context.Context, id uint32, includeInactive bool) (*domain.PsiSpecialtyModel, error) {
+		repo.GetByAdminIDFunc = func(ctx context.Context, id uint32) (*domain.PsiSpecialtyModel, error) {
 			return existingSpec, nil
 		}
 

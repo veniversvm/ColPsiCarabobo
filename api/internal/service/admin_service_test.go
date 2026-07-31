@@ -151,7 +151,7 @@ func TestAdminService_All(t *testing.T) {
 
 		trueVal := true
 		req := request_structs.CreateAdminRequest{
-			Username: "nuevo_admin",
+			Username: "nuevo_admin_test@gmail.com",
 			// Uso de dominio real (gmail) para superar la validación DNS (MX Record Lookup)
 			Email:    "nuevo_admin_test@gmail.com",
 			Password: "Password123!",
