@@ -161,31 +161,51 @@ docker-compose ps
 - **Email:** admin@admin.com
 - **Contraseña:** admin
 
+### Super Admin (seed inicial)
+
+`pkg/database/seed.go` crea un admin inicial solo si no existe ninguno:
+
+- **Usuario:** `admin` — **Email:** `admin@colpsicarabobo.com`
+- **Contraseña:** `admin123` en `development`; en **producción** se genera aleatoria
+  (16 caracteres) y se loguea la advertencia de cambiarla al primer login.
+
 ---
 
 ## 🔧 Variables de Entorno
 
-Las variables se cargan desde el archivo `.env` en la raíz del proyecto.
+Las variables se cargan desde el archivo `.env` en la raíz del proyecto
+(ver [`api/.env.example`](./.env.example)). Lista completa en
+`internal/config/env.config.go`:
 
-| Variable          | Descripción                        | Valor por defecto      |
-| :---------------- | :--------------------------------- | :--------------------- |
-| `PORT`            | Puerto del servidor HTTP           | `8080`                 |
-| `GOENV`           | Entorno de ejecución Go            | `development`          |
-| `DB_HOST`         | Host de PostgreSQL                 | `db`                   |
-| `DB_PORT`         | Puerto de PostgreSQL               | `5432`                 |
-| `DB_USER`         | Usuario de PostgreSQL              | `postgres`             |
-| `DB_PASSWORD`     | Contraseña de PostgreSQL           | `postgres`             |
-| `DB_NAME`         | Nombre de la base de datos         | `colpsi_db`            |
-| `AWS_REGION`      | Región de AWS S3                   | `us-east-1`            |
-| `AWS_ACCESS_KEY`  | Access Key de AWS                  | *(requerido)*          |
-| `AWS_SECRET_KEY`  | Secret Key de AWS                  | *(requerido)*          |
-| `AWS_BUCKET`      | Nombre del bucket S3               | *(requerido)*          |
-| `SMTP_HOST`       | Host del servidor SMTP             | *(requerido)*          |
-| `SMTP_PORT`       | Puerto del servidor SMTP           | `587`                  |
-| `SMTP_USER`       | Usuario SMTP                       | *(requerido)*          |
-| `SMTP_PASS`       | Contraseña SMTP                    | *(requerido)*          |
-| `SMTP_FROM`       | Email remitente                    | *(requerido)*          |
-| `JWT_SECRET`      | Secreto para firmar tokens JWT     | *(requerido, rotación)*|
+| Variable              | Descripción                                    | Valor por defecto           |
+| :-------------------- | :--------------------------------------------- | :-------------------------- |
+| `PORT`                | Puerto del servidor HTTP                       | `8080`                      |
+| `APP_ENV`             | Entorno: `development` / `production`          | `production`                |
+| `DB_HOST`             | Host de PostgreSQL                             | `localhost`                 |
+| `DB_PORT`             | Puerto de PostgreSQL                           | `5432`                      |
+| `DB_USER`             | Usuario de PostgreSQL                          | `postgres`                  |
+| `DB_PASSWORD`         | Contraseña de PostgreSQL                       | `postgres`                  |
+| `DB_NAME`             | Nombre de la base de datos                     | `colpsi_db`                 |
+| `S3_ENDPOINT`         | Endpoint **interno** del SDK (host Docker)     | `http://localhost:9000`     |
+| `S3_PUBLIC_URL`       | URL **pública** accesible desde el navegador (Path-Style `{endpoint}/{bucket}`) | `http://localhost:9000` |
+| `AWS_S3_BUCKET`       | Nombre del bucket S3                           | `colpsi-bucket`             |
+| `AWS_REGION`          | Región de AWS S3                               | `us-east-1`                 |
+| `AWS_ACCESS_KEY_ID`   | Access Key de S3/MinIO                         | `minioadmin`                |
+| `AWS_SECRET_ACCESS_KEY` | Secret Key de S3/MinIO                       | `minioadmin`                |
+| `SMTP_HOST`           | Host del servidor SMTP                         | `localhost`                 |
+| `SMTP_PORT`           | Puerto SMTP (dev: MailHog `1025`)              | `1025`                      |
+| `SMTP_USER` / `SMTP_PASS` | Credenciales SMTP                         | *(vacío)*                   |
+| `SMTP_FROM`           | Email remitente                                | `info@colpsicarabobo.com`   |
+| `ALLOWED_ORIGINS`     | Orígenes CORS permitidos (separados por coma)  | `http://127.0.0.1:3000, http://localhost:3000` |
+| `VALKEY_ADDR`         | Valkey/Redis para rate limiting (vacío = en memoria) | *(vacío)*            |
+| `JWT_LIBRARY_SECRET`  | Secreto de librería JWT externa                | *(vacío)*                  |
+| `ABS_ADMIN_TOKEN`     | Token absoluto de admin (respaldo)             | *(vacío)*                  |
+
+> **`S3_ENDPOINT` vs `S3_PUBLIC_URL`** — son propositivamente distintos:
+> el SDK (subir/bajar objetos) usa el endpoint interno del contenedor
+> (`s3:9000` en Docker), mientras que las URLs que ve el navegador se
+> construyen con `S3_PUBLIC_URL` (`GetPublicURL()` en `pkg/s3/s3.go`).
+> Mezclarlos rompe la carga de imágenes en el browser.
 
 ---
 
@@ -197,8 +217,15 @@ Todas las rutas prefijadas con `/api/v1`. Documentación interactiva disponible 
 
 | Método  | Endpoint                          | Descripción                | Auth   |
 | :------ | :-------------------------------- | :------------------------- | :----- |
-| `POST`  | `/api/v1/admin/auth/login`        | Login de administrador     | No     |
-| `POST`  | `/api/v1/admin/auth/register`     | Registrar nuevo admin      | No     |
+| `POST`  | `/api/v1/auth/login`              | Login de administrador     | No     |
+| `POST`  | `/api/v1/psi/login`               | Login del psicólogo        | No     |
+| `POST`  | `/api/v1/psi/me/logout`           | Logout psicólogo           | JWT    |
+
+> ⚠️ Las rutas `admin/*` están protegidas por `ProtectedAdmin404()`: sin un JWT
+> válido responden **404** ("Cannot PATCH /api/v1/admin/psi/:id"), no 401, para
+> ocultar la topología del panel. Si una llamada desde el frontend devuelve
+> "Cannot ...", el token no está llegando (revisar cookie HttpOnly `jwt` en las
+> server actions), no que la ruta no exista.
 
 ### Administradores
 
@@ -215,12 +242,19 @@ Todas las rutas prefijadas con `/api/v1`. Documentación interactiva disponible 
 
 | Método   | Endpoint                          | Descripción                        | Auth   |
 | :------- | :-------------------------------- | :--------------------------------- | :----- |
-| `GET`    | `/api/v1/psi`                     | Directorio (búsqueda/filtros)      | No     |
+| `GET`    | `/api/v1/psi/directory`           | Directorio (búsqueda/filtros)      | No     |
 | `GET`    | `/api/v1/psi/:id`                 | Perfil público del psicólogo       | No     |
-| `POST`   | `/api/v1/psi`                     | Crear perfil                       | JWT    |
-| `PATCH`  | `/api/v1/psi/:id`                 | Actualizar perfil                  | JWT    |
-| `DELETE` | `/api/v1/psi/:id`                 | Eliminar perfil                    | JWT    |
-| `PATCH`  | `/api/v1/psi/:id/image`           | Actualizar imagen de perfil        | JWT    |
+| `GET`    | `/api/v1/psi/public/sitemap-data` | Datos para sitemap público         | No     |
+| `GET`    | `/api/v1/psi/me`                  | Perfil propio (autogestión)        | JWT    |
+| `PATCH`  | `/api/v1/psi/me`                  | Actualizar perfil propio           | JWT    |
+| `POST`   | `/api/v1/psi/me/postgrades`       | Agregar postgrado                  | JWT    |
+| `POST`   | `/api/v1/psi/me/social`           | Agregar red social                 | JWT    |
+| `GET`    | `/api/v1/admin/psi/list`          | Listar psicólogos (admin)          | JWT    |
+| `POST`   | `/api/v1/admin/psi/create`        | Crear psicólogo (admin, idempotente) | JWT  |
+| `POST`   | `/api/v1/admin/psi/upload-csv`    | Importar CSV (admin)               | JWT    |
+| `GET`    | `/api/v1/admin/psi/:id`           | Detalle psicólogo (admin)          | JWT    |
+| `PATCH`  | `/api/v1/admin/psi/:id`           | Actualizar psicólogo (admin)       | JWT    |
+| `DELETE` | `/api/v1/admin/psi/:id`           | Eliminar psicólogo (admin)         | JWT    |
 
 ### Publicaciones (Posts)
 
@@ -441,6 +475,48 @@ Al agregar un nuevo dominio al proyecto, seguir este orden:
 8. **Middleware:** Aplicar auth/validación según corresponda
 9. **Swagger:** Documentar con anotaciones en el handler
 10. **Tests:** Escribir tests unitarios y de integración
+
+---
+
+## 🔄 Cambios recientes (fixes de integración)
+
+Resumen de los cambios recientes que tocan el comportamiento de la API y su
+contrato con el frontend (`web/`). Detalle de commits en `git log`.
+
+### 1. URLs públicas de S3/MinIO (imágenes rotas en el navegador)
+
+- **Problema:** el API devolvía URLs con el host interno del contenedor
+  (`http://s3:9000/...`), irresoluble desde el browser → `<img>` roto.
+- **Solución:** nueva variable `S3_PUBLIC_URL` (`internal/config/env.config.go`),
+  separada de `S3_ENDPOINT`. `GetPublicURL()` (`pkg/s3/s3.go`) construye URLs con
+  la pública en formato Path-Style `{publicUrl}/{bucket}/{key}` y devuelve `""`
+  ante keys vacías. El compose fija `S3_ENDPOINT=http://s3:9000` (interno) y
+  `S3_PUBLIC_URL=http://localhost:9000` (navegador).
+- **Frontend:** `bucketUrl()` es idempotente — acepta keys y URLs absolutas.
+
+### 2. JWT en cookie HttpOnly para server actions (404 enmascarado)
+
+- **Problema:** el panel admin devolvía "Cannot PATCH ..." porque las server
+  actions no llevaban token; el **404 lo emitía el middleware**
+  `ProtectedAdmin404()` (`internal/middleware/auth.go`), no la ruta.
+- **Solución:** el frontend persiste el JWT en la cookie HttpOnly `jwt`
+  (`web/src/lib/actions/auth.ts` + `syncJwtCookie` en login), y `web/src/lib/api.ts`
+  la lee en SSR para autenticar contra la API.
+
+### 3. Sanitización XSS — barrera final en la API
+
+- `bluemonday.UGCPolicy()` limpia `full_bio` antes de persistir
+  (`psi_service_self_management.go:223`, `psi_user_admin_service.go:422`) y el
+  contenido de posts (`post_service.go`). La sanitización del frontend es solo
+  defensa en profundidad; la API es la barrera de confianza.
+
+### 4. Worker de email asíncrono
+
+- `mail_service.go` procesa la cola en segundo plano con throttling (batch de 30)
+  y jittering (pausas de 60–180s) anti-spam. El host de dev es **MailHog**
+  (`SMTP_HOST=localhost`, `SMTP_PORT=1025`, profile `dev` del compose); si no
+  está levantado, los errores `no such host` en los logs son **ruido no
+  bloqueante** del worker, no fallos de la petición HTTP.
 
 ---
 
