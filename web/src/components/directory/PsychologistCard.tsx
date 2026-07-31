@@ -73,11 +73,6 @@ export function PsychologistCard(props: PsychologistCardProps) {
         <span class="block whitespace-pre-wrap break-words">
           "{psychologist.mini_bio || 'Profesional federado del estado Carabobo.'}"
         </span>
-        <Show when={psychologist.mini_bio && psychologist.mini_bio.length > 200}>
-          <span class="text-[8px] text-gray-400 mt-1 block text-right">
-            {psychologist.mini_bio.length}/250
-          </span>
-        </Show>
       </div>
 
       <div class="mt-auto flex flex-wrap gap-1">

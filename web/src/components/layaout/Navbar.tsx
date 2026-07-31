@@ -24,6 +24,11 @@ export default function Navbar() {
                 <span class="text-[#1e3a8a] font-extrabold text-lg tracking-tight"> Colegio de Psicólogos</span>
                 <span class="text-gray-400 text-[14px] font-bold tracking-widest uppercase">del Estado Carabobo</span>
               </div>
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/4/4b/Bandera_de_carabobo.svg"
+                alt="Bandera del Estado Carabobo"
+                class="h-8 w-auto rounded"
+              />
             </A>
           </div>
 

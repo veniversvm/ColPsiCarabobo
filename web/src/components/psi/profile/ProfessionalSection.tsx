@@ -1,6 +1,7 @@
 // web/src/components/psi/profile/ProfessionalSection.tsx
-import { For, Show } from "solid-js";
+import { Show } from "solid-js";
 import { RichTextEditor } from "~/components/ui/RichTextEditor";
+import { DropdownSelect } from "~/components/ui/DropdownSelect";
 
 const FULL_BIO_WORD_LIMIT = 5000;
 
@@ -35,7 +36,7 @@ export function ProfessionalSection(props: ProfessionalSectionProps) {
     props.onFullBioChange(v);
   };
 
-  const selectClass = "w-full bg-gray-50 border-2 border-transparent focus:border-colpsi-yellow rounded-xl px-5 py-3 outline-none text-colpsi-text transition-all appearance-none cursor-pointer disabled:opacity-60 disabled:cursor-wait";
+  const selectClass = "w-full bg-gray-50 border-2 border-transparent focus:border-colpsi-yellow rounded-xl px-5 py-3 text-colpsi-text";
 
   return (
     <section class="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-premium border border-gray-100">
@@ -53,24 +54,26 @@ export function ProfessionalSection(props: ProfessionalSectionProps) {
             <label class="text-xs font-bold text-gray-500 uppercase ml-2">
               Área de Trabajo Principal
             </label>
-            <select
+            <DropdownSelect
               value={props.primaryWorkArea}
               disabled={!props.specialties}
-              class={selectClass}
-              onChange={(e) => props.onPrimaryWorkAreaChange(e.currentTarget.value)}
-            >
-              <Show
-                when={props.specialties}
-                fallback={<option value="">Cargando áreas...</option>}
-              >
-                <option value="">— Sin área asignada —</option>
-                <For each={props.specialties}>
-                  {(item) => (
-                    <option value={item.name}>{item.name}</option>
-                  )}
-                </For>
-              </Show>
-            </select>
+              loading={!props.specialties}
+              loadingLabel="Cargando áreas..."
+              placeholder="— Sin área asignada —"
+              buttonClass={selectClass}
+              options={
+                props.specialties
+                  ? [
+                      { value: "", label: "— Sin área asignada —" },
+                      ...props.specialties.map((item) => ({
+                        value: item.name,
+                        label: item.name,
+                      })),
+                    ]
+                  : []
+              }
+              onChange={props.onPrimaryWorkAreaChange}
+            />
           </div>
 
           {/* Área Secundaria */}
@@ -78,29 +81,27 @@ export function ProfessionalSection(props: ProfessionalSectionProps) {
             <label class="text-xs font-bold text-gray-500 uppercase ml-2">
               Área de Trabajo Secundaria
             </label>
-            <select
+            <DropdownSelect
               value={props.secondaryWorkArea}
               disabled={!props.specialties}
-              class={selectClass}
-              onChange={(e) => props.onSecondaryWorkAreaChange(e.currentTarget.value)}
-            >
-              <Show
-                when={props.specialties}
-                fallback={<option value="">Cargando áreas...</option>}
-              >
-                <option value="">— Sin área secundaria —</option>
-                <For each={props.specialties}>
-                  {(item) => (
-                    <option
-                      value={item.name}
-                      disabled={item.name === props.primaryWorkArea}
-                    >
-                      {item.name}
-                    </option>
-                  )}
-                </For>
-              </Show>
-            </select>
+              loading={!props.specialties}
+              loadingLabel="Cargando áreas..."
+              placeholder="— Sin área secundaria —"
+              buttonClass={selectClass}
+              options={
+                props.specialties
+                  ? [
+                      { value: "", label: "— Sin área secundaria —" },
+                      ...props.specialties.map((item) => ({
+                        value: item.name,
+                        label: item.name,
+                        disabled: item.name === props.primaryWorkArea,
+                      })),
+                    ]
+                  : []
+              }
+              onChange={props.onSecondaryWorkAreaChange}
+            />
             <Show when={props.secondaryWorkArea && props.secondaryWorkArea === props.primaryWorkArea}>
               <p class="text-xs text-amber-500 font-bold ml-2">
                 ⚠️ El área secundaria no puede ser igual a la principal.

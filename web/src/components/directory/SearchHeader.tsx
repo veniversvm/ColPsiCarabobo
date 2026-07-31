@@ -1,5 +1,5 @@
 // web/src/components/directory/SearchHeader.tsx
-import { For, Show } from "solid-js";
+import { DropdownSelect } from "~/components/ui/DropdownSelect";
 
 interface WorkArea {
   id: number;
@@ -44,31 +44,26 @@ export function SearchHeader(props: SearchHeaderProps) {
 
             {/* Selector de Área de Desempeño */}
             <div class="relative md:w-80">
-              <select
+              <DropdownSelect
                 value={props.workArea}
                 disabled={!props.workAreas}
-                class="w-full bg-white rounded-2xl py-4 px-6 shadow-xl outline-none focus:ring-4 focus:ring-colpsi-yellow/50 transition-all text-colpsi-text font-bold appearance-none cursor-pointer disabled:opacity-60 disabled:cursor-wait"
-                onChange={(e) => props.onWorkAreaChange(e.currentTarget.value)}
-                name="area_desempeno"
-              >
-                <Show
-                  when={props.workAreas}
-                  fallback={<option value="">Cargando áreas...</option>}
-                >
-                  <option value="">Todas las Áreas de Desempeño</option>
-                  <For each={props.workAreas}>
-                    {(item) => (
-                      <option value={String(item.id)}>{item.name}</option>
-                    )}
-                  </For>
-                </Show>
-              </select>
-              {/* Icono de flecha para el select personalizado */}
-              <div class="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-colpsi-blue opacity-30">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                </svg>
-              </div>
+                loading={!props.workAreas}
+                loadingLabel="Cargando áreas..."
+                placeholder="Todas las Áreas de Desempeño"
+                buttonClass="w-full bg-white rounded-2xl py-4 px-6 shadow-xl focus:ring-4 focus:ring-colpsi-yellow/50 text-colpsi-text font-bold"
+                options={
+                  props.workAreas
+                    ? [
+                        { value: "", label: "Todas las Áreas de Desempeño" },
+                        ...props.workAreas.map((item) => ({
+                          value: String(item.id),
+                          label: item.name,
+                        })),
+                      ]
+                    : []
+                }
+                onChange={props.onWorkAreaChange}
+              />
             </div>
           </div>
 
