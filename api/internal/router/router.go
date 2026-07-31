@@ -35,9 +35,22 @@ func SetupRouter(app *fiber.App, db *gorm.DB, s3Client *s3.S3Client, appCache *c
 	specialtyRepo := postgres.NewSpecialtyRepository(db)
 
 	// ── MailService: una sola instancia compartida entre todos los routers ────
-	mailSvc, err := service.NewMailService()
-	if err != nil {
-		log.Warn().Err(err).Str("component", "router").Msg("Advertencia: No se pudo conectar al servidor SMTP")
+	// Se elige el transporte por MAIL_TRANSPORT: "resend" usa la API de Resend;
+	// cualquier otro valor usa SMTP (Mailpit/MailHog en desarrollo).
+	var (
+		mailSvc service.IMailService
+		err     error
+	)
+	if config.Envs.MailTransport == "resend" {
+		mailSvc, err = service.NewResendMailService()
+		if err != nil {
+			log.Warn().Err(err).Str("component", "router").Msg("Advertencia: No se pudo inicializar el transporte Resend")
+		}
+	} else {
+		mailSvc, err = service.NewMailService()
+		if err != nil {
+			log.Warn().Err(err).Str("component", "router").Msg("Advertencia: No se pudo conectar al servidor SMTP")
+		}
 	}
 
 	// Agrupación principal

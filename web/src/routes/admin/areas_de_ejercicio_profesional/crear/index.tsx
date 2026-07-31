@@ -45,6 +45,17 @@ export default function AdminCrearAreaEjercicioPage() {
     }
   };
 
+  // Función para filtrar caracteres especiales en tiempo real
+  const handleNameInput = (e: Event) => {
+    const input = e.currentTarget as HTMLInputElement;
+    // Permite: letras, números, espacios, acentos, ñ, guiones (-) y barras (/)
+    const sanitizedValue = input.value.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\/\-]/g, "");
+
+    setName(sanitizedValue);
+    // Forzamos el input visual para que borre el caracter inválido instantáneamente
+    input.value = sanitizedValue;
+  };
+
   return (
     <main class="pb-28 animate-in fade-in duration-500 max-w-3xl mx-auto font-sans">
 
@@ -94,10 +105,11 @@ export default function AdminCrearAreaEjercicioPage() {
               maxLength={100}
               placeholder="Ej: Psicología Clínica, Organizacional, etc."
               value={name()}
-              onInput={(e) => setName(e.currentTarget.value)}
+              onInput={handleNameInput}
               class={IC}
             />
-            <div class="flex justify-end mt-2">
+            <div class="flex justify-between mt-2 px-1">
+               <p class="text-[9px] text-gray-400 italic">No se admiten símbolos especiales.</p>
                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{name().length}/100</p>
             </div>
           </div>

@@ -126,8 +126,10 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 			continue
 		}
 
-		if psi.ProofOfLife && validEmail {
-			go s.mailService.SendEmail(
+		// Envío NO BLOQUEANTE: SendEmail solo encola en memoria; el worker
+		// (SMTP o Resend) despacha en background con su propio throttling.
+		if s.mailService != nil && psi.ProofOfLife && validEmail {
+			if err := s.mailService.SendEmail(
 				psi.Email,
 				"Bienvenido(a) a la plataforma COLPSI Carabobo",
 				"welcome_psi",
@@ -136,7 +138,9 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 					"Email":    psi.Email,
 					"Password": defaultPassword,
 				},
-			)
+			); err != nil {
+				log.Printf("❌ Error al encolar email para %s: %v", maskEmail(psi.Email), err)
+			}
 		}
 
 		successCount++

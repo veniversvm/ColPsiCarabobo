@@ -15,7 +15,6 @@ func makeV7FromTime(t time.Time) string {
 	u := uuid.New()
 	// Set version 7
 	u[6] = 0x70 | (u[6] & 0x0F)
-	u[7] = u[7] // random
 	// Encode 48-bit milliseconds
 	u[0] = byte(milli >> 40)
 	u[1] = byte(milli >> 32)

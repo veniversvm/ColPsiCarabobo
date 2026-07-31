@@ -12,7 +12,7 @@ import (
 )
 
 // SetupAdminRoutes registers admin authentication, management, and dashboard routes.
-func SetupAdminRoutes(router fiber.Router, adminRepo domain.UserAdminRepository, psiRepo domain.PsiUserRepository, analyticsSvc *service.AnalyticsService, mailSvc *service.MailService) {
+func SetupAdminRoutes(router fiber.Router, adminRepo domain.UserAdminRepository, psiRepo domain.PsiUserRepository, analyticsSvc *service.AnalyticsService, mailSvc service.IMailService) {
 	svc := service.NewAdminService(adminRepo, mailSvc)
 	h := handler.NewAdminHandler(svc)
 	authMid := middleware.NewAuthMiddleware(adminRepo, psiRepo, analyticsSvc)

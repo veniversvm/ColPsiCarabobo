@@ -19,7 +19,7 @@ interface AvatarUploaderProps {
 }
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/jpg"];
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/jpg", "image/gif"];
 
 export function AvatarUploader(props: AvatarUploaderProps) {
   // ── ESTADO DEL MODAL ──
@@ -53,7 +53,7 @@ export function AvatarUploader(props: AvatarUploaderProps) {
 
   const validateFile = (file: File): string | null => {
     if (!ALLOWED_TYPES.includes(file.type))
-      return "Formato no permitido. Usa JPG o PNG.";
+      return "Formato no permitido. Usa JPG, PNG o GIF.";
     if (file.size > MAX_FILE_SIZE) {
       const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
       return `La imagen es demasiado grande (${sizeMB}MB). Máximo 5MB.`;
@@ -118,7 +118,7 @@ export function AvatarUploader(props: AvatarUploaderProps) {
                 <input
                   type="file"
                   class="sr-only"
-                  accept="image/jpeg, image/png, image/jpg"
+                  accept="image/jpeg, image/png, image/jpg, image/gif"
                   onChange={(e) => {
                     const file = e.currentTarget.files?.[0];
                     handleFileChange(file || null);
@@ -134,7 +134,7 @@ export function AvatarUploader(props: AvatarUploaderProps) {
                 Foto de Perfil
               </p>
               <p class="text-[10px] text-gray-400 mt-1 bg-gray-50 px-3 py-1 rounded-full">
-                JPG, PNG • Máx 5MB
+                JPG, PNG, GIF • Máx 5MB
               </p>
             </div>
           </div>

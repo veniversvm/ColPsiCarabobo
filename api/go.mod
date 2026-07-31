@@ -9,6 +9,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.7
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.96.0
 	github.com/gofiber/fiber/v2 v2.52.11
+	github.com/gofiber/storage/valkey v0.3.1
 	github.com/gofiber/swagger v1.1.1
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
@@ -16,6 +17,8 @@ require (
 	github.com/kolesa-team/go-webp v1.0.5
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/patrickmn/go-cache v2.1.0+incompatible
+	github.com/resend/resend-go/v2 v2.28.0
+	github.com/rs/zerolog v1.35.1
 	github.com/stretchr/testify v1.11.1
 	github.com/swaggo/swag v1.16.4
 	github.com/wneessen/go-mail v0.7.2
@@ -24,6 +27,7 @@ require (
 	golang.org/x/image v0.41.0
 	golang.org/x/text v0.40.0
 	gorm.io/driver/postgres v1.6.0
+	gorm.io/driver/sqlite v1.6.0
 	gorm.io/gorm v1.31.1
 )
 
@@ -75,7 +79,6 @@ require (
 	github.com/go-openapi/spec v0.20.4 // indirect
 	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/go-sql-driver/mysql v1.8.1 // indirect
-	github.com/gofiber/storage/valkey v0.3.1 // indirect
 	github.com/golang-sql/civil v0.0.0-20220223132316-b832511892a9 // indirect
 	github.com/golang-sql/sqlexp v0.1.0 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
@@ -106,7 +109,6 @@ require (
 	github.com/richardlehane/mscfb v1.0.6 // indirect
 	github.com/richardlehane/msoleps v1.0.6 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
-	github.com/rs/zerolog v1.35.1 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.5.0 // indirect
 	github.com/swaggo/files/v2 v2.0.2 // indirect
 	github.com/tiendc/go-deepcopy v1.7.2 // indirect
@@ -143,6 +145,5 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/mysql v1.5.7 // indirect
-	gorm.io/driver/sqlite v1.6.0 // indirect
 	gorm.io/driver/sqlserver v1.5.4 // indirect
 )

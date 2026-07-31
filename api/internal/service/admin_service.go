@@ -31,13 +31,13 @@ import (
 type AdminService struct {
 	repo        domain.UserAdminRepository
 	cache       *cache.Cache
-	mailService *MailService // Inyección de servicio de mensajería (Event-Driven)
+	mailService IMailService // Inyección de servicio de mensajería (Event-Driven)
 }
 
 // NewAdminService inicializa el servicio administrativo.
 // Configura un TTL (Time-To-Live) base de 5 minutos y un ciclo de "Garbage Collection"
 // de 10 minutos para purgar claves expiradas, optimizando el uso de memoria RAM.
-func NewAdminService(repo domain.UserAdminRepository, mailService *MailService) *AdminService {
+func NewAdminService(repo domain.UserAdminRepository, mailService IMailService) *AdminService {
 	return &AdminService{
 		repo:        repo,
 		mailService: mailService,
@@ -102,9 +102,12 @@ func (s *AdminService) Login(ctx context.Context, identifier, password string) (
 	}
 
 	// Invocación dinámica y no-bloqueante del servicio de mensajería.
-	// Si el servidor SMTP falla, la autenticación sigue adelante ("Graceful Degradation").
-	if err := s.mailService.SendEmail(admin.Email, "Inicio de sesión en el sistema", "login_admin", mailData); err != nil {
-		log.Warn().Err(err).Str("component", "admin_service").Msg("Error al preparar el correo (pero el admin se creó)")
+	// Si el servidor SMTP falla o el servicio no está disponible, la
+	// autenticación sigue adelante ("Graceful Degradation").
+	if s.mailService != nil {
+		if err := s.mailService.SendEmail(admin.Email, "Inicio de sesión en el sistema", "login_admin", mailData); err != nil {
+			log.Warn().Err(err).Str("component", "admin_service").Msg("Error al preparar el correo (pero el admin se creó)")
+		}
 	}
 
 	signed, err := token.SignedString([]byte(newKey))
@@ -327,8 +330,10 @@ func (s *AdminService) CreateAdmin(
 		"Password": req.Password,
 	}
 
-	if err := s.mailService.SendEmail(newAdmin.Email, "Bienvenido al Colegio de Psicólogos", "welcome_admin", mailData); err != nil {
-		log.Warn().Err(err).Str("component", "admin_service").Msg("Error al preparar el correo (pero el admin se creó)")
+	if s.mailService != nil {
+		if err := s.mailService.SendEmail(newAdmin.Email, "Bienvenido al Colegio de Psicólogos", "welcome_admin", mailData); err != nil {
+			log.Warn().Err(err).Str("component", "admin_service").Msg("Error al preparar el correo (pero el admin se creó)")
+		}
 	}
 
 	// 7. Mantenimiento del Caché (Purge Completo)

@@ -44,6 +44,21 @@ type Config struct {
 	SMTPReplyTo  string
 	SMTPFromName string
 
+	// Transporte de email: "smtp" (Mailpit/MailHog) o "resend" (API Resend)
+	MailTransport string
+
+	// Resend (usado solo si MailTransport == "resend")
+	ResendAPIKey string
+
+	// Pacing del worker Resend (anti-spam y respeto a cuotas/rate limits)
+	MailDailyCap        int // Tope diario de envíos (warm-up de dominio)
+	MailBatchSize       int // Máx emails por llamada batch (límite Resend: 100)
+	MailBatchIntervalMS int // Pausa entre llamadas batch
+	MailBurstSize       int // Ráfaga de envíos antes de la pausa larga
+	MailBurstSleepMin   int // Segundos mínimos de la pausa larga
+	MailBurstSleepMax   int // Segundos máximos de la pausa larga
+	MailSendIntervalMS  int // Ventana de acumulación de la cola antes de despachar un lote
+
 	// Origins
 	AllowedOrigins string
 
@@ -107,6 +122,21 @@ func InitConfig() {
 		SMTPReplyTo:  getEnv("SMTP_REPLY_TO", ""),
 		SMTPFromName: getEnv("SMTP_FROM_NAME", "Colegio de Psicólogos de Carabobo"),
 
+		// Transporte de email
+		MailTransport: getEnv("MAIL_TRANSPORT", "smtp"),
+
+		// Resend
+		ResendAPIKey: getEnv("RESEND_API_KEY", ""),
+
+		// Pacing del worker Resend
+		MailDailyCap:        getEnvInt("MAIL_DAILY_CAP", 100),
+		MailBatchSize:       getEnvInt("MAIL_BATCH_SIZE", 100),
+		MailBatchIntervalMS: getEnvInt("MAIL_BATCH_INTERVAL_MS", 1000),
+		MailBurstSize:       getEnvInt("MAIL_BURST_SIZE", 30),
+		MailBurstSleepMin:   getEnvInt("MAIL_BURST_SLEEP_MIN", 60),
+		MailBurstSleepMax:   getEnvInt("MAIL_BURST_SLEEP_MAX", 180),
+		MailSendIntervalMS:  getEnvInt("MAIL_SEND_INTERVAL_MS", 500),
+
 		// Origins
 		AllowedOrigins: getEnv("ALLOWED_ORIGINS", "http://127.0.0.1:3000, http://localhost:3000"),
 
@@ -124,6 +154,18 @@ func InitConfig() {
 func getEnv(key, fallback string) string {
 	if value, ok := os.LookupEnv(key); ok {
 		return value
+	}
+	return fallback
+}
+
+// getEnvInt es una función auxiliar que intenta obtener una variable de entorno
+// numérica por su clave. Si no está definida o no es válida, retorna el fallback.
+func getEnvInt(key string, fallback int) int {
+	if value, ok := os.LookupEnv(key); ok {
+		if parsed, err := strconv.Atoi(value); err == nil {
+			return parsed
+		}
+		log.Warn().Str("component", "config").Str("key", key).Msg("Valor numérico inválido, usando fallback")
 	}
 	return fallback
 }

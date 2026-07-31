@@ -78,7 +78,7 @@ export default function DirectoryPage() {
   onMount(() => {
     if (!isCached()) {
       executeSearch(searchParams());
-      setTimeout(() => setShowLoading(false), 1200);
+      setTimeout(() => setShowLoading(false), 1);
     } else {
       setShowLoading(false);
     }
