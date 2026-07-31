@@ -40,7 +40,7 @@ func (s *PsiService) GetPublicDirectory(ctx context.Context, filter request_stru
 			LastName:       u.LastName,
 			CI:             u.CI,
 			FPV:            u.FPV,
-			ProfilePicture: s.publicURL(u.ProfilePictureS3Key),
+			ProfilePicture: s.avatarURL(u.ProfilePictureS3Key, u.UpdatedAt),
 			MiniBio:        u.MiniBio,
 		}
 
@@ -84,7 +84,7 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 			FPV:            psi.FPV,
 			CI:             psi.CI,
 			Gender:         psi.Genre,
-			ProfilePicture: s.publicURL(psi.ProfilePictureS3Key),
+			ProfilePicture: s.avatarURL(psi.ProfilePictureS3Key, psi.UpdatedAt),
 			Solvent:        false,
 			Undergraduate: request_structs.UndergraduateDTO{
 				University: psi.ColData.UniversityUndergraduate,
@@ -100,24 +100,24 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 	}
 
 	dto := &request_structs.PsiFullProfileDTO{
-		FirstName:      psi.FirstName,
-		SecondName:     psi.SecondName,
-		LastName:       psi.LastName,
-		SecondLastName: psi.SecondLastName,
-		FPV:            psi.FPV,
-		CI:             psi.CI,
-		Gender:         psi.Genre,
-		ProfilePicture: s.publicURL(psi.ProfilePictureS3Key),
-		Solvent:        true,
-		MiniBio:        psi.MiniBio,
-		FullBioContent: fullBio,
+		FirstName:            psi.FirstName,
+		SecondName:           psi.SecondName,
+		LastName:             psi.LastName,
+		SecondLastName:       psi.SecondLastName,
+		FPV:                  psi.FPV,
+		CI:                   psi.CI,
+		Gender:               psi.Genre,
+		ProfilePicture:       s.avatarURL(psi.ProfilePictureS3Key, psi.UpdatedAt),
+		Solvent:              true,
+		MiniBio:              psi.MiniBio,
+		FullBioContent:       fullBio,
 		PrimaryWorkArea:      psi.PrimaryWorkArea,
 		SecondaryWorkArea:    psi.SecondaryWorkArea,
 		PrimarySpecialtyID:   psi.PrimarySpecialtyID,
 		SecondarySpecialtyID: psi.SecondarySpecialtyID,
 		PostGrades:           make([]request_structs.PostGradeDTO, 0),
-		SocialNetworks:    make([]request_structs.SocialNetworkDTO, 0),
-		Undergraduate:     request_structs.UndergraduateDTO{},
+		SocialNetworks:       make([]request_structs.SocialNetworkDTO, 0),
+		Undergraduate:        request_structs.UndergraduateDTO{},
 	}
 
 	if psi.ShowContactEmail {

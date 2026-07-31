@@ -9,13 +9,14 @@ import (
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/handler"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/middleware"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/service"
+	"github.com/veniversvm/ColPsiCarabobo/api/pkg/cache"
 	"github.com/veniversvm/ColPsiCarabobo/api/pkg/s3"
 )
 
 // SetupPsiRoutes registers psychologist public, self-management, and admin CRUD routes.
-func SetupPsiRoutes(router fiber.Router, psiRepo domain.PsiUserRepository, adminRepo domain.UserAdminRepository, s3Client *s3.S3Client, analyticsSvc *service.AnalyticsService, mailService *service.MailService) {
+func SetupPsiRoutes(router fiber.Router, psiRepo domain.PsiUserRepository, adminRepo domain.UserAdminRepository, s3Client *s3.S3Client, analyticsSvc *service.AnalyticsService, mailService *service.MailService, appCache *cache.Cache) {
 	svc := service.NewPsiService(psiRepo, s3Client, mailService)
-	h := handler.NewPsiHandler(svc, analyticsSvc)
+	h := handler.NewPsiHandler(svc, analyticsSvc, appCache)
 	authMid := middleware.NewAuthMiddleware(adminRepo, psiRepo, analyticsSvc)
 
 	// Store de idempotencia — compartido solo para las rutas que lo necesitan

@@ -141,19 +141,19 @@ func seedSudo(t *testing.T) *domain.UserAdmin {
 			Key:      uuid.Must(uuid.NewV7()).String(),
 			IsActive: true,
 		},
-		Sudo:               true,
-		CanCreateAdmin:     true,
-		CanUpdateAdmin:     true,
-		CanDeleteAdmin:     true,
-		CanCreatePsi:       true,
-		CanUpdatePsi:       true,
-		CanDeletePsi:       true,
-		CanPublish:         true,
-		CanUpdatePublish:   true,
-		CanDeletePublish:   true,
-		CanCreateTags:      true,
-		CanEditTags:        true,
-		CanDeleteTags:      true,
+		Sudo:                 true,
+		CanCreateAdmin:       true,
+		CanUpdateAdmin:       true,
+		CanDeleteAdmin:       true,
+		CanCreatePsi:         true,
+		CanUpdatePsi:         true,
+		CanDeletePsi:         true,
+		CanPublish:           true,
+		CanUpdatePublish:     true,
+		CanDeletePublish:     true,
+		CanCreateTags:        true,
+		CanEditTags:          true,
+		CanDeleteTags:        true,
 		CanReadNotifications: true,
 	}
 	require.NoError(t, testDB.Create(admin).Error)
@@ -291,7 +291,7 @@ func buildTestApp(db *gorm.DB) *fiber.App {
 	api := app.Group("/api/v1")
 
 	router.SetupAdminRoutes(api, adminRepo, psiRepo, analyticsSvc, nil)
-	router.SetupPsiRoutes(api, psiRepo, adminRepo, nil, analyticsSvc, nil)
+	router.SetupPsiRoutes(api, psiRepo, adminRepo, nil, analyticsSvc, nil, nil)
 	router.SetupSpecialtyRoutes(api, psiRepo, adminRepo, specialtyRepo, analyticsSvc)
 	router.SetupPostRoutes(api, adminRepo, psiRepo, postRepo, nil, analyticsSvc)
 

@@ -47,9 +47,12 @@ swag init -g cmd/api/main.go -o docs/   # regenerar Swagger
    que la ruta no exista.
 
 2. **`S3_ENDPOINT` ≠ `S3_PUBLIC_URL`** — son intencionalmente distintos.
-   - `S3_ENDPOINT`: interno, para el SDK (en Docker: `http://s3:9000`).
+   - `S3_ENDPOINT`: interno, para el SDK, debe apuntar SIEMPRE directo a MinIO
+     (en Docker: `http://s3:9000`; en dev local: `http://localhost:9002`).
+     NUNCA apuntarlo al puerto 9000 del host: ahí vive el edge cache nginx
+     (`imgcache`) y las firmas S3 v4 se rompen al pasar por el proxy (403).
    - `S3_PUBLIC_URL`: pública, para URLs que renderiza el navegador
-     (en Docker: `http://localhost:9000`).
+     (en Docker: `http://localhost:9000`, servida por nginx).
    `GetPublicURL()` (`pkg/s3/s3.go`) usa SOLO la pública; nunca cambies esa
    función para usar el endpoint interno. No hardcodear hosts de imágenes.
 

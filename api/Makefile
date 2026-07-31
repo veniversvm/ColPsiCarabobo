@@ -1,4 +1,4 @@
-.PHONY: test test-unit test-repo test-integration test-security test-all test-race test-bench coverage coverage-html
+.PHONY: test test-unit test-repo test-integration test-security test-all test-race test-bench coverage coverage-html backfill-cache backfill-cache-dry
 
 # ─── Test DB ─────────────────────────────────────────────────────────────
 TEST_DB_DSN ?= host=localhost port=5433 user=postgres password=postgres dbname=colpsi_test sslmode=disable
@@ -51,3 +51,14 @@ coverage:
 coverage-html: coverage
 	go tool cover -html=coverage.out -o coverage.html
 	@echo "▸ HTML report: coverage.html"
+
+# ─── Backfill Cache-Control (objetos ya existentes en S3/MinIO) ───────────
+# Reescribe el metadata Cache-Control de los objetos subidos antes del cambio
+# de pkg/s3/upload.go. Usa --dry-run para previsualizar sin escribir.
+backfill-cache:
+	@echo "▸ Backfilling Cache-Control on existing S3 objects..."
+	go run ./cmd/exp/backfill-cache
+
+backfill-cache-dry:
+	@echo "▸ Backfill (dry-run) — no se escribirá nada..."
+	go run ./cmd/exp/backfill-cache --dry-run

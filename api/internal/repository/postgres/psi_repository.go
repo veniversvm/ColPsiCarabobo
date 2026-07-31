@@ -511,7 +511,7 @@ func (r *psiRepo) SearchDirectory(ctx context.Context, filter request_structs.Ps
 
 	// 1. Base: Siempre ACTIVOS
 	query := r.db.WithContext(ctx).Model(&domain.PsiUserModel{}).
-		Select("id, first_name, last_name, ci, fpv, profile_picture_s3_key, mini_bio, solvent, primary_work_area, secondary_work_area, primary_specialty_id, secondary_specialty_id").
+		Select("id, first_name, last_name, ci, fpv, profile_picture_s3_key, mini_bio, solvent, primary_work_area, secondary_work_area, primary_specialty_id, secondary_specialty_id, updated_at").
 		Where("is_active = ?", true)
 
 	// 2. Lógica de Búsqueda por Identidad
@@ -700,17 +700,17 @@ func (r *psiRepo) GetPostGradeByID(ctx context.Context, id uuid.UUID) (*domain.P
 // Utiliza Updates() con mapa explícito para proteger booleanos e int contra zero-values.
 func (r *psiRepo) UpdatePostGrade(ctx context.Context, pg *domain.PsiUserPostGrade) error {
 	return r.db.WithContext(ctx).Model(pg).Updates(map[string]interface{}{
-		"type":            pg.Type,
-		"title":           pg.Title,
-		"university":      pg.University,
-		"graduation_year": pg.GraduationYear,
-		"description":     pg.Description,
-		"active":          gorm.Expr("?", pg.Active),
-		"pic_one_s3_key":  pg.PicOneS3Key,
-		"pic_two_s3_key":  pg.PicTwoS3Key,
+		"type":             pg.Type,
+		"title":            pg.Title,
+		"university":       pg.University,
+		"graduation_year":  pg.GraduationYear,
+		"description":      pg.Description,
+		"active":           gorm.Expr("?", pg.Active),
+		"pic_one_s3_key":   pg.PicOneS3Key,
+		"pic_two_s3_key":   pg.PicTwoS3Key,
 		"pic_three_s3_key": pg.PicThreeS3Key,
-		"update_by":       pg.UpdateBy,
-		"update_by_id":    pg.UpdateById,
+		"update_by":        pg.UpdateBy,
+		"update_by_id":     pg.UpdateById,
 	}).Error
 }
 
@@ -764,10 +764,10 @@ func (r *psiRepo) GetSocialNetworkByID(ctx context.Context, id uuid.UUID) (*doma
 // Utiliza Updates() con mapa explícito para proteger el booleano IsActive contra zero-values.
 func (r *psiRepo) UpdateSocialNetwork(ctx context.Context, sn *domain.PsiUserSocialNetwork) error {
 	return r.db.WithContext(ctx).Model(sn).Updates(map[string]interface{}{
-		"name":        sn.Name,
-		"url":         sn.URL,
-		"is_active":   gorm.Expr("?", sn.IsActive),
-		"update_by":   sn.UpdateBy,
+		"name":         sn.Name,
+		"url":          sn.URL,
+		"is_active":    gorm.Expr("?", sn.IsActive),
+		"update_by":    sn.UpdateBy,
 		"update_by_id": sn.UpdateById,
 	}).Error
 }

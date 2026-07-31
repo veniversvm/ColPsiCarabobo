@@ -104,6 +104,8 @@ export function AvatarUploader(props: AvatarUploaderProps) {
                     src={previewUrl()!}
                     class="w-full h-full object-cover transition-transform group-hover:scale-110"
                     alt={fullName()}
+                    loading="lazy"
+                    decoding="async"
                   />
                 </Show>
               </div>

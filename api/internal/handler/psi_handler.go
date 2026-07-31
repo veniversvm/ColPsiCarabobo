@@ -2,11 +2,13 @@
 package handler
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"mime/multipart"
 	"strconv"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -14,19 +16,34 @@ import (
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/middleware"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/request_structs"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/service"
+	"github.com/veniversvm/ColPsiCarabobo/api/pkg/cache"
 )
 
 // PsiHandler handles HTTP requests related to psychologist profiles and self-management.
 type PsiHandler struct {
 	service   *service.PsiService
 	analytics *service.AnalyticsService // 👈 NUEVO
+	cache     *cache.Cache              // caché del directorio público (nil = desactivada)
 }
 
 // NewPsiHandler creates a new PsiHandler with the given services.
-func NewPsiHandler(svc *service.PsiService, analytics *service.AnalyticsService) *PsiHandler {
-	return &PsiHandler{
+// El parámetro cache es opcional (variádico): si no se provee, la caché queda desactivada.
+func NewPsiHandler(svc *service.PsiService, analytics *service.AnalyticsService, caches ...*cache.Cache) *PsiHandler {
+	h := &PsiHandler{
 		service:   svc,
 		analytics: analytics, // 👈 NUEVO
+	}
+	if len(caches) > 0 {
+		h.cache = caches[0]
+	}
+	return h
+}
+
+// invalidateDirectory invalida el caché del directorio público. Debe llamarse
+// tras cualquier mutación de psicólogos (crear, actualizar, eliminar, CSV).
+func (h *PsiHandler) invalidateDirectory() {
+	if h.cache != nil {
+		h.cache.Invalidate("directory")
 	}
 }
 
@@ -62,6 +79,10 @@ func (h *PsiHandler) UploadCsv(c *fiber.Ctx) error {
 	defer src.Close()
 
 	success, failed_records := h.service.ImportFromCSV(c.UserContext(), src, admin.ID)
+
+	if success > 0 {
+		h.invalidateDirectory()
+	}
 
 	return c.JSON(fiber.Map{
 		"imported": success,
@@ -124,6 +145,8 @@ func (h *PsiHandler) UpdateOwnProfile(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
+	h.invalidateDirectory()
+
 	return c.JSON(fiber.Map{
 		"message": "Perfil actualizado correctamente",
 		"id":      profile.ID,
@@ -151,9 +174,34 @@ func (h *PsiHandler) SearchDirectory(c *fiber.Ctx) error {
 
 	filter = request_structs.SanitizeDirectoryFilter(filter)
 
+	// ── Caché del directorio ─────────────────────────────────────────────────
+	// La clave incluye la generación del namespace: cualquier mutación de
+	// psicólogos (PATCH/POST/DELETE) invalida el directorio al instante.
+	const (
+		directoryNamespace = "directory"
+		directoryTTL       = 60 * time.Second
+	)
+
+	var sub string
+	if h.cache != nil {
+		sub = h.cache.GenKey(directoryNamespace, fmt.Sprintf("%+v", filter))
+		if raw, ok := h.cache.Get(directoryNamespace, sub); ok {
+			c.Set("Content-Type", "application/json")
+			return c.Send(raw)
+		}
+	}
+	// ─────────────────────────────────────────────────────────────────────────
+
 	result, err := h.service.GetPublicDirectory(c.UserContext(), filter)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Error interno en la búsqueda"})
+	}
+
+	// Guardar resultado en caché para los próximos requests
+	if h.cache != nil {
+		if raw, mErr := json.Marshal(result); mErr == nil {
+			h.cache.Set(directoryNamespace, sub, raw, directoryTTL)
+		}
 	}
 
 	// ── Analytics: registrar búsqueda ────────────────────────────────────────

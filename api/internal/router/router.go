@@ -11,6 +11,7 @@ import (
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/middleware"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/repository/postgres"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/service"
+	"github.com/veniversvm/ColPsiCarabobo/api/pkg/cache"
 	"github.com/veniversvm/ColPsiCarabobo/api/pkg/s3"
 	"gorm.io/gorm"
 
@@ -20,7 +21,7 @@ import (
 )
 
 // SetupRouter initializes all API routes, middleware, and dependency injection.
-func SetupRouter(app *fiber.App, db *gorm.DB, s3Client *s3.S3Client) {
+func SetupRouter(app *fiber.App, db *gorm.DB, s3Client *s3.S3Client, appCache *cache.Cache) {
 
 	// ── Analytics: instanciar repo, servicio y registrar middleware global ────
 	analyticsRepo := postgres.NewAnalyticsRepository(db)
@@ -50,7 +51,7 @@ func SetupRouter(app *fiber.App, db *gorm.DB, s3Client *s3.S3Client) {
 
 	// Rutas de dominio — se pasan repos, analyticsSvc y mailSvc
 	SetupAdminRoutes(api, adminRepo, psiRepo, analyticsSvc, mailSvc)
-	SetupPsiRoutes(api, psiRepo, adminRepo, s3Client, analyticsSvc, mailSvc)
+	SetupPsiRoutes(api, psiRepo, adminRepo, s3Client, analyticsSvc, mailSvc, appCache)
 	SetupSpecialtyRoutes(api, psiRepo, adminRepo, specialtyRepo, analyticsSvc)
 	SetupPostRoutes(api, adminRepo, psiRepo, postRepo, s3Client, analyticsSvc)
 

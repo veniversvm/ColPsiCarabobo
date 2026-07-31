@@ -62,6 +62,12 @@ func (s *PsiService) UpdateProfileSelf(
 			return nil, err
 		}
 		uploadedS3Keys = append(uploadedS3Keys, newKey)
+		if psi.ProfilePictureS3Key != "" && psi.ProfilePictureS3Key == newKey {
+			// La key del avatar es estable (avatars/{psiID}.webp): la subida la sobrescribe
+			// in-place. No debe tratarse como un objeto nuevo, porque si la persistencia
+			// falla el rollback la borraría dejando la URL que la DB ya referencia en 404.
+			uploadedS3Keys = uploadedS3Keys[:len(uploadedS3Keys)-1]
+		}
 		if psi.ProfilePictureS3Key != "" && psi.ProfilePictureS3Key != newKey {
 			oldS3KeysToDelete = append(oldS3KeysToDelete, psi.ProfilePictureS3Key)
 		}

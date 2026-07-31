@@ -56,6 +56,8 @@ export function PsychologistCard(props: PsychologistCardProps) {
               src={bucketUrl(psychologist.profile_picture)} 
               alt={fullName}
               class="w-full h-full object-cover" 
+              loading="lazy"
+              decoding="async"
             />
           </Show>
         </div>

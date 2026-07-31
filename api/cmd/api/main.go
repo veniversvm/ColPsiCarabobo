@@ -25,6 +25,7 @@ import (
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/router"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/service"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/utils"
+	"github.com/veniversvm/ColPsiCarabobo/api/pkg/cache"
 	"github.com/veniversvm/ColPsiCarabobo/api/pkg/database"
 	"github.com/veniversvm/ColPsiCarabobo/api/pkg/s3"
 
@@ -146,6 +147,9 @@ func main() {
 	}()
 	// ─────────────────────────────────────────────────────────────────────────
 
+	// 5.5 CACHÉ COMPARTIDA (Valkey o in-memory) para el directorio público
+	appCache := cache.New(config.Envs.ValkeyAddr)
+
 	// 6. INICIALIZACIÓN DE FIBER
 	app := fiber.New(fiber.Config{
 		AppName:           "ColPsiCarabobo API v1.0",
@@ -200,7 +204,7 @@ func main() {
 	// 8. RUTAS
 	// =========================================================================
 
-	router.SetupRouter(app, db, s3Client)
+	router.SetupRouter(app, db, s3Client, appCache)
 
 	app.Use(func(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{

@@ -1,6 +1,9 @@
 package service
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
@@ -34,7 +37,7 @@ func (s *PsiService) ResolvePsiModelURLs(psi *domain.PsiUserModel) {
 	if s.s3Client == nil || psi == nil {
 		return
 	}
-	psi.ProfilePictureS3Key = s.s3Client.GetPublicURL(psi.ProfilePictureS3Key)
+	psi.ProfilePictureS3Key = s.avatarURL(psi.ProfilePictureS3Key, psi.UpdatedAt)
 	if psi.ColData.PsiUserModelID != uuid.Nil {
 		psi.ColData.TitleImageOneS3Key = s.s3Client.GetPublicURL(psi.ColData.TitleImageOneS3Key)
 		psi.ColData.TitleImageTwoS3Key = s.s3Client.GetPublicURL(psi.ColData.TitleImageTwoS3Key)
@@ -54,4 +57,18 @@ func (s *PsiService) publicURL(key string) string {
 		return key
 	}
 	return s.s3Client.GetPublicURL(key)
+}
+
+// avatarURL resuelve la URL pública del avatar con cache-busting (?v=updated_at).
+// Al actualizarse la foto de perfil, updated_at cambia → la URL cambia → el navegador
+// descarta la copia cacheada de la imagen anterior automáticamente.
+func (s *PsiService) avatarURL(key string, updatedAt time.Time) string {
+	if key == "" {
+		return ""
+	}
+	url := s.publicURL(key)
+	if !updatedAt.IsZero() {
+		url = fmt.Sprintf("%s?v=%d", url, updatedAt.Unix())
+	}
+	return url
 }

@@ -92,6 +92,8 @@ func (h *PsiHandler) CreatePsiByAdmin(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
+	h.invalidateDirectory()
+
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "Psicólogo registrado con éxito"})
 }
 
@@ -148,6 +150,9 @@ func (h *PsiHandler) UpdatePsiByAdmin(c *fiber.Ctx) error {
 	); err != nil {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": err.Error()})
 	}
+
+	h.invalidateDirectory()
+
 	return c.JSON(fiber.Map{"message": "Perfil actualizado por administración"})
 }
 
@@ -176,6 +181,9 @@ func (h *PsiHandler) DeletePsiByAdmin(c *fiber.Ctx) error {
 	if err := h.service.DeletePsiByAdmin(c.UserContext(), admin, targetID); err != nil {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": err.Error()})
 	}
+
+	h.invalidateDirectory()
+
 	return c.JSON(fiber.Map{"message": "Psicólogo eliminado correctamente"})
 }
 
