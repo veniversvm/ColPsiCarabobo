@@ -2,6 +2,7 @@
 import { Show, createSignal } from "solid-js";
 import { Portal } from "solid-js/web"; // Importante para renderizar el modal sobre todo el DOM
 import QRCodeGenerator from "./QrCode";
+import { bucketUrl } from "~/lib/bucket";
 
 interface AvatarUploaderProps {
   url: string;
@@ -19,8 +20,6 @@ interface AvatarUploaderProps {
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/jpg"];
-const BUCKET_URL =
-  import.meta.env.VITE_BUCKET_URL || "";
 
 export function AvatarUploader(props: AvatarUploaderProps) {
   // ── ESTADO DEL MODAL ──
@@ -42,7 +41,7 @@ export function AvatarUploader(props: AvatarUploaderProps) {
       return URL.createObjectURL(props.avatarFile);
     }
     return props.currentAvatarUrl
-      ? `${BUCKET_URL}/${props.currentAvatarUrl}`
+      ? bucketUrl(props.currentAvatarUrl)
       : null;
   };
 

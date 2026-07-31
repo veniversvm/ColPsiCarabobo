@@ -82,6 +82,8 @@ services:
       - DB_HOST=pgbouncer
       - DB_PORT=5432
       - S3_ENDPOINT=http://s3:9000
+      # Pública: accesible desde el navegador (endpoint/bucket)
+      - S3_PUBLIC_URL=http://localhost:9000
       - VALKEY_ADDR=valkey:6379
       - PORT=8080
     networks:

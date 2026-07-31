@@ -28,7 +28,8 @@ type Config struct {
 	// S3 Configuration (AWS S3 o MinIO)
 	S3Bucket    string // Nombre del bucket para almacenamiento de archivos
 	S3Region    string // Región geográfica del servicio de almacenamiento
-	S3Endpoint  string // URL personalizada (necesario para MinIO en desarrollo)
+	S3Endpoint  string // URL del endpoint interno (MinIO en desarrollo) para el SDK
+	S3PublicURL string // URL pública accesible desde el navegador (endpoint/bucket)
 	S3AccessKey string // Credencial de acceso (Access Key ID)
 	S3SecretKey string // Credencial secreta (Secret Access Key)
 
@@ -90,6 +91,7 @@ func InitConfig() {
 		S3Bucket:    getEnv("AWS_S3_BUCKET", "colpsi-bucket"),
 		S3Region:    getEnv("AWS_REGION", "us-east-1"),
 		S3Endpoint:  getEnv("S3_ENDPOINT", "http://localhost:9000"),
+		S3PublicURL: getEnv("S3_PUBLIC_URL", "http://localhost:9000"),
 		S3AccessKey: getEnv("AWS_ACCESS_KEY_ID", "minioadmin"),
 		S3SecretKey: getEnv("AWS_SECRET_ACCESS_KEY", "minioadmin"),
 

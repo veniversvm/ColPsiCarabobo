@@ -4,6 +4,7 @@ import { useParams, useLocation, A } from "@solidjs/router";
 import { apiGet, ApiError } from "~/lib/api";
 import { Meta, Title, Link } from "@solidjs/meta";
 import { sanitizeHtml } from "~/lib/sanitize-html";
+import { bucketUrl as imgUrl } from "~/lib/bucket";
 
 export const ssr = true;
 
@@ -18,9 +19,7 @@ interface PostDetail {
   text: { id: string; content: string };
 }
 
-const BUCKET_URL = import.meta.env.VITE_BUCKET_URL || "";
 const SITE_URL = import.meta.env.VITE_SITE_URL || "https://colpsi-carabobo.org";
-const imgUrl = (key: string) => (key ? `${BUCKET_URL}/${key}` : "");
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString("es-VE", { day: "numeric", month: "long", year: "numeric" });

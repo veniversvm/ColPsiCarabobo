@@ -3,6 +3,7 @@ import { createSignal, For, Show, onMount, onCleanup } from "solid-js";
 import { A } from "@solidjs/router";
 import { apiGet } from "~/lib/api";
 import { LoadingScreen } from "~/components/ui/LoadingScreen";
+import { bucketUrl as imgUrl } from "~/lib/bucket";
 
 interface Post {
   id: string;
@@ -18,9 +19,6 @@ interface PaginatedPosts {
   page: number;
   total: number;
 }
-
-const BUCKET_URL = import.meta.env.VITE_BUCKET_URL || "";
-const imgUrl = (key: string) => key ? `${BUCKET_URL}/${key}` : "";
 
 const toSlug = (title: string, id: string) => {
   const slugTitle = title

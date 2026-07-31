@@ -57,13 +57,14 @@ func ConnectS3(ctx context.Context) (*S3Client, error) {
 }
 
 // GetPublicURL construye la URL pública completa de un objeto almacenado en S3/MinIO.
-// Utiliza el formato Path-Style: {endpoint}/{bucket}/{key}
+// Utiliza el formato Path-Style: {publicUrl}/{bucket}/{key}
+// Usa S3PublicURL (accesible desde el navegador), no el endpoint interno del SDK.
 // Retorna string vacío si la key está vacía (previene URLs rotas).
 func (s *S3Client) GetPublicURL(key string) string {
 	if key == "" {
 		return ""
 	}
-	return fmt.Sprintf("%s/%s/%s", appConfig.Envs.S3Endpoint, s.Bucket, key)
+	return fmt.Sprintf("%s/%s/%s", appConfig.Envs.S3PublicURL, s.Bucket, key)
 }
 
 // VerifyConnection realiza una verificación de disponibilidad del bucket.

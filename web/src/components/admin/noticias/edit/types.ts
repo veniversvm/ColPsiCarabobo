@@ -1,4 +1,5 @@
 // web/src/components/admin/noticias/edit/types.ts
+import { bucketUrl } from "~/lib/bucket";
 export type PostStatus = "draft" | "published" | "archived" | "scheduled";
 
 export interface PostDetail {
@@ -26,8 +27,7 @@ export const STATUS_BADGE: Record<PostStatus, string> = {
   scheduled: "bg-purple-100 text-purple-700",
 };
 
-export const BUCKET_URL = import.meta.env.VITE_BUCKET_URL || "";
-export const imgUrl = (key: string) => (key ? `${BUCKET_URL}/${key}` : "");
+export const imgUrl = (key: string) => bucketUrl(key);
 
 export const IC = "w-full bg-white border-2 border-gray-200 focus:border-blue-500 rounded-xl px-4 py-2.5 outline-none transition-all text-gray-800 text-sm";
 export const labelClass = "block text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1";

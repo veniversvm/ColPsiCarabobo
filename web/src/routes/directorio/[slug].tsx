@@ -19,8 +19,7 @@ import { FullBioModal } from "~/components/directory/FullBioModal";
 export const ssr = true;
 
 const SITE_URL = import.meta.env.VITE_SITE_URL || "http://localhost:3000";
-const BUCKET_URL = import.meta.env.VITE_BUCKET_URL || "";
-const imgUrl = (key: string) => (key ? `${BUCKET_URL}/${key}` : "");
+const imgUrl = bucketUrl;
 
 // ✅ Server function para obtener el perfil desde la API
 async function fetchProfile(fpv: string): Promise<PsiProfile | null> {

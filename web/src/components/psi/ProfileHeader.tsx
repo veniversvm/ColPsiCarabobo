@@ -3,9 +3,7 @@
 import { Show, For, createSignal } from "solid-js";
 import { Portal } from "solid-js/web";
 import QRCodeGenerator from "./profile/QrCode";
-
-// ── Variable de entorno con fallback al entorno de desarrollo ──
-const BUCKET_URL = import.meta.env.VITE_BUCKET_URL || "";
+import { bucketUrl } from "~/lib/bucket";
 
 interface ProfileHeaderProps {
   firstName: string;
@@ -29,7 +27,7 @@ export function ProfileHeader(props: ProfileHeaderProps) {
     .join(" ");
 
   // Helper para la URL de la imagen
-  const imageUrl = () => props.profilePicture ? `${BUCKET_URL}/${props.profilePicture}` : null;
+  const imageUrl = () => props.profilePicture ? bucketUrl(props.profilePicture) : null;
 
   return (
     <>
