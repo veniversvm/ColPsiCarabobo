@@ -1,7 +1,6 @@
 // web/src/components/admin/psicologos/edit/EditPageHeader.tsx
 
 import { Show } from "solid-js";
-import { bucketUrl } from "~/lib/bucket";
 import { useNavigate } from "@solidjs/router";
 import type { PsiProfile } from "./types";
 
@@ -21,13 +20,6 @@ export function EditPageHeader(props: Props) {
         >
           ←
         </button>
-        <Show when={props.profile?.profile_picture_url}>
-          <img
-            src={bucketUrl(props.profile?.profile_picture_url)}
-            class="w-14 h-14 rounded-2xl object-cover border-2 border-gray-100 shadow"
-            alt="Foto de perfil"
-          />
-        </Show>
         <div>
           <h1 class="text-2xl font-black text-blue-800 uppercase">Expediente de Colegiado</h1>
           <p class="text-gray-500 text-sm font-bold tracking-widest mt-0.5">

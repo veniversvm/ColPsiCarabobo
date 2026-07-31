@@ -124,6 +124,7 @@ CREATE TABLE "psi_users" (
   "second_name" character varying(255) NULL,
   "last_name" character varying(255) NOT NULL,
   "second_last_name" character varying(255) NULL,
+  "control_number" character varying(50) NULL,
   "fpv" bigint NOT NULL,
   "ci" bigint NOT NULL,
   "nationality" character varying(1) NOT NULL,
@@ -403,6 +404,7 @@ CREATE UNIQUE INDEX "idx_user_admins_unique_sudo"
 -- psi_users: Identificadores únicos
 CREATE UNIQUE INDEX "idx_psi_users_ci" ON "psi_users" ("ci");
 CREATE UNIQUE INDEX "idx_psi_users_fpv" ON "psi_users" ("fpv");
+CREATE UNIQUE INDEX "idx_psi_users_control_number" ON "psi_users" ("control_number") WHERE ((control_number IS NOT NULL) AND (control_number <> ''::character varying) AND (deleted_at IS NULL));
 
 -- psi_user_col_data: Relación 1:1 con psi_users
 CREATE UNIQUE INDEX "idx_psi_user_col_data_psi_user_model_id"

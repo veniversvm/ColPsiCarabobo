@@ -38,6 +38,7 @@ func SetupPsiRoutes(router fiber.Router, psiRepo domain.PsiUserRepository, admin
 
 	adminGroup.Post("/upload-csv", h.UploadCsv)
 	adminGroup.Get("/:id<uuid>", h.GetPsiByIDAdmin)
+	adminGroup.Delete("/:id/picture", h.DeleteProfilePictureByAdmin)
 	adminGroup.Patch("/:id", h.UpdatePsiByAdmin)
 	adminGroup.Delete("/:id", h.DeletePsiByAdmin)
 

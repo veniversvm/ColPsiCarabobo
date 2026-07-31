@@ -2,6 +2,7 @@
 
 import { Show, createMemo } from "solid-js";
 import QRCodeGenerator from "~/components/psi/profile/QrCode";
+import { bucketUrl } from "~/lib/bucket";
 import { Field, IC, SectionCard } from "../EditPrimitives";
 import type { EditFormState } from "../types";
 
@@ -12,6 +13,9 @@ interface Props {
   // --- Nuevas Props para archivos ---
   avatarFile: File | null;
   onAvatarChange: (file: File | null) => void;
+  // --- Foto actual en la DB (URL pública) y acción de eliminación ---
+  pictureUrl: string;
+  onDeletePicture: () => void;
 }
 
 export function AccountSection(props: Props) {
@@ -20,9 +24,7 @@ export function AccountSection(props: Props) {
     if (props.avatarFile) {
       return URL.createObjectURL(props.avatarFile);
     }
-    // Si no hay archivo nuevo, intentar mostrar la foto actual de la DB
-    // Nota: Ajusta 'profile_picture_url' según el nombre que venga en tu objeto de perfil
-    return (props.form as any).profile_picture_url || ""; 
+    return bucketUrl(props.pictureUrl) || "";
   });
 
   const handleFileChange = (e: Event) => {
@@ -69,6 +71,15 @@ export function AccountSection(props: Props) {
           <p class="text-[9px] text-gray-400 font-medium max-w-[120px] text-center">
             Formatos: JPG, PNG. Máx 2MB.
           </p>
+          <Show when={previewUrl() && !props.avatarFile}>
+            <button
+              onClick={() => props.onDeletePicture()}
+              class="text-[10px] font-black uppercase tracking-widest bg-red-50 text-red-600 border border-red-200 rounded-lg px-3 py-1.5 hover:bg-red-100 transition-colors"
+              title="Eliminar la foto de perfil del psicólogo"
+            >
+              🗑 Eliminar foto
+            </button>
+          </Show>
         </div>
 
         {/* 2. Inputs de Cuenta */}
@@ -90,10 +101,10 @@ export function AccountSection(props: Props) {
             />
           </Field>
           
-          <div class="md:col-span-2 p-5 bg-blue-50/50 rounded-2xl border border-blue-100 mt-2">
-            <p class="text-[11px] text-blue-700 leading-relaxed">
-              <span class="font-black uppercase mr-1">Aviso:</span> 
-              Cualquier cambio en el Email o Username afectará las credenciales de acceso del psicólogo. 
+          <div class="md:col-span-2 p-6 bg-blue-50/50 rounded-2xl border border-blue-100 mt-2">
+            <p class="text-sm text-blue-700 leading-relaxed">
+              <span class="font-black uppercase mr-1">Aviso:</span>
+              Cualquier cambio en el Email o Username afectará las credenciales de acceso del psicólogo.
               Si el usuario está logueado, su sesión se invalidará.
             </p>
           </div>

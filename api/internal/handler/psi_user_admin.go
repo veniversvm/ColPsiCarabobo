@@ -156,6 +156,37 @@ func (h *PsiHandler) UpdatePsiByAdmin(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"message": "Perfil actualizado por administración"})
 }
 
+// DeleteProfilePictureByAdmin godoc
+// @Summary      Eliminar foto de perfil de un psicólogo
+// @Description  Elimina el avatar del psicólogo: borra el objeto de S3 y limpia la referencia en la base de datos.
+// @Tags         Administración - Psicólogos
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id path string true "UUID del Psicólogo"
+// @Success      200 {object} map[string]string "message: Foto de perfil eliminada"
+// @Failure      400 {object} map[string]string "error: ID inválido"
+// @Failure      401 {object} map[string]string "error: No autorizado"
+// @Failure      403 {object} map[string]string "error: Permisos insuficientes"
+// @Router       /admin/psi/{id}/picture [delete]
+func (h *PsiHandler) DeleteProfilePictureByAdmin(c *fiber.Ctx) error {
+	admin, err := middleware.GetAuthenticatedAdmin(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
+	}
+	targetID, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ID de psicólogo inválido"})
+	}
+
+	if err := h.service.DeleteProfilePictureByAdmin(c.UserContext(), admin, targetID); err != nil {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	h.invalidateDirectory()
+
+	return c.JSON(fiber.Map{"message": "Foto de perfil eliminada"})
+}
+
 // DeletePsiByAdmin godoc
 // @Summary      Eliminar psicólogo (Soft Delete)
 // @Description  Marca a un psicólogo como eliminado. El registro permanece en la base de datos para auditoría legal pero queda invisible en el sistema.

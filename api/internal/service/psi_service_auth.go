@@ -52,8 +52,10 @@ func (s *PsiService) Login(ctx context.Context, identifier, password string) (st
 		"LoginTime": time.Now().Format(time.RFC1123),
 	}
 
-	if err := s.mailService.SendEmail(psi.Email, "Colegio de Psicólogos de Carabobo - Inicio de sesión en la plataforma.", "login_psi", mailData); err != nil {
-		log.Warn().Err(err).Str("component", "psi_service_auth").Msg("Error al preparar el correo (pero el psicólogo se logueó)")
+	if s.mailService != nil {
+		if err := s.mailService.SendEmail(psi.Email, "Colegio de Psicólogos de Carabobo - Inicio de sesión en la plataforma.", "login_psi", mailData); err != nil {
+			log.Warn().Err(err).Str("component", "psi_service_auth").Msg("Error al preparar el correo (pero el psicólogo se logueó)")
+		}
 	}
 
 	signed, err := token.SignedString([]byte(newKey))

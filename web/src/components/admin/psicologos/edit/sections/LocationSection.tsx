@@ -1,6 +1,8 @@
 // web/src/components/admin/psicologos/edit/sections/LocationSection.tsx
 
+import { Show } from "solid-js";
 import { ToggleSwitch } from "~/components/ui/ToggleSwitch";
+import { MUNICIPIOS_CARABOBO, ESTADOS_VENEZUELA } from "~/lib/geo";
 import { Field, IC, SectionCard } from "../EditPrimitives";
 import type { EditFormState } from "../types";
 
@@ -10,6 +12,12 @@ interface Props {
 }
 
 export function LocationSection(props: Props) {
+  const hasLegacyMunicipio = () =>
+    props.form.municipality_carabobo &&
+    !MUNICIPIOS_CARABOBO.includes(props.form.municipality_carabobo);
+  const hasLegacyEstado = () =>
+    props.form.state_outside && !ESTADOS_VENEZUELA.includes(props.form.state_outside);
+
   return (
     <SectionCard title="Ubicación Geográfica y Privacidad" accent="border-indigo-400">
       <div class="space-y-12">
@@ -24,9 +32,21 @@ export function LocationSection(props: Props) {
           
           <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
             <Field label="Municipio">
-              <input type="text" value={props.form.municipality_carabobo}
-                onInput={(e) => props.setForm("municipality_carabobo", e.currentTarget.value)} class={IC} 
-                placeholder="Ej: Valencia" />
+              <select
+                value={props.form.municipality_carabobo}
+                onChange={(e) => props.setForm("municipality_carabobo", e.currentTarget.value)}
+                class={IC}
+              >
+                <option value="">Seleccionar municipio…</option>
+                {MUNICIPIOS_CARABOBO.map((m) => (
+                  <option value={m}>{m}</option>
+                ))}
+                <Show when={hasLegacyMunicipio()}>
+                  <option value={props.form.municipality_carabobo}>
+                    {props.form.municipality_carabobo} (no estándar)
+                  </option>
+                </Show>
+              </select>
             </Field>
             <Field label="Teléfono Fijo">
               <input type="tel" value={props.form.phone_carabobo}
@@ -64,9 +84,21 @@ export function LocationSection(props: Props) {
           
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
             <Field label="Estado">
-              <input type="text" value={props.form.state_outside}
-                onInput={(e) => props.setForm("state_outside", e.currentTarget.value)} class={IC} 
-                placeholder="Ej: Aragua" />
+              <select
+                value={props.form.state_outside}
+                onChange={(e) => props.setForm("state_outside", e.currentTarget.value)}
+                class={IC}
+              >
+                <option value="">Seleccionar estado…</option>
+                {ESTADOS_VENEZUELA.map((e) => (
+                  <option value={e}>{e}</option>
+                ))}
+                <Show when={hasLegacyEstado()}>
+                  <option value={props.form.state_outside}>
+                    {props.form.state_outside} (no estándar)
+                  </option>
+                </Show>
+              </select>
             </Field>
             <Field label="Ciudad / Municipio">
               <input type="text" value={props.form.municipality_outside_carabobo}

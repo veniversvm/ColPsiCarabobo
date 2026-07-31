@@ -125,7 +125,7 @@ func (s *PsiService) CreatePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 	psi := createPsiUSerModel(req, psiID, audit_moodel, hashed, municipioCarabobo, estadoOutside, bornDate)
 
 	//── Solvencias ────────────────────────────────────────────
-	solvencies := createSolvencieModel(solvDate, psi.ID, audit_moodel)
+	solvencies := buildSolvencyHistory(solvDate, 0, psi.ID, audit_moodel)
 
 	//── Datos colegiales ────────────────────────────────────────────
 	colData := createColdata(req, psiID, colDataID, audit_moodel, gradDate, regDate, solvDate)
@@ -143,8 +143,10 @@ func (s *PsiService) CreatePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 		"Email":    psi.Email,
 		"Password": req.Password,
 	}
-	if err := s.mailService.SendEmail(psi.Email, "Bienvenido", "welcome_psi", mailData); err != nil {
-		log.Warn().Err(err).Str("component", "psi_user_admin_service").Msg("Error al enviar correo de bienvenida (psi creado correctamente)")
+	if s.mailService != nil {
+		if err := s.mailService.SendEmail(psi.Email, "Bienvenido", "welcome_psi", mailData); err != nil {
+			log.Warn().Err(err).Str("component", "psi_user_admin_service").Msg("Error al enviar correo de bienvenida (psi creado correctamente)")
+		}
 	}
 
 	return nil
@@ -720,6 +722,46 @@ func (s *PsiService) UpdatePsiByAdmin(
 }
 
 // =========================================================================
+// ELIMINACIÓN DE IMAGEN DE PERFIL (ADMIN)
+// =========================================================================
+
+// DeleteProfilePictureByAdmin elimina la foto de perfil de un psicólogo:
+// borra el objeto del bucket S3 y limpia la referencia en la base de datos.
+// Es idempotente por diseño: si el psicólogo no tiene foto, no falla.
+func (s *PsiService) DeleteProfilePictureByAdmin(ctx context.Context, admin *domain.UserAdmin, targetID uuid.UUID) error {
+	// 1. Validación de permisos (RBAC)
+	if !admin.CanUpdatePsi && !admin.Sudo {
+		return errors.New("no tienes permiso para editar registros de psicólogos")
+	}
+
+	// 2. Obtener registro actual
+	psi, err := s.repo.GetByID(ctx, targetID)
+	if err != nil {
+		return fmt.Errorf("error al recuperar el psicólogo: %w", err)
+	}
+
+	// 3. Sin foto: no-op
+	if psi.ProfilePictureS3Key == "" {
+		return nil
+	}
+
+	// 4. Eliminar el objeto del bucket (best-effort: el fallo se loguea pero no
+	//    bloquea la limpieza de la DB; el avatar tiene key estable y se sobrescribe).
+	if err := s.s3Client.DeleteFile(ctx, psi.ProfilePictureS3Key); err != nil {
+		log.Warn().Err(err).Str("component", "psi_user_admin_service").
+			Str("key", psi.ProfilePictureS3Key).
+			Msg("No se pudo eliminar el objeto de avatar en S3")
+	}
+
+	// 5. Limpiar la referencia en la DB
+	psi.ProfilePictureS3Key = ""
+	psi.UpdateBy = admin.Username
+	psi.UpdateById = &admin.ID
+
+	return s.repo.Update(ctx, psi, nil, nil, nil)
+}
+
+// =========================================================================
 // DESTRUCCIÓN LÓGICA (SOFT DELETE)
 // =========================================================================
 
@@ -804,28 +846,42 @@ func (s *PsiService) GetAdminDirectory(ctx context.Context, admin *domain.UserAd
 // de objetos del dominio, previniendo que la función principal de registro
 // (CreatePsiByAdmin) se convierta en un monolito inmanejable.
 
-func createSolvencieModel(date time.Time, userId uuid.UUID, audit_moodel domain.AuditModel) domain.PsiUserSolvency {
-	currentYear := date.Year()
-	nowYear := time.Now().Year()
-
-	// Validaciones de Consistencia de Datos
-	if currentYear > nowYear {
-		log.Warn().Int("year", currentYear).Str("component", "psi_admin").Msg("Solvency year is in the future")
-		return domain.PsiUserSolvency{}
+// buildSolvencyHistory genera el historial anual de solvencias desde el año de
+// colegiatura (mínimo 2024) hasta el año de la última solvencia conocida.
+// Cada registro se fecha el 31 de diciembre de su año (convención del Colegio).
+//
+// Consistencia:
+//   - Sin fecha de última solvencia → slice vacío (sin historial).
+//   - Año de solvencia previo a 2024 o posterior al año actual → slice vacío
+//     (datos inconsistentes, no se siembra historial).
+//   - `guildInscriptionYear` es la fecha de colegiatura; si es 0 o menor a 2024
+//     se toma 2024 como límite inferior.
+func buildSolvencyHistory(lastSolvencyDate time.Time, guildInscriptionYear int, userID uuid.UUID, audit domain.AuditModel) []domain.PsiUserSolvency {
+	if lastSolvencyDate.IsZero() {
+		return nil
 	}
-
-	if currentYear < 2024 {
-		log.Warn().Int("year", currentYear).Str("component", "psi_admin").Msg("Solvency year is before the 2024 limit")
-		return domain.PsiUserSolvency{}
+	currentYear := time.Now().Year()
+	lastYear := lastSolvencyDate.Year()
+	if lastYear > currentYear || lastYear < 2024 {
+		return nil
 	}
-
-	// Si pasa las validaciones, generamos el objeto
-	return domain.PsiUserSolvency{
-		ID:             uuid.Must(uuid.NewV7()),
-		PsiUserModelID: userId,
-		AuditModel:     audit_moodel,
-		Date:           time.Date(currentYear, time.December, 31, 0, 0, 0, 0, time.UTC),
+	startYear := guildInscriptionYear
+	if startYear < 2024 {
+		startYear = 2024
 	}
+	if startYear > lastYear {
+		startYear = lastYear
+	}
+	solvencies := make([]domain.PsiUserSolvency, 0, lastYear-startYear+1)
+	for y := startYear; y <= lastYear; y++ {
+		solvencies = append(solvencies, domain.PsiUserSolvency{
+			ID:             uuid.Must(uuid.NewV7()),
+			PsiUserModelID: userID,
+			AuditModel:     audit,
+			Date:           time.Date(y, time.December, 31, 0, 0, 0, 0, time.UTC),
+		})
+	}
+	return solvencies
 }
 
 func createPsiUSerModel(req request_structs.CreatePsiAdminRequest, psiID uuid.UUID, audit_moodel domain.AuditModel, hashed []byte, municipioCarabobo, estadoOutside string, bornDate time.Time) *domain.PsiUserModel {

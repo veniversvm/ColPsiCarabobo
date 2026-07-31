@@ -68,9 +68,10 @@ type PsiUserModel struct {
 	SecondName     string    `gorm:"size:255" json:"second_name"`
 	LastName       string    `gorm:"size:255;not null" json:"last_name"`
 	SecondLastName string    `gorm:"size:255" json:"second_last_name"`
-	FPV            int       `gorm:"not null;uniqueIndex" json:"fpv"`    // Número de Federación de Psicólogos de Venezuela
-	CI             int       `gorm:"not null;uniqueIndex" json:"ci"`     // Cédula de Identidad
-	Nationality    string    `gorm:"size:1;not null" json:"nationality"` // V = venezolano, E = extranjero
+	FPV            int       `gorm:"not null;uniqueIndex" json:"fpv"`                                                                                          // Número de Federación de Psicólogos de Venezuela
+	CI             int       `gorm:"not null;uniqueIndex" json:"ci"`                                                                                           // Cédula de Identidad
+	Nationality    string    `gorm:"size:1;not null" json:"nationality"`                                                                                       // V = venezolano, E = extranjero
+	ControlNumber  string    `gorm:"size:50;uniqueIndex:idx_psi_users_control_number,where:control_number <> '' AND deleted_at IS NULL" json:"control_number"` // Nº de control interno (columna 'Nº' del Excel, visible solo admin)
 	BornDate       time.Time `gorm:"type:date;not null" json:"born_date"`
 	Genre          string    `gorm:"size:1;not null" json:"genre"` // M = masculino, F = femenino
 

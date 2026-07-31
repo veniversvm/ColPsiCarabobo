@@ -94,52 +94,52 @@ func TestPsiRepo_ComprehensiveSuite(t *testing.T) {
 
 		// Sembrado de datos: Creamos una matriz de usuarios con distintos estados para evaluar los filtros.
 		users := []domain.PsiUserModel{
-		{
-			// Pedro: Solvente, Activo, Especialista, Privacidad de Ubicación ENCENDIDA (Visible)
-			ID: uuid.New(), FirstName: "Pedro", LastName: "Alfonso", CI: 10, FPV: 10,
-			Solvent: true, Genre: "M", Nationality: "V",
-			ContactEmail: "p1@t.com", ContactPhone: "04141234567",
-			MunicipalityCarabobo: "Valencia", ShowMunicipalityCarabobo: true, // Visible
-			PrimaryWorkArea:      "Neuropsicología",
-			PrimarySpecialtyID:   &spec.ID,
-			BornDate: now, BioTextID: dummyBio.ID, AudioBookShellId: "abs_p1",
-			Credentials: domain.Credentials{
-				IsActive: true,
-				Username: "p1", Email: "p1@t.com",
+			{
+				// Pedro: Solvente, Activo, Especialista, Privacidad de Ubicación ENCENDIDA (Visible)
+				ID: uuid.New(), FirstName: "Pedro", LastName: "Alfonso", CI: 10, FPV: 10,
+				Solvent: true, Genre: "M", Nationality: "V",
+				ContactEmail: "p1@t.com", ContactPhone: "04141234567",
+				MunicipalityCarabobo: "Valencia", ShowMunicipalityCarabobo: true, // Visible
+				PrimaryWorkArea:    "Neuropsicología",
+				PrimarySpecialtyID: &spec.ID,
+				BornDate:           now, BioTextID: dummyBio.ID, AudioBookShellId: "abs_p1",
+				Credentials: domain.Credentials{
+					IsActive: true,
+					Username: "p1", Email: "p1@t.com",
+				},
 			},
-		},
-		{
-			// Maria: Solvente, Activa, Privacidad de Ubicación APAGADA (Oculta en búsquedas por zona)
-			ID: uuid.New(), FirstName: "Maria", LastName: "Zeta", CI: 20, FPV: 20,
-			Solvent: true, Genre: "F", Nationality: "V",
-			ContactEmail: "m2@t.com", ContactPhone: "04120000000",
-			MunicipalityCarabobo: "San Diego", ShowMunicipalityCarabobo: false, // Oculta
-			BornDate: now, BioTextID: dummyBio.ID, AudioBookShellId: "abs_m2",
-			Credentials: domain.Credentials{
-				IsActive: true,
-				Username: "m2", Email: "m2@t.com",
+			{
+				// Maria: Solvente, Activa, Privacidad de Ubicación APAGADA (Oculta en búsquedas por zona)
+				ID: uuid.New(), FirstName: "Maria", LastName: "Zeta", CI: 20, FPV: 20,
+				Solvent: true, Genre: "F", Nationality: "V",
+				ContactEmail: "m2@t.com", ContactPhone: "04120000000",
+				MunicipalityCarabobo: "San Diego", ShowMunicipalityCarabobo: false, // Oculta
+				BornDate: now, BioTextID: dummyBio.ID, AudioBookShellId: "abs_m2",
+				Credentials: domain.Credentials{
+					IsActive: true,
+					Username: "m2", Email: "m2@t.com",
+				},
 			},
-		},
-		{
-			// Insolvente: No debe aparecer en búsquedas por navegación general
-			ID: uuid.New(), FirstName: "Insolvente", LastName: "Busquedame", CI: 30, FPV: 30,
-			Solvent: false, Genre: "M", Nationality: "V",
-			ContactEmail: "i3@t.com", BornDate: now, BioTextID: dummyBio.ID, AudioBookShellId: "abs_i3",
-			Credentials: domain.Credentials{
-				IsActive: true,
-				Username: "i3", Email: "i3@t.com",
+			{
+				// Insolvente: No debe aparecer en búsquedas por navegación general
+				ID: uuid.New(), FirstName: "Insolvente", LastName: "Busquedame", CI: 30, FPV: 30,
+				Solvent: false, Genre: "M", Nationality: "V",
+				ContactEmail: "i3@t.com", BornDate: now, BioTextID: dummyBio.ID, AudioBookShellId: "abs_i3",
+				Credentials: domain.Credentials{
+					IsActive: true,
+					Username: "i3", Email: "i3@t.com",
+				},
 			},
-		},
-		{
-			// Baneado/Inactivo: Jamás debe aparecer en el directorio público
-			ID: uuid.New(), FirstName: "Baneado", LastName: "Invisible", CI: 40, FPV: 40,
-			Solvent: true, Genre: "M", Nationality: "V",
-			ContactEmail: "b4@t.com", BornDate: now, BioTextID: dummyBio.ID, AudioBookShellId: "abs_b4",
-			Credentials: domain.Credentials{
-				IsActive: false,
-				Username: "b4", Email: "b4@t.com",
+			{
+				// Baneado/Inactivo: Jamás debe aparecer en el directorio público
+				ID: uuid.New(), FirstName: "Baneado", LastName: "Invisible", CI: 40, FPV: 40,
+				Solvent: true, Genre: "M", Nationality: "V",
+				ContactEmail: "b4@t.com", BornDate: now, BioTextID: dummyBio.ID, AudioBookShellId: "abs_b4",
+				Credentials: domain.Credentials{
+					IsActive: false,
+					Username: "b4", Email: "b4@t.com",
+				},
 			},
-		},
 		}
 		for i := range users {
 			require.NoError(t, tx.Create(&users[i]).Error)
@@ -292,12 +292,11 @@ func TestPsiRepo_ComprehensiveSuite(t *testing.T) {
 		col := &domain.PsiUserColData{
 			UniversityUndergraduate: "UC",
 		}
-		solvency := domain.PsiUserSolvency{
-			ID:   uuid.New(),
-			Date: time.Now(),
+		solvencies := []domain.PsiUserSolvency{
+			{ID: uuid.New(), Date: time.Now()},
 		}
 
-		err := r.CreateWithColData(ctx, psi, col, solvency, nil)
+		err := r.CreateWithColData(ctx, psi, col, solvencies, nil)
 		require.NoError(t, err)
 
 		// Verify user, col data, and solvency all exist

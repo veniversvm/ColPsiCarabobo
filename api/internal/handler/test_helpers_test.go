@@ -97,19 +97,19 @@ func (m *mockAdminRepo) CountSudos(ctx context.Context) (int64, error) {
 
 type mockPsiRepo struct {
 	domain.PsiUserRepository
-	GetByIDFunc                func(ctx context.Context, id uuid.UUID) (*domain.PsiUserModel, error)
-	GetByFPVFunc               func(ctx context.Context, id int) (domain.PsiUserModel, error)
-	GetByIdentifierFunc        func(ctx context.Context, identifier string) (*domain.PsiUserModel, error)
-	UpdateFunc                 func(ctx context.Context, psi *domain.PsiUserModel, colData *domain.PsiUserColData, bioText *domain.TextModel, solvencies []domain.PsiUserSolvency) error
-	UpdateKeyFunc              func(ctx context.Context, psi *domain.PsiUserModel) error
-	SearchDirectoryFunc        func(ctx context.Context, filter request_structs.PsiDirectoryFilterDTO) ([]domain.PsiUserModel, int64, error)
-	GetSitemapDataFunc         func(ctx context.Context) ([]domain.PsiUserModel, error)
-	GetPsiUserColDataFunc      func(ctx context.Context, psiID uuid.UUID) (*domain.PsiUserColData, error)
-	CreatePostGradeFunc        func(ctx context.Context, pg *domain.PsiUserPostGrade) error
-	CreateSocialNetworkFunc    func(ctx context.Context, sn *domain.PsiUserSocialNetwork) error
-	UpdateSocialNetworkFunc    func(ctx context.Context, sn *domain.PsiUserSocialNetwork) error
-	DeleteSocialNetworkFunc    func(ctx context.Context, id uuid.UUID) error
-	GetSocialNetworkByIDFunc   func(ctx context.Context, id uuid.UUID) (*domain.PsiUserSocialNetwork, error)
+	GetByIDFunc                    func(ctx context.Context, id uuid.UUID) (*domain.PsiUserModel, error)
+	GetByFPVFunc                   func(ctx context.Context, id int) (domain.PsiUserModel, error)
+	GetByIdentifierFunc            func(ctx context.Context, identifier string) (*domain.PsiUserModel, error)
+	UpdateFunc                     func(ctx context.Context, psi *domain.PsiUserModel, colData *domain.PsiUserColData, bioText *domain.TextModel, solvencies []domain.PsiUserSolvency) error
+	UpdateKeyFunc                  func(ctx context.Context, psi *domain.PsiUserModel) error
+	SearchDirectoryFunc            func(ctx context.Context, filter request_structs.PsiDirectoryFilterDTO) ([]domain.PsiUserModel, int64, error)
+	GetSitemapDataFunc             func(ctx context.Context) ([]domain.PsiUserModel, error)
+	GetPsiUserColDataFunc          func(ctx context.Context, psiID uuid.UUID) (*domain.PsiUserColData, error)
+	CreatePostGradeFunc            func(ctx context.Context, pg *domain.PsiUserPostGrade) error
+	CreateSocialNetworkFunc        func(ctx context.Context, sn *domain.PsiUserSocialNetwork) error
+	UpdateSocialNetworkFunc        func(ctx context.Context, sn *domain.PsiUserSocialNetwork) error
+	DeleteSocialNetworkFunc        func(ctx context.Context, id uuid.UUID) error
+	GetSocialNetworkByIDFunc       func(ctx context.Context, id uuid.UUID) (*domain.PsiUserSocialNetwork, error)
 	CountSocialNetworksByPsiIDFunc func(ctx context.Context, psiID uuid.UUID) (int64, error)
 }
 
@@ -197,7 +197,7 @@ func (m *mockPsiRepo) CountSocialNetworksByPsiID(ctx context.Context, psiID uuid
 	}
 	return 0, nil
 }
-func (m *mockPsiRepo) CreateWithColData(ctx context.Context, psi *domain.PsiUserModel, colData *domain.PsiUserColData, solvency domain.PsiUserSolvency, postgrades []domain.PsiUserPostGrade) error {
+func (m *mockPsiRepo) CreateWithColData(ctx context.Context, psi *domain.PsiUserModel, colData *domain.PsiUserColData, solvencies []domain.PsiUserSolvency, postgrades []domain.PsiUserPostGrade) error {
 	return nil
 }
 func (m *mockPsiRepo) ValidateUniqueCredentials(ctx context.Context, username, email string, excludeID uuid.UUID) error {
@@ -240,14 +240,14 @@ func (m *mockPsiRepo) GetTextContentByID(ctx context.Context, id uuid.UUID) (str
 
 type mockSpecialtyRepo struct {
 	domain.SpecialtyRepository
-	CreateFunc      func(ctx context.Context, s *domain.PsiSpecialtyModel) error
-	GetAllFunc      func(ctx context.Context, status string) ([]domain.PsiSpecialtyModel, error)
-	GetByIDFunc     func(ctx context.Context, id uint32, active bool) (*domain.PsiSpecialtyModel, error)
+	CreateFunc       func(ctx context.Context, s *domain.PsiSpecialtyModel) error
+	GetAllFunc       func(ctx context.Context, status string) ([]domain.PsiSpecialtyModel, error)
+	GetByIDFunc      func(ctx context.Context, id uint32, active bool) (*domain.PsiSpecialtyModel, error)
 	GetByAdminIDFunc func(ctx context.Context, id uint32) (*domain.PsiSpecialtyModel, error)
-	UpdateFunc      func(ctx context.Context, s *domain.PsiSpecialtyModel) error
-	DeleteFunc      func(ctx context.Context, id uint32) error
-	CountFunc       func(ctx context.Context, actives *bool) (int64, error)
-	GetAllAdminFunc func(ctx context.Context) ([]domain.PsiSpecialtyModel, error)
+	UpdateFunc       func(ctx context.Context, s *domain.PsiSpecialtyModel) error
+	DeleteFunc       func(ctx context.Context, id uint32) error
+	CountFunc        func(ctx context.Context, actives *bool) (int64, error)
+	GetAllAdminFunc  func(ctx context.Context) ([]domain.PsiSpecialtyModel, error)
 }
 
 func (m *mockSpecialtyRepo) Create(ctx context.Context, s *domain.PsiSpecialtyModel) error {
@@ -305,12 +305,12 @@ func (m *mockSpecialtyRepo) GetAllAdmin(ctx context.Context) ([]domain.PsiSpecia
 
 type mockPostRepo struct {
 	domain.PostRepository
-	CreateFunc           func(ctx context.Context, post *domain.Post, content *domain.TextModel) error
-	UpdateFunc           func(ctx context.Context, post *domain.Post, content *domain.TextModel) error
-	DeleteFunc           func(ctx context.Context, id uuid.UUID) error
-	GetByIDFunc          func(ctx context.Context, id uuid.UUID) (*domain.Post, error)
-	ListFunc             func(ctx context.Context, filter domain.PostFilter, page, limit int) ([]domain.Post, int64, error)
-	GetSitemapPostsFunc  func(ctx context.Context) ([]domain.Post, error)
+	CreateFunc          func(ctx context.Context, post *domain.Post, content *domain.TextModel) error
+	UpdateFunc          func(ctx context.Context, post *domain.Post, content *domain.TextModel) error
+	DeleteFunc          func(ctx context.Context, id uuid.UUID) error
+	GetByIDFunc         func(ctx context.Context, id uuid.UUID) (*domain.Post, error)
+	ListFunc            func(ctx context.Context, filter domain.PostFilter, page, limit int) ([]domain.Post, int64, error)
+	GetSitemapPostsFunc func(ctx context.Context) ([]domain.Post, error)
 }
 
 func (m *mockPostRepo) Create(ctx context.Context, post *domain.Post, content *domain.TextModel) error {
@@ -374,15 +374,15 @@ type mockAnalyticsRepo struct {
 	GetDashboardStatsFunc func() (*domain.DashboardStats, error)
 }
 
-func (m *mockAnalyticsRepo) CreateLoginEvent(domain.LoginEvent) error   { return nil }
+func (m *mockAnalyticsRepo) CreateLoginEvent(domain.LoginEvent) error       { return nil }
 func (m *mockAnalyticsRepo) UpsertActiveSession(domain.ActiveSession) error { return nil }
-func (m *mockAnalyticsRepo) DeleteActiveSession(uuid.UUID) error        { return nil }
+func (m *mockAnalyticsRepo) DeleteActiveSession(uuid.UUID) error            { return nil }
 func (m *mockAnalyticsRepo) UpdateSessionHeartbeat(uuid.UUID, time.Time, time.Time) error {
 	return nil
 }
-func (m *mockAnalyticsRepo) CreateSearchEvent(domain.SearchEvent) error  { return nil }
-func (m *mockAnalyticsRepo) CreateProfileView(domain.ProfileView) error  { return nil }
-func (m *mockAnalyticsRepo) CreatePageView(domain.PageView) error        { return nil }
+func (m *mockAnalyticsRepo) CreateSearchEvent(domain.SearchEvent) error { return nil }
+func (m *mockAnalyticsRepo) CreateProfileView(domain.ProfileView) error { return nil }
+func (m *mockAnalyticsRepo) CreatePageView(domain.PageView) error       { return nil }
 func (m *mockAnalyticsRepo) CountRecentPageViews(string, time.Time) (int64, error) {
 	return 0, nil
 }
@@ -395,7 +395,7 @@ func (m *mockAnalyticsRepo) GetDashboardStats() (*domain.DashboardStats, error) 
 func (m *mockAnalyticsRepo) DeletePageViewsOlderThan(time.Time) error    { return nil }
 func (m *mockAnalyticsRepo) DeleteSearchEventsOlderThan(time.Time) error { return nil }
 func (m *mockAnalyticsRepo) DeleteProfileViewsOlderThan(time.Time) error { return nil }
-func (m *mockAnalyticsRepo) DeleteExpiredSessions(time.Time) error      { return nil }
+func (m *mockAnalyticsRepo) DeleteExpiredSessions(time.Time) error       { return nil }
 
 // =========================================================================
 // JWT GENERATOR
@@ -420,24 +420,24 @@ func testAdmin(id uuid.UUID, canCreateAdmin, sudo bool) *domain.UserAdmin {
 	return &domain.UserAdmin{
 		ID: id,
 		Credentials: domain.Credentials{
-			Username:       "admin_" + id.String()[:8],
-			Email:          "admin_" + id.String()[:8] + "@test.com",
-			Password:       "$2a$10$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789012345678", // dummy hash
-			Key:            testSecret,
-			IsActive:       true,
+			Username:           "admin_" + id.String()[:8],
+			Email:              "admin_" + id.String()[:8] + "@test.com",
+			Password:           "$2a$10$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789012345678", // dummy hash
+			Key:                testSecret,
+			IsActive:           true,
 			MustChangePassword: false,
 		},
-		Sudo:           sudo,
-		CanCreateAdmin: canCreateAdmin,
-		CanPublish:     true,
-		CanCreatePsi:   true,
-		CanUpdatePsi:   true,
-		CanDeletePsi:   true,
-		CanUpdateAdmin: true,
-		CanDeleteAdmin: true,
-		CanCreateTags:  true,
-		CanEditTags:    true,
-		CanDeleteTags:  true,
+		Sudo:                 sudo,
+		CanCreateAdmin:       canCreateAdmin,
+		CanPublish:           true,
+		CanCreatePsi:         true,
+		CanUpdatePsi:         true,
+		CanDeletePsi:         true,
+		CanUpdateAdmin:       true,
+		CanDeleteAdmin:       true,
+		CanCreateTags:        true,
+		CanEditTags:          true,
+		CanDeleteTags:        true,
 		CanReadNotifications: true,
 	}
 }
@@ -451,17 +451,17 @@ func testPsiUser(id uuid.UUID) *domain.PsiUserModel {
 			Key:      testSecret,
 			IsActive: true,
 		},
-		FirstName:          "Juan",
-		LastName:           "Perez",
-		FPV:                12345,
-		CI:                 12345678,
-		Nationality:        "V",
-		Genre:              "M",
-		ContactPhone:       "+58-241-1234567",
-		ContactCellPhone:   "+58-412-1234567",
-		ContactEmail:       "juan@test.com",
+		FirstName:            "Juan",
+		LastName:             "Perez",
+		FPV:                  12345,
+		CI:                   12345678,
+		Nationality:          "V",
+		Genre:                "M",
+		ContactPhone:         "+58-241-1234567",
+		ContactCellPhone:     "+58-412-1234567",
+		ContactEmail:         "juan@test.com",
 		MunicipalityCarabobo: "Valencia",
-		PrimaryWorkArea:    "Psicologia Clinica",
+		PrimaryWorkArea:      "Psicologia Clinica",
 	}
 }
 
@@ -476,11 +476,11 @@ func testSpecialty(id uint32, name string) *domain.PsiSpecialtyModel {
 
 func testPost(id uuid.UUID, title string, status domain.PostStatus, postType string) *domain.Post {
 	return &domain.Post{
-		ID:        id,
-		Title:     title,
-		Type:      postType,
-		Status:    status,
-		TextID:    uuid.New(),
+		ID:         id,
+		Title:      title,
+		Type:       postType,
+		Status:     status,
+		TextID:     uuid.New(),
 		ImageS3Key: "images/test.jpg",
 	}
 }

@@ -38,8 +38,8 @@ func (r *psiRepo) CreateWithColData(
 	ctx context.Context,
 	psi *domain.PsiUserModel,
 	colData *domain.PsiUserColData,
-	solvencies domain.PsiUserSolvency,
-	postgrades []domain.PsiUserPostGrade, // 👈 1. Nuevo parámetro agregado
+	solvencies []domain.PsiUserSolvency,
+	postgrades []domain.PsiUserPostGrade,
 ) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		// 1. Crear una bio vacía para satisfacer la FK (siempre requerida)
@@ -65,9 +65,11 @@ func (r *psiRepo) CreateWithColData(
 			return fmt.Errorf("error creating col data: %w", err)
 		}
 
-		// 5. Crear solvencias
-		if solvencies.ID != uuid.Nil {
-			solvencies.PsiUserModelID = psi.ID
+		// 5. Crear solvencias (historial anual completo)
+		if len(solvencies) > 0 {
+			for i := range solvencies {
+				solvencies[i].PsiUserModelID = psi.ID
+			}
 			if err := tx.Create(&solvencies).Error; err != nil {
 				return fmt.Errorf("error creating solvency data: %w", err)
 			}

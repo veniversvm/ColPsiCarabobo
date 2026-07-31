@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -80,21 +82,23 @@ func emptyRow() []string {
 
 // dataRow construye una fila de datos con campos clave
 type testRow struct {
-	FPV         string
-	CI          string
-	FirstName   string
-	SecondName  string
-	LastName    string
-	SecLastName string
-	Email       string
-	Genre       string
-	Municipio   string
-	Estado      string
-	Postgrade1  string
-	Postgrade2  string
-	Postgrade3  string
-	Postgrade4  string
-	Status      string
+	FPV          string
+	CI           string
+	FirstName    string
+	SecondName   string
+	LastName     string
+	SecLastName  string
+	Email        string
+	Genre        string
+	Municipio    string
+	Estado       string
+	Postgrade1   string
+	Postgrade2   string
+	Postgrade3   string
+	Postgrade4   string
+	Status       string
+	ProofOfLife  string
+	SolvencyDate string
 }
 
 func buildDataRow(d testRow) []string {
@@ -143,6 +147,12 @@ func buildDataRow(d testRow) []string {
 	}
 	if d.Status != "" {
 		row[45] = d.Status
+	}
+	if d.ProofOfLife != "" {
+		row[14] = d.ProofOfLife
+	}
+	if d.SolvencyDate != "" {
+		row[44] = d.SolvencyDate
 	}
 	return row
 }
@@ -198,7 +208,7 @@ func TestImportFromXLSX_GhostRows(t *testing.T) {
 
 		createCalled := false
 		repo := &mockPsiRepoSvc{
-			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
+			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol []domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
 				createCalled = true
 				return nil
 			},
@@ -224,7 +234,7 @@ func TestImportFromXLSX_MunicipalityValidation(t *testing.T) {
 
 		createCalled := false
 		repo := &mockPsiRepoSvc{
-			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
+			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol []domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
 				createCalled = true
 				return nil
 			},
@@ -244,7 +254,7 @@ func TestImportFromXLSX_MunicipalityValidation(t *testing.T) {
 		rows := testRows(testRow{FPV: "100", CI: "200", FirstName: "Test", LastName: "User", Genre: "M", Municipio: "Valencia"})
 
 		repo := &mockPsiRepoSvc{
-			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
+			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol []domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
 				return nil
 			},
 		}
@@ -271,7 +281,7 @@ func TestImportFromXLSX_DBError(t *testing.T) {
 
 		callCount := 0
 		repo := &mockPsiRepoSvc{
-			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
+			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol []domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
 				callCount++
 				if callCount == 1 {
 					return errors.New("duplicate key value violates unique constraint \"idx_psi_users_fpv\"")
@@ -293,7 +303,7 @@ func TestImportFromXLSX_DBError(t *testing.T) {
 		rows := testRows(testRow{FPV: "100", CI: "200", FirstName: "A", LastName: "B", Genre: "M", Municipio: "Valencia"})
 
 		repo := &mockPsiRepoSvc{
-			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
+			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol []domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
 				return errors.New("constraint violation")
 			},
 		}
@@ -326,7 +336,7 @@ func TestImportFromXLSX_WelcomeEmail(t *testing.T) {
 			},
 		}
 		repo := &mockPsiRepoSvc{
-			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
+			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol []domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
 				return nil
 			},
 		}
@@ -351,7 +361,7 @@ func TestImportFromXLSX_WelcomeEmail(t *testing.T) {
 			},
 		}
 		repo := &mockPsiRepoSvc{
-			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
+			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol []domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
 				return nil
 			},
 		}
@@ -372,7 +382,7 @@ func TestImportFromXLSX_WelcomeEmail(t *testing.T) {
 			},
 		}
 		repo := &mockPsiRepoSvc{
-			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
+			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol []domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
 				return nil
 			},
 		}
@@ -404,7 +414,7 @@ func TestImportFromXLSX_ProofOfLife(t *testing.T) {
 		rows := [][]string{emptyRow(), emptyRow(), row}
 
 		repo := &mockPsiRepoSvc{
-			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
+			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol []domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
 				require.False(t, psi.ProofOfLife, "ProofOfLife debe ser false cuando es fallecido")
 				return nil
 			},
@@ -417,10 +427,10 @@ func TestImportFromXLSX_ProofOfLife(t *testing.T) {
 	})
 
 	t.Run("valor normal设置ProofOfLife a true", func(t *testing.T) {
-		rows := testRows(testRow{FPV: "100", CI: "200", FirstName: "Test", LastName: "User", Genre: "M", Municipio: "Valencia"})
+		rows := testRows(testRow{FPV: "100", CI: "200", FirstName: "Test", LastName: "User", Genre: "M", Municipio: "Valencia", ProofOfLife: "SI"})
 
 		repo := &mockPsiRepoSvc{
-			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
+			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol []domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
 				require.True(t, psi.ProofOfLife, "ProofOfLife debe ser true para registros normales")
 				return nil
 			},
@@ -447,7 +457,7 @@ func TestImportFromXLSX_PostGrades(t *testing.T) {
 
 		var capturedPGs []domain.PsiUserPostGrade
 		repo := &mockPsiRepoSvc{
-			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
+			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol []domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
 				capturedPGs = pg
 				return nil
 			},
@@ -471,7 +481,7 @@ func TestImportFromXLSX_PostGrades(t *testing.T) {
 
 		var capturedPGs []domain.PsiUserPostGrade
 		repo := &mockPsiRepoSvc{
-			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
+			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol []domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
 				capturedPGs = pg
 				return nil
 			},
@@ -492,7 +502,7 @@ func TestImportFromXLSX_PostGrades(t *testing.T) {
 
 		var capturedPGs []domain.PsiUserPostGrade
 		repo := &mockPsiRepoSvc{
-			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
+			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol []domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
 				capturedPGs = pg
 				return nil
 			},
@@ -521,7 +531,7 @@ func TestImportFromXLSX_FaultTolerance(t *testing.T) {
 
 		createCount := 0
 		repo := &mockPsiRepoSvc{
-			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
+			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol []domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
 				createCount++
 				return nil
 			},
@@ -544,7 +554,7 @@ func TestImportFromXLSX_FaultTolerance(t *testing.T) {
 
 		callCount := 0
 		repo := &mockPsiRepoSvc{
-			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
+			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol []domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
 				callCount++
 				if callCount == 1 {
 					return errors.New("duplicate key")
@@ -571,7 +581,7 @@ func TestImportFromXLSX_Credentials(t *testing.T) {
 		rows := testRows(testRow{FPV: "100", CI: "200", FirstName: "Test", LastName: "User", Genre: "M", Municipio: "Valencia"})
 
 		repo := &mockPsiRepoSvc{
-			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
+			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol []domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
 				require.True(t, psi.MustChangePassword, "MustChangePassword debe ser true en importacion")
 				require.NotEmpty(t, psi.Password, "Password no debe estar vacio")
 				require.NotEmpty(t, psi.Key, "Key no debe estar vacio")
@@ -590,7 +600,7 @@ func TestImportFromXLSX_Credentials(t *testing.T) {
 		rows := testRows(testRow{FPV: "100", CI: "200", FirstName: "Test", LastName: "User", Genre: "M", Municipio: "Valencia"})
 
 		repo := &mockPsiRepoSvc{
-			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
+			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol []domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
 				require.False(t, psi.ShowContactEmail)
 				require.False(t, psi.ShowMunicipalityCarabobo)
 				require.False(t, psi.ShowPhoneCarabobo)
@@ -615,7 +625,7 @@ func TestImportFromXLSX_GeneratedUsername(t *testing.T) {
 
 		var capturedUser string
 		repo := &mockPsiRepoSvc{
-			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
+			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol []domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
 				capturedUser = psi.Username
 				return nil
 			},
@@ -634,7 +644,7 @@ func TestImportFromXLSX_GeneratedUsername(t *testing.T) {
 
 		var capturedUser string
 		repo := &mockPsiRepoSvc{
-			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
+			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol []domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
 				capturedUser = psi.Username
 				return nil
 			},
@@ -657,7 +667,7 @@ func TestImportFromXLSX_EstadoOutside(t *testing.T) {
 		rows := testRows(testRow{FPV: "100", CI: "200", FirstName: "T", LastName: "U", Genre: "M", Estado: "lara"})
 
 		repo := &mockPsiRepoSvc{
-			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
+			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol []domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
 				require.Equal(t, "Lara", psi.StateOutside, "Estado debe normalizarse")
 				return nil
 			},
@@ -673,7 +683,7 @@ func TestImportFromXLSX_EstadoOutside(t *testing.T) {
 		rows := testRows(testRow{FPV: "100", CI: "200", FirstName: "T", LastName: "U", Genre: "M", Estado: "EstadoFalso"})
 
 		repo := &mockPsiRepoSvc{
-			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
+			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol []domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
 				require.Equal(t, "EstadoFalso", psi.StateOutside, "Estado invalido se mantiene raw")
 				return nil
 			},
@@ -687,17 +697,20 @@ func TestImportFromXLSX_EstadoOutside(t *testing.T) {
 }
 
 // =========================================================================
-// TEST: ImportFromXLSX — isActive based on status
+// TEST: ImportFromXLSX — IsActive y Solvent (nuevas reglas de lanzamiento)
 // =========================================================================
+//
+// Reglas acordadas:
+//   - Todos los registros importados quedan activos (is_active = true).
+//   - Solvente únicamente si la última solvencia registrada es del año vigente.
 
 func TestImportFromXLSX_IsActive(t *testing.T) {
-	t.Run("status Activo设置is_active a true", func(t *testing.T) {
-		rows := testRows(testRow{FPV: "100", CI: "200", FirstName: "T", LastName: "U", Genre: "M", Municipio: "Valencia", Status: "Activo"})
+	t.Run("todos los importados quedan activos", func(t *testing.T) {
+		rows := testRows(testRow{FPV: "100", CI: "200", FirstName: "T", LastName: "U", Genre: "M", Municipio: "Valencia"})
 
 		repo := &mockPsiRepoSvc{
-			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
-				require.True(t, psi.IsActive, "IsActive debe ser true cuando status es Activo")
-				require.True(t, psi.Solvent, "Solvent debe ser true cuando status es Activo")
+			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol []domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
+				require.True(t, psi.IsActive, "IsActive debe ser true para todos los importados")
 				return nil
 			},
 		}
@@ -707,13 +720,15 @@ func TestImportFromXLSX_IsActive(t *testing.T) {
 		svc.ImportFromXLSX(context.Background(), buf, uuid.Must(uuid.NewV7()))
 	})
 
-	t.Run("status vacio设置is_active a false", func(t *testing.T) {
-		rows := testRows(testRow{FPV: "100", CI: "200", FirstName: "T", LastName: "U", Genre: "M", Municipio: "Valencia"})
+	t.Run("solvente con solvencia del año vigente", func(t *testing.T) {
+		rows := testRows(testRow{
+			FPV: "100", CI: "200", FirstName: "T", LastName: "U", Genre: "M", Municipio: "Valencia",
+			SolvencyDate: fmt.Sprintf("%d-07-14", time.Now().Year()),
+		})
 
 		repo := &mockPsiRepoSvc{
-			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
-				require.False(t, psi.IsActive, "IsActive debe ser false cuando status no es Activo")
-				require.False(t, psi.Solvent)
+			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol []domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
+				require.True(t, psi.Solvent, "Solvent debe ser true con solvencia del año vigente")
 				return nil
 			},
 		}
@@ -721,6 +736,50 @@ func TestImportFromXLSX_IsActive(t *testing.T) {
 
 		buf := createTestXLSX(t, rows)
 		svc.ImportFromXLSX(context.Background(), buf, uuid.Must(uuid.NewV7()))
+	})
+
+	t.Run("insolvente sin solvencia del año vigente", func(t *testing.T) {
+		rows := testRows(testRow{
+			FPV: "100", CI: "200", FirstName: "T", LastName: "U", Genre: "M", Municipio: "Valencia",
+			SolvencyDate: fmt.Sprintf("%d-07-14", time.Now().Year()-1),
+		})
+
+		repo := &mockPsiRepoSvc{
+			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol []domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
+				require.False(t, psi.Solvent, "Solvent debe ser false sin solvencia del año vigente")
+				return nil
+			},
+		}
+		svc := NewPsiService(repo, nil, nil)
+
+		buf := createTestXLSX(t, rows)
+		svc.ImportFromXLSX(context.Background(), buf, uuid.Must(uuid.NewV7()))
+	})
+
+	t.Run("historial de solvencias desde la colegiatura", func(t *testing.T) {
+		inscriptionYear := 2024
+		rows := testRows(testRow{
+			FPV: "100", CI: "200", FirstName: "T", LastName: "U", Genre: "M", Municipio: "Valencia",
+			SolvencyDate: fmt.Sprintf("%d-07-14", time.Now().Year()),
+		})
+
+		var captured []domain.PsiUserSolvency
+		repo := &mockPsiRepoSvc{
+			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol []domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
+				captured = sol
+				return nil
+			},
+		}
+		svc := NewPsiService(repo, nil, nil)
+
+		buf := createTestXLSX(t, rows)
+		svc.ImportFromXLSX(context.Background(), buf, uuid.Must(uuid.NewV7()))
+
+		require.Len(t, captured, time.Now().Year()-inscriptionYear+1, "debe sembrar solvencias anuales desde 2024")
+		for i, s := range captured {
+			require.Equal(t, inscriptionYear+i, s.Date.Year())
+			require.Equal(t, time.December, s.Date.Month())
+		}
 	})
 }
 

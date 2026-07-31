@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 	"fmt"
-	"io"
 	"github.com/rs/zerolog/log"
+	"io"
 	"strings"
 
 	"github.com/google/uuid"
@@ -150,7 +150,7 @@ func (s *PsiService) ImportFromXLSX(ctx context.Context, reader io.Reader, admin
 			AuditModel: audit,
 			Credentials: domain.Credentials{
 				Key:                uuid.Must(uuid.NewV7()).String(),
-				IsActive:           getValorSeguro(row, 45) == "Activo",
+				IsActive:           true,
 				Username:           username,
 				Email:              email,
 				Password:           hashedPassword,
@@ -163,12 +163,13 @@ func (s *PsiService) ImportFromXLSX(ctx context.Context, reader io.Reader, admin
 			SecondLastName: cleanDash(getValorSeguro(row, 10)),
 			FPV:            parseInt(numFPV),
 			CI:             parseInt(ciStr),
-			Nationality:    getValorSeguro(row, 5),
+			Nationality:    parseNationality(getValorSeguro(row, 5)),
+			ControlNumber:  cleanDash(getValorSeguro(row, 0)),
 			BornDate:       parseDate(getValorSeguro(row, 11)),
 			Genre:          getValorSeguro(row, 13),
 
-			ProofOfLife: strings.ToLower(getValorSeguro(row, 14)) != "fallecido",
-			Solvent:     getValorSeguro(row, 45) == "Activo",
+			ProofOfLife: isProofOfLife(getValorSeguro(row, 14)),
+			Solvent:     isSolventByLastSolvency(parseDate(getValorSeguro(row, 44))),
 
 			ContactPhone:     cleanDash(getValorSeguro(row, 17)),
 			ContactCellPhone: cleanDash(getValorSeguro(row, 18)),
@@ -250,7 +251,7 @@ func (s *PsiService) ImportFromXLSX(ctx context.Context, reader io.Reader, admin
 		}
 
 		// 4. Historial Financiero
-		solvencies := createSolvencieModel(parseDate(getValorSeguro(row, 44)), psi.ID, audit)
+		solvencies := buildSolvencyHistory(parseDate(getValorSeguro(row, 44)), parseDate(getValorSeguro(row, 4)).Year(), psi.ID, audit)
 
 		// ── Persistencia Transaccional Estricta (ACID) ──────────────────────
 		// Ejecuta un "Bulk Insert" relacional. Si ocurre un fallo (ej. Violación de restricción UNIQUE en FPV),

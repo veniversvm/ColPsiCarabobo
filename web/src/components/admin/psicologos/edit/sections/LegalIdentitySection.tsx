@@ -80,6 +80,18 @@ export function LegalIdentitySection(props: Props) {
         </div>
 
         <div>
+          <Field label="Nº de Control (interno)">
+            <input
+              type="text"
+              readOnly
+              value={props.form.control_number || "—"}
+              title="Número de control interno asignado desde el Excel maestro. Solo visible para administradores."
+              class={`${IC} bg-gray-100 text-gray-600 cursor-not-allowed`}
+            />
+          </Field>
+        </div>
+
+        <div>
           <Field label="Género">
             <select
               value={props.form.genre}

@@ -56,6 +56,14 @@ const deleteSocialServer = action(
   },
 );
 
+const deleteProfilePictureServer = action(
+  async (id: string) => {
+    "use server";
+    const { apiDelete } = await import("~/lib/api");
+    return await apiDelete(`/admin/psi/${id}/picture`);
+  },
+);
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const formatDate = (dateStr?: string) => (dateStr ? dateStr.split("T")[0] : "");
@@ -95,6 +103,7 @@ export default function AdminEditPsiPage() {
   const params = useParams();
 
   const runUpdateAction = useAction(updateAdminPsiServer);
+  const runDeletePicture = useAction(deleteProfilePictureServer);
   const [profile, { refetch }] = createResource(() =>
     apiGet<any>(`/admin/psi/${params.id}`),
   );
@@ -102,6 +111,7 @@ export default function AdminEditPsiPage() {
 
   const [form, setForm] = createStore<EditFormState>({} as EditFormState);
   const [saving, setSaving] = createSignal(false);
+  const [deletingPicture, setDeletingPicture] = createSignal(false);
   const [message, setMessage] = createSignal<{
     type: "success" | "error";
     text: string;
@@ -132,7 +142,8 @@ export default function AdminEditPsiPage() {
       second_last_name: p.second_last_name ?? "",
       ci: p.ci ?? "",
       fpv: p.fpv ?? "",
-      nationality: p.nationality ?? "V",
+      nationality: p.nationality || "V",
+      control_number: p.control_number ?? "",
       genre: p.genre ?? "M",
       born_date: formatDate(p.born_date),
       is_active: p.is_active ?? true,
@@ -275,6 +286,29 @@ export default function AdminEditPsiPage() {
   const set = (key: keyof EditFormState, value: any) =>
     setForm(key as any, value);
 
+  const handleDeletePicture = async () => {
+    const id = params.id ?? "";
+    if (!id || deletingPicture() || !confirm("¿Eliminar la foto de perfil del psicólogo?")) {
+      return;
+    }
+    setDeletingPicture(true);
+    setMessage(null);
+    try {
+      await runDeletePicture(id);
+      setAvatarFile(null);
+      refetch();
+      setMessage({ type: "success", text: "Foto de perfil eliminada." });
+    } catch (err: any) {
+      const msg = err?.message || String(err);
+      setMessage({
+        type: "error",
+        text: msg.replace(/^.*?ApiError:\s*/i, "") || "Error al eliminar la foto.",
+      });
+    } finally {
+      setDeletingPicture(false);
+    }
+  };
+
   return (
     <main class="pb-28 animate-in fade-in duration-500 font-sans">
       <EditPageHeader profile={profile()} />
@@ -293,6 +327,8 @@ export default function AdminEditPsiPage() {
             url={canonicalUrl()}
             avatarFile={avatarFile()}
             onAvatarChange={setAvatarFile}
+            pictureUrl={profile()?.profile_picture_url || ""}
+            onDeletePicture={handleDeletePicture}
           />
           <AdminStatusSection form={form} setForm={set} />
 

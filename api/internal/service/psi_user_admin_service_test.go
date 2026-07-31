@@ -32,7 +32,7 @@ func (m *mockMailService) SendEmail(to, subject, template string, data interface
 // en tiempo de ejecución durante cada test.
 type mockPsiRepoAdmin struct {
 	domain.PsiUserRepository
-	CreateWithColDataFunc func(ctx context.Context, psi *domain.PsiUserModel, colData *domain.PsiUserColData, solvencies domain.PsiUserSolvency, postgrades []domain.PsiUserPostGrade) error
+	CreateWithColDataFunc func(ctx context.Context, psi *domain.PsiUserModel, colData *domain.PsiUserColData, solvencies []domain.PsiUserSolvency, postgrades []domain.PsiUserPostGrade) error
 	GetByIDFunc           func(ctx context.Context, id uuid.UUID) (*domain.PsiUserModel, error)
 	// Interface Compliance: La firma debe coincidir con el contrato del dominio,
 	// soportando ahora la inserción transaccional de un slice de solvencias.
@@ -44,7 +44,7 @@ type mockPsiRepoAdmin struct {
 // En Go, para que un mock satisfaga una interfaz implícitamente, sus métodos deben
 // tener los mismos tipos de datos, orden de parámetros y valores de retorno EXACTOS
 // que la interfaz definida en la capa de dominio.
-func (m *mockPsiRepoAdmin) CreateWithColData(ctx context.Context, p *domain.PsiUserModel, c *domain.PsiUserColData, s domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
+func (m *mockPsiRepoAdmin) CreateWithColData(ctx context.Context, p *domain.PsiUserModel, c *domain.PsiUserColData, s []domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
 	if m.CreateWithColDataFunc != nil {
 		return m.CreateWithColDataFunc(ctx, p, c, s, pg)
 	}
@@ -85,7 +85,7 @@ func TestPsiService_CreateByAdmin(t *testing.T) {
 	t.Run("Éxito: Registro completo", func(t *testing.T) {
 		// Mock Binding: Interceptamos la llamada y validamos que el servicio pasa
 		// correctamente la estructura de datos al repositorio simulado.
-		repo.CreateWithColDataFunc = func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, solvencies domain.PsiUserSolvency, postgrades []domain.PsiUserPostGrade) error {
+		repo.CreateWithColDataFunc = func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, solvencies []domain.PsiUserSolvency, postgrades []domain.PsiUserPostGrade) error {
 			return nil
 		}
 

@@ -13,6 +13,7 @@ export interface EditFormState {
   ci: string | number;
   fpv: string | number;
   nationality: string;
+  control_number: string;
   genre: string;
   born_date: string;
 

@@ -36,7 +36,7 @@ type mockPsiRepoSvc struct {
 	SearchDirectoryFunc           func(ctx context.Context, filter request_structs.PsiDirectoryFilterDTO) ([]domain.PsiUserModel, int64, error)
 	GetSitemapDataFunc            func(ctx context.Context) ([]domain.PsiUserModel, error)
 	GetSolvenciesFunc             func(ctx context.Context, id uuid.UUID) ([]domain.PsiUserSolvency, error)
-	CreateWithColDataFunc         func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error
+	CreateWithColDataFunc         func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol []domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error
 }
 
 func (m *mockPsiRepoSvc) GetByID(ctx context.Context, id uuid.UUID) (*domain.PsiUserModel, error) {
@@ -84,7 +84,7 @@ func (m *mockPsiRepoSvc) GetSitemapData(ctx context.Context) ([]domain.PsiUserMo
 func (m *mockPsiRepoSvc) GetSolvencies(ctx context.Context, id uuid.UUID) ([]domain.PsiUserSolvency, error) {
 	return m.GetSolvenciesFunc(ctx, id)
 }
-func (m *mockPsiRepoSvc) CreateWithColData(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
+func (m *mockPsiRepoSvc) CreateWithColData(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol []domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
 	return m.CreateWithColDataFunc(ctx, psi, col, sol, pg)
 }
 
