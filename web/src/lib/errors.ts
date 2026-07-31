@@ -1,3 +1,10 @@
+// web/src/lib/errors.ts
+//
+// Traducción de errores internos a mensajes amigables.
+// Evita filtrar detalles internos (stack traces, códigos de la API)
+// al usuario final. Agregar entradas nuevas a KNOWN_MESSAGES cuando
+// la API introduzca mensajes de error adicionales.
+
 const KNOWN_MESSAGES: Record<string, string> = {
   "OFFLINE_SERVICE": "El servicio no está disponible en este momento. Intente más tarde.",
   "Credenciales inválidas.": "Usuario o contraseña incorrectos.",

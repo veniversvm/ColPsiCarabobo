@@ -1,4 +1,8 @@
 // web/src/lib/sanitizer.ts
+//
+// Sanitización de entrada de formularios (aplicada en el cliente antes de
+// enviar a la API). Complementa — no reemplaza — la validación de Go.
+// Cada función normaliza su dominio (teléfonos, texto, email, contraseña).
 
 /**
  * Limpia números de teléfono.
@@ -81,9 +85,6 @@ export function sanitizeProfileRequest(data: any): any {
 
   return cleanData;
 }
-
-
-// web/src/lib/sanitizer.ts
 
 /**
  * Valida si una contraseña cumple con los estándares de seguridad de la API en Go.

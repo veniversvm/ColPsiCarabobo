@@ -1,4 +1,12 @@
 // web/src/lib/api.ts
+//
+// Cliente HTTP isomórfico hacia la API Go (Fiber).
+// - SSR/Server Actions: resuelve la API por `API_URL_INTERNAL` (red Docker).
+// - Navegador: usa `VITE_API_URL` (inlineado en build).
+// - Token JWT isomórfico: el servidor lee la cookie HttpOnly `jwt`;
+//   el cliente usa `sessionStorage.jwt`. Ambos se envían como `Authorization: Bearer`.
+// - Convierte errores de red en `ApiError(503, "OFFLINE_SERVICE")` y respuestas
+//   no-OK en `ApiError(status, mensaje, data)`.
 import { isServer } from "solid-js/web";
 import { getRequestEvent } from "solid-js/web";
 

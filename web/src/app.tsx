@@ -1,4 +1,6 @@
 // web/src/app.tsx
+// Raíz de la aplicación: provee Meta, Router (FileRoutes), AuthProvider,
+// Navbar global y ErrorBoundary con fallback OfflineAlert.
 import { ErrorBoundary, onMount, Suspense } from "solid-js";
 import { Router } from "@solidjs/router";
 import { FileRoutes } from "@solidjs/start/router";

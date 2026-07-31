@@ -1,3 +1,12 @@
+// web/src/lib/sanitize-html.ts
+//
+// Sanitización de HTML renderizado con innerHTML (perfil, noticias, etc.).
+// - Cliente: usa DOMPurify con lista blanca de etiquetas/atributos.
+// - SSR (Deno, sin DOM): DOMPurify exporta una fábrica sin `.sanitize`,
+//   por lo que se usa un fallback regex que elimina tags fuera de la lista.
+// - La barrera definitiva contra XSS es la API Go (bluemonday) al persistir.
+// NO agregar etiquetas/atributos a las listas salvo que sea estrictamente
+// necesario y esté validado por el backend.
 import DOMPurify from "dompurify";
 
 const ALLOWED_TAGS = [

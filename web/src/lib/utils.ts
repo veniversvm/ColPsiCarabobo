@@ -1,4 +1,8 @@
 // web/src/lib/utils.ts
+//
+// Utilidades de dominio compartidas (slugs, orden de postgrados).
+// No colocar aquí utilidades genéricas de UI; crear un archivo
+// dedicado en `src/lib/` por responsabilidad.
 
 /**
  * Normaliza un texto para URL (elimina acentos y caracteres especiales)

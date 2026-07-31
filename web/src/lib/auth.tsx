@@ -1,5 +1,11 @@
 // web/src/lib/auth.tsx
-
+//
+// Estado de sesión del lado cliente (Solid context).
+// - `sessionStorage.jwt`  → token usado por `api.ts` en el navegador.
+// - Cookie `user_data`    → datos públicos del usuario para restaurar la sesión.
+// - El JWT "real" vive en la cookie HttpOnly (seteada por server actions);
+//   aquí solo se guarda una copia en sessionStorage para las llamadas fetch.
+// - Timer de expiración: cierra sesión localmente en el instante en que vence el JWT.
 import { createContext, useContext, createSignal, JSX, onMount, onCleanup } from "solid-js";
 import Cookies from "js-cookie";
 import { isServer } from "solid-js/web";

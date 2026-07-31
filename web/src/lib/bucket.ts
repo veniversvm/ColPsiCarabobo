@@ -1,3 +1,13 @@
+// web/src/lib/bucket.ts
+//
+// Centraliza la construcción de URLs de objetos en el bucket S3/MinIO
+// y de URLs absolutas del sitio. Único lugar autorizado para hacerlo;
+// NO hardcodear endpoints de imágenes en componentes.
+//
+// En producción, el API Go devuelve URLs públicas completas; en desarrollo
+// local el navegador no resuelve el host Docker (`s3:9000`), por lo que
+// `VITE_BUCKET_URL` apunta a `http://localhost:9000/<bucket>`.
+
 const BUCKET_URL = import.meta.env.VITE_BUCKET_URL || "";
 const SITE_URL = import.meta.env.VITE_SITE_URL || "";
 

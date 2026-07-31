@@ -42,10 +42,15 @@ Sitio web del Colegio de Psicólogos de Carabobo. Incluye:
 | 13 | `psi/academico.tsx` | rel noopener noreferrer |
 | 14 | `aaaa[id].tsx` (eliminado) | Dead code removal |
 
-## Comandos
+## Comandos (web)
 
 ```bash
-npm run dev         # desarrollo
-npm run build       # build + verificar errores
-npm run typecheck   # typecheck (solo tsc --noEmit)
+npm run dev         # desarrollo (Vinxi)
+npm run build       # build SSR + verificar errores → .output/
+npm run start       # servir el build
 ```
+
+> No hay typecheck configurado (TypeScript no está instalado); `npm run build` es la verificación.
+
+Para el frontend en detalle (arquitectura, env vars, gotchas) ver [`web/README.md`](./web/README.md)
+y [`web/AGENTS.md`](./web/AGENTS.md).

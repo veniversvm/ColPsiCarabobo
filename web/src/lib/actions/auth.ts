@@ -1,4 +1,14 @@
 // web/src/lib/actions/auth.ts
+// Server actions de autenticación (se ejecutan SOLO en el servidor).
+//
+// Modelo de sesión:
+// - Go autentica y devuelve el JWT; el server action lo setea como cookie
+//   HttpOnly (`jwt`) → el browser nunca lo ve.
+// - El SSR / las server actions de admin leen esa cookie para llamar a la API
+//   con `Authorization: Bearer`.
+// - El cliente guarda una copia en `sessionStorage` para las peticiones fetch
+//   del navegador (ver `src/lib/api.ts`).
+// - `logoutAction` llama a `/psi/me/logout` de Go y borra las cookies.
 "use server";
 
 import { action, redirect } from "@solidjs/router";
