@@ -101,7 +101,7 @@ src/
 
 1. `npm run build` — ¿compila?
 2. Con Docker: `docker compose build web && docker compose up -d`.
-3. `curl localhost:3000` → 200, y el CSP debe incluir el origen del bucket en
+3. `curl localhost:23000` → 200, y el CSP debe incluir el origen del bucket en
    `img-src` (verificable en el HTML).
 4. Login admin (`/admin-access`) → el PATCH del dashboard deja de dar 404 si la
    cookie HttpOnly se está seteando (`curl` del RPC de `syncJwtCookie`).

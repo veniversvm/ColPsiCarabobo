@@ -11,7 +11,7 @@ services:
       - API_URL_INTERNAL=http://colpsi_api:8080/api/v1
       - PORT=3000
     ports:
-      - "3000:3000"
+      - "23000:3000"
     networks:
       - colpsi_network
     restart: unless-stopped
