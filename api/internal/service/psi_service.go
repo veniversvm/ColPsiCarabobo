@@ -17,6 +17,7 @@ type PsiService struct {
 	s3Client    *s3.S3Client
 	mailService IMailService
 	sanitizer   *bluemonday.Policy
+	absSvc      *AudiobookshelfService
 }
 
 // NewPsiService creates a new PsiService with the given repository, S3 client, and mail service.
@@ -72,6 +73,12 @@ func (s *PsiService) avatarURL(key string, updatedAt time.Time) string {
 		url = fmt.Sprintf("%s?v=%d", url, updatedAt.Unix())
 	}
 	return url
+}
+
+// SetAudiobookshelf inyecta el servicio de Audiobookshelf (nil-safe). Permite
+// el aprovisionamiento de cuentas ABS sin cambiar la firma de NewPsiService.
+func (s *PsiService) SetAudiobookshelf(absSvc *AudiobookshelfService) {
+	s.absSvc = absSvc
 }
 
 // SetAudiobookshelfID persiste el id de la cuenta ABS del agremiado en el

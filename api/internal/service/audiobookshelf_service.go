@@ -72,6 +72,13 @@ type absUser struct {
 	AccessToken string `json:"accessToken"`
 }
 
+// AbsUser es la vista resumida de un usuario ABS para la sincronización masiva.
+type AbsUser struct {
+	ID       string
+	Username string
+	IsActive bool
+}
+
 type absLoginResponse struct {
 	User absUser `json:"user"`
 }
@@ -93,7 +100,7 @@ func (s *AudiobookshelfService) GetAccess(ctx context.Context, username string) 
 		return nil, err
 	}
 
-	created, err := s.createUser(ctx, adminToken, username, password)
+	_, created, err := s.createUser(ctx, adminToken, username, password)
 	if err != nil {
 		// Carrera entre dos peticiones simultáneas: otra ya la creó.
 		if !strings.Contains(strings.ToLower(err.Error()), "already taken") {
@@ -174,9 +181,82 @@ func (s *AudiobookshelfService) adminLogin(ctx context.Context) (string, error) 
 	return user.AccessToken, nil
 }
 
+// ListUsers lista los usuarios de ABS usando el token del admin. Se usa para
+// comparar contra la base de datos en la sincronización masiva de cuentas.
+func (s *AudiobookshelfService) ListUsers(ctx context.Context) ([]AbsUser, error) {
+	adminToken, err := s.adminLogin(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.baseURL+"/api/users", nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+adminToken)
+
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrAbsUnavailable, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("%w: GET /api/users %d", ErrAbsUnavailable, resp.StatusCode)
+	}
+
+	var parsed struct {
+		Users []struct {
+			ID       string `json:"id"`
+			Username string `json:"username"`
+			IsActive bool   `json:"isActive"`
+		} `json:"users"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
+		return nil, fmt.Errorf("%w: GET /api/users cuerpo inválido", ErrAbsUnavailable)
+	}
+
+	users := make([]AbsUser, 0, len(parsed.Users))
+	for _, u := range parsed.Users {
+		users = append(users, AbsUser{ID: u.ID, Username: u.Username, IsActive: u.IsActive})
+	}
+	return users, nil
+}
+
+// DeactivateUser desactiva la cuenta ABS de un agremiado que dejó de ser
+// solvente. PATCH /api/users/{id} con isActive=false.
+func (s *AudiobookshelfService) DeactivateUser(ctx context.Context, userID string) error {
+	if userID == "" {
+		return fmt.Errorf("%w: id de usuario vacío", ErrAbsUnavailable)
+	}
+	adminToken, err := s.adminLogin(ctx)
+	if err != nil {
+		return err
+	}
+
+	body, _ := json.Marshal(map[string]bool{"isActive": false})
+	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, s.baseURL+"/api/users/"+userID, bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+adminToken)
+
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("%w: %v", ErrAbsUnavailable, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("%w: PATCH /api/users/%s %d", ErrAbsUnavailable, userID, resp.StatusCode)
+	}
+	return nil
+}
+
 // createUser crea una cuenta web de usuario en ABS usando el token admin.
-// Retorna true si la cuenta se creó (false si ya existía).
-func (s *AudiobookshelfService) createUser(ctx context.Context, adminToken, username, password string) (bool, error) {
+// Retorna el id de la cuenta creada y true si se creó (false si ya existía).
+func (s *AudiobookshelfService) createUser(ctx context.Context, adminToken, username, password string) (string, bool, error) {
 	body, _ := json.Marshal(map[string]interface{}{
 		"username": username,
 		"password": password,
@@ -186,24 +266,35 @@ func (s *AudiobookshelfService) createUser(ctx context.Context, adminToken, user
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.baseURL+"/api/users", bytes.NewReader(body))
 	if err != nil {
-		return false, err
+		return "", false, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+adminToken)
 
 	resp, err := s.client.Do(req)
 	if err != nil {
-		return false, fmt.Errorf("%w: %v", ErrAbsUnavailable, err)
+		return "", false, fmt.Errorf("%w: %v", ErrAbsUnavailable, err)
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == http.StatusConflict || strings.Contains(strings.ToLower(readBody(resp)), "already taken") {
-		return false, nil
+	if resp.StatusCode == http.StatusConflict {
+		return "", false, nil
 	}
 	if resp.StatusCode != http.StatusOK {
-		return false, fmt.Errorf("%w: POST /api/users %d", ErrAbsUnavailable, resp.StatusCode)
+		if strings.Contains(strings.ToLower(readBody(resp)), "already taken") {
+			return "", false, nil
+		}
+		return "", false, fmt.Errorf("%w: POST /api/users %d", ErrAbsUnavailable, resp.StatusCode)
 	}
-	return true, nil
+
+	// ABS responde { "user": { "id": "...", "username": "..." } }
+	var parsed struct {
+		User absUser `json:"user"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
+		return "", false, fmt.Errorf("%w: POST /api/users sin id", ErrAbsUnavailable)
+	}
+	return parsed.User.ID, true, nil
 }
 
 // readBody lee el cuerpo (hasta 4KB) para poder inspeccionar mensajes de error.

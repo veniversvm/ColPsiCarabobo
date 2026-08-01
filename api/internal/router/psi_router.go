@@ -18,13 +18,15 @@ import (
 func SetupPsiRoutes(router fiber.Router, psiRepo domain.PsiUserRepository, adminRepo domain.UserAdminRepository, s3Client *s3.S3Client, analyticsSvc *service.AnalyticsService, mailService service.IMailService, appCache *cache.Cache) {
 	svc := service.NewPsiService(psiRepo, s3Client, mailService)
 	h := handler.NewPsiHandler(svc, analyticsSvc, appCache)
-	h.SetAudiobookshelf(service.NewAudiobookshelfService(
+	absSvc := service.NewAudiobookshelfService(
 		config.Envs.AbsBaseURL,
 		config.Envs.AbsPublicURL,
 		config.Envs.AbsAdminUsername,
 		config.Envs.AbsAdminPassword,
 		config.Envs.AbsPasswordSecret,
-	))
+	)
+	svc.SetAudiobookshelf(absSvc)
+	h.SetAudiobookshelf(absSvc)
 	authMid := middleware.NewAuthMiddleware(adminRepo, psiRepo, analyticsSvc)
 
 	// Store de idempotencia — compartido solo para las rutas que lo necesitan

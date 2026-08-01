@@ -74,8 +74,10 @@ swag init -g cmd/api/main.go -o docs/   # regenerar Swagger
    `GOENV`) — el README anterior los listaba y no existían.
    Para la biblioteca virtual (Audiobookshelf): `ABS_BASE_URL` (interna, en Docker
    `http://audiobookshelf:80`, NUNCA la pública), `ABS_PUBLIC_URL` (navegador),
-   `ABS_ADMIN_USERNAME/PASSWORD` (admin de aprovisionamiento `colpsi-bot`) y
-   `ABS_PASSWORD_SECRET` (deriva la clave de cada agremiado; `openssl rand -hex 24`).
+   `ABS_ADMIN_USERNAME/PASSWORD` (admin de aprovisionamiento; en producción se usa
+   `root`, ver gotcha 9) y `ABS_PASSWORD_SECRET` (deriva la clave de cada agremiado;
+   `openssl rand -hex 24`). `ABS_SYNC_INTERVAL_HOURS` controla el worker de sync
+   (ver gotcha 10).
 
 6. **Config singleton** — `config.InitConfig()` debe ejecutarse al inicio de
    `main()` (`cmd/api/main.go:54`) antes de cualquier otro servicio. `config.Envs`
@@ -95,10 +97,21 @@ swag init -g cmd/api/main.go -o docs/   # regenerar Swagger
    (`psi_handler.go:GetAudiobookshelfAccess`) devuelve la URL de auto-login
    `{ABS_PUBLIC_URL}/login/?accessToken=...` SOLO a agremiados solventes
    (403 si no). El usuario ABS es `psi_<ci>` y se crea al vuelo vía la API de
-   admin (`colpsi-bot`) con la clave derivada de `ABS_PASSWORD_SECRET` (nunca
+   admin con la clave derivada de `ABS_PASSWORD_SECRET` (nunca
    se expone en claro). El id de la cuenta ABS se persiste en
    `audio_book_shell_id` (`UpdateAudioBookShellID`). El acceso se sirve por
    `ABS_PUBLIC_URL`, mientras `ABS_BASE_URL` es la interna del SDK.
+   El admin de aprovisionamiento (`ABS_ADMIN_USERNAME/PASSWORD`) debe tener rol
+   admin en ABS; si `colpsi-bot` no funciona (401), usar `root` del propio ABS.
+
+10. **Worker de sync ABS** (`cmd/api/abs_sync_worker.go`) — `runABSSyncLoop`
+    se dispara UNA vez al arrancar y luego cada `ABS_SYNC_INTERVAL_HOURS`
+    (default 24; `<=0` desactiva la sync). Ejecuta
+    `PsiService.SyncAudiobookshelfAccounts`: crea en masa las cuentas `psi_<ci>`
+    de los solventes que aún no tienen una y **desactiva** (SIEMPRE, no es
+    configurable) las `psi_*` de insolventes/inactivos/soft-deleted. NUNCA toca
+    usuarios ABS que no empiecen por `psi_` (protege admin/root). Usa la consulta
+    `GetAllForABSSync` (Unscoped) para ver también los soft-deleted.
 
 ## Estructura
 

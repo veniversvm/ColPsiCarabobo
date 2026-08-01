@@ -496,4 +496,57 @@ func TestPsiRepo_ComprehensiveSuite(t *testing.T) {
 		require.Len(t, users, 1)
 		require.Equal(t, "Sitemap", users[0].FirstName)
 	})
+
+	t.Run("GetAllForABSSync", func(t *testing.T) {
+		tx := mainDB.Begin()
+		defer tx.Rollback()
+		r := NewPsiRepository(tx)
+
+		// TextModel es una Foreign Key obligatoria (BioTextID) para PsiUserModel.
+		bio := domain.TextModel{ID: uuid.New(), Content: ""}
+		require.NoError(t, tx.Create(&bio).Error)
+
+		// Solvente activo — debe aparecer.
+		solvent := domain.PsiUserModel{
+			ID: uuid.New(), CI: 14000, FPV: 14000, BornDate: time.Now(),
+			Genre: "M", Nationality: "V", ContactEmail: "abs1@t.com", ContactPhone: "1414",
+			FirstName: "Abs", LastName: "Sync", BioTextID: bio.ID, AudioBookShellId: "abs_14000", Solvent: true,
+			Credentials: domain.Credentials{Username: "abs1", Email: "abs1@t.com", IsActive: true},
+		}
+		require.NoError(t, tx.Create(&solvent).Error)
+
+		// Insolvente activo — debe aparecer (para poder desactivarlo en ABS).
+		insolvent := domain.PsiUserModel{
+			ID: uuid.New(), CI: 15000, FPV: 15000, BornDate: time.Now(),
+			Genre: "F", Nationality: "V", ContactEmail: "abs2@t.com", ContactPhone: "1515",
+			FirstName: "Abs", LastName: "Insolvent", BioTextID: bio.ID, AudioBookShellId: "abs_15000", Solvent: false,
+			Credentials: domain.Credentials{Username: "abs2", Email: "abs2@t.com", IsActive: true},
+		}
+		require.NoError(t, tx.Create(&insolvent).Error)
+
+		// Soft-deleted — debe aparecer también (para revocar su acceso ABS).
+		deleted := domain.PsiUserModel{
+			ID: uuid.New(), CI: 16000, FPV: 16000, BornDate: time.Now(),
+			Genre: "M", Nationality: "V", ContactEmail: "abs3@t.com", ContactPhone: "1616",
+			FirstName: "Abs", LastName: "Deleted", BioTextID: bio.ID, AudioBookShellId: "abs_16000", Solvent: true,
+			Credentials: domain.Credentials{Username: "abs3", Email: "abs3@t.com", IsActive: true},
+		}
+		require.NoError(t, tx.Create(&deleted).Error)
+		require.NoError(t, tx.Delete(&deleted).Error)
+
+		users, err := r.GetAllForABSSync(ctx)
+		require.NoError(t, err)
+
+		// Debe incluir solvente, insolvente y soft-deleted (Unscoped).
+		found := map[int]domain.PsiUserModel{}
+		for _, u := range users {
+			found[u.CI] = u
+		}
+		require.Contains(t, found, 14000)
+		require.Contains(t, found, 15000)
+		require.Contains(t, found, 16000)
+		require.True(t, found[14000].Solvent)
+		require.False(t, found[15000].Solvent)
+		require.True(t, found[16000].DeletedAt.Valid, "soft-deleted debe traer DeletedAt poblado")
+	})
 }

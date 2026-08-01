@@ -46,6 +46,11 @@ type PsiUserRepository interface {
 	// Uso exlusivo para indexacion de Google SEO
 	GetSitemapData(ctx context.Context) ([]PsiUserModel, error)
 
+	// GetAllForABSSync recupera (incluyendo soft-deleted) los datos mínimos
+	// necesarios para reconciliar las cuentas de Audiobookshelf: CI, solvencia,
+	// estado activo e id de la cuenta ABS.
+	GetAllForABSSync(ctx context.Context) ([]PsiUserModel, error)
+
 	// =========================================================================
 	// ACTUALIZACIONES (MUTACIONES)
 	// =========================================================================

@@ -81,6 +81,7 @@ type Config struct {
 	AbsAdminUsername   string // Usuario admin de ABS para aprovisionar cuentas
 	AbsAdminPassword   string // Contraseña del admin de ABS
 	AbsPasswordSecret  string // Secreto para derivar la contraseña de cada agremiado
+	AbsSyncIntervalH   int    // Horas entre sincronizaciones de cuentas ABS (<=0 = desactivada)
 
 	//
 	JwtLibrarySecret string
@@ -175,6 +176,7 @@ func InitConfig() {
 		AbsAdminUsername:  getEnv("ABS_ADMIN_USERNAME", ""),
 		AbsAdminPassword:  getEnv("ABS_ADMIN_PASSWORD", ""),
 		AbsPasswordSecret: getEnv("ABS_PASSWORD_SECRET", ""),
+		AbsSyncIntervalH:  getEnvInt("ABS_SYNC_INTERVAL_HOURS", 24),
 
 		// Library
 		JwtLibrarySecret: getEnv("JWT_LIBRARY_SECRET", ""),

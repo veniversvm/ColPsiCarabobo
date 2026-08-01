@@ -149,6 +149,12 @@ func (s *PsiService) CreatePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 		}
 	}
 
+	// 10. Aprovisionar cuenta en Audiobookshelf si el agremiado nace solvente.
+	// No bloqueante: un fallo de ABS no revierte la creación del expediente.
+	if psi.Solvent {
+		s.EnsureAudiobookshelf(ctx, psi)
+	}
+
 	return nil
 }
 

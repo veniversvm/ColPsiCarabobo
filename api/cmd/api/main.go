@@ -147,6 +147,12 @@ func main() {
 	}()
 	// ─────────────────────────────────────────────────────────────────────────
 
+	// ── Sincronización de cuentas Audiobookshelf ─────────────────────────────
+	// Reconciliación periódica: crea cuentas ABS para solventes y desactiva las
+	// de quienes dejaron de serlo. Se dispara UNA vez al arrancar (para absorber
+	// imports XLSX recientes) y luego cada AbsSyncIntervalH horas.
+	runABSSyncLoop(bgCtx, db)
+
 	// 5.5 CACHÉ COMPARTIDA (Valkey o in-memory) para el directorio público
 	appCache := cache.New(config.Envs.ValkeyAddr)
 
