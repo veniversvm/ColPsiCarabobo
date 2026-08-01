@@ -2,30 +2,107 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body>
-    <h1>Bienvenido(a), {{.Name}}!</h1>
-    <p>Este correo te confirma como administrador del sistema.</p>
-    <p>Ya puedes acceder a tu perfil y gestionar las funciones administrativas.</p>
-    
-     <p>Tus credenciales de acceso son:</p>
-    <ul>
-        <li><strong>Usuario:</strong> {{.Name}}</li>
-        <li><strong>Correo:</strong> {{.Email}}</li>
-        <li><strong>Contraseña temporal:</strong> <strong>{{.Password}}</strong></li>
-    </ul>
+<body style="margin:0; padding:0; background-color:#f3f4f6;">
 
-    <div style="background-color:#fff3cd; border:1px solid #ffc107; padding:12px; margin:16px 0; border-radius:6px;">
-        <strong>IMPORTANTE:</strong> Esta es una contraseña temporal. Por tu seguridad, deberás cambiarla al iniciar sesión por primera vez.
-    </div>
-    
-    <br>
-    
-    <p>Atentamente,<br>
-    Administración ColPsiCarabobo</p>
-    <hr>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#f3f4f6">
+        <tr>
+            <td align="center" style="padding:24px 12px;">
 
-    <p><small>Este es un mensaje automático, por favor no responda.</small></p>
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px; background:#ffffff; border-radius:16px; overflow:hidden; border:1px solid #e5e7eb;">
+
+                    <!-- HEADER INSTITUCIONAL: Ψ + nombre + bandera de Carabobo -->
+                    <tr>
+                        <td bgcolor="#1e3a8a" style="padding:20px 24px;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td align="left" valign="middle">
+                                        <table role="presentation" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td valign="middle">
+                                                    <table role="presentation" cellpadding="0" cellspacing="0">
+                                                        <tr>
+                                                            <td align="center" style="width:46px; height:46px; background:#ffffff; border-radius:10px; font-family:Arial,Helvetica,sans-serif; font-size:26px; font-weight:bold; color:#1e3a8a; line-height:46px;">Ψ</td>
+                                                        </tr>
+                                                    </table>
+                                                </td>
+                                                <td valign="middle" style="padding-left:12px;">
+                                                    <div style="font-family:Arial,Helvetica,sans-serif; font-size:18px; font-weight:800; color:#ffffff; letter-spacing:-0.02em; line-height:1.2;">Colegio de Psicólogos</div>
+                                                    <div style="font-family:Arial,Helvetica,sans-serif; font-size:11px; font-weight:bold; color:#93c5fd; letter-spacing:0.18em; text-transform:uppercase; line-height:1.4;">del Estado Carabobo</div>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                    <td align="right" valign="middle">
+                                        <img
+                                            src="https://upload.wikimedia.org/wikipedia/commons/4/4b/Bandera_de_carabobo.svg"
+                                            alt="Bandera del Estado Carabobo"
+                                            width="42" height="28"
+                                            style="display:block; border-radius:4px;"
+                                        />
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- CUERPO -->
+                    <tr>
+                        <td style="padding:28px 24px; font-family:Arial,Helvetica,sans-serif; font-size:15px; line-height:1.6; color:#1f2937;">
+                            <h1 style="margin:0 0 12px 0; font-size:22px; font-weight:800; color:#1e3a8a;">Bienvenido(a), {{.Name}}!</h1>
+
+                            <p style="margin:0 0 12px 0;">Este correo te confirma como administrador del sistema del <strong>Colegio de Psicólogos de Carabobo</strong>.</p>
+
+                            <p style="margin:0 0 16px 0;">Ya puedes acceder a tu perfil y gestionar las funciones administrativas.</p>
+
+                            <p style="margin:0 0 8px 0;"><strong>Tus credenciales de acceso son:</strong></p>
+
+                            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; margin:8px 0 16px 0;">
+                                <tr>
+                                    <td style="padding:14px 18px; font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#1e3a8a;">
+                                        <strong>Usuario:</strong> {{.Name}}<br>
+                                        <strong>Correo:</strong> {{.Email}}<br>
+                                        <strong>Contraseña temporal:</strong> <strong style="background:#facc15; padding:1px 6px; border-radius:4px;">{{.Password}}</strong>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#fff7ed; border:1px solid #fed7aa; border-radius:12px; margin:0 0 20px 0;">
+                                <tr>
+                                    <td style="padding:12px 16px; font-family:Arial,Helvetica,sans-serif; font-size:13px; line-height:1.5; color:#9a3412;">
+                                        <strong>IMPORTANTE:</strong> Esta es una contraseña temporal. Por tu seguridad, deberás cambiarla al iniciar sesión por primera vez.
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="margin:0;">Atentamente,<br>
+                            Administración ColPsiCarabobo</p>
+                        </td>
+                    </tr>
+
+                    <!-- PIE -->
+                    <tr>
+                        <td style="padding:16px 24px; border-top:1px solid #e5e7eb;">
+                            <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:12px; color:#6b7280;">Este es un mensaje automático, por favor no responda.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:0; font-size:0; line-height:0;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td width="33%" bgcolor="#991b1b" style="height:6px; font-size:0; line-height:6px;">&nbsp;</td>
+                                    <td width="34%" bgcolor="#15803d" style="height:6px; font-size:0; line-height:6px;">&nbsp;</td>
+                                    <td width="33%" bgcolor="#1e3a8a" style="height:6px; font-size:0; line-height:6px;">&nbsp;</td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+
+            </td>
+        </tr>
+    </table>
 
 </body>
 </html>
