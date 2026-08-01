@@ -487,6 +487,16 @@ func (r *psiRepo) UpdateKey(ctx context.Context, psi *domain.PsiUserModel) error
 		Updates(psi).Error
 }
 
+// ResetPassword actualiza exclusivamente las credenciales de acceso tras un
+// reinicio administrativo de clave: nuevo hash bcrypt, rotación de la Key de
+// sesión (invalida los JWT emitidos) y la bandera de cambio obligatorio.
+// El Select() acota las columnas para no tocar el resto del expediente.
+func (r *psiRepo) ResetPassword(ctx context.Context, psi *domain.PsiUserModel) error {
+	return r.db.WithContext(ctx).Model(psi).
+		Select("Password", "Key", "MustChangePassword", "UpdatedAt", "UpdateBy", "UpdateById").
+		Updates(psi).Error
+}
+
 // GetPsiUserColData recupera exclusivamente la información colegial de un psicólogo.
 // Útil para vistas ligeras donde no se requiere el perfil completo del usuario.
 func (r *psiRepo) GetPsiUserColData(ctx context.Context, psiID uuid.UUID) (*domain.PsiUserColData, error) {
@@ -580,7 +590,7 @@ func (r *psiRepo) SearchAdmin(ctx context.Context, filter request_structs.PsiDir
 	var total int64
 
 	query := r.db.WithContext(ctx).Model(&domain.PsiUserModel{}).
-		Select("id, first_name, last_name, ci, fpv, email, solvent, is_active, primary_work_area, secondary_work_area, primary_specialty_id, secondary_specialty_id")
+		Select("id, first_name, last_name, ci, fpv, email, solvent, is_active, control_number, primary_work_area, secondary_work_area, primary_specialty_id, secondary_specialty_id")
 
 	if filter.SearchTerm != "" {
 		// Limpiamos espacios
@@ -594,7 +604,8 @@ func (r *psiRepo) SearchAdmin(ctx context.Context, filter request_structs.PsiDir
 				Or("unaccent(first_name || ' ' || last_name) ILIKE unaccent(?)", term).
 				Or("unaccent(last_name || ' ' || first_name) ILIKE unaccent(?)", term).
 				Or("CAST(ci AS TEXT) LIKE ?", term).
-				Or("CAST(fpv AS TEXT) LIKE ?", term),
+				Or("CAST(fpv AS TEXT) LIKE ?", term).
+				Or("control_number ILIKE ?", term),
 		)
 	}
 

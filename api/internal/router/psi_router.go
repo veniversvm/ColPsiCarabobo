@@ -41,6 +41,7 @@ func SetupPsiRoutes(router fiber.Router, psiRepo domain.PsiUserRepository, admin
 	adminGroup.Delete("/:id/picture", h.DeleteProfilePictureByAdmin)
 	adminGroup.Patch("/:id", h.UpdatePsiByAdmin)
 	adminGroup.Delete("/:id", h.DeletePsiByAdmin)
+	adminGroup.Post("/:id/reset-password", h.ResetPsiPasswordByAdmin)
 
 	// =========================================================================
 	// ZONA 2: AUTOGESTIÓN

@@ -196,6 +196,8 @@ Las variables se cargan desde el archivo `.env` en la raíz del proyecto
 | `SMTP_PORT`           | Puerto SMTP (dev: MailHog `1025`)              | `1025`                      |
 | `SMTP_USER` / `SMTP_PASS` | Credenciales SMTP                         | *(vacío)*                   |
 | `SMTP_FROM`           | Email remitente                                | `info@colpsicarabobo.com`   |
+| `APP_URL`             | URL pública del frontend (inyectada en los correos) | `http://localhost:3000` |
+| `MAIL_SIGNATURE`      | Firma institucional tras "Atentamente" en los correos | `Administración ColPsiCarabobo` |
 | `ALLOWED_ORIGINS`     | Orígenes CORS permitidos (separados por coma)  | `http://127.0.0.1:3000, http://localhost:3000` |
 | `VALKEY_ADDR`         | Valkey/Redis para rate limiting (vacío = en memoria) | *(vacío)*            |
 | `JWT_LIBRARY_SECRET`  | Secreto de librería JWT externa                | *(vacío)*                  |
@@ -255,6 +257,7 @@ Todas las rutas prefijadas con `/api/v1`. Documentación interactiva disponible 
 | `GET`    | `/api/v1/admin/psi/:id`           | Detalle psicólogo (admin)          | JWT    |
 | `PATCH`  | `/api/v1/admin/psi/:id`           | Actualizar psicólogo (admin)       | JWT    |
 | `DELETE` | `/api/v1/admin/psi/:id`           | Eliminar psicólogo (admin)         | JWT    |
+| `POST`   | `/api/v1/admin/psi/:id/reset-password` | Reiniciar clave (temporal de 12 chars; invalida sesiones y la envía por correo) | JWT |
 
 ### Publicaciones (Posts)
 

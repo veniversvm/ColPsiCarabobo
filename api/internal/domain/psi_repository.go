@@ -68,6 +68,11 @@ type PsiUserRepository interface {
 	// Vital para la rotación de sesiones y la invalidación de tokens JWT.
 	UpdateKey(ctx context.Context, psi *PsiUserModel) error
 
+	// ResetPassword actualiza únicamente la clave temporal del psicólogo:
+	// hash bcrypt, rotación de la Key de sesión y fuerza de must_change_password.
+	// Usado por el admin al reiniciar la contraseña de una cuenta.
+	ResetPassword(ctx context.Context, psi *PsiUserModel) error
+
 	// Delete realiza una eliminación lógica (Soft Delete) del perfil del psicólogo.
 	Delete(ctx context.Context, id uuid.UUID) error
 

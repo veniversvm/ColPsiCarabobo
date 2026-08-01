@@ -64,6 +64,12 @@ const deleteProfilePictureServer = action(
   },
 );
 
+const resetPasswordServer = action(async (id: string) => {
+  "use server";
+  const { apiPost } = await import("~/lib/api");
+  return await apiPost(`/admin/psi/${id}/reset-password`, {});
+});
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const formatDate = (dateStr?: string) => (dateStr ? dateStr.split("T")[0] : "");
@@ -104,6 +110,7 @@ export default function AdminEditPsiPage() {
 
   const runUpdateAction = useAction(updateAdminPsiServer);
   const runDeletePicture = useAction(deleteProfilePictureServer);
+  const runResetPassword = useAction(resetPasswordServer);
   const [profile, { refetch }] = createResource(() =>
     apiGet<any>(`/admin/psi/${params.id}`),
   );
@@ -112,6 +119,7 @@ export default function AdminEditPsiPage() {
   const [form, setForm] = createStore<EditFormState>({} as EditFormState);
   const [saving, setSaving] = createSignal(false);
   const [deletingPicture, setDeletingPicture] = createSignal(false);
+  const [resettingPassword, setResettingPassword] = createSignal(false);
   const [message, setMessage] = createSignal<{
     type: "success" | "error";
     text: string;
@@ -309,6 +317,37 @@ export default function AdminEditPsiPage() {
     }
   };
 
+  const handleResetPassword = async () => {
+    const id = params.id ?? "";
+    if (
+      !id ||
+      resettingPassword() ||
+      !confirm(
+        "¿Reiniciar la clave de acceso de este psicólogo?\n\n" +
+          "Se cerrarán sus sesiones activas y recibirá una contraseña temporal por correo. Deberá cambiarla al iniciar sesión.",
+      )
+    ) {
+      return;
+    }
+    setResettingPassword(true);
+    setMessage(null);
+    try {
+      await runResetPassword(id);
+      setMessage({
+        type: "success",
+        text: "Clave reiniciada. La contraseña temporal fue enviada al correo del psicólogo.",
+      });
+    } catch (err: any) {
+      const msg = err?.message || String(err);
+      setMessage({
+        type: "error",
+        text: msg.replace(/^.*?ApiError:\s*/i, "") || "Error al reiniciar la clave.",
+      });
+    } finally {
+      setResettingPassword(false);
+    }
+  };
+
   return (
     <main class="pb-28 animate-in fade-in duration-500 font-sans">
       <EditPageHeader profile={profile()} />
@@ -329,6 +368,8 @@ export default function AdminEditPsiPage() {
             onAvatarChange={setAvatarFile}
             pictureUrl={profile()?.profile_picture_url || ""}
             onDeletePicture={handleDeletePicture}
+            onResetPassword={handleResetPassword}
+            resettingPassword={resettingPassword()}
           />
           <AdminStatusSection form={form} setForm={set} />
 

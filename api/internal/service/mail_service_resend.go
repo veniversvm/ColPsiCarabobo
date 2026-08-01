@@ -326,7 +326,7 @@ func (s *ResendMailService) renderTemplate(job MailJob) (string, error) {
 	}
 
 	var body bytes.Buffer
-	if err := tmpl.Execute(&body, job.Data); err != nil {
+	if err := tmpl.Execute(&body, augmentTemplateData(job.Data)); err != nil {
 		return "", fmt.Errorf("error al inyectar datos en la plantilla: %w", err)
 	}
 	return body.String(), nil

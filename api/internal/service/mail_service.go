@@ -230,6 +230,33 @@ func (s *MailService) SendEmail(to string, subject string, templateName string, 
 	return nil
 }
 
+// augmentTemplateData inyecta variables globales de configuración en los datos
+// de la plantilla (URL de la aplicación y firma institucional). Así, todos los
+// correos se personalizan desde .env sin tocar cada punto de envío.
+//
+// Las variables expuestas a las plantillas son:
+//   - SiteURL:   URL pública del frontend (config.Envs.AppURL)
+//   - Signature: firma mostrada tras "Atentamente" (config.Envs.MailSignature)
+func augmentTemplateData(data interface{}) map[string]interface{} {
+	base := map[string]interface{}{
+		"SiteURL":   config.Envs.AppURL,
+		"Signature": config.Envs.MailSignature,
+	}
+	if data == nil {
+		return base
+	}
+	if m, ok := data.(map[string]interface{}); ok {
+		for k, v := range m {
+			base[k] = v
+		}
+		return base
+	}
+	// Fallback para datos no-map (no usado por las plantillas actuales):
+	// se exponen igualmente las variables globales junto al dato original.
+	base["Data"] = data
+	return base
+}
+
 // executeSend realiza la orquestación, renderización de plantillas y el envío
 // físico de forma síncrona. Es invocado exclusivamente por el Worker de fondo.
 func (s *MailService) executeSend(job MailJob) error {
@@ -245,7 +272,7 @@ func (s *MailService) executeSend(job MailJob) error {
 	// 2. Renderizar contenido dinámico
 	// Se inyecta la estructura `job.Data` en la plantilla de forma segura (previniendo XSS).
 	var body bytes.Buffer
-	if err := tmpl.Execute(&body, job.Data); err != nil {
+	if err := tmpl.Execute(&body, augmentTemplateData(job.Data)); err != nil {
 		return fmt.Errorf("error al inyectar datos en la plantilla: %w", err)
 	}
 

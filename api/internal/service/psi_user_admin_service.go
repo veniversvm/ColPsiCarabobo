@@ -783,6 +783,65 @@ func (s *PsiService) DeletePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 }
 
 // =========================================================================
+// REINICIO DE CLAVE (ADMIN)
+// =========================================================================
+
+// ResetPsiPasswordByAdmin reinicia la clave de acceso de un psicólogo: genera
+// una contraseña temporal (12 caracteres aleatorios), la hashea con bcrypt,
+// rota la Key de sesión para invalidar los JWT vigentes, fuerza el cambio de
+// contraseña en el próximo login y notifica al usuario por correo.
+//
+// La contraseña temporal jamás se devuelve en la respuesta HTTP: viaja
+// únicamente en el correo institucional (canal privado del psicólogo).
+func (s *PsiService) ResetPsiPasswordByAdmin(ctx context.Context, admin *domain.UserAdmin, targetID uuid.UUID) error {
+	// 1. Validación de permisos (RBAC)
+	if !admin.CanUpdatePsi && !admin.Sudo {
+		return errors.New("no tienes permiso para editar registros de psicólogos")
+	}
+
+	// 2. Obtener registro actual
+	psi, err := s.repo.GetByID(ctx, targetID)
+	if err != nil {
+		return domain.ErrPsiNotFound
+	}
+
+	// 3. Generar contraseña temporal (12 caracteres aleatorios)
+	tempPassword := utils.GenerateSecureRandomString(12)
+
+	// 4. Hash bcrypt y rotación de la Key de sesión
+	hashed, err := bcrypt.GenerateFromPassword([]byte(tempPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return errors.New("error al procesar seguridad")
+	}
+
+	psi.Password = string(hashed)
+	psi.Key = uuid.Must(uuid.NewV7()).String()
+	psi.MustChangePassword = true
+	psi.UpdateBy = admin.Username
+	psi.UpdateById = &admin.ID
+
+	// 5. Persistencia acotada a credenciales
+	if err := s.repo.ResetPassword(ctx, psi); err != nil {
+		return fmt.Errorf("error al reiniciar la contraseña: %w", err)
+	}
+
+	// 6. Notificación al psicólogo — no bloqueante, fallo silencioso intencional
+	// Si el SMTP falla, el reinicio de la clave ya quedó persistido.
+	if s.mailService != nil {
+		mailData := map[string]interface{}{
+			"Name":     psi.FirstName,
+			"Email":    psi.Email,
+			"Password": tempPassword,
+		}
+		if err := s.mailService.SendEmail(psi.Email, "Contraseña reiniciada", "reset_password_psi", mailData); err != nil {
+			log.Warn().Err(err).Str("component", "psi_user_admin_service").Msg("Error al enviar correo de clave reiniciada")
+		}
+	}
+
+	return nil
+}
+
+// =========================================================================
 // DASHBOARD Y LISTADOS
 // =========================================================================
 
@@ -815,14 +874,15 @@ func (s *PsiService) GetAdminDirectory(ctx context.Context, admin *domain.UserAd
 	list := make([]request_structs.PsiAdminListDTO, 0, len(users))
 	for _, u := range users {
 		list = append(list, request_structs.PsiAdminListDTO{
-			ID:        u.ID,
-			FirstName: u.FirstName,
-			LastName:  u.LastName,
-			CI:        u.CI,
-			FPV:       u.FPV,
-			Email:     u.Email,
-			Solvent:   u.Solvent,
-			IsActive:  u.IsActive,
+			ID:            u.ID,
+			FirstName:     u.FirstName,
+			LastName:      u.LastName,
+			CI:            u.CI,
+			FPV:           u.FPV,
+			Email:         u.Email,
+			ControlNumber: u.ControlNumber,
+			Solvent:       u.Solvent,
+			IsActive:      u.IsActive,
 		})
 	}
 

@@ -2,11 +2,13 @@ package service
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/request_structs"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // =========================================================================
@@ -37,6 +39,8 @@ type mockPsiRepoAdmin struct {
 	// Interface Compliance: La firma debe coincidir con el contrato del dominio,
 	// soportando ahora la inserción transaccional de un slice de solvencias.
 	UpdateFunc func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, text *domain.TextModel, solvencies []domain.PsiUserSolvency) error
+	// ResetPasswordFunc simula el reinicio de credenciales (clave + key de sesión).
+	ResetPasswordFunc func(ctx context.Context, psi *domain.PsiUserModel) error
 }
 
 // CreateWithColData simula la ingesta estructurada de un perfil de psicólogo.
@@ -60,6 +64,14 @@ func (m *mockPsiRepoAdmin) GetByID(ctx context.Context, id uuid.UUID) (*domain.P
 func (m *mockPsiRepoAdmin) Update(ctx context.Context, p *domain.PsiUserModel, c *domain.PsiUserColData, t *domain.TextModel, s []domain.PsiUserSolvency) error {
 	if m.UpdateFunc != nil {
 		return m.UpdateFunc(ctx, p, c, t, s)
+	}
+	return nil
+}
+
+// ResetPassword simula el reinicio de credenciales de un psicólogo.
+func (m *mockPsiRepoAdmin) ResetPassword(ctx context.Context, p *domain.PsiUserModel) error {
+	if m.ResetPasswordFunc != nil {
+		return m.ResetPasswordFunc(ctx, p)
 	}
 	return nil
 }
@@ -187,6 +199,101 @@ func TestPsiService_GetAdminDirectory_Security(t *testing.T) {
 
 		if err == nil || err.Error() != "permisos insuficientes para listar agremiados" {
 			t.Error("Se debió denegar el acceso")
+		}
+	})
+}
+
+// TestPsiService_ResetPsiPasswordByAdmin evalúa el reinicio administrativo de clave:
+// generación de contraseña temporal (12 caracteres), hashing bcrypt, rotación de la
+// Key de sesión, bandera MustChangePassword y notificación por correo.
+func TestPsiService_ResetPsiPasswordByAdmin(t *testing.T) {
+	repo := &mockPsiRepoAdmin{}
+	var mailTo, mailSubject, mailTemplate string
+	var mailData map[string]interface{}
+	mail := &mockMailService{
+		SendEmailFunc: func(to, subject, template string, data interface{}) error {
+			mailTo = to
+			mailSubject = subject
+			mailTemplate = template
+			mailData = data.(map[string]interface{})
+			return nil
+		},
+	}
+	svc := NewPsiService(repo, nil, mail)
+	ctx := context.Background()
+
+	admin := &domain.UserAdmin{ID: uuid.Must(uuid.NewV7()), Credentials: domain.Credentials{Username: "super_admin"}, Sudo: true}
+	targetID := uuid.Must(uuid.NewV7())
+	currentPsi := &domain.PsiUserModel{
+		ID: targetID,
+		Credentials: domain.Credentials{
+			Email:    "psi@test.com",
+			Username: "psi_test",
+			Key:      "old_key",
+			Password: "old_hash",
+		},
+		FirstName: "Licenciada",
+	}
+
+	var saved *domain.PsiUserModel
+	repo.GetByIDFunc = func(ctx context.Context, id uuid.UUID) (*domain.PsiUserModel, error) {
+		return currentPsi, nil
+	}
+	repo.ResetPasswordFunc = func(ctx context.Context, psi *domain.PsiUserModel) error {
+		saved = psi
+		return nil
+	}
+
+	t.Run("Éxito: clave temporal de 12 chars, key rotada y correo", func(t *testing.T) {
+		if err := svc.ResetPsiPasswordByAdmin(ctx, admin, targetID); err != nil {
+			t.Fatalf("No se esperaba error: %v", err)
+		}
+
+		if saved == nil {
+			t.Fatal("ResetPassword no fue invocado en el repositorio")
+		}
+		if !saved.MustChangePassword {
+			t.Error("MustChangePassword debe ser true tras el reinicio")
+		}
+		if saved.Key == "old_key" {
+			t.Error("La Key de sesión debe rotarse para invalidar JWT previos")
+		}
+		if saved.Password == "old_hash" {
+			t.Error("El hash de la contraseña debe cambiar")
+		}
+
+		// El correo debe enviarse con la plantilla dedicada y la clave temporal.
+		if mailTo != "psi@test.com" || mailTemplate != "reset_password_psi" {
+			t.Errorf("Correo inesperado: to=%q template=%q", mailTo, mailTemplate)
+		}
+		if mailSubject != "Contraseña reiniciada" {
+			t.Errorf("Asunto inesperado: %q", mailSubject)
+		}
+		temp, ok := mailData["Password"].(string)
+		if !ok || len(temp) != 12 {
+			t.Fatalf("La clave temporal debe ser un string de 12 caracteres, se obtuvo len=%d", len(temp))
+		}
+		// En la DB solo se persiste el hash bcrypt, nunca la clave en claro.
+		if err := bcrypt.CompareHashAndPassword([]byte(saved.Password), []byte(temp)); err != nil {
+			t.Error("El hash persistido no corresponde a la clave temporal enviada por correo")
+		}
+	})
+
+	t.Run("Bloqueo: admin sin permisos", func(t *testing.T) {
+		lowAdmin := &domain.UserAdmin{Sudo: false, CanUpdatePsi: false, CanCreatePsi: false}
+		err := svc.ResetPsiPasswordByAdmin(ctx, lowAdmin, targetID)
+		if err == nil || err.Error() != "no tienes permiso para editar registros de psicólogos" {
+			t.Errorf("Se debió denegar el acceso: %v", err)
+		}
+	})
+
+	t.Run("Registro inexistente", func(t *testing.T) {
+		repo.GetByIDFunc = func(ctx context.Context, id uuid.UUID) (*domain.PsiUserModel, error) {
+			return nil, errors.New("not found")
+		}
+		err := svc.ResetPsiPasswordByAdmin(ctx, admin, targetID)
+		if !errors.Is(err, domain.ErrPsiNotFound) {
+			t.Errorf("Se esperaba ErrPsiNotFound: %v", err)
 		}
 	})
 }

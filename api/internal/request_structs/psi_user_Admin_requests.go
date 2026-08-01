@@ -306,6 +306,9 @@ type PsiAdminListDTO struct {
 	FPV       int       `json:"fpv"`
 	Email     string    `json:"email"`
 
+	// Nº de control interno (columna 'Nº' del Excel maestro); visible solo admin.
+	ControlNumber string `json:"control_number"`
+
 	// Banderas UI: Permiten al Frontend renderizar componentes visuales (Badges) sin hacer lógica pesada.
 	Solvent  bool `json:"solvent"`   // Activa etiquetas visuales de Alerta Roja / Verde.
 	IsActive bool `json:"is_active"` // Activa la opacidad de la fila si el usuario está suspendido o baneado.

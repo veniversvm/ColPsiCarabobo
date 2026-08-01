@@ -16,6 +16,9 @@ interface Props {
   // --- Foto actual en la DB (URL pública) y acción de eliminación ---
   pictureUrl: string;
   onDeletePicture: () => void;
+  // --- Reinicio de clave por administración ---
+  onResetPassword: () => void;
+  resettingPassword: boolean;
 }
 
 export function AccountSection(props: Props) {
@@ -107,6 +110,28 @@ export function AccountSection(props: Props) {
               Cualquier cambio en el Email o Username afectará las credenciales de acceso del psicólogo.
               Si el usuario está logueado, su sesión se invalidará.
             </p>
+
+            <div class="flex flex-wrap items-center justify-between gap-4 mt-5 pt-5 border-t border-blue-100">
+              <p class="text-sm text-blue-700 leading-relaxed">
+                <span class="font-black uppercase mr-1">Clave de acceso:</span>
+                Reinicia la contraseña para cerrar todas sus sesiones y enviarle
+                una temporal por correo.
+              </p>
+              <button
+                type="button"
+                onClick={() => props.onResetPassword()}
+                disabled={props.resettingPassword}
+                class="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest bg-red-600 text-white rounded-lg px-4 py-2.5 hover:bg-red-700 active:scale-95 transition-all disabled:opacity-50"
+              >
+                <Show
+                  when={props.resettingPassword}
+                  fallback={<span>🔑 Reiniciar clave</span>}
+                >
+                  <span class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Procesando...</span>
+                </Show>
+              </button>
+            </div>
           </div>
         </div>
 

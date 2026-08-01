@@ -29,9 +29,11 @@ func TestTemplates_RenderConDatosDeEjemplo(t *testing.T) {
 		"Email":     "psicologo@ejemplo.com",
 		"Password":  "Temporal2026!",
 		"LoginTime": "Fri, 01 Aug 2026 10:00:00 -0400",
+		"SiteURL":   "https://colpsicarabobo.com",
+		"Signature": "Administración ColPsiCarabobo",
 	}
 
-	for _, name := range []string{"login_psi.html", "welcome_psi.html", "login_admin.html", "welcome_admin.html"} {
+	for _, name := range []string{"login_psi.html", "welcome_psi.html", "login_admin.html", "welcome_admin.html", "reset_password_psi.html"} {
 		out := renderTemplate(t, name, data)
 
 		// Branding institucional: letra Ψ, nombre del colegio y bandera de Carabobo.
@@ -51,6 +53,14 @@ func TestTemplates_RenderConDatosDeEjemplo(t *testing.T) {
 			if !strings.Contains(out, v) {
 				t.Errorf("%s no inyectó el dato %q", name, v)
 			}
+		}
+
+		// Firma y URL de la aplicación configurable desde .env.
+		if !strings.Contains(out, "Administración ColPsiCarabobo") {
+			t.Errorf("%s no inyectó la firma institucional", name)
+		}
+		if !strings.Contains(out, "https://colpsicarabobo.com") {
+			t.Errorf("%s no inyectó la URL de la aplicación", name)
 		}
 	}
 }

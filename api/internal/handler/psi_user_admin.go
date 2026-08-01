@@ -218,6 +218,39 @@ func (h *PsiHandler) DeletePsiByAdmin(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"message": "Psicólogo eliminado correctamente"})
 }
 
+// ResetPsiPasswordByAdmin godoc
+// @Summary      Reiniciar clave de un psicólogo
+// @Description  Genera una contraseña temporal de 12 caracteres, invalida las sesiones activas y obliga al cambio en el próximo login. La nueva clave se envía únicamente al correo del psicólogo.
+// @Tags         Administración - Psicólogos
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id path string true "UUID del Psicólogo"
+// @Success      200 {object} map[string]string "message: Contraseña reiniciada y enviada al correo del psicólogo"
+// @Failure      400 {object} map[string]string "error: ID inválido"
+// @Failure      401 {object} map[string]string "error: No autorizado"
+// @Failure      403 {object} map[string]string "error: Permisos insuficientes"
+// @Failure      404 {object} map[string]string "error: Registro no encontrado"
+// @Router       /admin/psi/{id}/reset-password [post]
+func (h *PsiHandler) ResetPsiPasswordByAdmin(c *fiber.Ctx) error {
+	admin, err := middleware.GetAuthenticatedAdmin(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
+	}
+	targetID, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ID de psicólogo inválido"})
+	}
+
+	if err := h.service.ResetPsiPasswordByAdmin(c.UserContext(), admin, targetID); err != nil {
+		if errors.Is(err, domain.ErrPsiNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Psicólogo no encontrado"})
+		}
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"message": "Contraseña reiniciada. La nueva clave temporal fue enviada al correo del psicólogo."})
+}
+
 // ListAllPsis godoc
 // @Summary      Listado administrativo de psicólogos
 // @Description  Buscador total de psicólogos. Ignora las reglas de solvencia e inactividad. Solo Admin.

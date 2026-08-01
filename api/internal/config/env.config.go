@@ -44,6 +44,11 @@ type Config struct {
 	SMTPReplyTo  string
 	SMTPFromName string
 
+	// URL pública de la aplicación (frontend) y firma institucional que se
+	// inyectan en las plantillas de correo. Configurables desde .env.
+	AppURL        string
+	MailSignature string
+
 	// Transporte de email: "smtp" (Mailpit/MailHog) o "resend" (API Resend)
 	MailTransport string
 
@@ -121,6 +126,10 @@ func InitConfig() {
 		SMTPFrom:     getEnv("SMTP_FROM", "info@colpsicarabobo.com"),
 		SMTPReplyTo:  getEnv("SMTP_REPLY_TO", ""),
 		SMTPFromName: getEnv("SMTP_FROM_NAME", "Colegio de Psicólogos de Carabobo"),
+
+		// URL de la app y firma de correo (inyectadas en las plantillas)
+		AppURL:        getEnv("APP_URL", "http://localhost:3000"),
+		MailSignature: getEnv("MAIL_SIGNATURE", "Administración ColPsiCarabobo"),
 
 		// Transporte de email
 		MailTransport: getEnv("MAIL_TRANSPORT", "smtp"),
