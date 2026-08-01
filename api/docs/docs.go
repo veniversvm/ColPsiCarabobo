@@ -40,7 +40,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreateAdminRequest"
+                            "$ref": "#/definitions/request_structs.CreateAdminRequest"
                         }
                     }
                 ],
@@ -198,7 +198,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Crea un post con contenido HTML y opcionalmente una imagen.",
+                "description": "Crea un post con contenido HTML y opcionalmente una imagen. El campo 'status' controla el ciclo de vida.",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -208,18 +208,18 @@ const docTemplate = `{
                 "tags": [
                     "Administración - Publicaciones"
                 ],
-                "summary": "Publicar nueva noticia",
+                "summary": "Crear nueva publicación",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Título del post",
+                        "description": "Título del post (max 100 chars)",
                         "name": "title",
                         "in": "formData",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "Resumen para el feed",
+                        "description": "Resumen para el feed (max 250 chars)",
                         "name": "short_description",
                         "in": "formData"
                     },
@@ -232,17 +232,23 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Tipo: public, psi",
+                        "description": "Visibilidad: public | psi",
                         "name": "type",
                         "in": "formData",
                         "required": true
                     },
                     {
-                        "type": "boolean",
-                        "description": "Visible inmediatamente",
-                        "name": "is_active",
+                        "type": "string",
+                        "description": "Estado: draft | published | archived | scheduled",
+                        "name": "status",
                         "in": "formData",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Fecha ISO8601 de publicación — obligatorio si status=scheduled",
+                        "name": "publish_at",
+                        "in": "formData"
                     },
                     {
                         "type": "file",
@@ -270,8 +276,8 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "403": {
-                        "description": "Forbidden",
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -289,7 +295,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Actualiza metadatos e imagen. El ID se obtiene de la URL. Los campos son opcionales (PATCH).",
+                "description": "Edición parcial (PATCH). Solo los campos enviados se modifican. Permite cambiar el estado del ciclo de vida.",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -316,38 +322,44 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Descripción corta",
+                        "description": "Nueva descripción corta",
                         "name": "short_description",
                         "in": "formData"
                     },
                     {
                         "type": "string",
-                        "description": "Contenido detallado",
+                        "description": "Nuevo contenido HTML",
                         "name": "content",
                         "in": "formData"
                     },
                     {
                         "type": "string",
-                        "description": "Tipo de post",
+                        "description": "Nueva visibilidad: public | psi",
                         "name": "type",
                         "in": "formData"
                     },
                     {
-                        "type": "boolean",
-                        "description": "Estado de activación",
-                        "name": "is_active",
+                        "type": "string",
+                        "description": "Nuevo estado: draft | published | archived | scheduled",
+                        "name": "status",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Nueva fecha de publicación — obligatorio si status=scheduled",
+                        "name": "publish_at",
                         "in": "formData"
                     },
                     {
                         "type": "file",
-                        "description": "Nueva imagen de portada",
+                        "description": "Nueva imagen de portada (reemplaza la anterior)",
                         "name": "image",
                         "in": "formData"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"message\": \"Publicación actualizada\"}",
+                        "description": "OK",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -356,7 +368,16 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "{\"error\": \"Datos inválidos\"}",
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -392,7 +413,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreatePsiAdminRequest"
+                            "$ref": "#/definitions/request_structs.CreatePsiAdminRequest"
                         }
                     }
                 ],
@@ -558,7 +579,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Administración - Psicólogos  \u003c-- Tag corregido para agruparlo bien"
+                    "Administración - Psicólogos"
                 ],
                 "summary": "Importar psicólogos masivamente",
                 "parameters": [
@@ -579,7 +600,7 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "Retornado si el usuario no tiene permisos (Security by Obscurity)",
+                        "description": "Not Found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -618,7 +639,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserModel"
+                            "$ref": "#/definitions/domain.PsiUserModel"
                         }
                     },
                     "400": {
@@ -743,7 +764,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdatePsiAdminRequest"
+                            "$ref": "#/definitions/request_structs.UpdatePsiAdminRequest"
                         }
                     }
                 ],
@@ -768,6 +789,143 @@ const docTemplate = `{
                     },
                     "403": {
                         "description": "error: Permisos insuficientes para editar este registro",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "error: Registro no encontrado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/psi/{id}/picture": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Elimina el avatar del psicólogo: borra el objeto de S3 y limpia la referencia en la base de datos.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Psicólogos"
+                ],
+                "summary": "Eliminar foto de perfil de un psicólogo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del Psicólogo",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "message: Foto de perfil eliminada",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "error: ID inválido",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "error: No autorizado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "error: Permisos insuficientes",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/psi/{id}/reset-password": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Genera una contraseña temporal de 12 caracteres, invalida las sesiones activas y obliga al cambio en el próximo login. La nueva clave se envía únicamente al correo del psicólogo.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Psicólogos"
+                ],
+                "summary": "Reiniciar clave de un psicólogo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del Psicólogo",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "message: Contraseña reiniciada y enviada al correo del psicólogo",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "error: ID inválido",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "error: No autorizado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "error: Permisos insuficientes",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -812,7 +970,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreateSpecialtyRequest"
+                            "$ref": "#/definitions/request_structs.CreateSpecialtyRequest"
                         }
                     }
                 ],
@@ -859,7 +1017,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiSpecialtyModel"
+                                "$ref": "#/definitions/domain.PsiSpecialtyModel"
                             }
                         }
                     },
@@ -939,7 +1097,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdateSpecialtyRequest"
+                            "$ref": "#/definitions/request_structs.UpdateSpecialtyRequest"
                         }
                     }
                 ],
@@ -990,7 +1148,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdateAdminRequest"
+                            "$ref": "#/definitions/request_structs.UpdateAdminRequest"
                         }
                     }
                 ],
@@ -1036,7 +1194,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.LoginRequest"
+                            "$ref": "#/definitions/handler.LoginRequest"
                         }
                     }
                 ],
@@ -1069,9 +1227,43 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/logout": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Invalida la sesión del administrador a nivel de servidor (Stateful Logout).",
+                "tags": [
+                    "Administración - Auth"
+                ],
+                "summary": "Cerrar sesión administrativo",
+                "responses": {
+                    "200": {
+                        "description": "message: sesión cerrada",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "error: no autenticado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/posts": {
             "get": {
-                "description": "Obtiene noticias. El contenido varía según el usuario: Público (solo noticias generales), Psicólogo (generales + gremiales), Admin (todo).",
+                "description": "Obtiene noticias. El contenido varía según el usuario: Público (solo publicados públicos), Psicólogo (públicos + gremiales), Admin (todos los estados).",
                 "produces": [
                     "application/json"
                 ],
@@ -1115,14 +1307,14 @@ const docTemplate = `{
         },
         "/posts/{id}": {
             "get": {
-                "description": "Devuelve el detalle de la noticia incluyendo el contenido HTML. Valida permisos de visibilidad.",
+                "description": "Devuelve el detalle completo incluyendo contenido HTML. Aplica ACL según el rol del solicitante.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Publicaciones"
                 ],
-                "summary": "Obtener noticia por ID",
+                "summary": "Obtener publicación por ID",
                 "parameters": [
                     {
                         "type": "string",
@@ -1136,7 +1328,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.Post"
+                            "$ref": "#/definitions/domain.Post"
                         }
                     },
                     "404": {
@@ -1153,7 +1345,7 @@ const docTemplate = `{
         },
         "/psi/directory": {
             "get": {
-                "description": "Motor de búsqueda avanzado. Si se usa 'q', busca por identidad (ignora solvencia). Si no se usa 'q', solo muestra solventes y aplica filtros de ubicación/especialidad.",
+                "description": "Motor de búsqueda avanzado con filtros de especialidad, ubicación y género.",
                 "produces": [
                     "application/json"
                 ],
@@ -1170,7 +1362,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "ID de la Especialidad (Catálogo Maestro)",
+                        "description": "ID de la Especialidad",
                         "name": "specialty",
                         "in": "query"
                     },
@@ -1230,7 +1422,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.PsiLoginRequest"
+                            "$ref": "#/definitions/request_structs.PsiLoginRequest"
                         }
                     }
                 ],
@@ -1254,6 +1446,78 @@ const docTemplate = `{
                 }
             }
         },
+        "/psi/login-library": {
+            "post": {
+                "description": "Autentica y retorna token SSO para el microservicio de biblioteca.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Psicólogos - Auth"
+                ],
+                "summary": "Login para Biblioteca (Audiobookshelf)",
+                "parameters": [
+                    {
+                        "description": "Credenciales",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.PsiLoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/psi/logout": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Invalida el token activo rotando la key de firma. Elimina la sesión activa de las estadísticas.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Psicólogos - Auth"
+                ],
+                "summary": "Logout de Psicólogo",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/psi/me": {
             "get": {
                 "security": [
@@ -1261,7 +1525,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Retorna toda la información del psicólogo autenticado (sin aplicar filtros de privacidad o solvencia). Ideal para el Dashboard del usuario.",
+                "description": "Retorna toda la información del psicólogo autenticado sin filtros de privacidad.",
                 "produces": [
                     "application/json"
                 ],
@@ -1273,11 +1537,11 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserModel"
+                            "$ref": "#/definitions/domain.PsiUserModel"
                         }
                     },
                     "401": {
-                        "description": "No autorizado",
+                        "description": "Unauthorized",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -1291,9 +1555,8 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Permite al psicólogo actualizar su información de contacto y visibilidad.",
                 "consumes": [
-                    "application/json"
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -1301,16 +1564,44 @@ const docTemplate = `{
                 "tags": [
                     "Psicólogos - Perfil"
                 ],
-                "summary": "Actualizar mi perfil",
+                "summary": "Actualizar mi perfil (Autogestión)",
                 "parameters": [
                     {
-                        "description": "Datos editables",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.PsiUserUpdateRequestSelf"
-                        }
+                        "type": "string",
+                        "description": "Contraseña actual obligatoria",
+                        "name": "password",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Nuevo nombre de usuario",
+                        "name": "username",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Imagen de perfil (JPEG/PNG)",
+                        "name": "profile_picture",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Imagen del título 1",
+                        "name": "title_image_one",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Imagen del título 2",
+                        "name": "title_image_two",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Imagen del título 3",
+                        "name": "title_image_three",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
@@ -1319,6 +1610,68 @@ const docTemplate = `{
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/psi/me/audiobookshelf": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Devuelve la URL de auto-login a Audiobookshelf. Solo agremiados solventes. Si el psicólogo no tiene cuenta en ABS, se crea automáticamente.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Psicólogos - Perfil"
+                ],
+                "summary": "Acceso a la biblioteca digital (Audiobookshelf)",
+                "responses": {
+                    "200": {
+                        "description": "url, username, created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Solo agremiados solventes",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Audiobookshelf no disponible",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -1331,9 +1684,8 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Registra un título académico y permite subir hasta 3 imágenes (título, notas, etc).",
                 "consumes": [
-                    "multipart/form-data   \u003c-- CAMBIO IMPORTANTE"
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -1358,7 +1710,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Año de graduación",
                         "name": "graduation_year",
                         "in": "formData",
@@ -1391,7 +1743,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "message",
+                        "description": "Created",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1409,7 +1761,6 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Edita un título. Permite reemplazar imágenes específicas enviando 'pic_one', 'pic_two' o 'pic_three'.",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -1430,7 +1781,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Título obtenido",
+                        "description": "Título",
                         "name": "title",
                         "in": "formData"
                     },
@@ -1441,7 +1792,7 @@ const docTemplate = `{
                         "in": "formData"
                     },
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Año",
                         "name": "graduation_year",
                         "in": "formData"
@@ -1473,7 +1824,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "message",
+                        "description": "OK",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1482,7 +1833,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "No es tu registro",
+                        "description": "Forbidden",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1517,7 +1868,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreateSocialNetworkRequest"
+                            "$ref": "#/definitions/request_structs.CreateSocialNetworkRequest"
                         }
                     }
                 ],
@@ -1597,7 +1948,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdateSocialNetworkRequest"
+                            "$ref": "#/definitions/request_structs.UpdateSocialNetworkRequest"
                         }
                     }
                 ],
@@ -1616,7 +1967,7 @@ const docTemplate = `{
         },
         "/psi/{id}": {
             "get": {
-                "description": "Retorna la ficha técnica. Oculta datos privados (teléfono, email) según configuración del usuario.",
+                "description": "Retorna la ficha técnica. Oculta datos privados según configuración del usuario.",
                 "produces": [
                     "application/json"
                 ],
@@ -1627,7 +1978,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "UUID del Psicólogo",
+                        "description": "FPV del Psicólogo",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1637,7 +1988,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.PsiFullProfileDTO"
+                            "$ref": "#/definitions/request_structs.PsiFullProfileDTO"
                         }
                     },
                     "404": {
@@ -1676,7 +2027,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiSpecialtyModel"
+                                "$ref": "#/definitions/domain.PsiSpecialtyModel"
                             }
                         }
                     },
@@ -1747,7 +2098,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiSpecialtyModel"
+                            "$ref": "#/definitions/domain.PsiSpecialtyModel"
                         }
                     },
                     "400": {
@@ -1773,7 +2124,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "github_com_veniversvm_ColPsiCarabobo_api_internal_domain.Post": {
+        "domain.Post": {
             "type": "object",
             "properties": {
                 "create_by": {
@@ -1795,19 +2146,27 @@ const docTemplate = `{
                     "description": "ImageS3Key almacena la ruta (Key) del archivo de imagen en el bucket de AWS S3/MinIO.\nNo guardamos la URL completa para mantener flexibilidad si cambia el dominio del bucket.",
                     "type": "string"
                 },
-                "is_active": {
-                    "description": "IsActive permite el control de visibilidad (Borrador/Publicado).",
-                    "type": "boolean"
+                "publish_at": {
+                    "description": "PublishAt solo aplica cuando Status == \"scheduled\"",
+                    "type": "string"
                 },
                 "short_description": {
                     "description": "ShortDescription actúa como un 'snippet' o resumen para las vistas de lista.\nAyuda al SEO y a la experiencia de usuario antes de entrar al detalle.",
                     "type": "string"
                 },
+                "status": {
+                    "description": "Status reemplaza is_active con ciclo de vida completo",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/domain.PostStatus"
+                        }
+                    ]
+                },
                 "text": {
                     "description": "Text es la instancia cargada del contenido.\nGORM permite cargar este campo mediante 'Preload' cuando se requiere el detalle completo.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.TextModel"
+                            "$ref": "#/definitions/domain.TextModel"
                         }
                     ]
                 },
@@ -1837,7 +2196,37 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiSpecialtyModel": {
+        "domain.PostGradeType": {
+            "type": "string",
+            "enum": [
+                "diplomado",
+                "especializacion",
+                "maestria",
+                "doctorado"
+            ],
+            "x-enum-varnames": [
+                "Diplomado",
+                "Especializacion",
+                "Maestria",
+                "Doctorado"
+            ]
+        },
+        "domain.PostStatus": {
+            "type": "string",
+            "enum": [
+                "draft",
+                "published",
+                "archived",
+                "scheduled"
+            ],
+            "x-enum-varnames": [
+                "PostStatusDraft",
+                "PostStatusPublished",
+                "PostStatusArchived",
+                "PostStatusScheduled"
+            ]
+        },
+        "domain.PsiSpecialtyModel": {
             "type": "object",
             "properties": {
                 "active": {
@@ -1878,10 +2267,11 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserColData": {
+        "domain.PsiUserColData": {
             "type": "object",
             "properties": {
                 "cpsm": {
+                    "description": "Miembro del Colegio de Psicólogos de Miranda",
                     "type": "boolean"
                 },
                 "create_by": {
@@ -1897,21 +2287,34 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "date_of_last_solvency": {
-                    "description": "Histórico de solvencia y membresías dobles.",
+                    "description": "── Solvencia y membresías ────────────────────────────────────────────",
                     "type": "string"
                 },
-                "double_guild": {
+                "discapacity": {
+                    "description": "Discapacidad",
                     "type": "boolean"
+                },
+                "double_guild": {
+                    "description": "Colegiado en más de un estado",
+                    "type": "boolean"
+                },
+                "double_guild_location": {
+                    "description": "Colegiado en más de un estado",
+                    "type": "string"
                 },
                 "graduate_date": {
                     "type": "string"
                 },
                 "guild_collaborator": {
+                    "description": "Colaborador activo del Colegio",
                     "type": "boolean"
                 },
                 "guild_director": {
-                    "description": "Professional Flags: Roles y estatus especiales dentro del gremio.",
+                    "description": "── Flags gremiales ───────────────────────────────────────────────────\nRoles y estatus especiales dentro de la estructura del Colegio.",
                     "type": "boolean"
+                },
+                "guild_inscription_date": {
+                    "type": "string"
                 },
                 "id": {
                     "type": "string"
@@ -1923,6 +2326,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "public_employee": {
+                    "description": "Empleado público",
                     "type": "boolean"
                 },
                 "register_folio": {
@@ -1935,7 +2339,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "register_title_state": {
-                    "description": "Register Title: Datos de registro legal del título en el estado.",
+                    "description": "── Registro legal del título ─────────────────────────────────────────",
                     "type": "string"
                 },
                 "register_tome": {
@@ -1951,13 +2355,25 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "sixty_five_or_plus": {
+                    "description": "Mayor de 65 años (tarifa diferenciada)",
                     "type": "boolean"
                 },
+                "title_image_one_url": {
+                    "description": "S3 Keys para imágenes del título de pregrado (máx. 3 archivos).",
+                    "type": "string"
+                },
+                "title_image_three_url": {
+                    "type": "string"
+                },
+                "title_image_two_url": {
+                    "type": "string"
+                },
                 "university_professor": {
+                    "description": "Docente universitario",
                     "type": "boolean"
                 },
                 "university_undergraduate": {
-                    "description": "Undergraduate Data: Información sobre el título de pregrado.",
+                    "description": "── Pregrado ──────────────────────────────────────────────────────────",
                     "type": "string"
                 },
                 "update_by": {
@@ -1974,10 +2390,15 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserModel": {
+        "domain.PsiUserModel": {
             "type": "object",
             "properties": {
+                "audio_book_shell_id": {
+                    "description": "── Campos exclusivos de Psi ───────────────────────────────────────────",
+                    "type": "string"
+                },
                 "bio_text_id": {
+                    "description": "FK hacia TextModel (contenido HTML sanitizado)",
                     "type": "string"
                 },
                 "born_date": {
@@ -1989,20 +2410,38 @@ const docTemplate = `{
                 "cel_phone_outside_carabobo": {
                     "type": "string"
                 },
+                "cell_phone_outside_venezuela": {
+                    "type": "string"
+                },
                 "ci": {
-                    "description": "CI es la Cédula de Identidad del profesional.",
+                    "description": "Cédula de Identidad",
                     "type": "integer"
                 },
                 "col_data": {
-                    "description": "Relaciones: Conexión con datos académicos y gremiales.",
+                    "description": "── Relaciones ────────────────────────────────────────────────────────",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserColData"
+                            "$ref": "#/definitions/domain.PsiUserColData"
                         }
                     ]
                 },
+                "contact_cell_phone": {
+                    "type": "string"
+                },
                 "contact_email": {
-                    "description": "Contact \u0026 Privacy: Control de visibilidad para el directorio público.",
+                    "description": "── Contacto público y privacidad ────────────────────────────────────\nCada campo sensible tiene un flag show_* que controla su visibilidad\nen el directorio público. El psicólogo gestiona estos desde su perfil.",
+                    "type": "string"
+                },
+                "contact_phone": {
+                    "description": "── Contacto interno del gremio ────────────────────────────────────",
+                    "type": "string"
+                },
+                "control_number": {
+                    "description": "Nº de control interno (columna 'Nº' del Excel, visible solo admin)",
+                    "type": "string"
+                },
+                "country": {
+                    "description": "── Ubicación: Fuera de Venezuela ─────────────────────────────────────\nPara miembros en el exterior. Country debe usar código ISO 3166-1 alpha-2.",
                     "type": "string"
                 },
                 "create_by": {
@@ -2018,40 +2457,47 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "email": {
+                    "description": "Email es la dirección de correo electrónico única del usuario.",
                     "type": "string"
                 },
                 "first_name": {
-                    "description": "Identity: Datos básicos de identificación legal.",
+                    "description": "── Identidad legal ───────────────────────────────────────────────────",
                     "type": "string"
                 },
                 "fpv": {
-                    "description": "FPV es el Número de Federación de Psicólogos de Venezuela.",
+                    "description": "Número de Federación de Psicólogos de Venezuela",
                     "type": "integer"
                 },
+                "full_bio": {
+                    "$ref": "#/definitions/domain.TextModel"
+                },
                 "genre": {
+                    "description": "M = masculino, F = femenino",
                     "type": "string"
                 },
                 "id": {
                     "type": "string"
                 },
                 "is_active": {
+                    "description": "IsActive controla si la cuenta puede iniciar sesión.",
                     "type": "boolean"
                 },
                 "last_name": {
                     "type": "string"
                 },
                 "mini_bio": {
-                    "description": "Bio: Información profesional resumida y detallada.",
+                    "description": "── Biografía profesional ─────────────────────────────────────────────",
                     "type": "string"
                 },
                 "municipality_carabobo": {
-                    "description": "Location Carabobo: Ubicación dentro de la jurisdicción principal.",
+                    "description": "── Ubicación: Carabobo ───────────────────────────────────────────────\nPara miembros residentes o con consulta dentro del estado Carabobo.\nMunicipalityCarabobo debe restringirse al catálogo de municipios del estado.",
                     "type": "string"
                 },
                 "municipality_outside_carabobo": {
                     "type": "string"
                 },
                 "nationality": {
+                    "description": "V = venezolano, E = extranjero",
                     "type": "string"
                 },
                 "phone_carabobo": {
@@ -2060,24 +2506,30 @@ const docTemplate = `{
                 "phone_outside_carabobo": {
                     "type": "string"
                 },
+                "phone_outside_venezuela": {
+                    "type": "string"
+                },
                 "post_grades": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserPostGrade"
+                        "$ref": "#/definitions/domain.PsiUserPostGrade"
                     }
                 },
-                "primary_specialty": {
-                    "description": "Especialidades: Categorización profesional.",
+                "primary_specialty_id": {
+                    "description": "FKs al catálogo de especialidades. Nullable porque se setean manualmente\npor el usuario después de crear su perfil, no durante la importación.",
+                    "type": "integer"
+                },
+                "primary_work_area": {
+                    "description": "── Áreas de desempeño (especialidades) ───────────────────────────────\nPrimaryWorkArea/SecondaryWorkArea: strings legacy mantenidos por backwards\ncompatibility con el frontend. Se mantienen sincronizados con las FK.",
                     "type": "string"
                 },
                 "profile_picture_url": {
+                    "description": "S3 key de la foto de perfil",
                     "type": "string"
                 },
                 "proof_of_life": {
+                    "description": "Fe de vida presentada",
                     "type": "boolean"
-                },
-                "public_phone": {
-                    "type": "string"
                 },
                 "second_last_name": {
                     "type": "string"
@@ -2085,33 +2537,78 @@ const docTemplate = `{
                 "second_name": {
                     "type": "string"
                 },
-                "secondary_specialty": {
+                "secondary_specialty_id": {
+                    "type": "integer"
+                },
+                "secondary_work_area": {
                     "type": "string"
                 },
                 "service_address": {
                     "type": "string"
                 },
+                "service_address_outside_carabobo": {
+                    "type": "string"
+                },
+                "service_address_outside_venezuela": {
+                    "type": "string"
+                },
+                "show_cel_phone_carabobo": {
+                    "type": "boolean"
+                },
+                "show_cel_phone_outside_carabobo": {
+                    "type": "boolean"
+                },
+                "show_cel_phone_outside_venezuela": {
+                    "type": "boolean"
+                },
                 "show_contact_email": {
                     "type": "boolean"
                 },
-                "show_public_phone": {
+                "show_municipality_carabobo": {
+                    "type": "boolean"
+                },
+                "show_municipality_outside_carabobo": {
+                    "type": "boolean"
+                },
+                "show_phone_carabobo": {
+                    "type": "boolean"
+                },
+                "show_phone_outside_carabobo": {
+                    "type": "boolean"
+                },
+                "show_phone_outside_venezuela": {
                     "type": "boolean"
                 },
                 "show_public_service_address": {
                     "type": "boolean"
                 },
+                "show_public_service_address_outside_carabobo": {
+                    "type": "boolean"
+                },
+                "show_public_service_address_outside_venezuela": {
+                    "type": "boolean"
+                },
+                "show_state_outside": {
+                    "type": "boolean"
+                },
                 "social_networks": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserSocialNetwork"
+                        "$ref": "#/definitions/domain.PsiUserSocialNetwork"
+                    }
+                },
+                "solvencies": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.PsiUserSolvency"
                     }
                 },
                 "solvent": {
-                    "description": "Status \u0026 Files: Estado de solvencia y archivos multimedia.",
+                    "description": "── Estado gremial y multimedia ───────────────────────────────────────",
                     "type": "boolean"
                 },
                 "state_outside": {
-                    "description": "Location Outside: Ubicación para miembros en el exterior o fuera de Carabobo.",
+                    "description": "── Ubicación: Fuera de Carabobo (Venezuela) ─────────────────────────\nPara miembros en otros estados venezolanos.\nStateOutside debe restringirse al catálogo de estados de Venezuela, excluyendo Carabobo.",
                     "type": "string"
                 },
                 "update_by": {
@@ -2127,11 +2624,12 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "username": {
+                    "description": "Username es el identificador único de login del usuario.",
                     "type": "string"
                 }
             }
         },
-        "github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserPostGrade": {
+        "domain.PsiUserPostGrade": {
             "type": "object",
             "properties": {
                 "create_by": {
@@ -2153,7 +2651,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "pic_one_url": {
-                    "description": "S3 Keys para certificados: Almacenan los comprobantes académicos en S3.",
+                    "description": "S3 Keys para certificados del postgrado (máx. 3 archivos).",
                     "type": "string"
                 },
                 "pic_three_url": {
@@ -2166,10 +2664,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "post_grade_graduation_year": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "post_grade_title": {
                     "type": "string"
+                },
+                "post_grade_type": {
+                    "$ref": "#/definitions/domain.PostGradeType"
                 },
                 "post_grade_university": {
                     "type": "string"
@@ -2191,7 +2692,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserSocialNetwork": {
+        "domain.PsiUserSocialNetwork": {
             "type": "object",
             "properties": {
                 "create_by": {
@@ -2238,7 +2739,46 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_veniversvm_ColPsiCarabobo_api_internal_domain.TextModel": {
+        "domain.PsiUserSolvency": {
+            "type": "object",
+            "properties": {
+                "create_by": {
+                    "description": "CreateBy almacena el nombre o identificador textual del creador.",
+                    "type": "string"
+                },
+                "create_by_id": {
+                    "description": "CreateById es el UUID del usuario/administrador que creó el registro.\nEs un puntero para permitir valores nulos si la creación es automática por el sistema.",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "CreatedAt registra la fecha y hora exacta en que se creó el registro.\nGORM gestiona este campo automáticamente durante la inserción.",
+                    "type": "string"
+                },
+                "date": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "psi_user_model_id": {
+                    "description": "El nombre del índice debe ser el mismo en ambos campos para crear una clave compuesta",
+                    "type": "string"
+                },
+                "update_by": {
+                    "description": "UpdateBy almacena el nombre o identificador textual de la última persona en modificarlo.",
+                    "type": "string"
+                },
+                "update_by_id": {
+                    "description": "UpdateById es el UUID del usuario/administrador que realizó la última actualización.",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "UpdatedAt registra la última fecha y hora en que se modificó el registro.\nGORM actualiza este valor automáticamente en cada operación de guardado.",
+                    "type": "string"
+                }
+            }
+        },
+        "domain.TextModel": {
             "type": "object",
             "properties": {
                 "content": {
@@ -2274,57 +2814,94 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.AdminPermissionsDTO": {
+        "handler.LoginRequest": {
             "type": "object",
+            "required": [
+                "identifier",
+                "password"
+            ],
             "properties": {
-                "can_create_admin": {
-                    "type": "boolean"
+                "identifier": {
+                    "type": "string",
+                    "example": "admin"
                 },
-                "can_create_psi": {
-                    "type": "boolean"
-                },
-                "can_create_tags": {
-                    "type": "boolean"
-                },
-                "can_delete_admin": {
-                    "type": "boolean"
-                },
-                "can_delete_psi": {
-                    "type": "boolean"
-                },
-                "can_delete_publish": {
-                    "type": "boolean"
-                },
-                "can_delete_tags": {
-                    "type": "boolean"
-                },
-                "can_edit_tags": {
-                    "type": "boolean"
-                },
-                "can_manage_notifications": {
-                    "type": "boolean"
-                },
-                "can_publish": {
-                    "type": "boolean"
-                },
-                "can_read_notifications": {
-                    "type": "boolean"
-                },
-                "can_send_notifications": {
-                    "type": "boolean"
-                },
-                "can_update_admin": {
-                    "type": "boolean"
-                },
-                "can_update_psi": {
-                    "type": "boolean"
-                },
-                "can_update_publish": {
-                    "type": "boolean"
+                "password": {
+                    "type": "string",
+                    "example": "admin123"
                 }
             }
         },
-        "github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreateAdminRequest": {
+        "request_structs.AdminPermissionsDTO": {
+            "type": "object",
+            "properties": {
+                "can_create_admin": {
+                    "description": "Gestión del Staff (Escalamiento y Delegación)",
+                    "type": "boolean",
+                    "example": false
+                },
+                "can_create_psi": {
+                    "description": "Gestión de Colegiados (CRUD de Psicólogos)",
+                    "type": "boolean",
+                    "example": false
+                },
+                "can_create_tags": {
+                    "description": "Taxonomías (Clasificación de contenido)",
+                    "type": "boolean",
+                    "example": false
+                },
+                "can_delete_admin": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "can_delete_psi": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "can_delete_publish": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "can_delete_tags": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "can_edit_tags": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "can_manage_notifications": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "can_publish": {
+                    "description": "Sistema de Gestión de Contenidos (CMS)",
+                    "type": "boolean",
+                    "example": true
+                },
+                "can_read_notifications": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "can_send_notifications": {
+                    "description": "Motor de Mensajería y Alertas",
+                    "type": "boolean",
+                    "example": true
+                },
+                "can_update_admin": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "can_update_psi": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "can_update_publish": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "request_structs.CreateAdminRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -2333,26 +2910,24 @@ const docTemplate = `{
             ],
             "properties": {
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "staff@colpsicarabobo.com"
                 },
                 "password": {
                     "type": "string",
-                    "minLength": 8
+                    "minLength": 8,
+                    "example": "Segura123!"
                 },
                 "permissions": {
-                    "description": "Permisos que se le quieren asignar",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.AdminPermissionsDTO"
-                        }
-                    ]
+                    "$ref": "#/definitions/request_structs.AdminPermissionsDTO"
                 },
                 "username": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "staff_admin"
                 }
             }
         },
-        "github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreatePsiAdminRequest": {
+        "request_structs.CreatePsiAdminRequest": {
             "type": "object",
             "required": [
                 "born_date",
@@ -2364,7 +2939,6 @@ const docTemplate = `{
                 "last_name",
                 "nationality",
                 "password",
-                "second_last_name",
                 "username"
             ],
             "properties": {
@@ -2372,35 +2946,57 @@ const docTemplate = `{
                     "type": "string",
                     "example": "1990-01-01"
                 },
+                "cel_phone_carabobo": {
+                    "type": "string"
+                },
                 "cel_phone_outside_carabobo": {
                     "type": "string"
                 },
+                "cell_phone_outside_venezuela": {
+                    "type": "string"
+                },
                 "ci": {
-                    "description": "Datos filiatorios",
                     "type": "integer"
                 },
+                "contact_cell_phone": {
+                    "type": "string"
+                },
                 "contact_email": {
-                    "description": "Datos de contacto publico",
+                    "description": "── Contacto Gremial y Público ────────────────────────────────────────",
+                    "type": "string"
+                },
+                "contact_phone": {
+                    "type": "string"
+                },
+                "country": {
+                    "description": "── Ubicación: Fuera de Venezuela ─────────────────────────────────────",
                     "type": "string"
                 },
                 "cpsm": {
                     "type": "boolean"
                 },
                 "date_of_last_solvency": {
-                    "description": "Histórico de solvencia y membresías dobles.",
+                    "description": "── Datos Colegiales: Historial Gremial ──────────────────────────────",
                     "type": "string"
+                },
+                "discapacity": {
+                    "type": "boolean"
                 },
                 "double_guild": {
                     "type": "boolean"
+                },
+                "double_guild_location": {
+                    "type": "string"
                 },
                 "email": {
                     "type": "string"
                 },
                 "first_name": {
+                    "description": "── Identidad Legal ───────────────────────────────────────────────────",
                     "type": "string"
                 },
                 "fpv": {
-                    "description": "FPV es el Número de Federación de Psicólogos de Venezuela, obligatorio para registro administrativo",
+                    "description": "Número de Federación de Psicólogos de Venezuela",
                     "type": "integer"
                 },
                 "genre": {
@@ -2417,8 +3013,12 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "guild_director": {
-                    "description": "Professional Flags: Roles y estatus especiales dentro del gremio.",
+                    "description": "── Datos Colegiales: Flags Gremiales ────────────────────────────────",
                     "type": "boolean"
+                },
+                "guild_inscription_date": {
+                    "description": "── Datos Colegiales: Pregrado e Inscripción ──────────────────────────",
+                    "type": "string"
                 },
                 "is_active": {
                     "type": "boolean"
@@ -2427,6 +3027,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "mention_undergraduate": {
+                    "type": "string"
+                },
+                "municipality_carabobo": {
+                    "description": "── Ubicación: Carabobo ───────────────────────────────────────────────",
                     "type": "string"
                 },
                 "municipality_outside_carabobo": {
@@ -2443,11 +3047,20 @@ const docTemplate = `{
                     "type": "string",
                     "minLength": 8
                 },
+                "phone_carabobo": {
+                    "type": "string"
+                },
                 "phone_outside_carabobo": {
                     "type": "string"
                 },
-                "primary_specialty": {
-                    "description": "Especialidades",
+                "phone_outside_venezuela": {
+                    "type": "string"
+                },
+                "primary_specialty_id": {
+                    "type": "integer"
+                },
+                "primary_work_area": {
+                    "description": "── Perfil Profesional ────────────────────────────────────────────────",
                     "type": "string"
                 },
                 "proof_of_life": {
@@ -2456,20 +3069,17 @@ const docTemplate = `{
                 "public_employee": {
                     "type": "boolean"
                 },
-                "public_phone": {
-                    "type": "string"
-                },
                 "register_folio": {
                     "type": "string"
                 },
                 "register_number": {
-                    "description": "Register Title: Datos de registro legal del título en el estado.",
                     "type": "integer"
                 },
                 "register_title_date": {
                     "type": "string"
                 },
                 "register_title_state": {
+                    "description": "── Datos Colegiales: Registro Legal del Título ───────────────────────",
                     "type": "string"
                 },
                 "register_tome": {
@@ -2481,37 +3091,45 @@ const docTemplate = `{
                 "second_name": {
                     "type": "string"
                 },
-                "secondary_specialty": {
+                "secondary_specialty_id": {
+                    "type": "integer"
+                },
+                "secondary_work_area": {
                     "type": "string"
                 },
                 "service_address": {
+                    "type": "string"
+                },
+                "service_address_outside_carabobo": {
+                    "type": "string"
+                },
+                "service_address_outside_venezuela": {
                     "type": "string"
                 },
                 "sixty_five_or_plus": {
                     "type": "boolean"
                 },
                 "solvent": {
-                    "description": "Estatus Administrativo (Solo Admin)",
+                    "description": "── Estatus Administrativo ────────────────────────────────────────────\nCampos críticos: Solo el administrador puede asignar estos valores.",
                     "type": "boolean"
                 },
                 "state_outside": {
-                    "description": "Si el psicologo esta fuera del estado Carabobo",
+                    "description": "── Ubicación: Fuera de Carabobo (Venezuela) ─────────────────────────",
                     "type": "string"
                 },
                 "university_professor": {
                     "type": "boolean"
                 },
                 "university_undergraduate": {
-                    "description": "--- DATOS COLEGIALES --- //\nUndergraduate Data",
                     "type": "string"
                 },
                 "username": {
-                    "description": "Auth \u0026 Identidad",
+                    "description": "── Auth \u0026 Credenciales ───────────────────────────────────────────────",
                     "type": "string"
                 }
             }
         },
-        "github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreateSocialNetworkRequest": {
+        "request_structs.CreateSocialNetworkRequest": {
             "type": "object",
             "required": [
                 "name",
@@ -2519,85 +3137,103 @@ const docTemplate = `{
             ],
             "properties": {
                 "name": {
+                    "description": "Name es el identificador o alias de la plataforma (ej: \"ig\", \"facebook\", \"linkedin\").\nArquitectura: Se espera que la capa de Casos de Uso (Dominio) reciba este valor\nen crudo y ejecute una lógica de normalización (ej. convertir \"ig\" a \"Instagram\")\nantes de insertarlo en la base de datos para mantener la consistencia visual.",
                     "type": "string",
                     "example": "ig"
                 },
                 "url": {
+                    "description": "URL es el enlace web absoluto al perfil profesional.",
                     "type": "string",
                     "example": "https://instagram.com/psicologo"
                 }
             }
         },
-        "github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreateSpecialtyRequest": {
+        "request_structs.CreateSpecialtyRequest": {
             "type": "object",
             "required": [
                 "name"
             ],
             "properties": {
                 "description": {
+                    "description": "Description proporciona detalles adicionales sobre el alcance de la especialidad.\nÚtil para mostrar \"Tooltips\" o tarjetas informativas a los pacientes\nque navegan por el directorio público buscando orientación.",
                     "type": "string",
-                    "example": "Especialidad enfocada en..."
+                    "example": "Rama de la psicología que se encarga de la investigación, evaluación, diagnóstico y tratamiento..."
                 },
                 "name": {
+                    "description": "Name es el identificador único y formal de la especialidad profesional.\nSe valida como requerido ('validate:\"required\"') para garantizar que\nningún registro huérfano o anónimo ingrese a la base de datos.",
                     "type": "string",
                     "example": "Psicología Clínica"
                 }
             }
         },
-        "github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.PostGradeDTO": {
+        "request_structs.PostGradeDTO": {
             "type": "object",
             "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "pic_one_url": {
+                    "description": "URL o S3 Key del diploma o certificado",
+                    "type": "string"
+                },
+                "pic_three_url": {
+                    "description": "URL o S3 Key de un tercer documento (opcional)",
+                    "type": "string"
+                },
+                "pic_two_url": {
+                    "description": "URL o S3 Key de un segundo documento (opcional)",
+                    "type": "string"
+                },
                 "title": {
+                    "type": "string"
+                },
+                "type": {
                     "type": "string"
                 },
                 "university": {
                     "type": "string"
                 },
                 "year": {
-                    "type": "string"
+                    "type": "integer"
                 }
             }
         },
-        "github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.PsiFullProfileDTO": {
+        "request_structs.PsiFullProfileDTO": {
             "type": "object",
             "properties": {
                 "address": {
                     "type": "string"
                 },
+                "ci": {
+                    "type": "integer"
+                },
                 "email": {
-                    "description": "Contacto (Condicional)",
+                    "description": "── Contacto (visibilidad condicional) ───────────────────────────────",
                     "type": "string"
                 },
                 "first_name": {
+                    "description": "── Identidad Pública (siempre visible) ──────────────────────────────",
                     "type": "string"
                 },
                 "fpv": {
                     "type": "integer"
                 },
-                "gender": {
+                "full_bio_content": {
                     "type": "string"
                 },
-                "id": {
-                    "description": "Identidad Pública",
+                "gender": {
                     "type": "string"
                 },
                 "last_name": {
                     "type": "string"
                 },
                 "location": {
-                    "description": "Ubicación",
-                    "type": "object",
-                    "properties": {
-                        "full_address": {
-                            "type": "string"
-                        },
-                        "municipality": {
-                            "type": "string"
-                        },
-                        "state": {
-                            "type": "string"
+                    "description": "── Ubicación Estructurada ────────────────────────────────────────────\nUn psicólogo puede tener presencia simultánea en Carabobo, en otro\nestado venezolano y/o en el exterior. Cada bloque es independiente\ny solo se incluye si tiene datos.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/request_structs.PsiLocationDTO"
                         }
-                    }
+                    ]
                 },
                 "mini_bio": {
                     "type": "string"
@@ -2606,49 +3242,143 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "post_grades": {
-                    "description": "Postgrados (Siempre visibles si existen)",
+                    "description": "── Relaciones ────────────────────────────────────────────────────────",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.PostGradeDTO"
+                        "$ref": "#/definitions/request_structs.PostGradeDTO"
                     }
                 },
+                "primary_specialty_id": {
+                    "type": "integer"
+                },
+                "primary_work_area": {
+                    "type": "string"
+                },
                 "profile_picture": {
+                    "type": "string"
+                },
+                "second_last_name": {
+                    "type": "string"
+                },
+                "second_name": {
+                    "type": "string"
+                },
+                "secondary_specialty_id": {
+                    "type": "integer"
+                },
+                "secondary_work_area": {
                     "type": "string"
                 },
                 "social_networks": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.SocialNetworkDTO"
+                        "$ref": "#/definitions/request_structs.SocialNetworkDTO"
                     }
                 },
                 "solvent": {
                     "type": "boolean"
                 },
-                "specialties": {
-                    "description": "Profesional y Académico",
+                "undergraduate": {
+                    "description": "── Datos de Pregrado (condicional por privacidad) ───────────────────",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/request_structs.UndergraduateDTO"
+                        }
+                    ]
+                },
+                "work_areas": {
+                    "description": "── Perfil Profesional ────────────────────────────────────────────────",
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
-                },
-                "undergraduate": {
-                    "description": "Datos Universitarios (Condicional)",
-                    "type": "object",
-                    "properties": {
-                        "date": {
-                            "type": "string"
-                        },
-                        "mention": {
-                            "type": "string"
-                        },
-                        "university": {
-                            "type": "string"
-                        }
-                    }
                 }
             }
         },
-        "github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.PsiLoginRequest": {
+        "request_structs.PsiLocationCaraboboDTO": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "cell_phone": {
+                    "type": "string"
+                },
+                "municipality": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                }
+            }
+        },
+        "request_structs.PsiLocationDTO": {
+            "type": "object",
+            "properties": {
+                "carabobo": {
+                    "description": "Presencia en el estado Carabobo (jurisdicción principal del Colegio)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/request_structs.PsiLocationCaraboboDTO"
+                        }
+                    ]
+                },
+                "exterior": {
+                    "description": "Presencia en el exterior",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/request_structs.PsiLocationExteriorDTO"
+                        }
+                    ]
+                },
+                "venezuela": {
+                    "description": "Presencia en otro estado venezolano (excluye Carabobo)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/request_structs.PsiLocationVenezuelaDTO"
+                        }
+                    ]
+                }
+            }
+        },
+        "request_structs.PsiLocationExteriorDTO": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "cell_phone": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                }
+            }
+        },
+        "request_structs.PsiLocationVenezuelaDTO": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "cell_phone": {
+                    "type": "string"
+                },
+                "municipality": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string"
+                }
+            }
+        },
+        "request_structs.PsiLoginRequest": {
             "type": "object",
             "required": [
                 "identifier",
@@ -2656,6 +3386,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "identifier": {
+                    "description": "Identifier puede ser el correo electrónico o el nombre de usuario.",
                     "type": "string",
                     "example": "psicologo@email.com"
                 },
@@ -2665,155 +3396,143 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.PsiUserUpdateRequestSelf": {
-            "type": "object",
-            "properties": {
-                "cel_phone_carabobo": {
-                    "type": "string"
-                },
-                "cel_phone_outside_carabobo": {
-                    "type": "string"
-                },
-                "contact_email": {
-                    "description": "Datos de Contacto y Privacidad (Permitido)",
-                    "type": "string"
-                },
-                "mini_bio": {
-                    "description": "Biografía (Permitido)",
-                    "type": "string"
-                },
-                "municipality_carabobo": {
-                    "description": "Ubicación (Permitido)",
-                    "type": "string"
-                },
-                "municipality_outside_carabobo": {
-                    "type": "string"
-                },
-                "phone_carabobo": {
-                    "type": "string"
-                },
-                "phone_outside_carabobo": {
-                    "type": "string"
-                },
-                "primary_specialty": {
-                    "description": "Especialidades (Permitido, si no está en la tabla de catálogo)",
-                    "type": "string"
-                },
-                "public_phone": {
-                    "type": "string"
-                },
-                "secondary_specialty": {
-                    "type": "string"
-                },
-                "service_address": {
-                    "type": "string"
-                },
-                "show_contact_email": {
-                    "type": "boolean"
-                },
-                "show_graduate_date": {
-                    "type": "boolean"
-                },
-                "show_mention_undergraduate": {
-                    "type": "boolean"
-                },
-                "show_public_phone": {
-                    "type": "boolean"
-                },
-                "show_public_service_address": {
-                    "type": "boolean"
-                },
-                "show_university_undergraduate": {
-                    "description": "Campos de ColData",
-                    "type": "boolean"
-                },
-                "state_outside": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.SocialNetworkDTO": {
+        "request_structs.SocialNetworkDTO": {
             "type": "object",
             "properties": {
                 "name": {
-                    "type": "string"
+                    "description": "Name contiene el identificador de la plataforma ya normalizado y formateado,\nlisto para mapear componentes de íconos (ej: renderizar el ícono de \"Instagram\").",
+                    "type": "string",
+                    "example": "Instagram"
                 },
                 "url": {
+                    "description": "URL contiene el enlace validado y listo para ser inyectado en un atributo href=\"...\".",
+                    "type": "string",
+                    "example": "https://instagram.com/psicologo"
+                }
+            }
+        },
+        "request_structs.UndergraduateDTO": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string"
+                },
+                "mention": {
+                    "type": "string"
+                },
+                "title_image_one_url": {
+                    "description": "URL o S3 Key del título de pregrado",
+                    "type": "string"
+                },
+                "title_image_three_url": {
+                    "description": "URL o S3 Key de un tercer documento (opcional)",
+                    "type": "string"
+                },
+                "title_image_two_url": {
+                    "description": "URL o S3 Key de un segundo documento (opcional)",
+                    "type": "string"
+                },
+                "university": {
                     "type": "string"
                 }
             }
         },
-        "github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdateAdminRequest": {
+        "request_structs.UpdateAdminRequest": {
             "type": "object",
             "required": [
                 "id"
             ],
             "properties": {
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "nuevo@correo.com"
                 },
                 "id": {
+                    "description": "ID es el identificador primario del administrador a afectar.\nNota Arquitectónica: En controladores robustos, este ID en el body debe\nser verificado cruzándolo con el ID de la URL (/api/admin/:id) para\nevitar ataques de manipulación de Payload.",
                     "type": "string"
                 },
                 "is_active": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
                 },
                 "password": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 8
                 },
                 "permissions": {
-                    "description": "Permisos",
+                    "description": "Sub-estructura que será evaluada por el Motor de Permisos.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.AdminPermissionsDTO"
+                            "$ref": "#/definitions/request_structs.AdminPermissionsDTO"
                         }
                     ]
                 },
                 "username": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "nuevo_username"
                 }
             }
         },
-        "github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdatePsiAdminRequest": {
+        "request_structs.UpdatePsiAdminRequest": {
             "type": "object",
             "required": [
                 "id"
             ],
             "properties": {
                 "born_date": {
-                    "type": "string",
-                    "example": "1990-01-01"
+                    "type": "string"
                 },
                 "cel_phone_outside_carabobo": {
                     "type": "string"
                 },
+                "cell_phone_carabobo": {
+                    "type": "string"
+                },
+                "cell_phone_outside_venezuela": {
+                    "type": "string"
+                },
                 "ci": {
-                    "description": "datos filiatorios (Solo Admin)",
                     "type": "integer"
                 },
+                "contact_cell_phone": {
+                    "type": "string"
+                },
                 "contact_email": {
-                    "description": "Datos de contacto y ubicación",
+                    "description": "── Contacto público y privacidad ─────────────────────────────────────",
+                    "type": "string"
+                },
+                "contact_phone": {
+                    "description": "── Contacto interno del gremio ───────────────────────────────────────",
+                    "type": "string"
+                },
+                "country": {
+                    "description": "── Ubicación: Fuera de Venezuela ─────────────────────────────────────",
                     "type": "string"
                 },
                 "cpsm": {
                     "type": "boolean"
                 },
                 "date_of_last_solvency": {
-                    "description": "Histórico de solvencia y membresías dobles.",
+                    "description": "── Solvencia y membresías ────────────────────────────────────────────",
                     "type": "string"
+                },
+                "discapacity": {
+                    "type": "boolean"
                 },
                 "double_guild": {
                     "type": "boolean"
+                },
+                "double_guild_location": {
+                    "type": "string"
                 },
                 "email": {
                     "type": "string"
                 },
                 "first_name": {
-                    "description": "Identidad (Solo Admin)",
+                    "description": "── Identidad legal ───────────────────────────────────────────────────",
                     "type": "string"
                 },
                 "fpv": {
-                    "description": "FPV es el Número de Federación de Psicólogos de Venezuela, obligatorio para registro administrativo",
                     "type": "integer"
                 },
                 "full_bio": {
@@ -2829,8 +3548,12 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "guild_director": {
-                    "description": "Flags Profesionales (Solo Admin)",
+                    "description": "── Flags gremiales ───────────────────────────────────────────────────",
                     "type": "boolean"
+                },
+                "guild_inscription_date": {
+                    "description": "── Registro legal del título ─────────────────────────────────────────",
+                    "type": "string"
                 },
                 "id": {
                     "type": "string"
@@ -2845,7 +3568,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "mini_bio": {
-                    "description": "En caso de que el admin quiera modificar las bios, aunque lo ideal es que el psicologo sea el encargado de esto",
+                    "type": "string"
+                },
+                "municipality_carabobo": {
+                    "description": "── Ubicación: Carabobo ───────────────────────────────────────────────",
                     "type": "string"
                 },
                 "municipality_outside_carabobo": {
@@ -2854,11 +3580,20 @@ const docTemplate = `{
                 "nationality": {
                     "type": "string"
                 },
+                "phone_carabobo": {
+                    "type": "string"
+                },
                 "phone_outside_carabobo": {
                     "type": "string"
                 },
-                "primary_specialty": {
-                    "description": "Especialidades",
+                "phone_outside_venezuela": {
+                    "type": "string"
+                },
+                "primary_specialty_id": {
+                    "type": "integer"
+                },
+                "primary_work_area": {
+                    "description": "── Perfil Profesional ────────────────────────────────────────────────",
                     "type": "string"
                 },
                 "proof_of_life": {
@@ -2866,9 +3601,6 @@ const docTemplate = `{
                 },
                 "public_employee": {
                     "type": "boolean"
-                },
-                "public_phone": {
-                    "type": "string"
                 },
                 "register_folio": {
                     "type": "string"
@@ -2891,85 +3623,135 @@ const docTemplate = `{
                 "second_name": {
                     "type": "string"
                 },
-                "secondary_specialty": {
+                "secondary_specialty_id": {
+                    "type": "integer"
+                },
+                "secondary_work_area": {
                     "type": "string"
                 },
                 "service_address": {
                     "type": "string"
                 },
+                "service_address_outside_carabobo": {
+                    "type": "string"
+                },
+                "service_address_outside_venezuela": {
+                    "type": "string"
+                },
+                "show_cel_phone_carabobo": {
+                    "type": "string"
+                },
+                "show_cel_phone_outside_carabobo": {
+                    "type": "string"
+                },
+                "show_cell_phone_outside_venezuela": {
+                    "type": "string"
+                },
                 "show_contact_email": {
-                    "type": "boolean"
+                    "type": "string"
                 },
-                "show_public_phone": {
-                    "type": "boolean"
+                "show_graduate_date": {
+                    "type": "string"
                 },
-                "show_service_address": {
-                    "type": "boolean"
+                "show_mention_undergraduate": {
+                    "type": "string"
+                },
+                "show_municipality_carabobo": {
+                    "type": "string"
+                },
+                "show_municipality_outside_carabobo": {
+                    "type": "string"
+                },
+                "show_phone_carabobo": {
+                    "description": "Añadido el tag form faltante",
+                    "type": "string"
+                },
+                "show_phone_outside_carabobo": {
+                    "type": "string"
+                },
+                "show_phone_outside_venezuela": {
+                    "type": "string"
+                },
+                "show_public_service_address": {
+                    "type": "string"
+                },
+                "show_public_service_address_outside_carabobo": {
+                    "type": "string"
+                },
+                "show_public_service_address_outside_venezuela": {
+                    "type": "string"
+                },
+                "show_state_outside": {
+                    "type": "string"
+                },
+                "show_university_undergraduate": {
+                    "type": "string"
                 },
                 "sixty_five_or_plus": {
                     "type": "boolean"
                 },
+                "solvencies": {
+                    "description": "JSON serializado en string para multipart",
+                    "type": "string"
+                },
                 "solvent": {
-                    "description": "Estatus Administrativo (Solo Admin)",
+                    "description": "── Estado gremial y multimedia ───────────────────────────────────────",
                     "type": "boolean"
                 },
                 "state_outside": {
-                    "description": "Si el psicologo esta fuera del estado Carabobo",
+                    "description": "── Ubicación: Fuera de Carabobo (Venezuela) ─────────────────────────",
                     "type": "string"
                 },
                 "university_professor": {
                     "type": "boolean"
                 },
                 "university_undergraduate": {
-                    "description": "Datos Colegiales (ColData - Solo Admin puede alterar la info)",
+                    "description": "── Pregrado ──────────────────────────────────────────────────────────",
+                    "type": "string"
+                },
+                "username": {
+                    "description": "── Credenciales de acceso ────────────────────────────────────────────",
                     "type": "string"
                 }
             }
         },
-        "github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdateSocialNetworkRequest": {
+        "request_structs.UpdateSocialNetworkRequest": {
             "type": "object",
             "properties": {
                 "is_active": {
-                    "type": "boolean"
+                    "description": "IsActive funciona como un interruptor de visibilidad (Soft-Disable).\nRegla de Negocio: Permite al usuario ocultar temporalmente la red social de\nsu perfil público (ej. si está rediseñando su Instagram) sin necesidad de\nejecutar un DELETE físico que destruiría el registro permanentemente.",
+                    "type": "boolean",
+                    "example": true
                 },
                 "name": {
+                    "description": "Name permite corregir un error tipográfico o cambiar el alias de la plataforma.",
                     "type": "string",
                     "example": "Instagram"
                 },
                 "url": {
+                    "description": "URL permite actualizar el enlace en caso de que el profesional cambie su handle/arroba.",
                     "type": "string",
                     "example": "https://instagram.com/nuevo_perfil"
                 }
             }
         },
-        "github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdateSpecialtyRequest": {
+        "request_structs.UpdateSpecialtyRequest": {
             "type": "object",
             "properties": {
                 "active": {
-                    "type": "boolean"
+                    "description": "Active funciona como un interruptor de visibilidad (Soft-Disable).\nPermite ocultar una especialidad deprecada del formulario de registro público\nsin borrarla, preservando la integridad referencial (Foreign Keys) de los\npsicólogos antiguos que ya la tienen asignada.\nAl ser *bool, evitamos que la ausencia del campo en el payload la desactive por accidente.",
+                    "type": "boolean",
+                    "example": true
                 },
                 "description": {
-                    "type": "string"
+                    "description": "Description es opcional. Permite redefinir o corregir la explicación del área clínica.",
+                    "type": "string",
+                    "example": "Nueva descripción actualizada..."
                 },
                 "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_handler.LoginRequest": {
-            "type": "object",
-            "required": [
-                "identifier",
-                "password"
-            ],
-            "properties": {
-                "identifier": {
+                    "description": "Name es opcional. Si se proporciona, el controlador/servicio debe validar\nque el nuevo nombre no colisione con otra especialidad existente (Restricción UNIQUE).",
                     "type": "string",
-                    "example": "admin"
-                },
-                "password": {
-                    "type": "string",
-                    "example": "admin123"
+                    "example": "Psicología Organizacional"
                 }
             }
         }

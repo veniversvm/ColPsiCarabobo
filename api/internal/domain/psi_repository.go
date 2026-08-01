@@ -73,6 +73,10 @@ type PsiUserRepository interface {
 	// Usado por el admin al reiniciar la contraseña de una cuenta.
 	ResetPassword(ctx context.Context, psi *PsiUserModel) error
 
+	// UpdateAudioBookShellID persiste el id de la cuenta del agremiado en
+	// Audiobookshelf (campo AudioBookShellId del modelo).
+	UpdateAudioBookShellID(ctx context.Context, psi *PsiUserModel) error
+
 	// Delete realiza una eliminación lógica (Soft Delete) del perfil del psicólogo.
 	Delete(ctx context.Context, id uuid.UUID) error
 

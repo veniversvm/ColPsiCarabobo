@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -196,8 +197,106 @@ func TestPsiGetMe(t *testing.T) {
 	})
 }
 
-func TestPsiLogout(t *testing.T) {
-	t.Run("success", func(t *testing.T) {
+func TestGetAudiobookshelfAccess(t *testing.T) {
+	// Fake ABS que responde login con un accessToken.
+	absSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/login" {
+			w.Write([]byte(`{"user":{"id":"abs-id-123","username":"psi_12345678","accessToken":"tok-abc"}}`))
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer absSrv.Close()
+
+	absSvc := service.NewAudiobookshelfService(absSrv.URL, "https://abs.public", "admin", "pass", "secret-test")
+
+	t.Run("solvent_returns_url", func(t *testing.T) {
+		psi := testPsiUser(uuid.New())
+		psi.Solvent = true
+		psi.CI = 12345678
+
+		psiRepo := &mockPsiRepo{
+			GetByIDFunc: func(_ context.Context, id uuid.UUID) (*domain.PsiUserModel, error) {
+				return psi, nil
+			},
+		}
+		h, adminRepo := testPsiHandler(psiRepo, &mockAnalyticsRepo{})
+		h.SetAudiobookshelf(absSvc)
+
+		token := generateTestToken(psi.ID.String(), "psi", futureTime())
+		app := setupPsiRoute(fiber.MethodGet, "/audiobookshelf", h.GetAudiobookshelfAccess, adminRepo, psiRepo)
+
+		req := httptest.NewRequest(fiber.MethodGet, "/api/v1/psi/me/audiobookshelf", nil)
+		authRequest(req, token)
+
+		resp, err := app.Test(req)
+		require.NoError(t, err)
+		require.Equal(t, fiber.StatusOK, resp.StatusCode)
+
+		result := decodeBody(resp)
+		require.Equal(t, "https://abs.public/login/?accessToken=tok-abc", result["url"])
+		require.Equal(t, "psi_12345678", result["username"])
+	})
+
+	t.Run("not_solvent_403", func(t *testing.T) {
+		psi := testPsiUser(uuid.New())
+		psi.Solvent = false
+
+		psiRepo := &mockPsiRepo{
+			GetByIDFunc: func(_ context.Context, id uuid.UUID) (*domain.PsiUserModel, error) {
+				return psi, nil
+			},
+		}
+		h, adminRepo := testPsiHandler(psiRepo, &mockAnalyticsRepo{})
+		h.SetAudiobookshelf(absSvc)
+
+		token := generateTestToken(psi.ID.String(), "psi", futureTime())
+		app := setupPsiRoute(fiber.MethodGet, "/audiobookshelf", h.GetAudiobookshelfAccess, adminRepo, psiRepo)
+
+		req := httptest.NewRequest(fiber.MethodGet, "/api/v1/psi/me/audiobookshelf", nil)
+		authRequest(req, token)
+
+		resp, err := app.Test(req)
+		require.NoError(t, err)
+		require.Equal(t, fiber.StatusForbidden, resp.StatusCode)
+	})
+
+	t.Run("no_auth_401", func(t *testing.T) {
+		h, adminRepo := testPsiHandler(&mockPsiRepo{}, &mockAnalyticsRepo{})
+		h.SetAudiobookshelf(absSvc)
+
+		app := setupPsiRoute(fiber.MethodGet, "/audiobookshelf", h.GetAudiobookshelfAccess, adminRepo, &mockPsiRepo{})
+		req := httptest.NewRequest(fiber.MethodGet, "/api/v1/psi/me/audiobookshelf", nil)
+
+		resp, err := app.Test(req)
+		require.NoError(t, err)
+		require.Equal(t, fiber.StatusUnauthorized, resp.StatusCode)
+	})
+
+	t.Run("service_unconfigured_503", func(t *testing.T) {
+		psi := testPsiUser(uuid.New())
+		psi.Solvent = true
+
+		psiRepo := &mockPsiRepo{
+			GetByIDFunc: func(_ context.Context, id uuid.UUID) (*domain.PsiUserModel, error) {
+				return psi, nil
+			},
+		}
+		h, adminRepo := testPsiHandler(psiRepo, &mockAnalyticsRepo{})
+
+		token := generateTestToken(psi.ID.String(), "psi", futureTime())
+		app := setupPsiRoute(fiber.MethodGet, "/audiobookshelf", h.GetAudiobookshelfAccess, adminRepo, psiRepo)
+
+		req := httptest.NewRequest(fiber.MethodGet, "/api/v1/psi/me/audiobookshelf", nil)
+		authRequest(req, token)
+
+		resp, err := app.Test(req)
+		require.NoError(t, err)
+		require.Equal(t, fiber.StatusServiceUnavailable, resp.StatusCode)
+	})
+}
+
+func TestPsiLogout(t *testing.T) {	t.Run("success", func(t *testing.T) {
 		psiID := uuid.New()
 		psi := testPsiUser(psiID)
 

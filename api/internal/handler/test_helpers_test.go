@@ -102,6 +102,7 @@ type mockPsiRepo struct {
 	GetByIdentifierFunc            func(ctx context.Context, identifier string) (*domain.PsiUserModel, error)
 	UpdateFunc                     func(ctx context.Context, psi *domain.PsiUserModel, colData *domain.PsiUserColData, bioText *domain.TextModel, solvencies []domain.PsiUserSolvency) error
 	UpdateKeyFunc                  func(ctx context.Context, psi *domain.PsiUserModel) error
+	UpdateAudioBookShellIDFunc     func(ctx context.Context, psi *domain.PsiUserModel) error
 	SearchDirectoryFunc            func(ctx context.Context, filter request_structs.PsiDirectoryFilterDTO) ([]domain.PsiUserModel, int64, error)
 	GetSitemapDataFunc             func(ctx context.Context) ([]domain.PsiUserModel, error)
 	GetPsiUserColDataFunc          func(ctx context.Context, psiID uuid.UUID) (*domain.PsiUserColData, error)
@@ -140,6 +141,12 @@ func (m *mockPsiRepo) Update(ctx context.Context, psi *domain.PsiUserModel, colD
 func (m *mockPsiRepo) UpdateKey(ctx context.Context, psi *domain.PsiUserModel) error {
 	if m.UpdateKeyFunc != nil {
 		return m.UpdateKeyFunc(ctx, psi)
+	}
+	return nil
+}
+func (m *mockPsiRepo) UpdateAudioBookShellID(ctx context.Context, psi *domain.PsiUserModel) error {
+	if m.UpdateAudioBookShellIDFunc != nil {
+		return m.UpdateAudioBookShellIDFunc(ctx, psi)
 	}
 	return nil
 }

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/config"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/handler"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/middleware"
@@ -17,6 +18,13 @@ import (
 func SetupPsiRoutes(router fiber.Router, psiRepo domain.PsiUserRepository, adminRepo domain.UserAdminRepository, s3Client *s3.S3Client, analyticsSvc *service.AnalyticsService, mailService service.IMailService, appCache *cache.Cache) {
 	svc := service.NewPsiService(psiRepo, s3Client, mailService)
 	h := handler.NewPsiHandler(svc, analyticsSvc, appCache)
+	h.SetAudiobookshelf(service.NewAudiobookshelfService(
+		config.Envs.AbsBaseURL,
+		config.Envs.AbsPublicURL,
+		config.Envs.AbsAdminUsername,
+		config.Envs.AbsAdminPassword,
+		config.Envs.AbsPasswordSecret,
+	))
 	authMid := middleware.NewAuthMiddleware(adminRepo, psiRepo, analyticsSvc)
 
 	// Store de idempotencia — compartido solo para las rutas que lo necesitan
@@ -49,6 +57,7 @@ func SetupPsiRoutes(router fiber.Router, psiRepo domain.PsiUserRepository, admin
 	meGroup := router.Group("/psi/me", authMid.ProtectedPsiUser())
 
 	meGroup.Get("/", h.GetMe)
+	meGroup.Get("/audiobookshelf", h.GetAudiobookshelfAccess)
 	meGroup.Patch("/", h.UpdateOwnProfile)
 	meGroup.Post("/postgrades", h.AddPostGrade)
 	meGroup.Patch("/postgrades/:id", h.UpdatePostGrade)

@@ -1,6 +1,6 @@
 basePath: /api/v1
 definitions:
-  github_com_veniversvm_ColPsiCarabobo_api_internal_domain.Post:
+  domain.Post:
     properties:
       create_by:
         description: CreateBy almacena el nombre o identificador textual del creador.
@@ -22,17 +22,21 @@ definitions:
           ImageS3Key almacena la ruta (Key) del archivo de imagen en el bucket de AWS S3/MinIO.
           No guardamos la URL completa para mantener flexibilidad si cambia el dominio del bucket.
         type: string
-      is_active:
-        description: IsActive permite el control de visibilidad (Borrador/Publicado).
-        type: boolean
+      publish_at:
+        description: PublishAt solo aplica cuando Status == "scheduled"
+        type: string
       short_description:
         description: |-
           ShortDescription actúa como un 'snippet' o resumen para las vistas de lista.
           Ayuda al SEO y a la experiencia de usuario antes de entrar al detalle.
         type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/domain.PostStatus'
+        description: Status reemplaza is_active con ciclo de vida completo
       text:
         allOf:
-        - $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.TextModel'
+        - $ref: '#/definitions/domain.TextModel'
         description: |-
           Text es la instancia cargada del contenido.
           GORM permite cargar este campo mediante 'Preload' cuando se requiere el detalle completo.
@@ -65,7 +69,31 @@ definitions:
           GORM actualiza este valor automáticamente en cada operación de guardado.
         type: string
     type: object
-  github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiSpecialtyModel:
+  domain.PostGradeType:
+    enum:
+    - diplomado
+    - especializacion
+    - maestria
+    - doctorado
+    type: string
+    x-enum-varnames:
+    - Diplomado
+    - Especializacion
+    - Maestria
+    - Doctorado
+  domain.PostStatus:
+    enum:
+    - draft
+    - published
+    - archived
+    - scheduled
+    type: string
+    x-enum-varnames:
+    - PostStatusDraft
+    - PostStatusPublished
+    - PostStatusArchived
+    - PostStatusScheduled
+  domain.PsiSpecialtyModel:
     properties:
       active:
         type: boolean
@@ -102,9 +130,10 @@ definitions:
           GORM actualiza este valor automáticamente en cada operación de guardado.
         type: string
     type: object
-  github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserColData:
+  domain.PsiUserColData:
     properties:
       cpsm:
+        description: Miembro del Colegio de Psicólogos de Miranda
         type: boolean
       create_by:
         description: CreateBy almacena el nombre o identificador textual del creador.
@@ -120,17 +149,29 @@ definitions:
           GORM gestiona este campo automáticamente durante la inserción.
         type: string
       date_of_last_solvency:
-        description: Histórico de solvencia y membresías dobles.
+        description: ── Solvencia y membresías ────────────────────────────────────────────
         type: string
-      double_guild:
+      discapacity:
+        description: Discapacidad
         type: boolean
+      double_guild:
+        description: Colegiado en más de un estado
+        type: boolean
+      double_guild_location:
+        description: Colegiado en más de un estado
+        type: string
       graduate_date:
         type: string
       guild_collaborator:
+        description: Colaborador activo del Colegio
         type: boolean
       guild_director:
-        description: 'Professional Flags: Roles y estatus especiales dentro del gremio.'
+        description: |-
+          ── Flags gremiales ───────────────────────────────────────────────────
+          Roles y estatus especiales dentro de la estructura del Colegio.
         type: boolean
+      guild_inscription_date:
+        type: string
       id:
         type: string
       mention_undergraduate:
@@ -138,6 +179,7 @@ definitions:
       psi_user_model_id:
         type: string
       public_employee:
+        description: Empleado público
         type: boolean
       register_folio:
         type: string
@@ -146,7 +188,7 @@ definitions:
       register_title_date:
         type: string
       register_title_state:
-        description: 'Register Title: Datos de registro legal del título en el estado.'
+        description: ── Registro legal del título ─────────────────────────────────────────
         type: string
       register_tome:
         type: string
@@ -157,11 +199,20 @@ definitions:
       show_university_undergraduate:
         type: boolean
       sixty_five_or_plus:
+        description: Mayor de 65 años (tarifa diferenciada)
         type: boolean
+      title_image_one_url:
+        description: S3 Keys para imágenes del título de pregrado (máx. 3 archivos).
+        type: string
+      title_image_three_url:
+        type: string
+      title_image_two_url:
+        type: string
       university_professor:
+        description: Docente universitario
         type: boolean
       university_undergraduate:
-        description: 'Undergraduate Data: Información sobre el título de pregrado.'
+        description: ── Pregrado ──────────────────────────────────────────────────────────
         type: string
       update_by:
         description: UpdateBy almacena el nombre o identificador textual de la última
@@ -177,9 +228,13 @@ definitions:
           GORM actualiza este valor automáticamente en cada operación de guardado.
         type: string
     type: object
-  github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserModel:
+  domain.PsiUserModel:
     properties:
+      audio_book_shell_id:
+        description: ── Campos exclusivos de Psi ───────────────────────────────────────────
+        type: string
       bio_text_id:
+        description: FK hacia TextModel (contenido HTML sanitizado)
         type: string
       born_date:
         type: string
@@ -187,16 +242,33 @@ definitions:
         type: string
       cel_phone_outside_carabobo:
         type: string
+      cell_phone_outside_venezuela:
+        type: string
       ci:
-        description: CI es la Cédula de Identidad del profesional.
+        description: Cédula de Identidad
         type: integer
       col_data:
         allOf:
-        - $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserColData'
-        description: 'Relaciones: Conexión con datos académicos y gremiales.'
+        - $ref: '#/definitions/domain.PsiUserColData'
+        description: ── Relaciones ────────────────────────────────────────────────────────
+      contact_cell_phone:
+        type: string
       contact_email:
-        description: 'Contact & Privacy: Control de visibilidad para el directorio
-          público.'
+        description: |-
+          ── Contacto público y privacidad ────────────────────────────────────
+          Cada campo sensible tiene un flag show_* que controla su visibilidad
+          en el directorio público. El psicólogo gestiona estos desde su perfil.
+        type: string
+      contact_phone:
+        description: ── Contacto interno del gremio ────────────────────────────────────
+        type: string
+      control_number:
+        description: Nº de control interno (columna 'Nº' del Excel, visible solo admin)
+        type: string
+      country:
+        description: |-
+          ── Ubicación: Fuera de Venezuela ─────────────────────────────────────
+          Para miembros en el exterior. Country debe usar código ISO 3166-1 alpha-2.
         type: string
       create_by:
         description: CreateBy almacena el nombre o identificador textual del creador.
@@ -212,72 +284,123 @@ definitions:
           GORM gestiona este campo automáticamente durante la inserción.
         type: string
       email:
+        description: Email es la dirección de correo electrónico única del usuario.
         type: string
       first_name:
-        description: 'Identity: Datos básicos de identificación legal.'
+        description: ── Identidad legal ───────────────────────────────────────────────────
         type: string
       fpv:
-        description: FPV es el Número de Federación de Psicólogos de Venezuela.
+        description: Número de Federación de Psicólogos de Venezuela
         type: integer
+      full_bio:
+        $ref: '#/definitions/domain.TextModel'
       genre:
+        description: M = masculino, F = femenino
         type: string
       id:
         type: string
       is_active:
+        description: IsActive controla si la cuenta puede iniciar sesión.
         type: boolean
       last_name:
         type: string
       mini_bio:
-        description: 'Bio: Información profesional resumida y detallada.'
+        description: ── Biografía profesional ─────────────────────────────────────────────
         type: string
       municipality_carabobo:
-        description: 'Location Carabobo: Ubicación dentro de la jurisdicción principal.'
+        description: |-
+          ── Ubicación: Carabobo ───────────────────────────────────────────────
+          Para miembros residentes o con consulta dentro del estado Carabobo.
+          MunicipalityCarabobo debe restringirse al catálogo de municipios del estado.
         type: string
       municipality_outside_carabobo:
         type: string
       nationality:
+        description: V = venezolano, E = extranjero
         type: string
       phone_carabobo:
         type: string
       phone_outside_carabobo:
         type: string
+      phone_outside_venezuela:
+        type: string
       post_grades:
         items:
-          $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserPostGrade'
+          $ref: '#/definitions/domain.PsiUserPostGrade'
         type: array
-      primary_specialty:
-        description: 'Especialidades: Categorización profesional.'
+      primary_specialty_id:
+        description: |-
+          FKs al catálogo de especialidades. Nullable porque se setean manualmente
+          por el usuario después de crear su perfil, no durante la importación.
+        type: integer
+      primary_work_area:
+        description: |-
+          ── Áreas de desempeño (especialidades) ───────────────────────────────
+          PrimaryWorkArea/SecondaryWorkArea: strings legacy mantenidos por backwards
+          compatibility con el frontend. Se mantienen sincronizados con las FK.
         type: string
       profile_picture_url:
+        description: S3 key de la foto de perfil
         type: string
       proof_of_life:
+        description: Fe de vida presentada
         type: boolean
-      public_phone:
-        type: string
       second_last_name:
         type: string
       second_name:
         type: string
-      secondary_specialty:
+      secondary_specialty_id:
+        type: integer
+      secondary_work_area:
         type: string
       service_address:
         type: string
+      service_address_outside_carabobo:
+        type: string
+      service_address_outside_venezuela:
+        type: string
+      show_cel_phone_carabobo:
+        type: boolean
+      show_cel_phone_outside_carabobo:
+        type: boolean
+      show_cel_phone_outside_venezuela:
+        type: boolean
       show_contact_email:
         type: boolean
-      show_public_phone:
+      show_municipality_carabobo:
+        type: boolean
+      show_municipality_outside_carabobo:
+        type: boolean
+      show_phone_carabobo:
+        type: boolean
+      show_phone_outside_carabobo:
+        type: boolean
+      show_phone_outside_venezuela:
         type: boolean
       show_public_service_address:
         type: boolean
+      show_public_service_address_outside_carabobo:
+        type: boolean
+      show_public_service_address_outside_venezuela:
+        type: boolean
+      show_state_outside:
+        type: boolean
       social_networks:
         items:
-          $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserSocialNetwork'
+          $ref: '#/definitions/domain.PsiUserSocialNetwork'
+        type: array
+      solvencies:
+        items:
+          $ref: '#/definitions/domain.PsiUserSolvency'
         type: array
       solvent:
-        description: 'Status & Files: Estado de solvencia y archivos multimedia.'
+        description: ── Estado gremial y multimedia ───────────────────────────────────────
         type: boolean
       state_outside:
-        description: 'Location Outside: Ubicación para miembros en el exterior o fuera
-          de Carabobo.'
+        description: |-
+          ── Ubicación: Fuera de Carabobo (Venezuela) ─────────────────────────
+          Para miembros en otros estados venezolanos.
+          StateOutside debe restringirse al catálogo de estados de Venezuela, excluyendo Carabobo.
         type: string
       update_by:
         description: UpdateBy almacena el nombre o identificador textual de la última
@@ -293,9 +416,10 @@ definitions:
           GORM actualiza este valor automáticamente en cada operación de guardado.
         type: string
       username:
+        description: Username es el identificador único de login del usuario.
         type: string
     type: object
-  github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserPostGrade:
+  domain.PsiUserPostGrade:
     properties:
       create_by:
         description: CreateBy almacena el nombre o identificador textual del creador.
@@ -315,8 +439,7 @@ definitions:
       is_active:
         type: boolean
       pic_one_url:
-        description: 'S3 Keys para certificados: Almacenan los comprobantes académicos
-          en S3.'
+        description: S3 Keys para certificados del postgrado (máx. 3 archivos).
         type: string
       pic_three_url:
         type: string
@@ -325,9 +448,11 @@ definitions:
       post_grade_description:
         type: string
       post_grade_graduation_year:
-        type: string
+        type: integer
       post_grade_title:
         type: string
+      post_grade_type:
+        $ref: '#/definitions/domain.PostGradeType'
       post_grade_university:
         type: string
       psi_user_id:
@@ -346,7 +471,7 @@ definitions:
           GORM actualiza este valor automáticamente en cada operación de guardado.
         type: string
     type: object
-  github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserSocialNetwork:
+  domain.PsiUserSocialNetwork:
     properties:
       create_by:
         description: CreateBy almacena el nombre o identificador textual del creador.
@@ -389,7 +514,44 @@ definitions:
         description: URL es el enlace directo al perfil o página
         type: string
     type: object
-  github_com_veniversvm_ColPsiCarabobo_api_internal_domain.TextModel:
+  domain.PsiUserSolvency:
+    properties:
+      create_by:
+        description: CreateBy almacena el nombre o identificador textual del creador.
+        type: string
+      create_by_id:
+        description: |-
+          CreateById es el UUID del usuario/administrador que creó el registro.
+          Es un puntero para permitir valores nulos si la creación es automática por el sistema.
+        type: string
+      created_at:
+        description: |-
+          CreatedAt registra la fecha y hora exacta en que se creó el registro.
+          GORM gestiona este campo automáticamente durante la inserción.
+        type: string
+      date:
+        type: string
+      id:
+        type: string
+      psi_user_model_id:
+        description: El nombre del índice debe ser el mismo en ambos campos para crear
+          una clave compuesta
+        type: string
+      update_by:
+        description: UpdateBy almacena el nombre o identificador textual de la última
+          persona en modificarlo.
+        type: string
+      update_by_id:
+        description: UpdateById es el UUID del usuario/administrador que realizó la
+          última actualización.
+        type: string
+      updated_at:
+        description: |-
+          UpdatedAt registra la última fecha y hora en que se modificó el registro.
+          GORM actualiza este valor automáticamente en cada operación de guardado.
+        type: string
+    type: object
+  domain.TextModel:
     properties:
       content:
         description: |-
@@ -425,84 +587,131 @@ definitions:
           GORM actualiza este valor automáticamente en cada operación de guardado.
         type: string
     type: object
-  github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.AdminPermissionsDTO:
+  handler.LoginRequest:
     properties:
-      can_create_admin:
-        type: boolean
-      can_create_psi:
-        type: boolean
-      can_create_tags:
-        type: boolean
-      can_delete_admin:
-        type: boolean
-      can_delete_psi:
-        type: boolean
-      can_delete_publish:
-        type: boolean
-      can_delete_tags:
-        type: boolean
-      can_edit_tags:
-        type: boolean
-      can_manage_notifications:
-        type: boolean
-      can_publish:
-        type: boolean
-      can_read_notifications:
-        type: boolean
-      can_send_notifications:
-        type: boolean
-      can_update_admin:
-        type: boolean
-      can_update_psi:
-        type: boolean
-      can_update_publish:
-        type: boolean
-    type: object
-  github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreateAdminRequest:
-    properties:
-      email:
+      identifier:
+        example: admin
         type: string
       password:
+        example: admin123
+        type: string
+    required:
+    - identifier
+    - password
+    type: object
+  request_structs.AdminPermissionsDTO:
+    properties:
+      can_create_admin:
+        description: Gestión del Staff (Escalamiento y Delegación)
+        example: false
+        type: boolean
+      can_create_psi:
+        description: Gestión de Colegiados (CRUD de Psicólogos)
+        example: false
+        type: boolean
+      can_create_tags:
+        description: Taxonomías (Clasificación de contenido)
+        example: false
+        type: boolean
+      can_delete_admin:
+        example: false
+        type: boolean
+      can_delete_psi:
+        example: false
+        type: boolean
+      can_delete_publish:
+        example: false
+        type: boolean
+      can_delete_tags:
+        example: false
+        type: boolean
+      can_edit_tags:
+        example: false
+        type: boolean
+      can_manage_notifications:
+        example: false
+        type: boolean
+      can_publish:
+        description: Sistema de Gestión de Contenidos (CMS)
+        example: true
+        type: boolean
+      can_read_notifications:
+        example: true
+        type: boolean
+      can_send_notifications:
+        description: Motor de Mensajería y Alertas
+        example: true
+        type: boolean
+      can_update_admin:
+        example: false
+        type: boolean
+      can_update_psi:
+        example: false
+        type: boolean
+      can_update_publish:
+        example: true
+        type: boolean
+    type: object
+  request_structs.CreateAdminRequest:
+    properties:
+      email:
+        example: staff@colpsicarabobo.com
+        type: string
+      password:
+        example: Segura123!
         minLength: 8
         type: string
       permissions:
-        allOf:
-        - $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.AdminPermissionsDTO'
-        description: Permisos que se le quieren asignar
+        $ref: '#/definitions/request_structs.AdminPermissionsDTO'
       username:
+        example: staff_admin
         type: string
     required:
     - email
     - password
     - username
     type: object
-  github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreatePsiAdminRequest:
+  request_structs.CreatePsiAdminRequest:
     properties:
       born_date:
         example: "1990-01-01"
         type: string
+      cel_phone_carabobo:
+        type: string
       cel_phone_outside_carabobo:
         type: string
+      cell_phone_outside_venezuela:
+        type: string
       ci:
-        description: Datos filiatorios
         type: integer
+      contact_cell_phone:
+        type: string
       contact_email:
-        description: Datos de contacto publico
+        description: ── Contacto Gremial y Público ────────────────────────────────────────
+        type: string
+      contact_phone:
+        type: string
+      country:
+        description: '── Ubicación: Fuera de Venezuela ─────────────────────────────────────'
         type: string
       cpsm:
         type: boolean
       date_of_last_solvency:
-        description: Histórico de solvencia y membresías dobles.
+        description: '── Datos Colegiales: Historial Gremial ──────────────────────────────'
         type: string
+      discapacity:
+        type: boolean
       double_guild:
         type: boolean
+      double_guild_location:
+        type: string
       email:
         type: string
       first_name:
+        description: ── Identidad Legal ───────────────────────────────────────────────────
         type: string
       fpv:
-        description: FPV es el Número de Federación de Psicólogos de Venezuela, obligatorio
-          para registro administrativo
+        description: Número de Federación de Psicólogos de Venezuela
         type: integer
       genre:
         enum:
@@ -514,13 +723,19 @@ definitions:
       guild_collaborator:
         type: boolean
       guild_director:
-        description: 'Professional Flags: Roles y estatus especiales dentro del gremio.'
+        description: '── Datos Colegiales: Flags Gremiales ────────────────────────────────'
         type: boolean
+      guild_inscription_date:
+        description: '── Datos Colegiales: Pregrado e Inscripción ──────────────────────────'
+        type: string
       is_active:
         type: boolean
       last_name:
         type: string
       mention_undergraduate:
+        type: string
+      municipality_carabobo:
+        description: '── Ubicación: Carabobo ───────────────────────────────────────────────'
         type: string
       municipality_outside_carabobo:
         type: string
@@ -532,25 +747,29 @@ definitions:
       password:
         minLength: 8
         type: string
+      phone_carabobo:
+        type: string
       phone_outside_carabobo:
         type: string
-      primary_specialty:
-        description: Especialidades
+      phone_outside_venezuela:
+        type: string
+      primary_specialty_id:
+        type: integer
+      primary_work_area:
+        description: ── Perfil Profesional ────────────────────────────────────────────────
         type: string
       proof_of_life:
         type: boolean
       public_employee:
         type: boolean
-      public_phone:
-        type: string
       register_folio:
         type: string
       register_number:
-        description: 'Register Title: Datos de registro legal del título en el estado.'
         type: integer
       register_title_date:
         type: string
       register_title_state:
+        description: '── Datos Colegiales: Registro Legal del Título ───────────────────────'
         type: string
       register_tome:
         type: string
@@ -558,27 +777,32 @@ definitions:
         type: string
       second_name:
         type: string
-      secondary_specialty:
+      secondary_specialty_id:
+        type: integer
+      secondary_work_area:
         type: string
       service_address:
+        type: string
+      service_address_outside_carabobo:
+        type: string
+      service_address_outside_venezuela:
         type: string
       sixty_five_or_plus:
         type: boolean
       solvent:
-        description: Estatus Administrativo (Solo Admin)
+        description: |-
+          ── Estatus Administrativo ────────────────────────────────────────────
+          Campos críticos: Solo el administrador puede asignar estos valores.
         type: boolean
       state_outside:
-        description: Si el psicologo esta fuera del estado Carabobo
+        description: '── Ubicación: Fuera de Carabobo (Venezuela) ─────────────────────────'
         type: string
       university_professor:
         type: boolean
       university_undergraduate:
-        description: |-
-          --- DATOS COLEGIALES --- //
-          Undergraduate Data
         type: string
       username:
-        description: Auth & Identidad
+        description: ── Auth & Credenciales ───────────────────────────────────────────────
         type: string
     required:
     - born_date
@@ -590,105 +814,189 @@ definitions:
     - last_name
     - nationality
     - password
-    - second_last_name
     - username
     type: object
-  github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreateSocialNetworkRequest:
+  request_structs.CreateSocialNetworkRequest:
     properties:
       name:
+        description: |-
+          Name es el identificador o alias de la plataforma (ej: "ig", "facebook", "linkedin").
+          Arquitectura: Se espera que la capa de Casos de Uso (Dominio) reciba este valor
+          en crudo y ejecute una lógica de normalización (ej. convertir "ig" a "Instagram")
+          antes de insertarlo en la base de datos para mantener la consistencia visual.
         example: ig
         type: string
       url:
+        description: URL es el enlace web absoluto al perfil profesional.
         example: https://instagram.com/psicologo
         type: string
     required:
     - name
     - url
     type: object
-  github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreateSpecialtyRequest:
+  request_structs.CreateSpecialtyRequest:
     properties:
       description:
-        example: Especialidad enfocada en...
+        description: |-
+          Description proporciona detalles adicionales sobre el alcance de la especialidad.
+          Útil para mostrar "Tooltips" o tarjetas informativas a los pacientes
+          que navegan por el directorio público buscando orientación.
+        example: Rama de la psicología que se encarga de la investigación, evaluación,
+          diagnóstico y tratamiento...
         type: string
       name:
+        description: |-
+          Name es el identificador único y formal de la especialidad profesional.
+          Se valida como requerido ('validate:"required"') para garantizar que
+          ningún registro huérfano o anónimo ingrese a la base de datos.
         example: Psicología Clínica
         type: string
     required:
     - name
     type: object
-  github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.PostGradeDTO:
+  request_structs.PostGradeDTO:
     properties:
+      description:
+        type: string
+      pic_one_url:
+        description: URL o S3 Key del diploma o certificado
+        type: string
+      pic_three_url:
+        description: URL o S3 Key de un tercer documento (opcional)
+        type: string
+      pic_two_url:
+        description: URL o S3 Key de un segundo documento (opcional)
+        type: string
       title:
+        type: string
+      type:
         type: string
       university:
         type: string
       year:
-        type: string
+        type: integer
     type: object
-  github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.PsiFullProfileDTO:
+  request_structs.PsiFullProfileDTO:
     properties:
       address:
         type: string
+      ci:
+        type: integer
       email:
-        description: Contacto (Condicional)
+        description: ── Contacto (visibilidad condicional) ───────────────────────────────
         type: string
       first_name:
+        description: ── Identidad Pública (siempre visible) ──────────────────────────────
         type: string
       fpv:
         type: integer
-      gender:
+      full_bio_content:
         type: string
-      id:
-        description: Identidad Pública
+      gender:
         type: string
       last_name:
         type: string
       location:
-        description: Ubicación
-        properties:
-          full_address:
-            type: string
-          municipality:
-            type: string
-          state:
-            type: string
-        type: object
+        allOf:
+        - $ref: '#/definitions/request_structs.PsiLocationDTO'
+        description: |-
+          ── Ubicación Estructurada ────────────────────────────────────────────
+          Un psicólogo puede tener presencia simultánea en Carabobo, en otro
+          estado venezolano y/o en el exterior. Cada bloque es independiente
+          y solo se incluye si tiene datos.
       mini_bio:
         type: string
       phone:
         type: string
       post_grades:
-        description: Postgrados (Siempre visibles si existen)
+        description: ── Relaciones ────────────────────────────────────────────────────────
         items:
-          $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.PostGradeDTO'
+          $ref: '#/definitions/request_structs.PostGradeDTO'
         type: array
+      primary_specialty_id:
+        type: integer
+      primary_work_area:
+        type: string
       profile_picture:
+        type: string
+      second_last_name:
+        type: string
+      second_name:
+        type: string
+      secondary_specialty_id:
+        type: integer
+      secondary_work_area:
         type: string
       social_networks:
         items:
-          $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.SocialNetworkDTO'
+          $ref: '#/definitions/request_structs.SocialNetworkDTO'
         type: array
       solvent:
         type: boolean
-      specialties:
-        description: Profesional y Académico
+      undergraduate:
+        allOf:
+        - $ref: '#/definitions/request_structs.UndergraduateDTO'
+        description: ── Datos de Pregrado (condicional por privacidad) ───────────────────
+      work_areas:
+        description: ── Perfil Profesional ────────────────────────────────────────────────
         items:
           type: string
         type: array
-      undergraduate:
-        description: Datos Universitarios (Condicional)
-        properties:
-          date:
-            type: string
-          mention:
-            type: string
-          university:
-            type: string
-        type: object
     type: object
-  github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.PsiLoginRequest:
+  request_structs.PsiLocationCaraboboDTO:
+    properties:
+      address:
+        type: string
+      cell_phone:
+        type: string
+      municipality:
+        type: string
+      phone:
+        type: string
+    type: object
+  request_structs.PsiLocationDTO:
+    properties:
+      carabobo:
+        allOf:
+        - $ref: '#/definitions/request_structs.PsiLocationCaraboboDTO'
+        description: Presencia en el estado Carabobo (jurisdicción principal del Colegio)
+      exterior:
+        allOf:
+        - $ref: '#/definitions/request_structs.PsiLocationExteriorDTO'
+        description: Presencia en el exterior
+      venezuela:
+        allOf:
+        - $ref: '#/definitions/request_structs.PsiLocationVenezuelaDTO'
+        description: Presencia en otro estado venezolano (excluye Carabobo)
+    type: object
+  request_structs.PsiLocationExteriorDTO:
+    properties:
+      address:
+        type: string
+      cell_phone:
+        type: string
+      country:
+        type: string
+      phone:
+        type: string
+    type: object
+  request_structs.PsiLocationVenezuelaDTO:
+    properties:
+      address:
+        type: string
+      cell_phone:
+        type: string
+      municipality:
+        type: string
+      phone:
+        type: string
+      state:
+        type: string
+    type: object
+  request_structs.PsiLoginRequest:
     properties:
       identifier:
+        description: Identifier puede ser el correo electrónico o el nombre de usuario.
         example: psicologo@email.com
         type: string
       password:
@@ -698,106 +1006,106 @@ definitions:
     - identifier
     - password
     type: object
-  github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.PsiUserUpdateRequestSelf:
-    properties:
-      cel_phone_carabobo:
-        type: string
-      cel_phone_outside_carabobo:
-        type: string
-      contact_email:
-        description: Datos de Contacto y Privacidad (Permitido)
-        type: string
-      mini_bio:
-        description: Biografía (Permitido)
-        type: string
-      municipality_carabobo:
-        description: Ubicación (Permitido)
-        type: string
-      municipality_outside_carabobo:
-        type: string
-      phone_carabobo:
-        type: string
-      phone_outside_carabobo:
-        type: string
-      primary_specialty:
-        description: Especialidades (Permitido, si no está en la tabla de catálogo)
-        type: string
-      public_phone:
-        type: string
-      secondary_specialty:
-        type: string
-      service_address:
-        type: string
-      show_contact_email:
-        type: boolean
-      show_graduate_date:
-        type: boolean
-      show_mention_undergraduate:
-        type: boolean
-      show_public_phone:
-        type: boolean
-      show_public_service_address:
-        type: boolean
-      show_university_undergraduate:
-        description: Campos de ColData
-        type: boolean
-      state_outside:
-        type: string
-    type: object
-  github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.SocialNetworkDTO:
+  request_structs.SocialNetworkDTO:
     properties:
       name:
+        description: |-
+          Name contiene el identificador de la plataforma ya normalizado y formateado,
+          listo para mapear componentes de íconos (ej: renderizar el ícono de "Instagram").
+        example: Instagram
         type: string
       url:
+        description: URL contiene el enlace validado y listo para ser inyectado en
+          un atributo href="...".
+        example: https://instagram.com/psicologo
         type: string
     type: object
-  github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdateAdminRequest:
+  request_structs.UndergraduateDTO:
+    properties:
+      date:
+        type: string
+      mention:
+        type: string
+      title_image_one_url:
+        description: URL o S3 Key del título de pregrado
+        type: string
+      title_image_three_url:
+        description: URL o S3 Key de un tercer documento (opcional)
+        type: string
+      title_image_two_url:
+        description: URL o S3 Key de un segundo documento (opcional)
+        type: string
+      university:
+        type: string
+    type: object
+  request_structs.UpdateAdminRequest:
     properties:
       email:
+        example: nuevo@correo.com
         type: string
       id:
+        description: |-
+          ID es el identificador primario del administrador a afectar.
+          Nota Arquitectónica: En controladores robustos, este ID en el body debe
+          ser verificado cruzándolo con el ID de la URL (/api/admin/:id) para
+          evitar ataques de manipulación de Payload.
         type: string
       is_active:
+        example: true
         type: boolean
       password:
+        minLength: 8
         type: string
       permissions:
         allOf:
-        - $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.AdminPermissionsDTO'
-        description: Permisos
+        - $ref: '#/definitions/request_structs.AdminPermissionsDTO'
+        description: Sub-estructura que será evaluada por el Motor de Permisos.
       username:
+        example: nuevo_username
         type: string
     required:
     - id
     type: object
-  github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdatePsiAdminRequest:
+  request_structs.UpdatePsiAdminRequest:
     properties:
       born_date:
-        example: "1990-01-01"
         type: string
       cel_phone_outside_carabobo:
         type: string
+      cell_phone_carabobo:
+        type: string
+      cell_phone_outside_venezuela:
+        type: string
       ci:
-        description: datos filiatorios (Solo Admin)
         type: integer
+      contact_cell_phone:
+        type: string
       contact_email:
-        description: Datos de contacto y ubicación
+        description: ── Contacto público y privacidad ─────────────────────────────────────
+        type: string
+      contact_phone:
+        description: ── Contacto interno del gremio ───────────────────────────────────────
+        type: string
+      country:
+        description: '── Ubicación: Fuera de Venezuela ─────────────────────────────────────'
         type: string
       cpsm:
         type: boolean
       date_of_last_solvency:
-        description: Histórico de solvencia y membresías dobles.
+        description: ── Solvencia y membresías ────────────────────────────────────────────
         type: string
+      discapacity:
+        type: boolean
       double_guild:
         type: boolean
+      double_guild_location:
+        type: string
       email:
         type: string
       first_name:
-        description: Identidad (Solo Admin)
+        description: ── Identidad legal ───────────────────────────────────────────────────
         type: string
       fpv:
-        description: FPV es el Número de Federación de Psicólogos de Venezuela, obligatorio
-          para registro administrativo
         type: integer
       full_bio:
         type: string
@@ -808,8 +1116,11 @@ definitions:
       guild_collaborator:
         type: boolean
       guild_director:
-        description: Flags Profesionales (Solo Admin)
+        description: ── Flags gremiales ───────────────────────────────────────────────────
         type: boolean
+      guild_inscription_date:
+        description: ── Registro legal del título ─────────────────────────────────────────
+        type: string
       id:
         type: string
       is_active:
@@ -819,24 +1130,29 @@ definitions:
       mention_undergraduate:
         type: string
       mini_bio:
-        description: En caso de que el admin quiera modificar las bios, aunque lo
-          ideal es que el psicologo sea el encargado de esto
+        type: string
+      municipality_carabobo:
+        description: '── Ubicación: Carabobo ───────────────────────────────────────────────'
         type: string
       municipality_outside_carabobo:
         type: string
       nationality:
         type: string
+      phone_carabobo:
+        type: string
       phone_outside_carabobo:
         type: string
-      primary_specialty:
-        description: Especialidades
+      phone_outside_venezuela:
+        type: string
+      primary_specialty_id:
+        type: integer
+      primary_work_area:
+        description: ── Perfil Profesional ────────────────────────────────────────────────
         type: string
       proof_of_life:
         type: boolean
       public_employee:
         type: boolean
-      public_phone:
-        type: string
       register_folio:
         type: string
       register_number:
@@ -851,63 +1167,114 @@ definitions:
         type: string
       second_name:
         type: string
-      secondary_specialty:
+      secondary_specialty_id:
+        type: integer
+      secondary_work_area:
         type: string
       service_address:
         type: string
+      service_address_outside_carabobo:
+        type: string
+      service_address_outside_venezuela:
+        type: string
+      show_cel_phone_carabobo:
+        type: string
+      show_cel_phone_outside_carabobo:
+        type: string
+      show_cell_phone_outside_venezuela:
+        type: string
       show_contact_email:
-        type: boolean
-      show_public_phone:
-        type: boolean
-      show_service_address:
-        type: boolean
+        type: string
+      show_graduate_date:
+        type: string
+      show_mention_undergraduate:
+        type: string
+      show_municipality_carabobo:
+        type: string
+      show_municipality_outside_carabobo:
+        type: string
+      show_phone_carabobo:
+        description: Añadido el tag form faltante
+        type: string
+      show_phone_outside_carabobo:
+        type: string
+      show_phone_outside_venezuela:
+        type: string
+      show_public_service_address:
+        type: string
+      show_public_service_address_outside_carabobo:
+        type: string
+      show_public_service_address_outside_venezuela:
+        type: string
+      show_state_outside:
+        type: string
+      show_university_undergraduate:
+        type: string
       sixty_five_or_plus:
         type: boolean
+      solvencies:
+        description: JSON serializado en string para multipart
+        type: string
       solvent:
-        description: Estatus Administrativo (Solo Admin)
+        description: ── Estado gremial y multimedia ───────────────────────────────────────
         type: boolean
       state_outside:
-        description: Si el psicologo esta fuera del estado Carabobo
+        description: '── Ubicación: Fuera de Carabobo (Venezuela) ─────────────────────────'
         type: string
       university_professor:
         type: boolean
       university_undergraduate:
-        description: Datos Colegiales (ColData - Solo Admin puede alterar la info)
+        description: ── Pregrado ──────────────────────────────────────────────────────────
+        type: string
+      username:
+        description: ── Credenciales de acceso ────────────────────────────────────────────
         type: string
     required:
     - id
     type: object
-  github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdateSocialNetworkRequest:
+  request_structs.UpdateSocialNetworkRequest:
     properties:
       is_active:
+        description: |-
+          IsActive funciona como un interruptor de visibilidad (Soft-Disable).
+          Regla de Negocio: Permite al usuario ocultar temporalmente la red social de
+          su perfil público (ej. si está rediseñando su Instagram) sin necesidad de
+          ejecutar un DELETE físico que destruiría el registro permanentemente.
+        example: true
         type: boolean
       name:
+        description: Name permite corregir un error tipográfico o cambiar el alias
+          de la plataforma.
         example: Instagram
         type: string
       url:
+        description: URL permite actualizar el enlace en caso de que el profesional
+          cambie su handle/arroba.
         example: https://instagram.com/nuevo_perfil
         type: string
     type: object
-  github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdateSpecialtyRequest:
+  request_structs.UpdateSpecialtyRequest:
     properties:
       active:
+        description: |-
+          Active funciona como un interruptor de visibilidad (Soft-Disable).
+          Permite ocultar una especialidad deprecada del formulario de registro público
+          sin borrarla, preservando la integridad referencial (Foreign Keys) de los
+          psicólogos antiguos que ya la tienen asignada.
+          Al ser *bool, evitamos que la ausencia del campo en el payload la desactive por accidente.
+        example: true
         type: boolean
       description:
+        description: Description es opcional. Permite redefinir o corregir la explicación
+          del área clínica.
+        example: Nueva descripción actualizada...
         type: string
       name:
+        description: |-
+          Name es opcional. Si se proporciona, el controlador/servicio debe validar
+          que el nuevo nombre no colisione con otra especialidad existente (Restricción UNIQUE).
+        example: Psicología Organizacional
         type: string
-    type: object
-  internal_handler.LoginRequest:
-    properties:
-      identifier:
-        example: admin
-        type: string
-      password:
-        example: admin123
-        type: string
-    required:
-    - identifier
-    - password
     type: object
 host: localhost:8080
 info:
@@ -928,7 +1295,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreateAdminRequest'
+          $ref: '#/definitions/request_structs.CreateAdminRequest'
       produces:
       - application/json
       responses:
@@ -1035,14 +1402,15 @@ paths:
     post:
       consumes:
       - multipart/form-data
-      description: Crea un post con contenido HTML y opcionalmente una imagen.
+      description: Crea un post con contenido HTML y opcionalmente una imagen. El
+        campo 'status' controla el ciclo de vida.
       parameters:
-      - description: Título del post
+      - description: Título del post (max 100 chars)
         in: formData
         name: title
         required: true
         type: string
-      - description: Resumen para el feed
+      - description: Resumen para el feed (max 250 chars)
         in: formData
         name: short_description
         type: string
@@ -1051,16 +1419,20 @@ paths:
         name: content
         required: true
         type: string
-      - description: 'Tipo: public, psi'
+      - description: 'Visibilidad: public | psi'
         in: formData
         name: type
         required: true
         type: string
-      - description: Visible inmediatamente
+      - description: 'Estado: draft | published | archived | scheduled'
         in: formData
-        name: is_active
+        name: status
         required: true
-        type: boolean
+        type: string
+      - description: Fecha ISO8601 de publicación — obligatorio si status=scheduled
+        in: formData
+        name: publish_at
+        type: string
       - description: Imagen de portada
         in: formData
         name: image
@@ -1080,23 +1452,23 @@ paths:
             additionalProperties:
               type: string
             type: object
-        "403":
-          description: Forbidden
+        "500":
+          description: Internal Server Error
           schema:
             additionalProperties:
               type: string
             type: object
       security:
       - BearerAuth: []
-      summary: Publicar nueva noticia
+      summary: Crear nueva publicación
       tags:
       - Administración - Publicaciones
   /admin/posts/{id}:
     patch:
       consumes:
       - multipart/form-data
-      description: Actualiza metadatos e imagen. El ID se obtiene de la URL. Los campos
-        son opcionales (PATCH).
+      description: Edición parcial (PATCH). Solo los campos enviados se modifican.
+        Permite cambiar el estado del ciclo de vida.
       parameters:
       - description: UUID de la publicación
         in: path
@@ -1107,23 +1479,27 @@ paths:
         in: formData
         name: title
         type: string
-      - description: Descripción corta
+      - description: Nueva descripción corta
         in: formData
         name: short_description
         type: string
-      - description: Contenido detallado
+      - description: Nuevo contenido HTML
         in: formData
         name: content
         type: string
-      - description: Tipo de post
+      - description: 'Nueva visibilidad: public | psi'
         in: formData
         name: type
         type: string
-      - description: Estado de activación
+      - description: 'Nuevo estado: draft | published | archived | scheduled'
         in: formData
-        name: is_active
-        type: boolean
-      - description: Nueva imagen de portada
+        name: status
+        type: string
+      - description: Nueva fecha de publicación — obligatorio si status=scheduled
+        in: formData
+        name: publish_at
+        type: string
+      - description: Nueva imagen de portada (reemplaza la anterior)
         in: formData
         name: image
         type: file
@@ -1131,13 +1507,19 @@ paths:
       - application/json
       responses:
         "200":
-          description: '{"message": "Publicación actualizada"}'
+          description: OK
           schema:
             additionalProperties:
               type: string
             type: object
         "400":
-          description: '{"error": "Datos inválidos"}'
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
           schema:
             additionalProperties:
               type: string
@@ -1204,7 +1586,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserModel'
+            $ref: '#/definitions/domain.PsiUserModel'
         "400":
           description: ID inválido
           schema:
@@ -1245,7 +1627,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdatePsiAdminRequest'
+          $ref: '#/definitions/request_structs.UpdatePsiAdminRequest'
       produces:
       - application/json
       responses:
@@ -1278,6 +1660,97 @@ paths:
       summary: Editar perfil completo de psicólogo
       tags:
       - Administración - Psicólogos
+  /admin/psi/{id}/picture:
+    delete:
+      description: 'Elimina el avatar del psicólogo: borra el objeto de S3 y limpia
+        la referencia en la base de datos.'
+      parameters:
+      - description: UUID del Psicólogo
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'message: Foto de perfil eliminada'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: 'error: ID inválido'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: 'error: No autorizado'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: 'error: Permisos insuficientes'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Eliminar foto de perfil de un psicólogo
+      tags:
+      - Administración - Psicólogos
+  /admin/psi/{id}/reset-password:
+    post:
+      description: Genera una contraseña temporal de 12 caracteres, invalida las sesiones
+        activas y obliga al cambio en el próximo login. La nueva clave se envía únicamente
+        al correo del psicólogo.
+      parameters:
+      - description: UUID del Psicólogo
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'message: Contraseña reiniciada y enviada al correo del psicólogo'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: 'error: ID inválido'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: 'error: No autorizado'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: 'error: Permisos insuficientes'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: 'error: Registro no encontrado'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Reiniciar clave de un psicólogo
+      tags:
+      - Administración - Psicólogos
   /admin/psi/create:
     post:
       consumes:
@@ -1290,7 +1763,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreatePsiAdminRequest'
+          $ref: '#/definitions/request_structs.CreatePsiAdminRequest'
       produces:
       - application/json
       responses:
@@ -1413,7 +1886,7 @@ paths:
             additionalProperties: true
             type: object
         "404":
-          description: Retornado si el usuario no tiene permisos (Security by Obscurity)
+          description: Not Found
           schema:
             additionalProperties:
               type: string
@@ -1422,7 +1895,7 @@ paths:
       - BearerAuth: []
       summary: Importar psicólogos masivamente
       tags:
-      - Administración - Psicólogos  <-- Tag corregido para agruparlo bien
+      - Administración - Psicólogos
   /admin/specialties:
     post:
       consumes:
@@ -1435,7 +1908,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreateSpecialtyRequest'
+          $ref: '#/definitions/request_structs.CreateSpecialtyRequest'
       produces:
       - application/json
       responses:
@@ -1493,7 +1966,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdateSpecialtyRequest'
+          $ref: '#/definitions/request_structs.UpdateSpecialtyRequest'
       produces:
       - application/json
       responses:
@@ -1525,7 +1998,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiSpecialtyModel'
+              $ref: '#/definitions/domain.PsiSpecialtyModel'
             type: array
         "403":
           description: 'error: permisos insuficientes'
@@ -1550,7 +2023,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdateAdminRequest'
+          $ref: '#/definitions/request_structs.UpdateAdminRequest'
       produces:
       - application/json
       responses:
@@ -1583,7 +2056,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_handler.LoginRequest'
+          $ref: '#/definitions/handler.LoginRequest'
       produces:
       - application/json
       responses:
@@ -1607,10 +2080,33 @@ paths:
       summary: Iniciar sesión administrativo
       tags:
       - Administración - Auth
+  /auth/logout:
+    post:
+      description: Invalida la sesión del administrador a nivel de servidor (Stateful
+        Logout).
+      responses:
+        "200":
+          description: 'message: sesión cerrada'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: 'error: no autenticado'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Cerrar sesión administrativo
+      tags:
+      - Administración - Auth
   /posts:
     get:
       description: 'Obtiene noticias. El contenido varía según el usuario: Público
-        (solo noticias generales), Psicólogo (generales + gremiales), Admin (todo).'
+        (solo publicados públicos), Psicólogo (públicos + gremiales), Admin (todos
+        los estados).'
       parameters:
       - description: 'Número de página (Default: 1)'
         in: query
@@ -1639,8 +2135,8 @@ paths:
       - Publicaciones
   /posts/{id}:
     get:
-      description: Devuelve el detalle de la noticia incluyendo el contenido HTML.
-        Valida permisos de visibilidad.
+      description: Devuelve el detalle completo incluyendo contenido HTML. Aplica
+        ACL según el rol del solicitante.
       parameters:
       - description: UUID del Post
         in: path
@@ -1653,22 +2149,22 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.Post'
+            $ref: '#/definitions/domain.Post'
         "404":
           description: Not Found
           schema:
             additionalProperties:
               type: string
             type: object
-      summary: Obtener noticia por ID
+      summary: Obtener publicación por ID
       tags:
       - Publicaciones
   /psi/{id}:
     get:
-      description: Retorna la ficha técnica. Oculta datos privados (teléfono, email)
-        según configuración del usuario.
+      description: Retorna la ficha técnica. Oculta datos privados según configuración
+        del usuario.
       parameters:
-      - description: UUID del Psicólogo
+      - description: FPV del Psicólogo
         in: path
         name: id
         required: true
@@ -1679,7 +2175,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.PsiFullProfileDTO'
+            $ref: '#/definitions/request_structs.PsiFullProfileDTO'
         "404":
           description: Not Found
           schema:
@@ -1691,15 +2187,14 @@ paths:
       - Psicólogos - Público
   /psi/directory:
     get:
-      description: Motor de búsqueda avanzado. Si se usa 'q', busca por identidad
-        (ignora solvencia). Si no se usa 'q', solo muestra solventes y aplica filtros
-        de ubicación/especialidad.
+      description: Motor de búsqueda avanzado con filtros de especialidad, ubicación
+        y género.
       parameters:
       - description: Búsqueda por Nombre, Apellido, CI o FPV
         in: query
         name: q
         type: string
-      - description: ID de la Especialidad (Catálogo Maestro)
+      - description: ID de la Especialidad
         in: query
         name: specialty
         type: integer
@@ -1741,7 +2236,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.PsiLoginRequest'
+          $ref: '#/definitions/request_structs.PsiLoginRequest'
       produces:
       - application/json
       responses:
@@ -1759,19 +2254,66 @@ paths:
       summary: Login de Psicólogo
       tags:
       - Psicólogos - Auth
-  /psi/me:
-    get:
-      description: Retorna toda la información del psicólogo autenticado (sin aplicar
-        filtros de privacidad o solvencia). Ideal para el Dashboard del usuario.
+  /psi/login-library:
+    post:
+      consumes:
+      - application/json
+      description: Autentica y retorna token SSO para el microservicio de biblioteca.
+      parameters:
+      - description: Credenciales
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.PsiLoginRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiUserModel'
+            additionalProperties: true
+            type: object
         "401":
-          description: No autorizado
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Login para Biblioteca (Audiobookshelf)
+      tags:
+      - Psicólogos - Auth
+  /psi/logout:
+    post:
+      description: Invalida el token activo rotando la key de firma. Elimina la sesión
+        activa de las estadísticas.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Logout de Psicólogo
+      tags:
+      - Psicólogos - Auth
+  /psi/me:
+    get:
+      description: Retorna toda la información del psicólogo autenticado sin filtros
+        de privacidad.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.PsiUserModel'
+        "401":
+          description: Unauthorized
           schema:
             additionalProperties: true
             type: object
@@ -1782,15 +2324,33 @@ paths:
       - Psicólogos - Perfil
     patch:
       consumes:
-      - application/json
-      description: Permite al psicólogo actualizar su información de contacto y visibilidad.
+      - multipart/form-data
       parameters:
-      - description: Datos editables
-        in: body
-        name: request
+      - description: Contraseña actual obligatoria
+        in: formData
+        name: password
         required: true
-        schema:
-          $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.PsiUserUpdateRequestSelf'
+        type: string
+      - description: Nuevo nombre de usuario
+        in: formData
+        name: username
+        type: string
+      - description: Imagen de perfil (JPEG/PNG)
+        in: formData
+        name: profile_picture
+        type: file
+      - description: Imagen del título 1
+        in: formData
+        name: title_image_one
+        type: file
+      - description: Imagen del título 2
+        in: formData
+        name: title_image_two
+        type: file
+      - description: Imagen del título 3
+        in: formData
+        name: title_image_three
+        type: file
       produces:
       - application/json
       responses:
@@ -1799,17 +2359,56 @@ paths:
           schema:
             additionalProperties: true
             type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
       security:
       - BearerAuth: []
-      summary: Actualizar mi perfil
+      summary: Actualizar mi perfil (Autogestión)
+      tags:
+      - Psicólogos - Perfil
+  /psi/me/audiobookshelf:
+    get:
+      description: Devuelve la URL de auto-login a Audiobookshelf. Solo agremiados
+        solventes. Si el psicólogo no tiene cuenta en ABS, se crea automáticamente.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: url, username, created
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Solo agremiados solventes
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "503":
+          description: Audiobookshelf no disponible
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Acceso a la biblioteca digital (Audiobookshelf)
       tags:
       - Psicólogos - Perfil
   /psi/me/postgrades:
     post:
       consumes:
-      - multipart/form-data   <-- CAMBIO IMPORTANTE
-      description: Registra un título académico y permite subir hasta 3 imágenes (título,
-        notas, etc).
+      - multipart/form-data
       parameters:
       - description: Título obtenido
         in: formData
@@ -1825,7 +2424,7 @@ paths:
         in: formData
         name: graduation_year
         required: true
-        type: string
+        type: integer
       - description: Descripción opcional
         in: formData
         name: description
@@ -1846,7 +2445,7 @@ paths:
       - application/json
       responses:
         "201":
-          description: message
+          description: Created
           schema:
             additionalProperties:
               type: string
@@ -1860,15 +2459,13 @@ paths:
     patch:
       consumes:
       - multipart/form-data
-      description: Edita un título. Permite reemplazar imágenes específicas enviando
-        'pic_one', 'pic_two' o 'pic_three'.
       parameters:
       - description: ID del Postgrado
         in: path
         name: id
         required: true
         type: string
-      - description: Título obtenido
+      - description: Título
         in: formData
         name: title
         type: string
@@ -1879,7 +2476,7 @@ paths:
       - description: Año
         in: formData
         name: graduation_year
-        type: string
+        type: integer
       - description: Descripción
         in: formData
         name: description
@@ -1900,13 +2497,13 @@ paths:
       - application/json
       responses:
         "200":
-          description: message
+          description: OK
           schema:
             additionalProperties:
               type: string
             type: object
         "403":
-          description: No es tu registro
+          description: Forbidden
           schema:
             additionalProperties:
               type: string
@@ -1926,7 +2523,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.CreateSocialNetworkRequest'
+          $ref: '#/definitions/request_structs.CreateSocialNetworkRequest'
       produces:
       - application/json
       responses:
@@ -1976,7 +2573,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_request_structs.UpdateSocialNetworkRequest'
+          $ref: '#/definitions/request_structs.UpdateSocialNetworkRequest'
       produces:
       - application/json
       responses:
@@ -2007,7 +2604,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiSpecialtyModel'
+              $ref: '#/definitions/domain.PsiSpecialtyModel'
             type: array
         "500":
           description: error al recuperar especialidades
@@ -2034,7 +2631,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_veniversvm_ColPsiCarabobo_api_internal_domain.PsiSpecialtyModel'
+            $ref: '#/definitions/domain.PsiSpecialtyModel'
         "400":
           description: ID inválido
           schema:

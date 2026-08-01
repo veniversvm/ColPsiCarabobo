@@ -497,6 +497,14 @@ func (r *psiRepo) ResetPassword(ctx context.Context, psi *domain.PsiUserModel) e
 		Updates(psi).Error
 }
 
+// UpdateAudioBookShellID persiste el id de la cuenta del agremiado en
+// Audiobookshelf. Select() acota las columnas para no tocar el expediente.
+func (r *psiRepo) UpdateAudioBookShellID(ctx context.Context, psi *domain.PsiUserModel) error {
+	return r.db.WithContext(ctx).Model(psi).
+		Select("AudioBookShellId", "UpdatedAt").
+		Updates(psi).Error
+}
+
 // GetPsiUserColData recupera exclusivamente la información colegial de un psicólogo.
 // Útil para vistas ligeras donde no se requiere el perfil completo del usuario.
 func (r *psiRepo) GetPsiUserColData(ctx context.Context, psiID uuid.UUID) (*domain.PsiUserColData, error) {

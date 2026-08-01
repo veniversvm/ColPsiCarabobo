@@ -72,6 +72,10 @@ swag init -g cmd/api/main.go -o docs/   # regenerar Swagger
    `S3_ENDPOINT`, `S3_PUBLIC_URL`, `APP_ENV`, `VALKEY_ADDR`, `JWT_LIBRARY_SECRET`,
    `ABS_ADMIN_TOKEN`. No usar nombres obsoletos (`AWS_BUCKET`, `AWS_ACCESS_KEY`,
    `GOENV`) — el README anterior los listaba y no existían.
+   Para la biblioteca virtual (Audiobookshelf): `ABS_BASE_URL` (interna, en Docker
+   `http://audiobookshelf:80`, NUNCA la pública), `ABS_PUBLIC_URL` (navegador),
+   `ABS_ADMIN_USERNAME/PASSWORD` (admin de aprovisionamiento `colpsi-bot`) y
+   `ABS_PASSWORD_SECRET` (deriva la clave de cada agremiado; `openssl rand -hex 24`).
 
 6. **Config singleton** — `config.InitConfig()` debe ejecutarse al inicio de
    `main()` (`cmd/api/main.go:54`) antes de cualquier otro servicio. `config.Envs`
@@ -86,6 +90,15 @@ swag init -g cmd/api/main.go -o docs/   # regenerar Swagger
    `X-Idempotency-Key` (ventana 30 min). Si un test/script da duplicados o
    "replayed", es el middleware actuando. La respuesta reutilizada marca
    `X-Idempotent-Replayed: true`.
+
+9. **Biblioteca virtual (Audiobookshelf)** — `GET /psi/me/audiobookshelf`
+   (`psi_handler.go:GetAudiobookshelfAccess`) devuelve la URL de auto-login
+   `{ABS_PUBLIC_URL}/login/?accessToken=...` SOLO a agremiados solventes
+   (403 si no). El usuario ABS es `psi_<ci>` y se crea al vuelo vía la API de
+   admin (`colpsi-bot`) con la clave derivada de `ABS_PASSWORD_SECRET` (nunca
+   se expone en claro). El id de la cuenta ABS se persiste en
+   `audio_book_shell_id` (`UpdateAudioBookShellID`). El acceso se sirve por
+   `ABS_PUBLIC_URL`, mientras `ABS_BASE_URL` es la interna del SDK.
 
 ## Estructura
 

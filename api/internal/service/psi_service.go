@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -71,4 +72,15 @@ func (s *PsiService) avatarURL(key string, updatedAt time.Time) string {
 		url = fmt.Sprintf("%s?v=%d", url, updatedAt.Unix())
 	}
 	return url
+}
+
+// SetAudiobookshelfID persiste el id de la cuenta ABS del agremiado en el
+// expediente (campo AudioBookShellId). Es una actualización ligera que no toca
+// el resto del perfil. Si el id no cambió, no hace nada.
+func (s *PsiService) SetAudiobookshelfID(ctx context.Context, psi *domain.PsiUserModel, absID string) error {
+	if psi == nil || absID == "" || absID == psi.AudioBookShellId {
+		return nil
+	}
+	psi.AudioBookShellId = absID
+	return s.repo.UpdateAudioBookShellID(ctx, psi)
 }

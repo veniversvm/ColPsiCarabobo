@@ -85,6 +85,9 @@ services:
       # Pública: accesible desde el navegador (endpoint/bucket)
       - S3_PUBLIC_URL=http://localhost:29000
       - VALKEY_ADDR=valkey:6379
+      # Interna: el API habla con ABS por su nombre de red (la pública la pone
+      # ABS_PUBLIC_URL desde .env, para el navegador).
+      - ABS_BASE_URL=http://audiobookshelf:80
       - PORT=8080
     networks:
       - colpsi_network

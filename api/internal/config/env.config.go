@@ -70,6 +70,13 @@ type Config struct {
 	// Valkey (rate limiting store)
 	ValkeyAddr string // Valkey/Redis address (e.g. "colpsi_valkey:6379"). Empty = in-memory fallback.
 
+	// Audiobookshelf (biblioteca digital de los agremiados solventes)
+	AbsBaseURL         string // URL interna que usa la API para hablar con ABS (SDK)
+	AbsPublicURL       string // URL pública que abre el navegador (auto-login)
+	AbsAdminUsername   string // Usuario admin de ABS para aprovisionar cuentas
+	AbsAdminPassword   string // Contraseña del admin de ABS
+	AbsPasswordSecret  string // Secreto para derivar la contraseña de cada agremiado
+
 	//
 	JwtLibrarySecret string
 	AbsAdminToken    string
@@ -151,6 +158,13 @@ func InitConfig() {
 
 		// Valkey
 		ValkeyAddr: getEnv("VALKEY_ADDR", ""),
+
+		// Audiobookshelf
+		AbsBaseURL:        getEnv("ABS_BASE_URL", "http://localhost:21337"),
+		AbsPublicURL:      getEnv("ABS_PUBLIC_URL", "http://localhost:21337"),
+		AbsAdminUsername:  getEnv("ABS_ADMIN_USERNAME", ""),
+		AbsAdminPassword:  getEnv("ABS_ADMIN_PASSWORD", ""),
+		AbsPasswordSecret: getEnv("ABS_PASSWORD_SECRET", ""),
 
 		// Library
 		JwtLibrarySecret: getEnv("JWT_LIBRARY_SECRET", ""),

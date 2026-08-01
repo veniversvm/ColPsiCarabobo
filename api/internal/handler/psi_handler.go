@@ -24,6 +24,7 @@ type PsiHandler struct {
 	service   *service.PsiService
 	analytics *service.AnalyticsService // 👈 NUEVO
 	cache     *cache.Cache              // caché del directorio público (nil = desactivada)
+	abs       *service.AudiobookshelfService
 }
 
 // NewPsiHandler creates a new PsiHandler with the given services.
@@ -37,6 +38,12 @@ func NewPsiHandler(svc *service.PsiService, analytics *service.AnalyticsService,
 		h.cache = caches[0]
 	}
 	return h
+}
+
+// SetAudiobookshelf inyecta el servicio de Audiobookshelf. Sin él, el endpoint
+// de acceso a la biblioteca responde 503.
+func (h *PsiHandler) SetAudiobookshelf(absSvc *service.AudiobookshelfService) {
+	h.abs = absSvc
 }
 
 // invalidateDirectory invalida el caché del directorio público. Debe llamarse
@@ -292,6 +299,60 @@ func (h *PsiHandler) GetMe(c *fiber.Ctx) error {
 	h.service.ResolvePsiModelURLs(psi)
 
 	return c.JSON(psi)
+}
+
+// GetAudiobookshelfAccess godoc
+// @Summary      Acceso a la biblioteca digital (Audiobookshelf)
+// @Description  Devuelve la URL de auto-login a Audiobookshelf. Solo agremiados solventes. Si el psicólogo no tiene cuenta en ABS, se crea automáticamente.
+// @Security     BearerAuth
+// @Tags         Psicólogos - Perfil
+// @Produce      json
+// @Success      200  {object}  map[string]interface{}  "url, username, created"
+// @Failure      401  {object}  map[string]string
+// @Failure      403  {object}  map[string]string  "Solo agremiados solventes"
+// @Failure      503  {object}  map[string]string  "Audiobookshelf no disponible"
+// @Router       /psi/me/audiobookshelf [get]
+func (h *PsiHandler) GetAudiobookshelfAccess(c *fiber.Ctx) error {
+	psi, ok := c.Locals("psi_user").(*domain.PsiUserModel)
+	if !ok || psi == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Sesión inválida o expirada"})
+	}
+
+	if !psi.Solvent {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"error": "Acceso restringido a agremiados solventes",
+		})
+	}
+
+	if h.abs == nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "La biblioteca digital no está disponible",
+		})
+	}
+
+	username := fmt.Sprintf("psi_%d", psi.CI)
+	access, err := h.abs.GetAccess(c.UserContext(), username)
+	if err != nil {
+		log.Warn().Err(err).Str("component", "psi-handler").
+			Str("id", psi.ID.String()).Str("username", username).
+			Msg("Error obteniendo acceso a Audiobookshelf")
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "La biblioteca digital no está disponible",
+		})
+	}
+
+	// Persistir el id ABS en el expediente (si cambió). Fallo de persistencia
+	// no bloquea el acceso: solo se registra.
+	if err := h.service.SetAudiobookshelfID(c.UserContext(), psi, access.UserID); err != nil {
+		log.Error().Err(err).Str("component", "psi-handler").
+			Str("id", psi.ID.String()).Msg("Error persistiendo AudioBookShellId")
+	}
+
+	return c.JSON(fiber.Map{
+		"url":      access.URL,
+		"username": access.Username,
+		"created":  access.Created,
+	})
 }
 
 // Login godoc

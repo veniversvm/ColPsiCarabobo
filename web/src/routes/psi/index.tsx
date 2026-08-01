@@ -6,7 +6,7 @@
  * FIX SENIOR: Este es el dashboard principal del psicólogo. Se carga información sensible del perfil, por lo que se accede a través de la cookie de autenticación.
  * El endpoint /psi/me en Go se encarga de devolver toda la información relevante del perfil en una sola petición para optimizar la experiencia.
  */
-import { createResource, For, Show, Suspense } from "solid-js";
+import { createResource, createSignal, For, Show, Suspense } from "solid-js";
 import { useAuth } from "~/lib/auth";
 import { apiGet } from "~/lib/api";
 import { bucketUrl } from "~/lib/bucket";
@@ -18,6 +18,28 @@ export default function PsiDashboard() {
   // Cargamos los datos extendidos del perfil y las noticias gremiales
   const [profile] = createResource(() => apiGet<any>("/psi/me"));
   const [news] = createResource(() => apiGet<any>("/posts?limit=3"));
+
+  // Acceso a la Biblioteca Virtual (Audiobookshelf). Solo agremiados solventes.
+  const [opening, setOpening] = createSignal(false);
+  const [libError, setLibError] = createSignal("");
+
+  const openLibrary = async () => {
+    if (!profile()?.solvent || opening()) return;
+    setOpening(true);
+    setLibError("");
+    try {
+      const res = await apiGet<{ url: string }>("/psi/me/audiobookshelf");
+      window.open(res.url, "_blank", "noopener,noreferrer");
+    } catch (e: any) {
+      setLibError(
+        e?.message === "OFFLINE_SERVICE"
+          ? "La biblioteca no está disponible. Intenta de nuevo."
+          : e?.message || "No se pudo abrir la biblioteca. Intenta de nuevo."
+      );
+    } finally {
+      setOpening(false);
+    }
+  };
 
   return (
     <main class="bg-[#f8fafc] min-h-screen pb-20">
@@ -51,6 +73,36 @@ export default function PsiDashboard() {
             </div>
           </div>
         </Suspense>
+
+        {/* Biblioteca Virtual */}
+        <div class={`col-span-2 bg-white rounded-3xl p-4 border shadow-sm ${profile()?.solvent ? 'border-gray-100' : 'border-dashed border-gray-300'}`}>
+          <button
+            type="button"
+            onClick={openLibrary}
+            disabled={!profile()?.solvent || opening()}
+            class={`w-full flex items-center gap-3 text-left group ${profile()?.solvent ? 'active:scale-[0.99] transition-transform' : 'cursor-not-allowed'}`}
+          >
+            <div class={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${profile()?.solvent ? 'bg-blue-50 text-[#1e3a8a] group-hover:bg-[#facc15] transition-colors' : 'bg-gray-100 text-gray-400'}`}>
+              🎧
+            </div>
+            <div class="flex-1">
+              <span class={`text-xs font-bold ${profile()?.solvent ? 'text-[#1e3a8a]' : 'text-gray-400'}`}>
+                Biblioteca Virtual
+              </span>
+              <p class="text-[11px] text-gray-500 mt-0.5 leading-snug">
+                <Show when={profile()?.solvent} fallback="Ponte al día con el gremio para acceder a la biblioteca virtual">
+                  Audiolibros y contenidos exclusivos para agremiados
+                </Show>
+              </p>
+            </div>
+            <Show when={profile()?.solvent} fallback={<span class="text-lg text-gray-300">🔒</span>}>
+              <span class={`text-lg text-[#1e3a8a] ${opening() ? 'opacity-40' : 'group-hover:translate-x-0.5 transition-transform'}`}>→</span>
+            </Show>
+          </button>
+          <Show when={libError()}>
+            <p class="text-xs text-red-600 mt-2 pl-16">{libError()}</p>
+          </Show>
+        </div>
 
         {/* Acceso Rápido (Grid) */}
         <div class="grid grid-cols-2 gap-4">
