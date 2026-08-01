@@ -49,7 +49,7 @@ func (s *PsiService) Login(ctx context.Context, identifier, password string) (st
 	mailData := map[string]interface{}{
 		"Name":      psi.Username,
 		"Email":     psi.Email,
-		"LoginTime": time.Now().Format(time.RFC1123),
+		"LoginTime": time.Now().Local().Format(time.RFC1123),
 	}
 
 	if s.mailService != nil {

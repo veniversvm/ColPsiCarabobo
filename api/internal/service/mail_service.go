@@ -17,6 +17,11 @@ import (
 	"github.com/wneessen/go-mail"
 )
 
+// siteURL es la URL pública del frontend inyectada en las plantillas de correo.
+// Temporalmente fija al dominio de despliegue actual para que todos los correos
+// (incluso desde dev, que también usa Resend) apunten a producción.
+const siteURL = "https://franhsabt-testing-ground.lat"
+
 // maskEmail enmascara un email para logs: "j***@e****.com"
 func maskEmail(email string) string {
 	at := -1
@@ -235,11 +240,11 @@ func (s *MailService) SendEmail(to string, subject string, templateName string, 
 // correos se personalizan desde .env sin tocar cada punto de envío.
 //
 // Las variables expuestas a las plantillas son:
-//   - SiteURL:   URL pública del frontend (config.Envs.AppURL)
+//   - SiteURL:   URL pública del frontend (siteURL, fija al dominio de despliegue)
 //   - Signature: firma mostrada tras "Atentamente" (config.Envs.MailSignature)
 func augmentTemplateData(data interface{}) map[string]interface{} {
 	base := map[string]interface{}{
-		"SiteURL":   config.Envs.AppURL,
+		"SiteURL":   siteURL,
 		"Signature": config.Envs.MailSignature,
 	}
 	if data == nil {

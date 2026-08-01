@@ -98,7 +98,7 @@ func (s *AdminService) Login(ctx context.Context, identifier, password string) (
 	mailData := map[string]interface{}{
 		"Name":      admin.Username,
 		"Email":     admin.Email,
-		"LoginTime": time.Now().Format(time.RFC1123),
+		"LoginTime": time.Now().Local().Format(time.RFC1123),
 	}
 
 	// Invocación dinámica y no-bloqueante del servicio de mensajería.

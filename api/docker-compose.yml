@@ -90,6 +90,8 @@ services:
       # ABS_PUBLIC_URL desde .env, para el navegador).
       - ABS_BASE_URL=http://audiobookshelf:80
       - PORT=8080
+      # Hora local del contenedor (Venezuela) para timestamps de correos (LoginTime)
+      - TZ=America/Caracas
     networks:
       - colpsi_network
     depends_on:
