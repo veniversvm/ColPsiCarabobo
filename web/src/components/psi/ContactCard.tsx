@@ -79,8 +79,8 @@ export function ContactCard(props: ContactCardProps) {
   return (
     <Show when={hasContactInfo()}>
       <div class="bg-white rounded-3xl p-6 md:p-8 shadow-premium border border-gray-100">
-        <h3 class="text-xs md:text-sm font-black text-colpsi-blue uppercase tracking-widest border-b-2 border-gray-50 pb-4 mb-5 flex items-center gap-2">
-          <span class="text-lg">📇</span> Contacto
+        <h3 class="text-sm md:text-lg font-black text-colpsi-blue uppercase tracking-widest border-b-2 border-gray-50 pb-4 mb-5 flex items-center gap-2">
+          <span class="text-2xl">📇</span> Contacto
         </h3>
 
         {/* ── Contactos principales ──────────────────────────────────── */}
@@ -88,22 +88,22 @@ export function ContactCard(props: ContactCardProps) {
           <Show when={props.email}>
             <a
               href={`mailto:${props.email}`}
-              class="inline-flex items-center gap-2 bg-gray-50 hover:bg-colpsi-blue/5 text-gray-700 text-xs md:text-sm font-bold px-3 py-2 rounded-xl transition-colors break-all"
+              class="inline-flex items-center gap-2 bg-gray-50 hover:bg-colpsi-blue/5 text-gray-700 text-sm md:text-base font-bold px-3 py-2 rounded-xl transition-colors break-all"
             >
-              <span class="text-base">✉️</span> {props.email}
+              <span class="text-xl">✉️</span> {props.email}
             </a>
           </Show>
           <Show when={props.phone}>
             <a
               href={`tel:${props.phone}`}
-              class="inline-flex items-center gap-2 bg-gray-50 hover:bg-colpsi-blue/5 text-gray-700 text-xs md:text-sm font-bold px-3 py-2 rounded-xl transition-colors"
+              class="inline-flex items-center gap-2 bg-gray-50 hover:bg-colpsi-blue/5 text-gray-700 text-sm md:text-base font-bold px-3 py-2 rounded-xl transition-colors"
             >
-              <span class="text-base">📞</span> {props.phone}
+              <span class="text-xl">📞</span> {props.phone}
             </a>
           </Show>
           <Show when={props.address}>
-            <span class="inline-flex items-center gap-2 bg-gray-50 text-gray-700 text-xs md:text-sm font-bold px-3 py-2 rounded-xl">
-              <span class="text-base">🏢</span> {props.address}
+            <span class="inline-flex items-center gap-2 bg-gray-50 text-gray-700 text-sm md:text-base font-bold px-3 py-2 rounded-xl">
+              <span class="text-xl">🏢</span> {props.address}
             </span>
           </Show>
         </div>
@@ -114,13 +114,13 @@ export function ContactCard(props: ContactCardProps) {
             <For each={blocks()}>
               {(block) => (
                 <div class="bg-gray-50/60 border border-gray-50 rounded-2xl p-4 flex flex-col gap-2">
-                  <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
-                    <span>{block.icon}</span> {block.title}
+                  <p class="text-xs md:text-sm font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+                    <span class="text-lg">{block.icon}</span> {block.title}
                   </p>
                   <div class="space-y-1">
                     <For each={block.lines}>
                       {(line) => (
-                        <p class="text-xs md:text-sm text-gray-600 leading-snug">{line}</p>
+                        <p class="text-sm md:text-base text-gray-600 leading-snug">{line}</p>
                       )}
                     </For>
                   </div>
@@ -129,7 +129,7 @@ export function ContactCard(props: ContactCardProps) {
                       <Show when={block.phone}>
                         <a
                           href={`tel:${block.phone}`}
-                          class="inline-flex items-center gap-1 text-[10px] md:text-xs bg-white text-colpsi-blue font-bold px-2 py-1 rounded-lg border border-blue-100 hover:bg-colpsi-blue hover:text-white transition-colors"
+                          class="inline-flex items-center gap-1 text-xs md:text-sm bg-white text-colpsi-blue font-bold px-2 py-1 rounded-lg border border-blue-100 hover:bg-colpsi-blue hover:text-white transition-colors"
                         >
                           📞 {block.phone}
                         </a>
@@ -137,7 +137,7 @@ export function ContactCard(props: ContactCardProps) {
                       <Show when={block.cell}>
                         <a
                           href={`tel:${block.cell}`}
-                          class="inline-flex items-center gap-1 text-[10px] md:text-xs bg-white text-colpsi-blue font-bold px-2 py-1 rounded-lg border border-blue-100 hover:bg-colpsi-blue hover:text-white transition-colors"
+                          class="inline-flex items-center gap-1 text-xs md:text-sm bg-white text-colpsi-blue font-bold px-2 py-1 rounded-lg border border-blue-100 hover:bg-colpsi-blue hover:text-white transition-colors"
                         >
                           📱 {block.cell}
                         </a>
@@ -159,7 +159,7 @@ export function ContactCard(props: ContactCardProps) {
                   href={net.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="text-[10px] md:text-xs bg-gray-50 text-colpsi-blue font-bold px-2 md:px-3 py-1.5 rounded-lg hover:bg-colpsi-yellow transition-colors"
+                  class="text-xs md:text-sm bg-gray-50 text-colpsi-blue font-bold px-2 md:px-3 py-1.5 rounded-lg hover:bg-colpsi-yellow transition-colors"
                 >
                   {net.name}
                 </a>
