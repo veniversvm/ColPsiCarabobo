@@ -11,6 +11,7 @@ interface ContactCardProps {
 }
 
 type LocationBlock = {
+  tag: string;
   title: string;
   icon: string;
   lines: string[];
@@ -31,18 +32,28 @@ export function ContactCard(props: ContactCardProps) {
     hasAnyLocation() ||
     props.socialNetworks?.length;
 
+  // Colores del badge según el tipo de ubicación
+  const tagClasses = (tag: string) => {
+    switch (tag) {
+      case "Carabobo":
+        return "bg-blue-50 text-blue-700 border-blue-100";
+      case "Venezuela":
+        return "bg-indigo-50 text-indigo-700 border-indigo-100";
+      default:
+        return "bg-emerald-50 text-emerald-700 border-emerald-100";
+    }
+  };
+
   const blocks = (): LocationBlock[] => {
     const result: LocationBlock[] = [];
 
     if (props.location?.carabobo) {
       const loc = props.location.carabobo;
       result.push({
-        title: "Carabobo",
+        tag: "Carabobo",
         icon: "📍",
-        lines: [
-          loc.municipality ? `${loc.municipality}, Carabobo` : "Carabobo",
-          loc.address,
-        ].filter(Boolean),
+        title: loc.municipality ? `${loc.municipality}, Carabobo` : "Carabobo",
+        lines: [loc.address].filter(Boolean),
         phone: loc.phone,
         cell: loc.cell_phone,
       });
@@ -51,12 +62,10 @@ export function ContactCard(props: ContactCardProps) {
     if (props.location?.venezuela) {
       const loc = props.location.venezuela;
       result.push({
-        title: loc.state || "Venezuela",
+        tag: "Venezuela",
         icon: "📍",
-        lines: [
-          loc.municipality ? `${loc.municipality}, ${loc.state}` : loc.state,
-          loc.address,
-        ].filter(Boolean),
+        title: loc.municipality ? `${loc.municipality}, ${loc.state}` : loc.state || "Venezuela",
+        lines: [loc.address].filter(Boolean),
         phone: loc.phone,
         cell: loc.cell_phone,
       });
@@ -65,8 +74,9 @@ export function ContactCard(props: ContactCardProps) {
     if (props.location?.exterior) {
       const loc = props.location.exterior;
       result.push({
-        title: loc.country || "Exterior",
+        tag: "Internacional",
         icon: "🌎",
+        title: loc.country || "Exterior",
         lines: [loc.address].filter(Boolean),
         phone: loc.phone,
         cell: loc.cell_phone,
@@ -108,15 +118,22 @@ export function ContactCard(props: ContactCardProps) {
           </Show>
         </div>
 
-        {/* ── Ubicaciones (grid compacto) ────────────────────────────── */}
+        {/* ── Ubicaciones (una debajo de la otra con su tipo) ─────────── */}
         <Show when={hasAnyLocation()}>
-          <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div class="flex flex-col gap-4">
             <For each={blocks()}>
               {(block) => (
                 <div class="bg-gray-50/60 border border-gray-50 rounded-2xl p-4 flex flex-col gap-2">
-                  <p class="text-xs md:text-sm font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
-                    <span class="text-lg">{block.icon}</span> {block.title}
-                  </p>
+                  <div class="flex items-center justify-between gap-2 flex-wrap">
+                    <p class="text-sm md:text-base font-black text-colpsi-blue uppercase tracking-wide flex items-center gap-2">
+                      <span class="text-lg">{block.icon}</span> {block.title}
+                    </p>
+                    <span
+                      class={`text-[11px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border ${tagClasses(block.tag)}`}
+                    >
+                      {block.tag}
+                    </span>
+                  </div>
                   <div class="space-y-1">
                     <For each={block.lines}>
                       {(line) => (
