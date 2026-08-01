@@ -111,18 +111,27 @@ func (s *ResendMailService) Close() {
 	})
 }
 
+// isSkippableRecipient indica si un destinatario debe omitirse por integridad:
+// placeholders "sincorreo" o correos de prueba "test" no deben salir a Resend.
+// Comparación sin distinguir mayúsculas.
+func isSkippableRecipient(to string) bool {
+	lowerTo := strings.ToLower(to)
+	return strings.Contains(lowerTo, "sincorreo") || strings.Contains(lowerTo, "test")
+}
+
 // SendEmail encola un correo (Fire-and-Forget, no bloqueante salvo backpressure).
 //
-// Filtro de integridad: los destinatarios placeholder ("sincorreo") se omiten
-// para evitar hard bounces que degradan la reputación del dominio en Resend.
+// Filtro de integridad: los destinatarios placeholder ("sincorreo") y los de
+// prueba ("test") se omiten para evitar hard bounces que degradan la reputación
+// del dominio en Resend.
 func (s *ResendMailService) SendEmail(to string, subject string, templateName string, data interface{}) error {
 	if s == nil || s.queue == nil || s.closed {
 		return errors.New("el servicio de correo no está listo")
 	}
 
-	if strings.Contains(to, "sincorreo") {
+	if isSkippableRecipient(to) {
 		log.Info().Str("component", "mail_resend").Str("to", maskEmail(to)).
-			Msg("Destinatario placeholder detectado. Envío omitido por integridad")
+			Msg("Destinatario placeholder/test detectado. Envío omitido por integridad")
 		return nil
 	}
 
@@ -215,6 +224,14 @@ func (s *ResendMailService) startWorker(ctx context.Context) {
 func (s *ResendMailService) sendBatchWithRetry(ctx context.Context, batch []MailJob) error {
 	params := make([]*resend.SendEmailRequest, 0, len(batch))
 	for _, job := range batch {
+		// Defensa en profundidad: aunque un placeholder/test llegue a la cola
+		// (p.ej. encolado directo en tests), no debe salir a Resend.
+		if isSkippableRecipient(job.To) {
+			log.Info().Str("component", "mail_resend").Str("to", maskEmail(job.To)).
+				Msg("Destinatario placeholder/test en lote. Envío omitido por integridad")
+			continue
+		}
+
 		body, err := s.renderTemplate(job)
 		if err != nil {
 			// Error permanente de plantilla: se descarta el ítem y se continúa.
