@@ -35,6 +35,11 @@ type Config struct {
 
 	Environment string // Entorno de ejecución (development, production, etc.)
 
+	// Super Admin del seed (solo se crea si no hay administradores)
+	AdminEmail    string
+	AdminUsername string
+	AdminPassword string
+
 	// Email
 	SMTPHost     string
 	SMTPPort     int
@@ -124,6 +129,11 @@ func InitConfig() {
 
 		// Configuración de Entorno
 		Environment: getEnv("APP_ENV", "production"),
+
+		// Super Admin (seed)
+		AdminEmail:    getEnv("ADMIN_EMAIL", "admin@colpsicarabobo.com"),
+		AdminUsername: getEnv("ADMIN_USERNAME", "admin"),
+		AdminPassword: getEnv("ADMIN_PASSWORD", ""),
 
 		// Configuración de Email
 		SMTPHost:     getEnv("SMTP_HOST", "localhost"),

@@ -19,7 +19,9 @@ func SeedAdmin(db *gorm.DB) {
 		log.Info().Str("component", "seed").Msg("No se encontraron administradores. Creando Super Admin por defecto...")
 
 		var defaultPass string
-		if config.Envs.Environment == "development" {
+		if config.Envs.AdminPassword != "" {
+			defaultPass = config.Envs.AdminPassword
+		} else if config.Envs.Environment == "development" {
 			defaultPass = "admin123"
 		} else {
 			defaultPass = utils.GenerateSecureRandomString(16)
@@ -40,8 +42,8 @@ func SeedAdmin(db *gorm.DB) {
 				CreateById: &adminID, // Se auto-referencia como creador inicial
 			},
 			Credentials: domain.Credentials{
-				Username: "admin",
-				Email:    "admin@colpsicarabobo.com",
+				Username: config.Envs.AdminUsername,
+				Email:    config.Envs.AdminEmail,
 				Password: string(hashedPassword),
 				IsActive: true,
 			},
@@ -71,6 +73,8 @@ func SeedAdmin(db *gorm.DB) {
 			log.Info().Str("component", "seed").Msg("Super Admin creado exitosamente.")
 			if config.Envs.Environment == "development" {
 				log.Info().Str("component", "seed").Str("user", admin.Username).Str("pass", defaultPass).Str("id", admin.ID.String()).Msg("Super Admin dev credentials")
+			} else if config.Envs.AdminPassword != "" {
+				log.Info().Str("component", "seed").Str("user", admin.Username).Str("email", admin.Email).Str("id", admin.ID.String()).Msg("Super Admin creado con credenciales de ADMIN_*")
 			} else {
 				log.Info().Str("component", "seed").Str("user", admin.Username).Str("id", admin.ID.String()).Msg("Super Admin creado")
 				log.Warn().Str("component", "seed").Msg("La contraseña fue generada automáticamente. Cámbiela al iniciar sesión.")
