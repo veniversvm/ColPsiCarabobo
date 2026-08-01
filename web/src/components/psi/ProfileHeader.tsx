@@ -35,7 +35,7 @@ export function ProfileHeader(props: ProfileHeaderProps) {
         
         {/* ── AVATAR ────────────────────────────────────────────────────── */}
         <div 
-          class={`w-24 h-24 md:w-32 md:h-32 mx-auto bg-gray-50 rounded-full overflow-hidden border-4 border-colpsi-yellow shadow-inner mb-5 relative group ${props.profilePicture ? 'cursor-pointer' : ''}`}
+          class={`w-28 h-28 md:w-36 md:h-36 mx-auto bg-gray-50 rounded-full overflow-hidden border-4 border-colpsi-yellow shadow-inner mb-5 relative group ${props.profilePicture ? 'cursor-pointer' : ''}`}
           onClick={() => {
             if (props.profilePicture) setIsModalOpen(true);
           }}

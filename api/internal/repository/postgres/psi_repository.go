@@ -530,9 +530,16 @@ func (r *psiRepo) SearchDirectory(ctx context.Context, filter request_structs.Ps
 	var total int64
 
 	// 1. Base: Siempre ACTIVOS
+	//    Las áreas de desempeño se resuelven SOLO desde el catálogo
+	//    (psi_specialty_models) vía las FK primary/secondary_specialty_id, de modo
+	//    que las tarjetas del directorio muestren únicamente áreas que existen en
+	//    el catálogo oficial. El campo legacy primary/secondary_work_area queda
+	//    fuera (COALESCE a vacío): si la FK no está asignada no se pinta chip.
 	query := r.db.WithContext(ctx).Model(&domain.PsiUserModel{}).
-		Select("id, first_name, last_name, ci, fpv, profile_picture_s3_key, mini_bio, solvent, primary_work_area, secondary_work_area, primary_specialty_id, secondary_specialty_id, updated_at").
-		Where("is_active = ?", true)
+		Select("psi_users.id, psi_users.first_name, psi_users.last_name, psi_users.ci, psi_users.fpv, psi_users.profile_picture_s3_key, psi_users.mini_bio, psi_users.solvent, psi_users.primary_specialty_id, psi_users.secondary_specialty_id, psi_users.updated_at, COALESCE(sp1.name, '') AS primary_work_area, COALESCE(sp2.name, '') AS secondary_work_area").
+		Joins("LEFT JOIN psi_specialty_models sp1 ON sp1.id = psi_users.primary_specialty_id").
+		Joins("LEFT JOIN psi_specialty_models sp2 ON sp2.id = psi_users.secondary_specialty_id").
+		Where("psi_users.is_active = ?", true)
 
 	// 2. Lógica de Búsqueda por Identidad
 	if filter.SearchTerm != "" {

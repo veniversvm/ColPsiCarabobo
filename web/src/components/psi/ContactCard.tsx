@@ -10,6 +10,14 @@ interface ContactCardProps {
   socialNetworks?: SocialNetwork[];
 }
 
+type LocationBlock = {
+  title: string;
+  icon: string;
+  lines: string[];
+  phone?: string;
+  cell?: string;
+};
+
 export function ContactCard(props: ContactCardProps) {
   const hasAnyLocation = () =>
     props.location?.carabobo ||
@@ -23,122 +31,128 @@ export function ContactCard(props: ContactCardProps) {
     hasAnyLocation() ||
     props.socialNetworks?.length;
 
+  const blocks = (): LocationBlock[] => {
+    const result: LocationBlock[] = [];
+
+    if (props.location?.carabobo) {
+      const loc = props.location.carabobo;
+      result.push({
+        title: "Carabobo",
+        icon: "📍",
+        lines: [
+          loc.municipality ? `${loc.municipality}, Carabobo` : "Carabobo",
+          loc.address,
+        ].filter(Boolean),
+        phone: loc.phone,
+        cell: loc.cell_phone,
+      });
+    }
+
+    if (props.location?.venezuela) {
+      const loc = props.location.venezuela;
+      result.push({
+        title: loc.state || "Venezuela",
+        icon: "📍",
+        lines: [
+          loc.municipality ? `${loc.municipality}, ${loc.state}` : loc.state,
+          loc.address,
+        ].filter(Boolean),
+        phone: loc.phone,
+        cell: loc.cell_phone,
+      });
+    }
+
+    if (props.location?.exterior) {
+      const loc = props.location.exterior;
+      result.push({
+        title: loc.country || "Exterior",
+        icon: "🌎",
+        lines: [loc.address].filter(Boolean),
+        phone: loc.phone,
+        cell: loc.cell_phone,
+      });
+    }
+
+    return result;
+  };
+
   return (
     <Show when={hasContactInfo()}>
-      <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 space-y-4">
-        <h3 class="text-xs md:text-sm font-black text-colpsi-blue uppercase tracking-widest border-b border-gray-100 pb-2 mb-3">
-          Contacto
+      <div class="bg-white rounded-3xl p-6 md:p-8 shadow-premium border border-gray-100">
+        <h3 class="text-xs md:text-sm font-black text-colpsi-blue uppercase tracking-widest border-b-2 border-gray-50 pb-4 mb-5 flex items-center gap-2">
+          <span class="text-lg">📇</span> Contacto
         </h3>
 
-        {/* ── Contacto principal ──────────────────────────────────────── */}
-        <Show when={props.email}>
-          <div class="flex items-center gap-3 text-xs md:text-sm">
-            <span class="text-colpsi-yellow text-base md:text-lg">✉️</span>
-            <a href={`mailto:${props.email}`} class="text-gray-600 hover:text-colpsi-blue transition-colors break-all">
-              {props.email}
+        {/* ── Contactos principales ──────────────────────────────────── */}
+        <div class="flex flex-wrap gap-2.5 mb-6">
+          <Show when={props.email}>
+            <a
+              href={`mailto:${props.email}`}
+              class="inline-flex items-center gap-2 bg-gray-50 hover:bg-colpsi-blue/5 text-gray-700 text-xs md:text-sm font-bold px-3 py-2 rounded-xl transition-colors break-all"
+            >
+              <span class="text-base">✉️</span> {props.email}
             </a>
-          </div>
-        </Show>
-
-        <Show when={props.phone}>
-          <div class="flex items-center gap-3 text-xs md:text-sm">
-            <span class="text-colpsi-yellow text-base md:text-lg">📞</span>
-            <a href={`tel:${props.phone}`} class="text-gray-600 hover:text-colpsi-blue transition-colors">
-              {props.phone}
+          </Show>
+          <Show when={props.phone}>
+            <a
+              href={`tel:${props.phone}`}
+              class="inline-flex items-center gap-2 bg-gray-50 hover:bg-colpsi-blue/5 text-gray-700 text-xs md:text-sm font-bold px-3 py-2 rounded-xl transition-colors"
+            >
+              <span class="text-base">📞</span> {props.phone}
             </a>
+          </Show>
+          <Show when={props.address}>
+            <span class="inline-flex items-center gap-2 bg-gray-50 text-gray-700 text-xs md:text-sm font-bold px-3 py-2 rounded-xl">
+              <span class="text-base">🏢</span> {props.address}
+            </span>
+          </Show>
+        </div>
+
+        {/* ── Ubicaciones (grid compacto) ────────────────────────────── */}
+        <Show when={hasAnyLocation()}>
+          <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <For each={blocks()}>
+              {(block) => (
+                <div class="bg-gray-50/60 border border-gray-50 rounded-2xl p-4 flex flex-col gap-2">
+                  <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+                    <span>{block.icon}</span> {block.title}
+                  </p>
+                  <div class="space-y-1">
+                    <For each={block.lines}>
+                      {(line) => (
+                        <p class="text-xs md:text-sm text-gray-600 leading-snug">{line}</p>
+                      )}
+                    </For>
+                  </div>
+                  {(block.phone || block.cell) && (
+                    <div class="flex flex-wrap gap-1.5 mt-auto pt-2">
+                      <Show when={block.phone}>
+                        <a
+                          href={`tel:${block.phone}`}
+                          class="inline-flex items-center gap-1 text-[10px] md:text-xs bg-white text-colpsi-blue font-bold px-2 py-1 rounded-lg border border-blue-100 hover:bg-colpsi-blue hover:text-white transition-colors"
+                        >
+                          📞 {block.phone}
+                        </a>
+                      </Show>
+                      <Show when={block.cell}>
+                        <a
+                          href={`tel:${block.cell}`}
+                          class="inline-flex items-center gap-1 text-[10px] md:text-xs bg-white text-colpsi-blue font-bold px-2 py-1 rounded-lg border border-blue-100 hover:bg-colpsi-blue hover:text-white transition-colors"
+                        >
+                          📱 {block.cell}
+                        </a>
+                      </Show>
+                    </div>
+                  )}
+                </div>
+              )}
+            </For>
           </div>
         </Show>
 
-        <Show when={props.address}>
-          <div class="flex items-center gap-3 text-xs md:text-sm">
-            <span class="text-colpsi-yellow text-base md:text-lg">🏢</span>
-            <span class="text-gray-600">{props.address}</span>
-          </div>
-        </Show>
-
-        {/* ── Ubicación: Carabobo ─────────────────────────────────────── */}
-        <Show when={props.location?.carabobo}>
-          {(loc) => (
-            <div class="pt-3 mt-1 border-t border-gray-50 space-y-2">
-              <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                📍 Carabobo
-              </p>
-              <p class="text-xs md:text-sm text-gray-600 pl-1">
-                {loc().municipality}, Carabobo
-              </p>
-              <Show when={loc().phone}>
-                <div class="flex items-center gap-2 text-xs text-gray-500 pl-1">
-                  <span>📞</span>
-                  <a href={`tel:${loc().phone}`} class="hover:text-colpsi-blue transition-colors">{loc().phone}</a>
-                </div>
-              </Show>
-              <Show when={loc().cell_phone}>
-                <div class="flex items-center gap-2 text-xs text-gray-500 pl-1">
-                  <span>📱</span>
-                  <a href={`tel:${loc().cell_phone}`} class="hover:text-colpsi-blue transition-colors">{loc().cell_phone}</a>
-                </div>
-              </Show>
-              <Show when={loc().address}>
-                <p class="text-xs text-gray-500 pl-1">🏢 {loc().address}</p>
-              </Show>
-            </div>
-          )}
-        </Show>
-
-        {/* ── Ubicación: Venezuela (fuera de Carabobo) ────────────────── */}
-        <Show when={props.location?.venezuela}>
-          {(loc) => (
-            <div class="pt-3 mt-1 border-t border-gray-50 space-y-2">
-              <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                📍 {loc().state}
-              </p>
-              <Show when={loc().municipality}>
-                <p class="text-xs md:text-sm text-gray-600 pl-1">
-                  {loc().municipality}, {loc().state}
-                </p>
-              </Show>
-              <Show when={loc().phone}>
-                <div class="flex items-center gap-2 text-xs text-gray-500 pl-1">
-                  <span>📞</span>
-                  <a href={`tel:${loc().phone}`} class="hover:text-colpsi-blue transition-colors">{loc().phone}</a>
-                </div>
-              </Show>
-              <Show when={loc().cell_phone}>
-                <div class="flex items-center gap-2 text-xs text-gray-500 pl-1">
-                  <span>📱</span>
-                  <a href={`tel:${loc().cell_phone}`} class="hover:text-colpsi-blue transition-colors">{loc().cell_phone}</a>
-                </div>
-              </Show>
-              <Show when={loc().address}>
-                <p class="text-xs text-gray-500 pl-1">🏢 {loc().address}</p>
-              </Show>
-            </div>
-          )}
-        </Show>
-
-        {/* ── Ubicación: Exterior ─────────────────────────────────────── */}
-        <Show when={props.location?.exterior}>
-          {(loc) => (
-            <div class="pt-3 mt-1 border-t border-gray-50 space-y-2">
-              <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                🌎 {loc().country}
-              </p>
-              <Show when={loc().phone}>
-                <div class="flex items-center gap-2 text-xs text-gray-500 pl-1">
-                  <span>📞</span>
-                  <a href={`tel:${loc().phone}`} class="hover:text-colpsi-blue transition-colors">{loc().phone}</a>
-                </div>
-              </Show>
-              <Show when={loc().address}>
-                <p class="text-xs text-gray-500 pl-1">🏢 {loc().address}</p>
-              </Show>
-            </div>
-          )}
-        </Show>
-
-        {/* ── Redes sociales ──────────────────────────────────────────── */}
+        {/* ── Redes sociales ─────────────────────────────────────────── */}
         <Show when={props.socialNetworks?.length}>
-          <div class="pt-3 mt-3 border-t border-gray-100 flex flex-wrap gap-2">
+          <div class="mt-5 pt-4 border-t border-gray-100 flex flex-wrap gap-2">
             <For each={props.socialNetworks}>
               {(net) => (
                 <a
