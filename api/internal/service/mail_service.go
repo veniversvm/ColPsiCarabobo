@@ -70,10 +70,10 @@ type MailJob struct {
 // Mantiene una conexión SMTP configurada y un canal (queue) que actúa como un
 // amortiguador (Buffer) entre las peticiones HTTP rápidas y el lento protocolo SMTP.
 type MailService struct {
-	client *mail.Client
-	from   string
-	queue  chan MailJob // Nuestra cola de mensajes en memoria (Thread-safe por naturaleza en Go)
-	cancel context.CancelFunc
+	client    *mail.Client
+	from      string
+	queue     chan MailJob // Nuestra cola de mensajes en memoria (Thread-safe por naturaleza en Go)
+	cancel    context.CancelFunc
 	closeOnce sync.Once
 	closed    bool
 }
@@ -85,13 +85,23 @@ func NewMailService() (*MailService, error) {
 		tlsPolicy = mail.TLSOpportunistic
 	}
 
-	c, err := mail.NewClient(config.Envs.SMTPHost,
+	opts := []mail.Option{
 		mail.WithPort(config.Envs.SMTPPort),
-		mail.WithSMTPAuth(mail.SMTPAuthPlain),
-		mail.WithUsername(config.Envs.SMTPUser),
-		mail.WithPassword(config.Envs.SMTPPass),
 		mail.WithTLSPolicy(tlsPolicy),
-	)
+	}
+
+	// Auth SMTP solo si hay credenciales (SMTP_USER). Servidores locales de
+	// desarrollo (MailHog/Mailpit) no requieren autenticación; forzar AUTH sin
+	// credenciales rompe el envío ("SMTP AUTH failed: unencrypted connection").
+	if config.Envs.SMTPUser != "" {
+		opts = append(opts,
+			mail.WithSMTPAuth(mail.SMTPAuthPlain),
+			mail.WithUsername(config.Envs.SMTPUser),
+			mail.WithPassword(config.Envs.SMTPPass),
+		)
+	}
+
+	c, err := mail.NewClient(config.Envs.SMTPHost, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("fallo al crear cliente de correo: %w", err)
 	}
