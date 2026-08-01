@@ -1,7 +1,7 @@
 # ── ETAPA DE CONSTRUCCIÓN ──────────────────────────────────────────────────
 FROM golang:1.26-alpine AS builder
 
-# Instalamos dependencias para CGO y libwebp
+# Dependencias para CGO y libwebp
 RUN apk add --no-cache \
     gcc \
     musl-dev \
@@ -15,22 +15,34 @@ RUN go mod download
 
 COPY . .
 
-# CGO_ENABLED=1 es necesario para librerías de imágenes que dependen de C
-RUN CGO_ENABLED=1 GOOS=linux go build -ldflags="-s -w" -o main ./cmd/api
+# CGO_ENABLED=1 es necesario para librerías de imágenes que dependen de C.
+# -trimpath: rutas relativas en el binario (sin rutas del builder).
+# -s -w: sin tabla de símbolos ni debug (imagen menor).
+RUN CGO_ENABLED=1 GOOS=linux go build -trimpath -ldflags="-s -w" -o main ./cmd/api
 
 # ── ETAPA FINAL (Imagen ligera) ─────────────────────────────────────────────
 FROM alpine:3.19
 
-# Instalamos certificados para TLS (SMTP/S3) y la librería de ejecución de webp
+# Certificados para TLS (SMTP/S3), timezones y librería de runtime webp.
 RUN apk --no-cache add \
     ca-certificates \
     tzdata \
     libwebp
 
+# Usuario no-root: reduce la superficie de ataque si el proceso se compromete.
+RUN addgroup -S app && adduser -S -G app app
+
 WORKDIR /app
 COPY --from=builder /app/main .
-# Copiamos la carpeta de templates si el binario la necesita en runtime
-COPY --from=builder /app/internal/templates ./internal/templates
+RUN chown -R app:app /app
 
-EXPOSE 5555
+ENV PORT=8080
+USER app
+
+EXPOSE 8080
+
+# Healthcheck: verifica que el servidor HTTP responde (ruta pública del directorio).
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD wget -qO- http://127.0.0.1:${PORT}/api/v1/psi/directory > /dev/null || exit 1
+
 CMD ["./main"]

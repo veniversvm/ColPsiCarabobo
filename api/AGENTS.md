@@ -48,11 +48,11 @@ swag init -g cmd/api/main.go -o docs/   # regenerar Swagger
 
 2. **`S3_ENDPOINT` ≠ `S3_PUBLIC_URL`** — son intencionalmente distintos.
    - `S3_ENDPOINT`: interno, para el SDK, debe apuntar SIEMPRE directo a MinIO
-     (en Docker: `http://s3:9000`; en dev local: `http://localhost:9002`).
-     NUNCA apuntarlo al puerto 9000 del host: ahí vive el edge cache nginx
-     (`imgcache`) y las firmas S3 v4 se rompen al pasar por el proxy (403).
+     (en Docker: `http://s3:9000`; en dev local: `http://localhost:29002`).
+     NUNCA apuntarlo al puerto del host donde vive el edge cache nginx
+     (`imgcache`, host `29000`) y las firmas S3 v4 se rompen al pasar por el proxy (403).
    - `S3_PUBLIC_URL`: pública, para URLs que renderiza el navegador
-     (en Docker: `http://localhost:9000`, servida por nginx).
+     (en Docker: `http://localhost:29000`, servida por nginx).
    `GetPublicURL()` (`pkg/s3/s3.go`) usa SOLO la pública; nunca cambies esa
    función para usar el endpoint interno. No hardcodear hosts de imágenes.
 
@@ -125,7 +125,7 @@ api/
 1. `go build ./... && go vet ./...` — ¿compila sin advertencias?
 2. `make test-unit` — ¿tests unitarios en verde?
 3. Con Docker: `docker compose up -d` (api, db, pgbouncer, s3, valkey).
-4. `curl http://localhost:8080/api/v1/psi/directory` → 200 con URLs de imágenes
-   `http://localhost:9000/colpsi-bucket/...` (nunca `s3:9000`).
+4. `curl http://localhost:28080/api/v1/psi/directory` → 200 con URLs de imágenes
+   `http://localhost:29000/colpsi-bucket/...` (nunca `s3:9000`).
 5. Login admin → `PATCH /api/v1/admin/psi/:id` con la cookie `jwt` → 200 (no el
    404 enmascarado del middleware).

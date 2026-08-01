@@ -22,8 +22,8 @@ portal del psicólogo, administración e inscripciones.
 
 - **Node.js ≥ 22** (para Vinxi/Vite)
 - **Deno ≥ 2.x** (para build SSR y servidor de producción)
-- **API Go corriendo** en `http://localhost:8080` (ver [`api/README.md`](../api/README.md))
-- **MinIO/S3** con el bucket accesible desde el navegador (`http://localhost:9000/colpsi-bucket` en dev)
+- **API Go corriendo** en `http://localhost:28080` (ver [`api/README.md`](../api/README.md))
+- **MinIO/S3** con el bucket accesible desde el navegador (`http://localhost:29000/colpsi-bucket` en dev)
 
 ## Setup local
 
@@ -112,7 +112,7 @@ Los errores de red se convierten en `ApiError(503, "OFFLINE_SERVICE")` y los de 
 
 - **Única vía**: `bucketUrl(key)` de `src/lib/bucket.ts`. Es idempotente: si la key ya es
   una URL absoluta (el API puede devolverla), la retorna tal cual.
-- La API Go devuelve URLs públicas usando `S3_PUBLIC_URL` (default `http://localhost:9000`),
+- La API Go devuelve URLs públicas usando `S3_PUBLIC_URL` (default `http://localhost:29000`),
   de modo que el navegador nunca recibe el host interno Docker (`s3:9000`).
 - El CSP (`src/entry-server.tsx`) agrega el origen del bucket a `img-src` automáticamente
   a partir de `VITE_BUCKET_URL`.

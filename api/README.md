@@ -151,10 +151,18 @@ docker-compose ps
 
 | Servicio  | URL                           | Descripción               |
 | :-------- | :---------------------------- | :------------------------ |
-| **API**       | http://localhost:8080          | Endpoint principal REST   |
-| **Swagger**   | http://localhost:8080/swagger/ | Documentación interactiva |
-| **PgAdmin**   | http://localhost:5050          | Administración PostgreSQL |
-| **MinIO**     | http://localhost:9001          | Console de almacenamiento |
+| **API**       | http://localhost:28080         | Endpoint principal REST   |
+| **Swagger**   | http://localhost:28080/swagger/ | Documentación interactiva |
+| **PgAdmin**   | http://localhost:25050         | Administración PostgreSQL (solo dev) |
+| **MinIO**     | http://localhost:29001         | Console de almacenamiento |
+| **Imágenes**  | http://localhost:29000         | Edge cache nginx (bucket público) |
+| **MailHog**   | http://localhost:28025         | Catcher de correos (solo dev, `MAILPIT_PROFILE`) |
+
+> Los puertos del host son **no estándar** (2xxxx) para reducir la superficie de
+> ataque y evitar colisiones en servidores compartidos. Dentro de la red Docker
+> los servicios conservan sus puertos internos (5432, 6379, 8080, 9000, …).
+> DB (25432), PgBouncer (26432), Valkey (26379), MinIO SDK (29002) y
+> Audiobookshelf (21337) también están remapeados.
 
 ### Credenciales por defecto (PgAdmin)
 
@@ -186,14 +194,14 @@ Las variables se cargan desde el archivo `.env` en la raíz del proyecto
 | `DB_USER`             | Usuario de PostgreSQL                          | `postgres`                  |
 | `DB_PASSWORD`         | Contraseña de PostgreSQL                       | `postgres`                  |
 | `DB_NAME`             | Nombre de la base de datos                     | `colpsi_db`                 |
-| `S3_ENDPOINT`         | Endpoint **interno** del SDK (host Docker)     | `http://localhost:9000`     |
-| `S3_PUBLIC_URL`       | URL **pública** accesible desde el navegador (Path-Style `{endpoint}/{bucket}`) | `http://localhost:9000` |
+| `S3_ENDPOINT`         | Endpoint **interno** del SDK (host Docker)     | `http://localhost:29002`    |
+| `S3_PUBLIC_URL`       | URL **pública** accesible desde el navegador (Path-Style `{endpoint}/{bucket}`) | `http://localhost:29000` |
 | `AWS_S3_BUCKET`       | Nombre del bucket S3                           | `colpsi-bucket`             |
 | `AWS_REGION`          | Región de AWS S3                               | `us-east-1`                 |
 | `AWS_ACCESS_KEY_ID`   | Access Key de S3/MinIO                         | `minioadmin`                |
 | `AWS_SECRET_ACCESS_KEY` | Secret Key de S3/MinIO                       | `minioadmin`                |
 | `SMTP_HOST`           | Host del servidor SMTP                         | `localhost`                 |
-| `SMTP_PORT`           | Puerto SMTP (dev: MailHog `1025`)              | `1025`                      |
+| `SMTP_PORT`           | Puerto SMTP (dev: MailHog `1025` interno)      | `1025`                      |
 | `SMTP_USER` / `SMTP_PASS` | Credenciales SMTP                         | *(vacío)*                   |
 | `SMTP_FROM`           | Email remitente                                | `info@colpsicarabobo.com`   |
 | `APP_URL`             | URL pública del frontend (inyectada en los correos) | `http://localhost:3000` |
@@ -494,7 +502,7 @@ contrato con el frontend (`web/`). Detalle de commits en `git log`.
   separada de `S3_ENDPOINT`. `GetPublicURL()` (`pkg/s3/s3.go`) construye URLs con
   la pública en formato Path-Style `{publicUrl}/{bucket}/{key}` y devuelve `""`
   ante keys vacías. El compose fija `S3_ENDPOINT=http://s3:9000` (interno) y
-  `S3_PUBLIC_URL=http://localhost:9000` (navegador).
+  `S3_PUBLIC_URL=http://localhost:29000` (navegador).
 - **Frontend:** `bucketUrl()` es idempotente — acepta keys y URLs absolutas.
 
 ### 2. JWT en cookie HttpOnly para server actions (404 enmascarado)

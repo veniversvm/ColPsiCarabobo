@@ -14,7 +14,7 @@ services:
       - ./init-db/pg_hba.conf:/etc/postgresql/pg_hba.conf
     command: postgres -c hba_file=/etc/postgresql/pg_hba.conf
     ports:
-      - "${POSTGRES_HOST_PORT:-5432}:5432"
+      - "${POSTGRES_HOST_PORT:-25432}:5432"
     networks:
       - colpsi_network
     restart: unless-stopped
@@ -42,7 +42,7 @@ services:
       - ADMIN_USERS=${DB_USER:-postgres}
       - IGNORE_STARTUP_PARAMETERS=extra_float_digits,search_path
     ports:
-      - "${PGBOUNCER_HOST_PORT:-6432}:5432"
+      - "${PGBOUNCER_HOST_PORT:-26432}:5432"
     networks:
       - colpsi_network
     depends_on:
@@ -76,14 +76,14 @@ services:
     container_name: colpsi_api
     env_file: .env
     ports:
-      - "8080:8080" 
+      - "28080:8080" 
     environment:
       # Sobrescribimos localhost para que apunte a los contenedores internos
       - DB_HOST=pgbouncer
       - DB_PORT=5432
       - S3_ENDPOINT=http://s3:9000
       # Pública: accesible desde el navegador (endpoint/bucket)
-      - S3_PUBLIC_URL=http://localhost:9000
+      - S3_PUBLIC_URL=http://localhost:29000
       - VALKEY_ADDR=valkey:6379
       - PORT=8080
     networks:
@@ -96,9 +96,6 @@ services:
       migrador:
         condition: service_completed_successfully
     restart: unless-stopped
-    # Descomenta la siguiente línea si necesitas probar la API desde afuera sin Deno
-    # ports:
-    #   - "5555:5555"
 
   # 4. pgAdmin (Solo Dev)
   pgadmin:
@@ -108,7 +105,7 @@ services:
       - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL:-admin@admin.com}
       - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD:-admin}
     ports:
-      - "127.0.0.1:5050:80"
+      - "127.0.0.1:25050:80"
     depends_on:
       - db
     networks:
@@ -116,27 +113,30 @@ services:
     profiles:
       - dev
 
-  # 5. MailHog (Solo Dev)
+  # 5. MailHog / Mailpit (SOLO Dev)
+  # No se levanta en producción. El estado se controla con MAILPIT_PROFILE:
+  #   - Dev:  MAILPIT_PROFILE=dev en .env → `docker compose --profile dev up -d`
+  #   - Prod: sin MAILPIT_PROFILE (o vacío) → el profile queda en "disabled",
+  #           que nunca se activa → el servicio NO se levanta.
   mailhog:
     image: mailhog/mailhog:latest
     container_name: colpsi_mailhog
+    profiles: ["${MAILPIT_PROFILE:-disabled}"]
     ports:
-      - "1025:1025"   # SMTP server
-      - "8025:8025"   # Web UI (http://localhost:8025)
+      - "21025:1025"   # SMTP server
+      - "28025:8025"   # Web UI (http://localhost:28025)
     environment:
-      - MH_API_BIND_ADDR=0.0.0.0:8025
-      - MH_SMTP_BIND_ADDR=0.0.0.0:1025
+      - MH_API_BIND_ADDR=0.0.0.0:28025
+      - MH_SMTP_BIND_ADDR=0.0.0.0:21025
     networks:
       - colpsi_network
-    profiles:
-      - dev
 
   # 6. Valkey (rate limiting store)
   valkey:
     image: valkey/valkey:9.1-alpine
     container_name: colpsi_valkey
     ports:
-      - "6379:6379"
+      - "26379:6379"
     volumes:
       - valkey_data:/data
     command: valkey-server --save 60 1 --loglevel warning
@@ -155,11 +155,11 @@ services:
     container_name: colpsi_s3
     restart: always
     ports:
-      # 9000 quedó reservado para el edge cache nginx (imgcache).
-      # 9001: consola MinIO.
-      # 9002: acceso DIRECTO al SDK desde el host (S3_ENDPOINT en dev local).
-      - "9001:9001"
-      - "9002:9000"
+      # 29000 quedó reservado para el edge cache nginx (imgcache).
+      # 29001: consola MinIO.
+      # 29002: acceso DIRECTO al SDK desde el host (S3_ENDPOINT en dev local).
+      - "29001:9001"
+      - "29002:9000"
     environment:
       - MINIO_ROOT_USER=${AWS_ACCESS_KEY_ID:-minioadmin}
       - MINIO_ROOT_PASSWORD=${AWS_SECRET_ACCESS_KEY:-minioadmin}
@@ -170,8 +170,8 @@ services:
       - colpsi_network
 
   # 7b. Edge cache Nginx delante de MinIO
-  # Ocupa el puerto 9000 (S3_PUBLIC_URL) y cachea las imágenes en disco local.
-  # MinIO queda solo en la red interna (s3:9000) para el SDK y la consola 9001.
+  # Ocupa el puerto 29000 (S3_PUBLIC_URL) y cachea las imágenes en disco local.
+  # MinIO queda solo en la red interna (s3:9000) para el SDK y la consola 29001.
   imgcache:
     image: nginx:alpine
     container_name: colpsi_imgcache
@@ -179,7 +179,7 @@ services:
     depends_on:
       - s3
     ports:
-      - "9000:80"
+      - "29000:80"
     volumes:
       - ./nginx-imgcache.conf:/etc/nginx/nginx.conf:ro
       - imgcache_data:/var/cache/nginx
@@ -206,7 +206,7 @@ services:
     container_name: audiobookshelf
     restart: unless-stopped
     ports:
-      - "1337:80" # Mapea el puerto 1337 de tu máquina al 80 del contenedor
+      - "21337:80" # Mapea el puerto 21337 de tu máquina al 80 del contenedor
     volumes:
       # Carpetas para tus archivos multimedia
       - ./biblioteca/audiobooks:/audiobooks

@@ -1,0 +1,32 @@
+# ── Seguridad / secretos ────────────────────────────────────────────────────
+.env
+.env.*
+!/.env.example
+
+# ── Control de versiones ────────────────────────────────────────────────────
+.git
+.gitignore
+
+# ── Datos / artefactos locales ──────────────────────────────────────────────
+*.xlsx
+.~lock*
+coverage*.out
+logs/
+biblioteca/
+*.csv
+
+# ── Documentación y planificación ───────────────────────────────────────────
+*.md
+PLAN_TESTING.md
+SECURITY_*.md
+TESTING.md
+
+# ── Infraestructura / tooling ───────────────────────────────────────────────
+docker-compose*.yml
+dockerfile
+nginx-imgcache.conf
+atlas.hcl
+Makefile
+notas.txt
+init-db/
+test*.csv
