@@ -113,6 +113,17 @@ swag init -g cmd/api/main.go -o docs/   # regenerar Swagger
     usuarios ABS que no empiecen por `psi_` (protege admin/root). Usa la consulta
     `GetAllForABSSync` (Unscoped) para ver también los soft-deleted.
 
+11. **El directorio público solo muestra áreas del catálogo** —
+    `SearchDirectory` (`psi_repository.go`) hace LEFT JOIN a
+    `psi_specialty_models` por `primary/secondary_specialty_id` y devuelve los
+    nombres resueltos (COALESCE a vacío) como `Specialties` del
+    `PsiMiniProfileDTO`. Los strings legacy `primary_work_area` /
+    `secondary_work_area` del import se IGNORAN en el directorio: si el catálogo
+    está vacío, las tarjetas salen sin chips. El filtro por área sí sigue
+    funcionando por FK. No vuelvas a usar los campos legacy para el directorio
+    (rompe el contrato "solo áreas reales"); el detalle completo (`GET /psi/:fpv`)
+    sí conserva el `work_area` para el perfil.
+
 ## Estructura
 
 ```

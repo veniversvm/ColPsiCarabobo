@@ -61,6 +61,20 @@ deno task build      # igual que npm run build (lo usa el dockerfile)
    `API_URL_INTERNAL` (red Docker). En el navegador por `VITE_API_URL`. Nunca
    uses una en el otro contexto.
 
+8. **El directorio solo muestra áreas del catálogo** — `PsychologistCard.tsx`
+   pinta chips de `psychologist.specialties` tal cual llegan del API, y la API
+   Go los resuelve SOLO desde el catálogo (`psi_specialty_models`, ver gotcha 11
+   de `api/AGENTS.md`). Si el catálogo está vacío, las tarjetas salen sin chips:
+   NO es un bug del front. La tarjeta usa `line-clamp-3` en el mini_bio para
+   mantener alturas uniformes.
+
+9. **`ContactCard` y el detalle `/directorio/[slug]`** — el detalle usa layout de
+   2 columnas: `ProfileHeader` + `ContactCard` a la derecha (encima de "Perfil").
+   La `ContactCard` apila las ubicaciones UNA debajo de la otra y marca cada una
+   con un badge de tipo: `Carabobo` (azul), `Venezuela` (índigo) o
+   `Internacional` (verde). Si añades una ubicación nueva, mantenlo en la lista
+   vertical y dale su `tag`; no vuelvas al grid.
+
 ## Estructura
 
 ```

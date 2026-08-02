@@ -108,6 +108,17 @@ Los errores de red se convierten en `ApiError(503, "OFFLINE_SERVICE")` y los de 
 > ⚠️ Server actions de `@solidjs/router` deben invocarse con `useAction()`, **nunca**
 > llamando la acción directamente (`this.r.singleFlight` lanza TypeError).
 
+### Directorio y detalle de psicólogo
+
+- `/directorio` (`index.tsx`): búsqueda con estado en query params, grid de tarjetas
+  (`ResultsGrid` + `PsychologistCard`). Tarjeta compacta: avatar `w-14/16`, mini_bio
+  con `line-clamp-3` (alturas uniformes) y chips de áreas que vienen SOLO del catálogo
+  de la API — si el catálogo está vacío no hay chips (no es bug del front).
+- `/directorio/[slug].tsx`: layout de 2 columnas con `ProfileHeader` (foto ampliable,
+  nombre, FPV/CI) y `ContactCard` en la columna derecha, encima de "Perfil profesional".
+  La `ContactCard` apila las ubicaciones una debajo de la otra y cada bloque marca su
+  tipo con un badge: `Carabobo` (azul), `Venezuela` (índigo) o `Internacional` (verde).
+
 ### Imágenes (bucket S3/MinIO)
 
 - **Única vía**: `bucketUrl(key)` de `src/lib/bucket.ts`. Es idempotente: si la key ya es
