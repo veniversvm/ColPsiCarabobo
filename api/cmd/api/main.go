@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -45,12 +46,23 @@ import (
 // @bearerFormat                JWT
 func main() {
 	// 1. CONFIGURACIÓN
-	numCPU := runtime.NumCPU()
-	if numCPU > 2 {
-		runtime.GOMAXPROCS(numCPU / 2)
+	// Límite de paralelismo del runtime Go: nunca usar TODAS las vCPU del host
+	// (deja al menos una libre para el SO y el resto de contenedores). Si el env
+	// GOMAXPROCS está definido, manda (docker-compose lo fija a 3 para el Contabo).
+	if raw := os.Getenv("GOMAXPROCS"); raw != "" {
+		if n, err := strconv.Atoi(raw); err == nil && n > 0 {
+			runtime.GOMAXPROCS(n)
+		}
 	} else {
-		runtime.GOMAXPROCS(numCPU)
+		numCPU := runtime.NumCPU()
+		if numCPU > 1 {
+			runtime.GOMAXPROCS(numCPU - 1)
+		} else {
+			runtime.GOMAXPROCS(numCPU)
+		}
 	}
+	log.Info().Int("gomaxprocs", runtime.GOMAXPROCS(0)).Int("numcpu", runtime.NumCPU()).
+		Str("component", "config").Msg("Paralelismo del runtime Go")
 
 	config.InitConfig()
 	logger.Init(config.Envs.Environment)

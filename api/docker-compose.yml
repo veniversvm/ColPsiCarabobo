@@ -12,7 +12,11 @@ services:
       - postgres_data:/var/lib/postgresql
       - ./init-db:/docker-entrypoint-initdb.d 
       - ./init-db/pg_hba.conf:/etc/postgresql/pg_hba.conf
-    command: postgres -c hba_file=/etc/postgresql/pg_hba.conf
+      - ./init-db/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+    command: postgres -c hba_file=/etc/postgresql/pg_hba.conf -c config_file=/etc/postgresql/postgresql.conf
+    # Contabo 4 vCPU/8GB: tope duro de CPU en 3 y de memoria para no ahogar el host.
+    cpus: "3.0"
+    mem_limit: 3.5g
     ports:
       - "${POSTGRES_HOST_PORT:-25432}:5432"
     networks:
@@ -36,11 +40,13 @@ services:
       - DB_PORT=5432
       - DB_NAME=${DB_NAME:-colpsi_db}
       - POOL_MODE=transaction
-      - MAX_CLIENT_CONN=1000
+      - MAX_CLIENT_CONN=200
       - DEFAULT_POOL_SIZE=20
       - AUTH_TYPE=scram-sha-256
       - ADMIN_USERS=${DB_USER:-postgres}
       - IGNORE_STARTUP_PARAMETERS=extra_float_digits,search_path
+    cpus: "0.5"
+    mem_limit: 256m
     ports:
       - "${PGBOUNCER_HOST_PORT:-26432}:5432"
     networks:
@@ -92,6 +98,10 @@ services:
       - PORT=8080
       # Hora local del contenedor (Venezuela) para timestamps de correos (LoginTime)
       - TZ=America/Caracas
+      # Límite de paralelismo del runtime Go: 3 vCPU (nunca las 4 del host).
+      - GOMAXPROCS=${GOMAXPROCS:-3}
+    cpus: "3.0"
+    mem_limit: 1g
     networks:
       - colpsi_network
     depends_on:
@@ -145,7 +155,10 @@ services:
       - "26379:6379"
     volumes:
       - valkey_data:/data
-    command: valkey-server --save 60 1 --loglevel warning
+    command: valkey-server --save "" --appendonly no --maxmemory 512mb --maxmemory-policy allkeys-lru --maxclients 512 --loglevel warning
+    # Valkey es single-threaded: usa 1 núcleo por diseño. Tope de memoria para no OOM al host.
+    cpus: "1.0"
+    mem_limit: 768m
     networks:
       - colpsi_network
     restart: unless-stopped
@@ -172,6 +185,8 @@ services:
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"
+    cpus: "2.0"
+    mem_limit: 1.5g
     networks:
       - colpsi_network
 
@@ -189,6 +204,7 @@ services:
     volumes:
       - ./nginx-imgcache.conf:/etc/nginx/nginx.conf:ro
       - imgcache_data:/var/cache/nginx
+    mem_limit: 512m
     networks:
       - colpsi_network
 
@@ -223,6 +239,9 @@ services:
     environment:
       - AUDIOBOOKSHELF_UID=1000
       - AUDIOBOOKSHELF_GID=1000
+    # ABS es Node y puede pedir 1-2GB; topes para no ahogar el server de 8GB.
+    cpus: "2.0"
+    mem_limit: 1.5g
     networks:
       - colpsi_network
 

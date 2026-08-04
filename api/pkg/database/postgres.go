@@ -21,10 +21,10 @@ import (
 func ConnectDB() (*gorm.DB, error) {
 	// DSN (Data Source Name): Cadena de conexión estandarizada.
 	// Nota: config.Envs.DBPort debe ser 6432 para pasar por PgBouncer.
-	// options=-c statement_timeout=30000: red de seguridad server-side. Si una
-	// query se bloquea (lock/deadlock) el server la aborta a los 30s, liberando
-	// la conexión y el backend pined en PgBouncer. Evita conexiones colgadas.
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable connect_timeout=5 options='-c statement_timeout=30000'",
+	// statement_timeout NO se manda por DSN: PgBouncer rechaza el startup param
+	// `options` (08P01). El timeout se fija server-side en init-db/postgresql.conf
+	// (30s), que aplica a todas las conexiones incluida la de PgBouncer.
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable connect_timeout=5",
 		config.Envs.DBHost,
 		config.Envs.DBUser,
 		config.Envs.DBPass,
@@ -63,8 +63,10 @@ func ConnectDB() (*gorm.DB, error) {
 		return nil, fmt.Errorf("error al obtener pool de conexiones: %w", err)
 	}
 
-	sqlDB.SetMaxOpenConns(25)
-	sqlDB.SetMaxIdleConns(10)
+	// Pool 1:1 con PgBouncer (DEFAULT_POOL_SIZE=20): sin colas de clientes en
+	// el pooler. Tamaños acotados para un server de 4 vCPU / 8 GB.
+	sqlDB.SetMaxOpenConns(20)
+	sqlDB.SetMaxIdleConns(8)
 	sqlDB.SetConnMaxIdleTime(1 * time.Minute)
 	sqlDB.SetConnMaxLifetime(5 * time.Minute)
 
