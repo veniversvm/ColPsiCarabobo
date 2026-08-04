@@ -2,6 +2,7 @@
 package domain
 
 import (
+	"context"
 	"time"
 
 	"github.com/google/uuid"
@@ -10,20 +11,23 @@ import (
 // AnalyticsRepository defines the persistence contract for analytics telemetry events.
 // It decouples the service layer from the ORM, enabling mock-based testing and
 // allowing the storage implementation to change without affecting business logic.
+//
+// Todos los métodos reciben context.Context para propagar timeouts/cancelaciones
+// y evitar que una query bloqueada mantenga una conexión a BD colgada.
 type AnalyticsRepository interface {
-	CreateLoginEvent(event LoginEvent) error
-	UpsertActiveSession(session ActiveSession) error
-	DeleteActiveSession(userID uuid.UUID) error
-	UpdateSessionHeartbeat(userID uuid.UUID, lastSeen, expiresAt time.Time) error
-	CreateSearchEvent(event SearchEvent) error
-	CreateProfileView(event ProfileView) error
-	CreatePageView(view PageView) error
-	CountRecentPageViews(sessionID string, since time.Time) (int64, error)
+	CreateLoginEvent(ctx context.Context, event LoginEvent) error
+	UpsertActiveSession(ctx context.Context, session ActiveSession) error
+	DeleteActiveSession(ctx context.Context, userID uuid.UUID) error
+	UpdateSessionHeartbeat(ctx context.Context, userID uuid.UUID, lastSeen, expiresAt time.Time) error
+	CreateSearchEvent(ctx context.Context, event SearchEvent) error
+	CreateProfileView(ctx context.Context, event ProfileView) error
+	CreatePageView(ctx context.Context, view PageView) error
+	CountRecentPageViews(ctx context.Context, sessionID string, since time.Time) (int64, error)
 
-	GetDashboardStats() (*DashboardStats, error)
+	GetDashboardStats(ctx context.Context) (*DashboardStats, error)
 
-	DeletePageViewsOlderThan(cutoff time.Time) error
-	DeleteSearchEventsOlderThan(cutoff time.Time) error
-	DeleteProfileViewsOlderThan(cutoff time.Time) error
-	DeleteExpiredSessions(now time.Time) error
+	DeletePageViewsOlderThan(ctx context.Context, cutoff time.Time) error
+	DeleteSearchEventsOlderThan(ctx context.Context, cutoff time.Time) error
+	DeleteProfileViewsOlderThan(ctx context.Context, cutoff time.Time) error
+	DeleteExpiredSessions(ctx context.Context, now time.Time) error
 }

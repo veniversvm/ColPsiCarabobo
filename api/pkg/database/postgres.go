@@ -21,7 +21,10 @@ import (
 func ConnectDB() (*gorm.DB, error) {
 	// DSN (Data Source Name): Cadena de conexión estandarizada.
 	// Nota: config.Envs.DBPort debe ser 6432 para pasar por PgBouncer.
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable connect_timeout=5",
+	// options=-c statement_timeout=30000: red de seguridad server-side. Si una
+	// query se bloquea (lock/deadlock) el server la aborta a los 30s, liberando
+	// la conexión y el backend pined en PgBouncer. Evita conexiones colgadas.
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable connect_timeout=5 options='-c statement_timeout=30000'",
 		config.Envs.DBHost,
 		config.Envs.DBUser,
 		config.Envs.DBPass,
@@ -62,6 +65,7 @@ func ConnectDB() (*gorm.DB, error) {
 
 	sqlDB.SetMaxOpenConns(25)
 	sqlDB.SetMaxIdleConns(10)
+	sqlDB.SetConnMaxIdleTime(1 * time.Minute)
 	sqlDB.SetConnMaxLifetime(5 * time.Minute)
 
 	return db, nil

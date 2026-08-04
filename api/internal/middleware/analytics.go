@@ -6,6 +6,7 @@
 package middleware
 
 import (
+	"context"
 	"strings"
 	"time"
 
@@ -16,11 +17,10 @@ import (
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/service"
 )
 
-// visitWindow define el umbral de "Debouncing" para el rastreo de visitas.
-// Si un mismo identificador de sesión (_sid) navega por múltiples rutas o recarga
-// la página dentro de esta ventana de 30 minutos, se considera una única visita continua.
-// Esto previene el inflado artificial de métricas y el agotamiento de la base de datos.
-const visitWindow = 30 * time.Minute
+// analyticsCtxTimeout acota la vida de la goroutine analítica por request.
+// Si la BD está degradada, la goroutine muere sola en vez de colgarse esperando
+// una conexión del pool.
+const analyticsCtxTimeout = 5 * time.Second
 
 // skipPaths define una Lista Negra (Blocklist) de prefijos de ruta que no deben
 // generar eventos analíticos, evitando que el "ruido" contamine las métricas de negocio.
@@ -92,15 +92,13 @@ func AnalyticsMiddleware(analytics *service.AnalyticsService) fiber.Handler {
 		// ─────────────────────────────────────────────────────────────────────
 
 		// 6. Volcado Asíncrono a Base de Datos
+		// La goroutine es la única frontera asíncrona: TrackPageView corre de forma
+		// síncrona dentro (con su propio debouncing) bajo el semáforo del servicio.
 		go func() {
-			// Ventana de sesión (Debouncing):
-			count, _ := analytics.CountRecentPageViews(sessionID, time.Now().Add(-visitWindow))
-			if count > 0 {
-				return // Ya registrado en esta ventana
-			}
+			ctx, cancel := context.WithTimeout(context.Background(), analyticsCtxTimeout)
+			defer cancel()
 
-			// Si es una visita fresca, se persiste en el log de analíticas.
-			analytics.RecordPageView(domain.PageView{
+			analytics.TrackPageView(ctx, domain.PageView{
 				Path:      path,
 				Method:    method,
 				UserID:    userID,

@@ -3,6 +3,7 @@ package main
 
 import (
 	"context"
+	"sync/atomic"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -11,6 +12,11 @@ import (
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/service"
 	"gorm.io/gorm"
 )
+
+// absSyncPassTimeout acota cada pasada de sincronización ABS. Si una pasada se
+// cuelga (query bloqueada o HTTP a ABS lento), se aborta sola en lugar de dejar
+// una conexión a BD pined indefinidamente.
+const absSyncPassTimeout = 5 * time.Minute
 
 // runABSSyncLoop reconcilia las cuentas de Audiobookshelf en background:
 // una pasada inmediata al arrancar y luego cada AbsSyncIntervalH horas.
@@ -33,8 +39,22 @@ func runABSSyncLoop(ctx context.Context, db *gorm.DB) {
 	syncSvc := service.NewPsiService(psiRepo, nil, nil)
 	syncSvc.SetAudiobookshelf(absSvc)
 
+	// running evita pasadas solapadas: si una pasada tarda más que el intervalo,
+	// el siguiente tick se omite en lugar de lanzar una pasada concurrente
+	// (ambas cargarían la tabla completa en memoria).
+	var running atomic.Bool
+
 	run := func() {
-		report, err := syncSvc.SyncAudiobookshelfAccounts(ctx)
+		if !running.CompareAndSwap(false, true) {
+			log.Warn().Str("component", "psi-abs-sync").Msg("Sincronización ABS previa aún en curso; omitiendo pasada")
+			return
+		}
+		defer running.Store(false)
+
+		passCtx, cancel := context.WithTimeout(ctx, absSyncPassTimeout)
+		defer cancel()
+
+		report, err := syncSvc.SyncAudiobookshelfAccounts(passCtx)
 		if err != nil {
 			log.Error().Err(err).Str("component", "psi-abs-sync").Msg("Error en sincronización ABS")
 			return

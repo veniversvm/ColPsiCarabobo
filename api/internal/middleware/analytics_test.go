@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"io"
 	"net/http/httptest"
 	"strings"
@@ -20,39 +21,41 @@ import (
 // Se diferencia del mock en auth_test.go por permitir inyectar comportamiento.
 type mockAnalyticsRepoForMiddleware struct {
 	domain.AnalyticsRepository
-	CreatePageViewFunc       func(view domain.PageView) error
-	CountRecentPageViewsFunc func(sessionID string, since time.Time) (int64, error)
+	CreatePageViewFunc       func(ctx context.Context, view domain.PageView) error
+	CountRecentPageViewsFunc func(ctx context.Context, sessionID string, since time.Time) (int64, error)
 }
 
-func (m *mockAnalyticsRepoForMiddleware) CreatePageView(view domain.PageView) error {
+func (m *mockAnalyticsRepoForMiddleware) CreatePageView(ctx context.Context, view domain.PageView) error {
 	if m.CreatePageViewFunc != nil {
-		return m.CreatePageViewFunc(view)
+		return m.CreatePageViewFunc(ctx, view)
 	}
 	return nil
 }
 
-func (m *mockAnalyticsRepoForMiddleware) CountRecentPageViews(sessionID string, since time.Time) (int64, error) {
+func (m *mockAnalyticsRepoForMiddleware) CountRecentPageViews(ctx context.Context, sessionID string, since time.Time) (int64, error) {
 	if m.CountRecentPageViewsFunc != nil {
-		return m.CountRecentPageViewsFunc(sessionID, since)
+		return m.CountRecentPageViewsFunc(ctx, sessionID, since)
 	}
 	return 0, nil
 }
 
-func (m *mockAnalyticsRepoForMiddleware) CreateLoginEvent(domain.LoginEvent) error   { return nil }
-func (m *mockAnalyticsRepoForMiddleware) UpsertActiveSession(domain.ActiveSession) error { return nil }
-func (m *mockAnalyticsRepoForMiddleware) DeleteActiveSession(uuid.UUID) error        { return nil }
-func (m *mockAnalyticsRepoForMiddleware) UpdateSessionHeartbeat(uuid.UUID, time.Time, time.Time) error {
+func (m *mockAnalyticsRepoForMiddleware) CreateLoginEvent(context.Context, domain.LoginEvent) error { return nil }
+func (m *mockAnalyticsRepoForMiddleware) UpsertActiveSession(context.Context, domain.ActiveSession) error {
 	return nil
 }
-func (m *mockAnalyticsRepoForMiddleware) CreateSearchEvent(domain.SearchEvent) error  { return nil }
-func (m *mockAnalyticsRepoForMiddleware) CreateProfileView(domain.ProfileView) error  { return nil }
-func (m *mockAnalyticsRepoForMiddleware) GetDashboardStats() (*domain.DashboardStats, error) {
+func (m *mockAnalyticsRepoForMiddleware) DeleteActiveSession(context.Context, uuid.UUID) error { return nil }
+func (m *mockAnalyticsRepoForMiddleware) UpdateSessionHeartbeat(context.Context, uuid.UUID, time.Time, time.Time) error {
+	return nil
+}
+func (m *mockAnalyticsRepoForMiddleware) CreateSearchEvent(context.Context, domain.SearchEvent) error  { return nil }
+func (m *mockAnalyticsRepoForMiddleware) CreateProfileView(context.Context, domain.ProfileView) error  { return nil }
+func (m *mockAnalyticsRepoForMiddleware) GetDashboardStats(context.Context) (*domain.DashboardStats, error) {
 	return &domain.DashboardStats{}, nil
 }
-func (m *mockAnalyticsRepoForMiddleware) DeletePageViewsOlderThan(time.Time) error    { return nil }
-func (m *mockAnalyticsRepoForMiddleware) DeleteSearchEventsOlderThan(time.Time) error { return nil }
-func (m *mockAnalyticsRepoForMiddleware) DeleteProfileViewsOlderThan(time.Time) error { return nil }
-func (m *mockAnalyticsRepoForMiddleware) DeleteExpiredSessions(time.Time) error       { return nil }
+func (m *mockAnalyticsRepoForMiddleware) DeletePageViewsOlderThan(context.Context, time.Time) error    { return nil }
+func (m *mockAnalyticsRepoForMiddleware) DeleteSearchEventsOlderThan(context.Context, time.Time) error { return nil }
+func (m *mockAnalyticsRepoForMiddleware) DeleteProfileViewsOlderThan(context.Context, time.Time) error { return nil }
+func (m *mockAnalyticsRepoForMiddleware) DeleteExpiredSessions(context.Context, time.Time) error       { return nil }
 
 func init() {
 	// Prevenir panic por config.Envs nil en analytics.go
@@ -105,7 +108,7 @@ func TestAnalyticsMiddleware(t *testing.T) {
 		svc := service.NewAnalyticsService(repo)
 		var createCalled int64
 
-		repo.CreatePageViewFunc = func(view domain.PageView) error {
+		repo.CreatePageViewFunc = func(ctx context.Context, view domain.PageView) error {
 			atomic.AddInt64(&createCalled, 1)
 			return nil
 		}
@@ -130,7 +133,7 @@ func TestAnalyticsMiddleware(t *testing.T) {
 		svc := service.NewAnalyticsService(repo)
 		var createCalled int64
 
-		repo.CreatePageViewFunc = func(view domain.PageView) error {
+		repo.CreatePageViewFunc = func(ctx context.Context, view domain.PageView) error {
 			atomic.AddInt64(&createCalled, 1)
 			return nil
 		}
@@ -161,7 +164,7 @@ func TestAnalyticsMiddleware(t *testing.T) {
 		svc := service.NewAnalyticsService(repo)
 		var createCalled int64
 
-		repo.CreatePageViewFunc = func(view domain.PageView) error {
+		repo.CreatePageViewFunc = func(ctx context.Context, view domain.PageView) error {
 			atomic.AddInt64(&createCalled, 1)
 			return nil
 		}
@@ -191,7 +194,7 @@ func TestAnalyticsMiddleware(t *testing.T) {
 		repo := &mockAnalyticsRepoForMiddleware{}
 		svc := service.NewAnalyticsService(repo)
 
-		repo.CountRecentPageViewsFunc = func(sessionID string, since time.Time) (int64, error) {
+		repo.CountRecentPageViewsFunc = func(ctx context.Context, sessionID string, since time.Time) (int64, error) {
 			return 0, nil // primera visita
 		}
 
@@ -226,7 +229,7 @@ func TestAnalyticsMiddleware(t *testing.T) {
 		existingSID := uuid.Must(uuid.NewV7()).String()
 
 		var capturedSID string
-		repo.CountRecentPageViewsFunc = func(sessionID string, since time.Time) (int64, error) {
+		repo.CountRecentPageViewsFunc = func(ctx context.Context, sessionID string, since time.Time) (int64, error) {
 			capturedSID = sessionID
 			return 0, nil
 		}
@@ -252,10 +255,10 @@ func TestAnalyticsMiddleware(t *testing.T) {
 		var capturedView domain.PageView
 		var mu sync.Mutex
 
-		repo.CountRecentPageViewsFunc = func(sessionID string, since time.Time) (int64, error) {
+		repo.CountRecentPageViewsFunc = func(ctx context.Context, sessionID string, since time.Time) (int64, error) {
 			return 0, nil
 		}
-		repo.CreatePageViewFunc = func(view domain.PageView) error {
+		repo.CreatePageViewFunc = func(ctx context.Context, view domain.PageView) error {
 			mu.Lock()
 			capturedView = view
 			mu.Unlock()
@@ -290,10 +293,10 @@ func TestAnalyticsMiddleware(t *testing.T) {
 		svc := service.NewAnalyticsService(repo)
 		var createCount int64
 
-		repo.CountRecentPageViewsFunc = func(sessionID string, since time.Time) (int64, error) {
+		repo.CountRecentPageViewsFunc = func(ctx context.Context, sessionID string, since time.Time) (int64, error) {
 			return 1, nil // Ya hay vista reciente → debouncing activo
 		}
-		repo.CreatePageViewFunc = func(view domain.PageView) error {
+		repo.CreatePageViewFunc = func(ctx context.Context, view domain.PageView) error {
 			atomic.AddInt64(&createCount, 1)
 			return nil
 		}
@@ -331,14 +334,14 @@ func TestAnalyticsMiddleware(t *testing.T) {
 		var createCount int64
 
 		callIdx := 0
-		repo.CountRecentPageViewsFunc = func(sessionID string, since time.Time) (int64, error) {
+		repo.CountRecentPageViewsFunc = func(ctx context.Context, sessionID string, since time.Time) (int64, error) {
 			callIdx++
 			if callIdx == 1 {
 				return 0, nil // Primera request: sin vistas previas
 			}
 			return 0, nil // Segunda request: también sin vistas (ventana expiró)
 		}
-		repo.CreatePageViewFunc = func(view domain.PageView) error {
+		repo.CreatePageViewFunc = func(ctx context.Context, view domain.PageView) error {
 			atomic.AddInt64(&createCount, 1)
 			return nil
 		}
@@ -377,10 +380,10 @@ func TestAnalyticsMiddleware(t *testing.T) {
 		var capturedView domain.PageView
 		var mu sync.Mutex
 
-		repo.CountRecentPageViewsFunc = func(sessionID string, since time.Time) (int64, error) {
+		repo.CountRecentPageViewsFunc = func(ctx context.Context, sessionID string, since time.Time) (int64, error) {
 			return 0, nil
 		}
-		repo.CreatePageViewFunc = func(view domain.PageView) error {
+		repo.CreatePageViewFunc = func(ctx context.Context, view domain.PageView) error {
 			mu.Lock()
 			capturedView = view
 			mu.Unlock()
@@ -419,10 +422,10 @@ func TestAnalyticsMiddleware(t *testing.T) {
 		var capturedView domain.PageView
 		var mu sync.Mutex
 
-		repo.CountRecentPageViewsFunc = func(sessionID string, since time.Time) (int64, error) {
+		repo.CountRecentPageViewsFunc = func(ctx context.Context, sessionID string, since time.Time) (int64, error) {
 			return 0, nil
 		}
-		repo.CreatePageViewFunc = func(view domain.PageView) error {
+		repo.CreatePageViewFunc = func(ctx context.Context, view domain.PageView) error {
 			mu.Lock()
 			capturedView = view
 			mu.Unlock()
@@ -452,10 +455,10 @@ func TestAnalyticsMiddleware_SkipPathsCoverage(t *testing.T) {
 	svc := service.NewAnalyticsService(repo)
 	var createCount int64
 
-	repo.CountRecentPageViewsFunc = func(sessionID string, since time.Time) (int64, error) {
+	repo.CountRecentPageViewsFunc = func(ctx context.Context, sessionID string, since time.Time) (int64, error) {
 		return 0, nil
 	}
-	repo.CreatePageViewFunc = func(view domain.PageView) error {
+	repo.CreatePageViewFunc = func(ctx context.Context, view domain.PageView) error {
 		atomic.AddInt64(&createCount, 1)
 		return nil
 	}

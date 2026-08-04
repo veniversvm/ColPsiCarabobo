@@ -19,7 +19,7 @@ func TestGetDashboardStats(t *testing.T) {
 		admin := testAdmin(adminID, true, true)
 
 		repo := &mockAnalyticsRepo{
-			GetDashboardStatsFunc: func() (*domain.DashboardStats, error) {
+			GetDashboardStatsFunc: func(ctx context.Context) (*domain.DashboardStats, error) {
 				return &domain.DashboardStats{
 					LoginsTotal:     42,
 					ActiveSessionsNow: 3,

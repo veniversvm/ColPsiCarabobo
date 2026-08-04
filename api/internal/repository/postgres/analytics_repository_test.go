@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"context"
 	"os"
 	"testing"
 	"time"
@@ -70,7 +71,7 @@ func TestAnalyticsRepo_ComprehensiveSuite(t *testing.T) {
 			UserAgent: "Mozilla/5.0",
 		}
 
-		err := r.CreateLoginEvent(event)
+		err := r.CreateLoginEvent(context.Background(), event)
 		require.NoError(t, err)
 
 		var count int64
@@ -95,7 +96,7 @@ func TestAnalyticsRepo_ComprehensiveSuite(t *testing.T) {
 			ExpiresAt: now.Add(30 * time.Minute),
 		}
 
-		err := r.UpsertActiveSession(session)
+		err := r.UpsertActiveSession(context.Background(), session)
 		require.NoError(t, err)
 
 		var found domain.ActiveSession
@@ -105,7 +106,7 @@ func TestAnalyticsRepo_ComprehensiveSuite(t *testing.T) {
 
 		// Upsert again — should update, not create duplicate
 		session.Username = "session_user_updated"
-		err = r.UpsertActiveSession(session)
+		err = r.UpsertActiveSession(context.Background(), session)
 		require.NoError(t, err)
 
 		var count int64
@@ -132,7 +133,7 @@ func TestAnalyticsRepo_ComprehensiveSuite(t *testing.T) {
 			ExpiresAt: now.Add(30 * time.Minute),
 		})
 
-		err := r.DeleteActiveSession(userID)
+		err := r.DeleteActiveSession(context.Background(), userID)
 		require.NoError(t, err)
 
 		var count int64
@@ -159,7 +160,7 @@ func TestAnalyticsRepo_ComprehensiveSuite(t *testing.T) {
 		newLastSeen := now.Add(5 * time.Minute)
 		newExpiry := now.Add(35 * time.Minute)
 
-		err := r.UpdateSessionHeartbeat(userID, newLastSeen, newExpiry)
+		err := r.UpdateSessionHeartbeat(context.Background(), userID, newLastSeen, newExpiry)
 		require.NoError(t, err)
 
 		var found domain.ActiveSession
@@ -176,7 +177,7 @@ func TestAnalyticsRepo_ComprehensiveSuite(t *testing.T) {
 		sessionID := "sess_abc123"
 		now := time.Now()
 
-		err := r.CreatePageView(domain.PageView{
+		err := r.CreatePageView(context.Background(), domain.PageView{
 			Path:      "/directorio",
 			Method:    "GET",
 			SessionID: sessionID,
@@ -185,7 +186,7 @@ func TestAnalyticsRepo_ComprehensiveSuite(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		err = r.CreatePageView(domain.PageView{
+		err = r.CreatePageView(context.Background(), domain.PageView{
 			Path:      "/perfil/123",
 			Method:    "GET",
 			SessionID: sessionID,
@@ -194,11 +195,11 @@ func TestAnalyticsRepo_ComprehensiveSuite(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		count, err := r.CountRecentPageViews(sessionID, now.Add(-1*time.Minute))
+		count, err := r.CountRecentPageViews(context.Background(), sessionID, now.Add(-1*time.Minute))
 		require.NoError(t, err)
 		require.Equal(t, int64(2), count)
 
-		count, err = r.CountRecentPageViews(sessionID, now.Add(1*time.Hour))
+		count, err = r.CountRecentPageViews(context.Background(), sessionID, now.Add(1*time.Hour))
 		require.NoError(t, err)
 		require.Equal(t, int64(0), count, "Should not count views after the since time")
 	})
@@ -218,7 +219,7 @@ func TestAnalyticsRepo_ComprehensiveSuite(t *testing.T) {
 			IP:           "127.0.0.1",
 		}
 
-		err := r.CreateSearchEvent(event)
+		err := r.CreateSearchEvent(context.Background(), event)
 		require.NoError(t, err)
 
 		var count int64
@@ -238,7 +239,7 @@ func TestAnalyticsRepo_ComprehensiveSuite(t *testing.T) {
 			IP:        "10.0.0.1",
 		}
 
-		err := r.CreateProfileView(event)
+		err := r.CreateProfileView(context.Background(), event)
 		require.NoError(t, err)
 
 		var count int64
@@ -251,7 +252,7 @@ func TestAnalyticsRepo_ComprehensiveSuite(t *testing.T) {
 		defer tx.Rollback()
 		r := NewAnalyticsRepository(tx)
 
-		stats, err := r.GetDashboardStats()
+		stats, err := r.GetDashboardStats(context.Background())
 		require.NoError(t, err)
 		require.NotNil(t, stats)
 		require.Equal(t, int64(0), stats.LoginsTotal)
@@ -294,7 +295,7 @@ func TestAnalyticsRepo_ComprehensiveSuite(t *testing.T) {
 			IP: "127.0.0.1", LastSeen: now, ExpiresAt: now.Add(10 * time.Minute),
 		})
 
-		stats, err := r.GetDashboardStats()
+		stats, err := r.GetDashboardStats(context.Background())
 		require.NoError(t, err)
 		require.Equal(t, int64(2), stats.LoginsTotal)
 		require.Equal(t, int64(2), stats.LoginsToday)
@@ -316,7 +317,7 @@ func TestAnalyticsRepo_ComprehensiveSuite(t *testing.T) {
 		tx.Create(&domain.ActiveSession{UserID: uuid.New(), Username: "expired2", Role: "psi", IP: "127.0.0.1", LastSeen: expired, ExpiresAt: expired})
 		tx.Create(&domain.ActiveSession{UserID: uuid.New(), Username: "active1", Role: "admin", IP: "127.0.0.1", LastSeen: now, ExpiresAt: future})
 
-		err := r.DeleteExpiredSessions(now)
+		err := r.DeleteExpiredSessions(context.Background(), now)
 		require.NoError(t, err)
 
 		var count int64
@@ -339,19 +340,19 @@ func TestAnalyticsRepo_ComprehensiveSuite(t *testing.T) {
 		tx.Create(&domain.ProfileView{PsiID: uuid.New(), SessionID: "s1", CreatedAt: old})
 		tx.Create(&domain.ProfileView{PsiID: uuid.New(), SessionID: "s2", CreatedAt: recent})
 
-		err := r.DeletePageViewsOlderThan(time.Now().Add(-24 * time.Hour))
+		err := r.DeletePageViewsOlderThan(context.Background(), time.Now().Add(-24 * time.Hour))
 		require.NoError(t, err)
 		var pvCount int64
 		tx.Model(&domain.PageView{}).Count(&pvCount)
 		require.Equal(t, int64(1), pvCount)
 
-		err = r.DeleteSearchEventsOlderThan(time.Now().Add(-24 * time.Hour))
+		err = r.DeleteSearchEventsOlderThan(context.Background(), time.Now().Add(-24 * time.Hour))
 		require.NoError(t, err)
 		var seCount int64
 		tx.Model(&domain.SearchEvent{}).Count(&seCount)
 		require.Equal(t, int64(1), seCount)
 
-		err = r.DeleteProfileViewsOlderThan(time.Now().Add(-24 * time.Hour))
+		err = r.DeleteProfileViewsOlderThan(context.Background(), time.Now().Add(-24 * time.Hour))
 		require.NoError(t, err)
 		var proCount int64
 		tx.Model(&domain.ProfileView{}).Count(&proCount)

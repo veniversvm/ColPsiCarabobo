@@ -45,19 +45,27 @@ type mockAnalyticsRepo struct {
 	domain.AnalyticsRepository
 }
 
-func (m *mockAnalyticsRepo) CreateLoginEvent(domain.LoginEvent) error   { return nil }
-func (m *mockAnalyticsRepo) UpsertActiveSession(domain.ActiveSession) error { return nil }
-func (m *mockAnalyticsRepo) DeleteActiveSession(uuid.UUID) error        { return nil }
-func (m *mockAnalyticsRepo) UpdateSessionHeartbeat(uuid.UUID, time.Time, time.Time) error { return nil }
-func (m *mockAnalyticsRepo) CreateSearchEvent(domain.SearchEvent) error { return nil }
-func (m *mockAnalyticsRepo) CreateProfileView(domain.ProfileView) error { return nil }
-func (m *mockAnalyticsRepo) CreatePageView(domain.PageView) error       { return nil }
-func (m *mockAnalyticsRepo) CountRecentPageViews(string, time.Time) (int64, error) { return 0, nil }
-func (m *mockAnalyticsRepo) GetDashboardStats() (*domain.DashboardStats, error) { return &domain.DashboardStats{}, nil }
-func (m *mockAnalyticsRepo) DeletePageViewsOlderThan(time.Time) error   { return nil }
-func (m *mockAnalyticsRepo) DeleteSearchEventsOlderThan(time.Time) error { return nil }
-func (m *mockAnalyticsRepo) DeleteProfileViewsOlderThan(time.Time) error { return nil }
-func (m *mockAnalyticsRepo) DeleteExpiredSessions(time.Time) error      { return nil }
+func (m *mockAnalyticsRepo) CreateLoginEvent(context.Context, domain.LoginEvent) error { return nil }
+func (m *mockAnalyticsRepo) UpsertActiveSession(context.Context, domain.ActiveSession) error {
+	return nil
+}
+func (m *mockAnalyticsRepo) DeleteActiveSession(context.Context, uuid.UUID) error { return nil }
+func (m *mockAnalyticsRepo) UpdateSessionHeartbeat(context.Context, uuid.UUID, time.Time, time.Time) error {
+	return nil
+}
+func (m *mockAnalyticsRepo) CreateSearchEvent(context.Context, domain.SearchEvent) error { return nil }
+func (m *mockAnalyticsRepo) CreateProfileView(context.Context, domain.ProfileView) error { return nil }
+func (m *mockAnalyticsRepo) CreatePageView(context.Context, domain.PageView) error       { return nil }
+func (m *mockAnalyticsRepo) CountRecentPageViews(context.Context, string, time.Time) (int64, error) {
+	return 0, nil
+}
+func (m *mockAnalyticsRepo) GetDashboardStats(context.Context) (*domain.DashboardStats, error) {
+	return &domain.DashboardStats{}, nil
+}
+func (m *mockAnalyticsRepo) DeletePageViewsOlderThan(context.Context, time.Time) error   { return nil }
+func (m *mockAnalyticsRepo) DeleteSearchEventsOlderThan(context.Context, time.Time) error { return nil }
+func (m *mockAnalyticsRepo) DeleteProfileViewsOlderThan(context.Context, time.Time) error { return nil }
+func (m *mockAnalyticsRepo) DeleteExpiredSessions(context.Context, time.Time) error      { return nil }
 
 // =========================================================================
 // GENERADOR DE TOKENS PARA TESTS

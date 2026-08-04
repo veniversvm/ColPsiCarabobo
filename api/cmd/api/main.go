@@ -119,7 +119,8 @@ func main() {
 	defer bgCancel()
 
 	// ── Limpieza periódica de sesiones expiradas ──────────────────────────────
-	// Corre cada hora en background — elimina ActiveSession con expires_at < now
+	// Corre cada hora en background — elimina ActiveSession con expires_at < now.
+	// Cada ejecución lleva su propio timeout para no dejar una conexión colgada.
 	go func() {
 		ticker := time.NewTicker(1 * time.Hour)
 		defer ticker.Stop()
@@ -128,7 +129,9 @@ func main() {
 			case <-bgCtx.Done():
 				return
 			case <-ticker.C:
-				analyticsSvc.CleanExpiredSessions()
+				cleanCtx, cleanCancel := context.WithTimeout(bgCtx, 30*time.Second)
+				analyticsSvc.CleanExpiredSessions(cleanCtx)
+				cleanCancel()
 				log.Info().Str("component", "analytics").Msg("Sesiones expiradas limpiadas")
 			}
 		}
@@ -141,7 +144,9 @@ func main() {
 			case <-bgCtx.Done():
 				return
 			case <-ticker.C:
-				postSvc.PublishScheduled(bgCtx)
+				pubCtx, pubCancel := context.WithTimeout(bgCtx, 30*time.Second)
+				postSvc.PublishScheduled(pubCtx)
+				pubCancel()
 			}
 		}
 	}()

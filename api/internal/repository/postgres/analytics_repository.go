@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"context"
 	"time"
 
 	"github.com/google/uuid"
@@ -18,25 +19,25 @@ func NewAnalyticsRepository(db *gorm.DB) domain.AnalyticsRepository {
 }
 
 // CreateLoginEvent persists a new login event record.
-func (r *analyticsRepo) CreateLoginEvent(event domain.LoginEvent) error {
-	return r.db.Create(&event).Error
+func (r *analyticsRepo) CreateLoginEvent(ctx context.Context, event domain.LoginEvent) error {
+	return r.db.WithContext(ctx).Create(&event).Error
 }
 
 // UpsertActiveSession creates or updates the active session for a user.
-func (r *analyticsRepo) UpsertActiveSession(session domain.ActiveSession) error {
-	return r.db.Where(domain.ActiveSession{UserID: session.UserID}).
+func (r *analyticsRepo) UpsertActiveSession(ctx context.Context, session domain.ActiveSession) error {
+	return r.db.WithContext(ctx).Where(domain.ActiveSession{UserID: session.UserID}).
 		Assign(session).
 		FirstOrCreate(&session).Error
 }
 
 // DeleteActiveSession removes the active session record for a user.
-func (r *analyticsRepo) DeleteActiveSession(userID uuid.UUID) error {
-	return r.db.Where("user_id = ?", userID).Delete(&domain.ActiveSession{}).Error
+func (r *analyticsRepo) DeleteActiveSession(ctx context.Context, userID uuid.UUID) error {
+	return r.db.WithContext(ctx).Where("user_id = ?", userID).Delete(&domain.ActiveSession{}).Error
 }
 
 // UpdateSessionHeartbeat updates the last-seen and expiry timestamps for a session.
-func (r *analyticsRepo) UpdateSessionHeartbeat(userID uuid.UUID, lastSeen, expiresAt time.Time) error {
-	return r.db.Model(&domain.ActiveSession{}).
+func (r *analyticsRepo) UpdateSessionHeartbeat(ctx context.Context, userID uuid.UUID, lastSeen, expiresAt time.Time) error {
+	return r.db.WithContext(ctx).Model(&domain.ActiveSession{}).
 		Where("user_id = ?", userID).
 		Updates(map[string]any{
 			"last_seen":  lastSeen,
@@ -45,31 +46,31 @@ func (r *analyticsRepo) UpdateSessionHeartbeat(userID uuid.UUID, lastSeen, expir
 }
 
 // CreateSearchEvent persists a directory search event.
-func (r *analyticsRepo) CreateSearchEvent(event domain.SearchEvent) error {
-	return r.db.Create(&event).Error
+func (r *analyticsRepo) CreateSearchEvent(ctx context.Context, event domain.SearchEvent) error {
+	return r.db.WithContext(ctx).Create(&event).Error
 }
 
 // CreateProfileView persists a profile view event.
-func (r *analyticsRepo) CreateProfileView(event domain.ProfileView) error {
-	return r.db.Create(&event).Error
+func (r *analyticsRepo) CreateProfileView(ctx context.Context, event domain.ProfileView) error {
+	return r.db.WithContext(ctx).Create(&event).Error
 }
 
 // CreatePageView persists a page view event.
-func (r *analyticsRepo) CreatePageView(view domain.PageView) error {
-	return r.db.Create(&view).Error
+func (r *analyticsRepo) CreatePageView(ctx context.Context, view domain.PageView) error {
+	return r.db.WithContext(ctx).Create(&view).Error
 }
 
 // CountRecentPageViews returns the number of page views for a session since the given time.
-func (r *analyticsRepo) CountRecentPageViews(sessionID string, since time.Time) (int64, error) {
+func (r *analyticsRepo) CountRecentPageViews(ctx context.Context, sessionID string, since time.Time) (int64, error) {
 	var count int64
-	err := r.db.Model(&domain.PageView{}).
+	err := r.db.WithContext(ctx).Model(&domain.PageView{}).
 		Where("session_id = ? AND created_at >= ?", sessionID, since).
 		Count(&count).Error
 	return count, err
 }
 
 // GetDashboardStats returns aggregated analytics metrics for the admin dashboard.
-func (r *analyticsRepo) GetDashboardStats() (*domain.DashboardStats, error) {
+func (r *analyticsRepo) GetDashboardStats(ctx context.Context) (*domain.DashboardStats, error) {
 	stats := &domain.DashboardStats{}
 
 	now := time.Now()
@@ -79,7 +80,7 @@ func (r *analyticsRepo) GetDashboardStats() (*domain.DashboardStats, error) {
 	thirtyDays := todayStart.AddDate(0, 0, -30)
 	fourteenDays := todayStart.AddDate(0, 0, -14)
 
-	db := r.db
+	db := r.db.WithContext(ctx)
 
 	// Logins
 	db.Model(&domain.LoginEvent{}).Count(&stats.LoginsTotal)
@@ -180,21 +181,21 @@ func (r *analyticsRepo) GetDashboardStats() (*domain.DashboardStats, error) {
 }
 
 // DeletePageViewsOlderThan removes page view records older than the cutoff time.
-func (r *analyticsRepo) DeletePageViewsOlderThan(cutoff time.Time) error {
-	return r.db.Where("created_at < ?", cutoff).Delete(&domain.PageView{}).Error
+func (r *analyticsRepo) DeletePageViewsOlderThan(ctx context.Context, cutoff time.Time) error {
+	return r.db.WithContext(ctx).Where("created_at < ?", cutoff).Delete(&domain.PageView{}).Error
 }
 
 // DeleteSearchEventsOlderThan removes search event records older than the cutoff time.
-func (r *analyticsRepo) DeleteSearchEventsOlderThan(cutoff time.Time) error {
-	return r.db.Where("created_at < ?", cutoff).Delete(&domain.SearchEvent{}).Error
+func (r *analyticsRepo) DeleteSearchEventsOlderThan(ctx context.Context, cutoff time.Time) error {
+	return r.db.WithContext(ctx).Where("created_at < ?", cutoff).Delete(&domain.SearchEvent{}).Error
 }
 
 // DeleteProfileViewsOlderThan removes profile view records older than the cutoff time.
-func (r *analyticsRepo) DeleteProfileViewsOlderThan(cutoff time.Time) error {
-	return r.db.Where("created_at < ?", cutoff).Delete(&domain.ProfileView{}).Error
+func (r *analyticsRepo) DeleteProfileViewsOlderThan(ctx context.Context, cutoff time.Time) error {
+	return r.db.WithContext(ctx).Where("created_at < ?", cutoff).Delete(&domain.ProfileView{}).Error
 }
 
 // DeleteExpiredSessions removes active sessions that have expired.
-func (r *analyticsRepo) DeleteExpiredSessions(now time.Time) error {
-	return r.db.Where("expires_at < ?", now).Delete(&domain.ActiveSession{}).Error
+func (r *analyticsRepo) DeleteExpiredSessions(ctx context.Context, now time.Time) error {
+	return r.db.WithContext(ctx).Where("expires_at < ?", now).Delete(&domain.ActiveSession{}).Error
 }

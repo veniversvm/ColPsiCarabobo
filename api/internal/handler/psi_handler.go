@@ -2,6 +2,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -18,6 +19,11 @@ import (
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/service"
 	"github.com/veniversvm/ColPsiCarabobo/api/pkg/cache"
 )
+
+// csvImportTimeout acota el import masivo de CSV (puede tardar minutos con
+// archivos de miles de filas). Si excede, la transacción en curso hace rollback
+// y la request devuelve error en lugar de dejar una conexión a BD colgada.
+const csvImportTimeout = 300 * time.Second
 
 // PsiHandler handles HTTP requests related to psychologist profiles and self-management.
 type PsiHandler struct {
@@ -85,7 +91,10 @@ func (h *PsiHandler) UploadCsv(c *fiber.Ctx) error {
 	}
 	defer src.Close()
 
-	success, failed_records := h.service.ImportFromCSV(c.UserContext(), src, admin.ID)
+	ctx, cancel := context.WithTimeout(c.UserContext(), csvImportTimeout)
+	defer cancel()
+
+	success, failed_records := h.service.ImportFromCSV(ctx, src, admin.ID)
 
 	if success > 0 {
 		h.invalidateDirectory()

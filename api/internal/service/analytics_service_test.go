@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"sync"
 	"testing"
@@ -18,108 +19,108 @@ import (
 type mockAnalyticsRepo struct {
 	domain.AnalyticsRepository
 
-	CreateLoginEventFunc          func(event domain.LoginEvent) error
-	UpsertActiveSessionFunc       func(session domain.ActiveSession) error
-	DeleteActiveSessionFunc       func(userID uuid.UUID) error
-	UpdateSessionHeartbeatFunc    func(userID uuid.UUID, lastSeen, expiresAt time.Time) error
-	CreateSearchEventFunc         func(event domain.SearchEvent) error
-	CreateProfileViewFunc         func(event domain.ProfileView) error
-	CreatePageViewFunc            func(view domain.PageView) error
-	CountRecentPageViewsFunc      func(sessionID string, since time.Time) (int64, error)
-	GetDashboardStatsFunc         func() (*domain.DashboardStats, error)
-	DeletePageViewsOlderThanFunc  func(cutoff time.Time) error
-	DeleteSearchEventsOlderThanFunc func(cutoff time.Time) error
-	DeleteProfileViewsOlderThanFunc func(cutoff time.Time) error
-	DeleteExpiredSessionsFunc     func(now time.Time) error
+	CreateLoginEventFunc            func(ctx context.Context, event domain.LoginEvent) error
+	UpsertActiveSessionFunc         func(ctx context.Context, session domain.ActiveSession) error
+	DeleteActiveSessionFunc         func(ctx context.Context, userID uuid.UUID) error
+	UpdateSessionHeartbeatFunc      func(ctx context.Context, userID uuid.UUID, lastSeen, expiresAt time.Time) error
+	CreateSearchEventFunc           func(ctx context.Context, event domain.SearchEvent) error
+	CreateProfileViewFunc           func(ctx context.Context, event domain.ProfileView) error
+	CreatePageViewFunc              func(ctx context.Context, view domain.PageView) error
+	CountRecentPageViewsFunc        func(ctx context.Context, sessionID string, since time.Time) (int64, error)
+	GetDashboardStatsFunc           func(ctx context.Context) (*domain.DashboardStats, error)
+	DeletePageViewsOlderThanFunc    func(ctx context.Context, cutoff time.Time) error
+	DeleteSearchEventsOlderThanFunc func(ctx context.Context, cutoff time.Time) error
+	DeleteProfileViewsOlderThanFunc func(ctx context.Context, cutoff time.Time) error
+	DeleteExpiredSessionsFunc       func(ctx context.Context, now time.Time) error
 }
 
-func (m *mockAnalyticsRepo) CreateLoginEvent(event domain.LoginEvent) error {
+func (m *mockAnalyticsRepo) CreateLoginEvent(ctx context.Context, event domain.LoginEvent) error {
 	if m.CreateLoginEventFunc != nil {
-		return m.CreateLoginEventFunc(event)
+		return m.CreateLoginEventFunc(ctx, event)
 	}
 	return nil
 }
 
-func (m *mockAnalyticsRepo) UpsertActiveSession(session domain.ActiveSession) error {
+func (m *mockAnalyticsRepo) UpsertActiveSession(ctx context.Context, session domain.ActiveSession) error {
 	if m.UpsertActiveSessionFunc != nil {
-		return m.UpsertActiveSessionFunc(session)
+		return m.UpsertActiveSessionFunc(ctx, session)
 	}
 	return nil
 }
 
-func (m *mockAnalyticsRepo) DeleteActiveSession(userID uuid.UUID) error {
+func (m *mockAnalyticsRepo) DeleteActiveSession(ctx context.Context, userID uuid.UUID) error {
 	if m.DeleteActiveSessionFunc != nil {
-		return m.DeleteActiveSessionFunc(userID)
+		return m.DeleteActiveSessionFunc(ctx, userID)
 	}
 	return nil
 }
 
-func (m *mockAnalyticsRepo) UpdateSessionHeartbeat(userID uuid.UUID, lastSeen, expiresAt time.Time) error {
+func (m *mockAnalyticsRepo) UpdateSessionHeartbeat(ctx context.Context, userID uuid.UUID, lastSeen, expiresAt time.Time) error {
 	if m.UpdateSessionHeartbeatFunc != nil {
-		return m.UpdateSessionHeartbeatFunc(userID, lastSeen, expiresAt)
+		return m.UpdateSessionHeartbeatFunc(ctx, userID, lastSeen, expiresAt)
 	}
 	return nil
 }
 
-func (m *mockAnalyticsRepo) CreateSearchEvent(event domain.SearchEvent) error {
+func (m *mockAnalyticsRepo) CreateSearchEvent(ctx context.Context, event domain.SearchEvent) error {
 	if m.CreateSearchEventFunc != nil {
-		return m.CreateSearchEventFunc(event)
+		return m.CreateSearchEventFunc(ctx, event)
 	}
 	return nil
 }
 
-func (m *mockAnalyticsRepo) CreateProfileView(event domain.ProfileView) error {
+func (m *mockAnalyticsRepo) CreateProfileView(ctx context.Context, event domain.ProfileView) error {
 	if m.CreateProfileViewFunc != nil {
-		return m.CreateProfileViewFunc(event)
+		return m.CreateProfileViewFunc(ctx, event)
 	}
 	return nil
 }
 
-func (m *mockAnalyticsRepo) CreatePageView(view domain.PageView) error {
+func (m *mockAnalyticsRepo) CreatePageView(ctx context.Context, view domain.PageView) error {
 	if m.CreatePageViewFunc != nil {
-		return m.CreatePageViewFunc(view)
+		return m.CreatePageViewFunc(ctx, view)
 	}
 	return nil
 }
 
-func (m *mockAnalyticsRepo) CountRecentPageViews(sessionID string, since time.Time) (int64, error) {
+func (m *mockAnalyticsRepo) CountRecentPageViews(ctx context.Context, sessionID string, since time.Time) (int64, error) {
 	if m.CountRecentPageViewsFunc != nil {
-		return m.CountRecentPageViewsFunc(sessionID, since)
+		return m.CountRecentPageViewsFunc(ctx, sessionID, since)
 	}
 	return 0, nil
 }
 
-func (m *mockAnalyticsRepo) GetDashboardStats() (*domain.DashboardStats, error) {
+func (m *mockAnalyticsRepo) GetDashboardStats(ctx context.Context) (*domain.DashboardStats, error) {
 	if m.GetDashboardStatsFunc != nil {
-		return m.GetDashboardStatsFunc()
+		return m.GetDashboardStatsFunc(ctx)
 	}
 	return &domain.DashboardStats{}, nil
 }
 
-func (m *mockAnalyticsRepo) DeletePageViewsOlderThan(cutoff time.Time) error {
+func (m *mockAnalyticsRepo) DeletePageViewsOlderThan(ctx context.Context, cutoff time.Time) error {
 	if m.DeletePageViewsOlderThanFunc != nil {
-		return m.DeletePageViewsOlderThanFunc(cutoff)
+		return m.DeletePageViewsOlderThanFunc(ctx, cutoff)
 	}
 	return nil
 }
 
-func (m *mockAnalyticsRepo) DeleteSearchEventsOlderThan(cutoff time.Time) error {
+func (m *mockAnalyticsRepo) DeleteSearchEventsOlderThan(ctx context.Context, cutoff time.Time) error {
 	if m.DeleteSearchEventsOlderThanFunc != nil {
-		return m.DeleteSearchEventsOlderThanFunc(cutoff)
+		return m.DeleteSearchEventsOlderThanFunc(ctx, cutoff)
 	}
 	return nil
 }
 
-func (m *mockAnalyticsRepo) DeleteProfileViewsOlderThan(cutoff time.Time) error {
+func (m *mockAnalyticsRepo) DeleteProfileViewsOlderThan(ctx context.Context, cutoff time.Time) error {
 	if m.DeleteProfileViewsOlderThanFunc != nil {
-		return m.DeleteProfileViewsOlderThanFunc(cutoff)
+		return m.DeleteProfileViewsOlderThanFunc(ctx, cutoff)
 	}
 	return nil
 }
 
-func (m *mockAnalyticsRepo) DeleteExpiredSessions(now time.Time) error {
+func (m *mockAnalyticsRepo) DeleteExpiredSessions(ctx context.Context, now time.Time) error {
 	if m.DeleteExpiredSessionsFunc != nil {
-		return m.DeleteExpiredSessionsFunc(now)
+		return m.DeleteExpiredSessionsFunc(ctx, now)
 	}
 	return nil
 }
@@ -136,12 +137,12 @@ func TestAnalyticsService_RecordLogin(t *testing.T) {
 		var capturedSession domain.ActiveSession
 
 		repo := &mockAnalyticsRepo{
-			CreateLoginEventFunc: func(event domain.LoginEvent) error {
+			CreateLoginEventFunc: func(ctx context.Context, event domain.LoginEvent) error {
 				loginCalled = true
 				capturedEvent = event
 				return nil
 			},
-			UpsertActiveSessionFunc: func(session domain.ActiveSession) error {
+			UpsertActiveSessionFunc: func(ctx context.Context, session domain.ActiveSession) error {
 				sessionCalled = true
 				capturedSession = session
 				return nil
@@ -167,10 +168,10 @@ func TestAnalyticsService_RecordLogin(t *testing.T) {
 
 	t.Run("error en CreateLoginEvent no panichea", func(t *testing.T) {
 		repo := &mockAnalyticsRepo{
-			CreateLoginEventFunc: func(event domain.LoginEvent) error {
+			CreateLoginEventFunc: func(ctx context.Context, event domain.LoginEvent) error {
 				return errors.New("db connection lost")
 			},
-			UpsertActiveSessionFunc: func(session domain.ActiveSession) error {
+			UpsertActiveSessionFunc: func(ctx context.Context, session domain.ActiveSession) error {
 				return nil
 			},
 		}
@@ -190,7 +191,7 @@ func TestAnalyticsService_RecordLogout(t *testing.T) {
 		var capturedID uuid.UUID
 
 		repo := &mockAnalyticsRepo{
-			DeleteActiveSessionFunc: func(userID uuid.UUID) error {
+			DeleteActiveSessionFunc: func(ctx context.Context, userID uuid.UUID) error {
 				called = true
 				capturedID = userID
 				return nil
@@ -211,7 +212,7 @@ func TestAnalyticsService_HeartbeatSession(t *testing.T) {
 	t.Run("llama a UpdateSessionHeartbeat con tiempos", func(t *testing.T) {
 		var called bool
 		repo := &mockAnalyticsRepo{
-			UpdateSessionHeartbeatFunc: func(userID uuid.UUID, lastSeen, expiresAt time.Time) error {
+			UpdateSessionHeartbeatFunc: func(ctx context.Context, userID uuid.UUID, lastSeen, expiresAt time.Time) error {
 				called = true
 				require.False(t, lastSeen.IsZero(), "lastSeen no debe ser zero")
 				require.False(t, expiresAt.IsZero(), "expiresAt no debe ser zero")
@@ -234,7 +235,7 @@ func TestAnalyticsService_RecordSearch(t *testing.T) {
 		var capturedEvent domain.SearchEvent
 
 		repo := &mockAnalyticsRepo{
-			CreateSearchEventFunc: func(event domain.SearchEvent) error {
+			CreateSearchEventFunc: func(ctx context.Context, event domain.SearchEvent) error {
 				called = true
 				capturedEvent = event
 				return nil
@@ -259,7 +260,7 @@ func TestAnalyticsService_RecordSearch(t *testing.T) {
 	t.Run("userID nil para busquedas anonimas", func(t *testing.T) {
 		var capturedEvent domain.SearchEvent
 		repo := &mockAnalyticsRepo{
-			CreateSearchEventFunc: func(event domain.SearchEvent) error {
+			CreateSearchEventFunc: func(ctx context.Context, event domain.SearchEvent) error {
 				capturedEvent = event
 				return nil
 			},
@@ -279,7 +280,7 @@ func TestAnalyticsService_RecordProfileView(t *testing.T) {
 		var capturedEvent domain.ProfileView
 
 		repo := &mockAnalyticsRepo{
-			CreateProfileViewFunc: func(event domain.ProfileView) error {
+			CreateProfileViewFunc: func(ctx context.Context, event domain.ProfileView) error {
 				called = true
 				capturedEvent = event
 				return nil
@@ -304,7 +305,7 @@ func TestAnalyticsService_RecordPageView(t *testing.T) {
 		var capturedView domain.PageView
 
 		repo := &mockAnalyticsRepo{
-			CreatePageViewFunc: func(view domain.PageView) error {
+			CreatePageViewFunc: func(ctx context.Context, view domain.PageView) error {
 				called = true
 				capturedView = view
 				return nil
@@ -329,26 +330,26 @@ func TestAnalyticsService_RecordPageView(t *testing.T) {
 func TestAnalyticsService_CountRecentPageViews(t *testing.T) {
 	t.Run("retorna count del repo", func(t *testing.T) {
 		repo := &mockAnalyticsRepo{
-			CountRecentPageViewsFunc: func(sessionID string, since time.Time) (int64, error) {
+			CountRecentPageViewsFunc: func(ctx context.Context, sessionID string, since time.Time) (int64, error) {
 				return 42, nil
 			},
 		}
 		svc := NewAnalyticsService(repo)
 
-		count, err := svc.CountRecentPageViews("session1", time.Now().Add(-30*time.Minute))
+		count, err := svc.CountRecentPageViews(context.Background(), "session1", time.Now().Add(-30*time.Minute))
 		require.NoError(t, err)
 		require.Equal(t, int64(42), count)
 	})
 
 	t.Run("propaga error del repo", func(t *testing.T) {
 		repo := &mockAnalyticsRepo{
-			CountRecentPageViewsFunc: func(sessionID string, since time.Time) (int64, error) {
+			CountRecentPageViewsFunc: func(ctx context.Context, sessionID string, since time.Time) (int64, error) {
 				return 0, errors.New("db error")
 			},
 		}
 		svc := NewAnalyticsService(repo)
 
-		_, err := svc.CountRecentPageViews("session1", time.Now())
+		_, err := svc.CountRecentPageViews(context.Background(), "session1", time.Now())
 		require.Error(t, err)
 		require.Equal(t, "db error", err.Error())
 	})
@@ -361,13 +362,13 @@ func TestAnalyticsService_GetDashboardStats(t *testing.T) {
 			ActiveSessionsNow: 5,
 		}
 		repo := &mockAnalyticsRepo{
-			GetDashboardStatsFunc: func() (*domain.DashboardStats, error) {
+			GetDashboardStatsFunc: func(ctx context.Context) (*domain.DashboardStats, error) {
 				return expectedStats, nil
 			},
 		}
 		svc := NewAnalyticsService(repo)
 
-		stats, err := svc.GetDashboardStats()
+		stats, err := svc.GetDashboardStats(context.Background())
 		require.NoError(t, err)
 		require.Equal(t, int64(100), stats.LoginsTotal)
 		require.Equal(t, int64(5), stats.ActiveSessionsNow)
@@ -375,13 +376,13 @@ func TestAnalyticsService_GetDashboardStats(t *testing.T) {
 
 	t.Run("propaga error del repo", func(t *testing.T) {
 		repo := &mockAnalyticsRepo{
-			GetDashboardStatsFunc: func() (*domain.DashboardStats, error) {
+			GetDashboardStatsFunc: func(ctx context.Context) (*domain.DashboardStats, error) {
 				return nil, errors.New("query failed")
 			},
 		}
 		svc := NewAnalyticsService(repo)
 
-		_, err := svc.GetDashboardStats()
+		_, err := svc.GetDashboardStats(context.Background())
 		require.Error(t, err)
 	})
 }
@@ -392,26 +393,26 @@ func TestAnalyticsService_PurgeOldData(t *testing.T) {
 		var loginEventsCalled bool
 
 		repo := &mockAnalyticsRepo{
-			DeletePageViewsOlderThanFunc: func(cutoff time.Time) error {
+			DeletePageViewsOlderThanFunc: func(ctx context.Context, cutoff time.Time) error {
 				pageViewsCalled = true
 				return nil
 			},
-			DeleteSearchEventsOlderThanFunc: func(cutoff time.Time) error {
+			DeleteSearchEventsOlderThanFunc: func(ctx context.Context, cutoff time.Time) error {
 				searchEventsCalled = true
 				return nil
 			},
-			DeleteProfileViewsOlderThanFunc: func(cutoff time.Time) error {
+			DeleteProfileViewsOlderThanFunc: func(ctx context.Context, cutoff time.Time) error {
 				profileViewsCalled = true
 				return nil
 			},
-			CreateLoginEventFunc: func(event domain.LoginEvent) error {
+			CreateLoginEventFunc: func(ctx context.Context, event domain.LoginEvent) error {
 				loginEventsCalled = true
 				return nil
 			},
 		}
 		svc := NewAnalyticsService(repo)
 
-		svc.PurgeOldData(30)
+		svc.PurgeOldData(context.Background(), 30)
 
 		require.True(t, pageViewsCalled, "DeletePageViewsOlderThan debe ser llamado")
 		require.True(t, searchEventsCalled, "DeleteSearchEventsOlderThan debe ser llamado")
@@ -424,7 +425,7 @@ func TestAnalyticsService_CleanExpiredSessions(t *testing.T) {
 	t.Run("llama a DeleteExpiredSessions", func(t *testing.T) {
 		var called bool
 		repo := &mockAnalyticsRepo{
-			DeleteExpiredSessionsFunc: func(now time.Time) error {
+			DeleteExpiredSessionsFunc: func(ctx context.Context, now time.Time) error {
 				called = true
 				require.False(t, now.IsZero(), "now no debe ser zero")
 				return nil
@@ -432,20 +433,20 @@ func TestAnalyticsService_CleanExpiredSessions(t *testing.T) {
 		}
 		svc := NewAnalyticsService(repo)
 
-		svc.CleanExpiredSessions()
+		svc.CleanExpiredSessions(context.Background())
 		require.True(t, called)
 	})
 
 	t.Run("propaga error del repo", func(t *testing.T) {
 		repo := &mockAnalyticsRepo{
-			DeleteExpiredSessionsFunc: func(now time.Time) error {
+			DeleteExpiredSessionsFunc: func(ctx context.Context, now time.Time) error {
 				return errors.New("delete failed")
 			},
 		}
 		svc := NewAnalyticsService(repo)
 
 		require.NotPanics(t, func() {
-			svc.CleanExpiredSessions()
+			svc.CleanExpiredSessions(context.Background())
 		})
 	})
 }
@@ -479,28 +480,28 @@ func TestAnalyticsService_ConcurrentRecordCalls(t *testing.T) {
 	callCount := 0
 
 	repo := &mockAnalyticsRepo{
-		CreateLoginEventFunc: func(event domain.LoginEvent) error {
+		CreateLoginEventFunc: func(ctx context.Context, event domain.LoginEvent) error {
 			mu.Lock()
 			callCount++
 			mu.Unlock()
 			return nil
 		},
-		UpsertActiveSessionFunc: func(session domain.ActiveSession) error {
+		UpsertActiveSessionFunc: func(ctx context.Context, session domain.ActiveSession) error {
 			return nil
 		},
-		CreateSearchEventFunc: func(event domain.SearchEvent) error {
+		CreateSearchEventFunc: func(ctx context.Context, event domain.SearchEvent) error {
 			mu.Lock()
 			callCount++
 			mu.Unlock()
 			return nil
 		},
-		CreatePageViewFunc: func(view domain.PageView) error {
+		CreatePageViewFunc: func(ctx context.Context, view domain.PageView) error {
 			mu.Lock()
 			callCount++
 			mu.Unlock()
 			return nil
 		},
-		CreateProfileViewFunc: func(event domain.ProfileView) error {
+		CreateProfileViewFunc: func(ctx context.Context, event domain.ProfileView) error {
 			mu.Lock()
 			callCount++
 			mu.Unlock()

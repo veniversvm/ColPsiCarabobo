@@ -56,7 +56,11 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 	}
 	defer f.Close()
 
-	rows, _ := f.Rows("BD ColPsiCarabobo 2026")
+	rows, err := f.Rows("BD ColPsiCarabobo 2026")
+	if err != nil {
+		return 0, []map[string]string{{"error": "no se pudo leer la hoja del archivo"}}
+	}
+	defer rows.Close()
 
 	successCount := 0
 	var failedRecords []map[string]string
@@ -77,6 +81,17 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 	rowIdx := 0
 	for rows.Next() {
 		rowIdx++
+
+		// Si el contexto se canceló (timeout del import o request abortada),
+		// abortamos el resto del archivo: cada transacción restante fallaría
+		// igual con el ctx cancelado y solo quemaríamos CPU/lectura.
+		if ctx.Err() != nil {
+			failedRecords = append(failedRecords, map[string]string{
+				"error": "importación cancelada por timeout",
+			})
+			break
+		}
+
 		row, _ := rows.Columns()
 		if rowIdx <= 2 {
 			continue
