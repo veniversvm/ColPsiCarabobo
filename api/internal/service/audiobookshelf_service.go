@@ -184,11 +184,28 @@ func (s *AudiobookshelfService) adminLogin(ctx context.Context) (string, error) 
 // ListUsers lista los usuarios de ABS usando el token del admin. Se usa para
 // comparar contra la base de datos en la sincronización masiva de cuentas.
 func (s *AudiobookshelfService) ListUsers(ctx context.Context) ([]AbsUser, error) {
+	_, users, err := s.ListUsersWithToken(ctx)
+	return users, err
+}
+
+// ListUsersWithToken lista los usuarios de ABS y devuelve el token admin usado
+// para autenticarse. Reutilizar ese token en el resto de la pasada evita hacer
+// un login por operación: el endpoint /login de ABS está limitado por IP y un
+// bucle de aprovisionamiento masivo lo agota (deja cuentas sin crear).
+func (s *AudiobookshelfService) ListUsersWithToken(ctx context.Context) (string, []AbsUser, error) {
 	adminToken, err := s.adminLogin(ctx)
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
+	users, err := s.listUsers(ctx, adminToken)
+	if err != nil {
+		return "", nil, err
+	}
+	return adminToken, users, nil
+}
 
+// listUsers ejecuta GET /api/users con un token admin ya obtenido.
+func (s *AudiobookshelfService) listUsers(ctx context.Context, adminToken string) ([]AbsUser, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.baseURL+"/api/users", nil)
 	if err != nil {
 		return nil, err
@@ -295,6 +312,32 @@ func (s *AudiobookshelfService) createUser(ctx context.Context, adminToken, user
 		return "", false, fmt.Errorf("%w: POST /api/users sin id", ErrAbsUnavailable)
 	}
 	return parsed.User.ID, true, nil
+}
+
+// createUserIfMissing crea la cuenta ABS sin hacer un login previo de sondeo,
+// usando un token admin ya obtenido. Pensada para la sincronización masiva:
+// el listado previo ya indica qué cuentas faltan y un probe por usuario
+// duplicaría los logins (agotando el rate limiter de /login de ABS). Si la
+// cuenta ya existe (carrera con otra pasada o un GetAccess concurrente), se
+// autentica para recuperar el id real.
+func (s *AudiobookshelfService) createUserIfMissing(ctx context.Context, adminToken, username string) (string, bool, error) {
+	password := s.passwordFor(username)
+
+	userID, created, err := s.createUser(ctx, adminToken, username, password)
+	if err != nil {
+		if !strings.Contains(strings.ToLower(err.Error()), "already taken") {
+			return "", false, err
+		}
+	} else if created {
+		return userID, true, nil
+	}
+
+	// Ya existía (conflicto "already taken"): se autentica para obtener su id.
+	user, loginErr := s.login(ctx, username, password)
+	if loginErr != nil {
+		return "", false, loginErr
+	}
+	return user.ID, false, nil
 }
 
 // readBody lee el cuerpo (hasta 4KB) para poder inspeccionar mensajes de error.

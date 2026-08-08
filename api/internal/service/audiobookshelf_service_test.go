@@ -291,6 +291,26 @@ func TestListUsers(t *testing.T) {
 	require.False(t, byName["psi_2222"].IsActive)
 }
 
+func TestCreateUserIfMissing_ConflictReAuths(t *testing.T) {
+	fake := newFakeAbs()
+	fake.adminUser = "colpsi-bot"
+	fake.adminPass = "adminpass"
+
+	svc, _ := buildSvc(t, fake)
+	// El usuario ya existe con la clave derivada (otra pasada lo creó primero).
+	fake.users["psi_12345678"] = svc.passwordFor("psi_12345678")
+	fake.usersActive["psi_12345678"] = true
+	fake.usersIDs["psi_12345678"] = "id-psi_12345678"
+
+	adminToken, err := svc.adminLogin(context.Background())
+	require.NoError(t, err)
+
+	userID, created, err := svc.createUserIfMissing(context.Background(), adminToken, "psi_12345678")
+	require.NoError(t, err)
+	require.False(t, created)
+	require.Equal(t, "id-psi_12345678", userID)
+}
+
 func TestDeactivateUser(t *testing.T) {
 	fake := newFakeAbs()
 	fake.adminUser = "colpsi-bot"

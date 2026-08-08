@@ -122,6 +122,31 @@ func TestSyncAudiobookshelfAccounts_IgnoresNonPsiUsers(t *testing.T) {
 	require.True(t, fake.usersActive["root"])
 }
 
+func TestSyncAudiobookshelfAccounts_NoProbeLogins(t *testing.T) {
+	fake := newFakeAbs()
+	fake.adminUser = "colpsi-bot"
+	fake.adminPass = "adminpass"
+
+	svc, _ := buildSvc(t, fake)
+
+	repo := newMockSyncRepo(
+		domain.PsiUserModel{ID: uuid.New(), CI: 1111, Solvent: true, Credentials: domain.Credentials{IsActive: true}},
+		domain.PsiUserModel{ID: uuid.New(), CI: 2222, Solvent: true, Credentials: domain.Credentials{IsActive: true}},
+		domain.PsiUserModel{ID: uuid.New(), CI: 3333, Solvent: true, Credentials: domain.Credentials{IsActive: true}},
+	)
+
+	psiSvc := &PsiService{repo: repo, absSvc: svc}
+	report, err := psiSvc.SyncAudiobookshelfAccounts(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, 3, report.Created)
+	require.Empty(t, report.Errors)
+
+	// Solo el login del admin para ListUsers; sin probes fallidos ni re-logins
+	// por usuario (un probe por cuenta agotaba el rate limiter de ABS).
+	require.Equal(t, 1, fake.loginCalls)
+	require.Equal(t, 3, fake.createCalls)
+}
+
 func TestSyncAudiobookshelfAccounts_NilAbsSvc(t *testing.T) {
 	repo := newMockSyncRepo(
 		domain.PsiUserModel{ID: uuid.New(), CI: 9999, Solvent: true, Credentials: domain.Credentials{IsActive: true}},

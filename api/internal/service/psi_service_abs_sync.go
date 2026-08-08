@@ -5,10 +5,15 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/rs/zerolog/log"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 )
+
+// absSyncPace espacia las llamadas de creación a ABS en la pasada masiva para
+// no saturar los rate limiters del endpoint /login de Audiobookshelf.
+const absSyncPace = 100 * time.Millisecond
 
 // ABSSyncReport resume el resultado de una sincronización de cuentas ABS.
 type ABSSyncReport struct {
@@ -63,8 +68,10 @@ func (s *PsiService) SyncAudiobookshelfAccounts(ctx context.Context) (*ABSSyncRe
 		desired[fmt.Sprintf("psi_%d", psi.CI)] = psi
 	}
 
-	// 2) Estado real en ABS.
-	absUsers, err := s.absSvc.ListUsers(ctx)
+	// 2) Estado real en ABS. ListUsersWithToken reutiliza el token admin en toda
+	//    la pasada: hacer un login por cuenta agota el rate limiter de /login de
+	//    ABS y deja cuentas sin crear (error silencioso visto en producción).
+	adminToken, absUsers, err := s.absSvc.ListUsersWithToken(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +89,7 @@ func (s *PsiService) SyncAudiobookshelfAccounts(ctx context.Context) (*ABSSyncRe
 			report.Skipped++
 			continue
 		}
-		userID, created, err := s.absSvc.ensureUser(ctx, username)
+		userID, created, err := s.absSvc.createUserIfMissing(ctx, adminToken, username)
 		if err != nil {
 			report.Errors = append(report.Errors, fmt.Sprintf("%s: %v", username, err))
 			continue
@@ -97,6 +104,7 @@ func (s *PsiService) SyncAudiobookshelfAccounts(ctx context.Context) (*ABSSyncRe
 			log.Error().Err(err).Str("component", "psi-abs-sync").
 				Str("id", psi.ID.String()).Msg("Error persistiendo AudioBookShellId en sync")
 		}
+		time.Sleep(absSyncPace)
 	}
 
 	// 4) Desactivar cuentas psi_* que ya no tienen derecho (insolventes,
@@ -128,35 +136,4 @@ func (s *PsiService) SyncAudiobookshelfAccounts(ctx context.Context) (*ABSSyncRe
 		Msg("Sincronización de cuentas Audiobookshelf completada")
 
 	return report, nil
-}
-
-// ensureUser garantiza la cuenta ABS sin devolver la URL de auto-login
-// (variante ligera de GetAccess pensada para la sincronización masiva).
-func (s *AudiobookshelfService) ensureUser(ctx context.Context, username string) (string, bool, error) {
-	password := s.passwordFor(username)
-
-	// Ya existe y la clave derivada es válida.
-	user, err := s.login(ctx, username, password)
-	if err == nil {
-		return user.ID, false, nil
-	}
-
-	adminToken, err := s.adminLogin(ctx)
-	if err != nil {
-		return "", false, err
-	}
-
-	userID, created, err := s.createUser(ctx, adminToken, username, password)
-	if err != nil {
-		if !strings.Contains(strings.ToLower(err.Error()), "already taken") {
-			return "", false, err
-		}
-		// Carrera: otra sync ya la creó. Se autentica para obtener el id.
-		user, loginErr := s.login(ctx, username, password)
-		if loginErr != nil {
-			return "", false, loginErr
-		}
-		return user.ID, false, nil
-	}
-	return userID, created, nil
 }
