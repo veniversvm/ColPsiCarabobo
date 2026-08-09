@@ -41,6 +41,7 @@ Sitio web del Colegio de Psicólogos de Carabobo. Incluye:
 | 12 | `routes/robots.txt.ts` | robots.txt dinámico |
 | 13 | `psi/academico.tsx` | rel noopener noreferrer |
 | 14 | `aaaa[id].tsx` (eliminado) | Dead code removal |
+| 15 | `api/internal/middleware/security_headers.go`, `api/cmd/api/main.go` | Headers de seguridad de la API: HSTS (via `HSTS_MAX_AGE`/`HSTS_PRELOAD`), Permissions-Policy y `Cache-Control: no-store` en auth/admin/psi-me |
 
 ## Comandos (web)
 

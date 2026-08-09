@@ -25,3 +25,6 @@ curl -X POST http://localhost:8080/api/v1/psi/login-library \
     "identifier": "hsabatino1@gmail.com",
     "password": "Colpsi2025!"
   }'
+
+
+  git pull && docker compose up -d --build api

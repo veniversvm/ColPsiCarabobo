@@ -83,7 +83,7 @@ export default function PublicPortal() {
 
             {/* Opción: Inscripción (NUEVA) */}
             <NavCard 
-              title="Trámites e Inscripción" 
+              title="Inscripción" 
               desc="Guía paso a paso y requisitos legales para nuevos agremiados." 
               href="/inscripcion" 
               icon="⚖️" 

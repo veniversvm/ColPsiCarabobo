@@ -72,6 +72,8 @@ swag init -g cmd/api/main.go -o docs/   # regenerar Swagger
    `S3_ENDPOINT`, `S3_PUBLIC_URL`, `APP_ENV`, `VALKEY_ADDR`, `JWT_LIBRARY_SECRET`,
    `ABS_ADMIN_TOKEN`. No usar nombres obsoletos (`AWS_BUCKET`, `AWS_ACCESS_KEY`,
    `GOENV`) — el README anterior los listaba y no existían.
+   Para los headers de seguridad: `HSTS_MAX_AGE` (segundos, default 31536000;
+   HSTS solo se emite sobre HTTPS) y `HSTS_PRELOAD` (bool, default `false`).
    Para la biblioteca virtual (Audiobookshelf): `ABS_BASE_URL` (interna, en Docker
    `http://audiobookshelf:80`, NUNCA la pública), `ABS_PUBLIC_URL` (navegador),
    `ABS_ADMIN_USERNAME/PASSWORD` (admin de aprovisionamiento; en producción se usa

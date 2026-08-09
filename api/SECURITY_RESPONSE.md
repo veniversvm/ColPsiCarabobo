@@ -514,14 +514,28 @@ BodyLimit: 20 * 1024 * 1024,  // 20MB
 ### MED-07 / FIX-24: Missing Security Headers
 
 **Equipo:** ✅ IMPLEMENTADO
-**Estado:** Correcto. Helmet middleware activo.
+**Estado:** Correcto. Middleware `middleware.SecurityHeaders()` activo (wrapper de Helmet).
 
-**Evidencia:** `cmd/api/main.go:188`
+**Evidencia:** `api/internal/middleware/security_headers.go:13`, montado en `cmd/api/main.go:215`
 ```go
-app.Use(helmet.New())
+app.Use(middleware.SecurityHeaders())
 ```
 
-Helmet agrega: `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, `Strict-Transport-Security`, etc.
+Helmet (con defaults de Fiber) agrega: `X-Content-Type-Options: nosniff`,
+`X-Frame-Options: SAMEORIGIN`, `X-XSS-Protection: 0`, `Referrer-Policy: no-referrer`,
+`Cross-Origin-*` y `X-Permitted-Cross-Domain-Policies: none`.
+
+Además, ahora se configuran explícitamente:
+- **HSTS** — `Strict-Transport-Security: max-age=<HSTS_MAX_AGE>; includeSubDomains[; preload]`
+  solo se emite sobre HTTPS (`X-Forwarded-Proto: https` del proxy). `HSTS_MAX_AGE`
+  default 31536000 (1 año); `HSTS_PRELOAD` default `false` (requiere registro previo en hstspreload.org).
+- **Permissions-Policy** — bloquea `geolocation`, `microphone`, `camera`, `usb`,
+  `magnetometer`, `accelerometer` y `gyroscope`.
+- **`Cache-Control: no-store`** — en `/auth`, `/admin`, `/admin/psi`, `/psi/me`,
+  `/psi/login` y `/psi/login-library` vía `middleware.NoStore()`.
+
+Cubierto por tests: `TestSecurity_Headers_Present`, `TestSecurity_HSTS_OverHTTPS`,
+`TestSecurity_NoStore_OnSensitiveEndpoints` (integration) y `middleware/security_headers_test.go`.
 
 ---
 
