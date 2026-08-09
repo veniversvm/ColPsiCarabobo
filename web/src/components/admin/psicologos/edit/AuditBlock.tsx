@@ -9,11 +9,7 @@ interface Props {
 
 export function AuditBlock(props: Props) {
   return (
-    <section class="bg-gray-50 rounded-3xl p-6 shadow-inner border border-gray-200 mt-8">
-      <h2 class="text-sm font-black text-gray-500 mb-5 uppercase tracking-widest">
-        Información de Auditoría (Solo Lectura)
-      </h2>
-
+    <div>
       {/* Postgrados */}
       <div class="bg-white p-5 rounded-2xl border border-gray-100 mb-4">
         <h3 class="text-xs font-bold text-blue-800 mb-3">
@@ -57,6 +53,6 @@ export function AuditBlock(props: Props) {
           </p>
         </div>
       </div>
-    </section>
+    </div>
   );
 }

@@ -816,6 +816,38 @@ func (r *psiRepo) CountSocialNetworksByPsiID(ctx context.Context, psiID uuid.UUI
 	return count, err
 }
 
+// =========================================================================
+// EXPEDIENTE DEONTOLÓGICO
+// =========================================================================
+
+// CreateDeontologia registra una nueva entrada del expediente deontológico.
+func (r *psiRepo) CreateDeontologia(ctx context.Context, entry *domain.PsiODeontologia) error {
+	return r.db.WithContext(ctx).Create(entry).Error
+}
+
+// ListDeontologiaByPsiID recupera las entradas deontológicas de un psicólogo,
+// ordenadas de la más reciente a la más antigua.
+func (r *psiRepo) ListDeontologiaByPsiID(ctx context.Context, psiID uuid.UUID) ([]domain.PsiODeontologia, error) {
+	var entries []domain.PsiODeontologia
+	err := r.db.WithContext(ctx).
+		Where("psi_user_id = ?", psiID).
+		Order("created_at DESC").
+		Find(&entries).Error
+	return entries, err
+}
+
+// GetDeontologiaByID busca una entrada deontológica específica por su UUID.
+func (r *psiRepo) GetDeontologiaByID(ctx context.Context, id uuid.UUID) (*domain.PsiODeontologia, error) {
+	var entry domain.PsiODeontologia
+	err := r.db.WithContext(ctx).First(&entry, "id = ?", id).Error
+	return &entry, err
+}
+
+// DeleteDeontologia elimina lógicamente (Soft Delete) una entrada deontológica.
+func (r *psiRepo) DeleteDeontologia(ctx context.Context, id uuid.UUID) error {
+	return r.db.WithContext(ctx).Delete(&domain.PsiODeontologia{}, "id = ?", id).Error
+}
+
 // GetTextContentByID recupera el contenido de un TextModel dado su UUID.
 // Usamos Select("content") para no traer toda la estructura de auditoría si no es necesaria,
 // optimizando la transferencia de datos desde Postgres.

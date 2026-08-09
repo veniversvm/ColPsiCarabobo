@@ -36,4 +36,8 @@ var (
 	ErrUniqueViolation = errors.New("registro duplicado")
 	// ErrSudoExists is returned when a SUDO user already exists.
 	ErrSudoExists = errors.New("ya existe un usuario SUDO")
+	// ErrInvalidRequest is returned when a request payload fails basic validation.
+	ErrInvalidRequest = errors.New("solicitud inválida")
+	// ErrDeontologiaNotFound is returned when a deontological record cannot be found.
+	ErrDeontologiaNotFound = errors.New("entrada deontológica no encontrada")
 )

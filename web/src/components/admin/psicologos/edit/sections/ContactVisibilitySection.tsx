@@ -1,7 +1,7 @@
 // web/src/components/admin/psicologos/edit/sections/ContactVisibilitySection.tsx
 
 import { ToggleSwitch } from "~/components/ui/ToggleSwitch";
-import { Field, IC, SectionCard } from "../EditPrimitives";
+import { Field, IC } from "../EditPrimitives";
 import type { EditFormState } from "../types";
 
 interface Props {
@@ -11,8 +11,7 @@ interface Props {
 
 export function ContactVisibilitySection(props: Props) {
   return (
-    <SectionCard title="Gestión de Contacto y Privacidad" accent="border-colpsi-blue">
-      <div class="space-y-8">
+    <div class="space-y-8">
         
         {/* ── SECCIÓN A: CONTACTO INTERNO (GREMIO) ── */}
         <div>
@@ -102,6 +101,5 @@ export function ContactVisibilitySection(props: Props) {
         </div>
 
       </div>
-    </SectionCard>
   );
 }

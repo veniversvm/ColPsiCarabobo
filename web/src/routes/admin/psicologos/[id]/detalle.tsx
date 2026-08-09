@@ -14,7 +14,9 @@ import { apiGet } from "~/lib/api";
 import {
   EditPageHeader,
   EditAlert,
+  CollapsibleSection,
   SocialNetworksBlock,
+  DeontologiaBlock,
   AuditBlock,
   AccountSection,
   AdminStatusSection,
@@ -24,7 +26,7 @@ import {
   ProfessionalSection,
   AcademicSection,
 } from "~/components/admin/psicologos/edit";
-import type { EditFormState } from "~/components/admin/psicologos/edit";
+import type { EditFormState, DeontologiaEntry } from "~/components/admin/psicologos/edit";
 import { SolvenciesSection } from "~/components/admin/psicologos/edit/SolvenciesSection";
 
 // ─── Server Actions ───────────────────────────────────────────────────────────
@@ -69,6 +71,26 @@ const resetPasswordServer = action(async (id: string) => {
   const { apiPost } = await import("~/lib/api");
   return await apiPost(`/admin/psi/${id}/reset-password`, {});
 });
+
+const addDeontologiaServer = action(
+  async (params: { id: string; content: string }) => {
+    "use server";
+    const { apiPost } = await import("~/lib/api");
+    return await apiPost(`/admin/psi/${params.id}/deontologia`, {
+      content: params.content,
+    });
+  },
+);
+
+const deleteDeontologiaServer = action(
+  async (params: { psiId: string; entryId: string }) => {
+    "use server";
+    const { apiDelete } = await import("~/lib/api");
+    return await apiDelete(
+      `/admin/psi/${params.psiId}/deontologia/${params.entryId}`,
+    );
+  },
+);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -115,6 +137,9 @@ export default function AdminEditPsiPage() {
     apiGet<any>(`/admin/psi/${params.id}`),
   );
   const [workAreas] = createResource(() => apiGet<any[]>("/specialties"));
+  const [deontologia, { refetch: refetchDeontologia }] = createResource(
+    () => apiGet<DeontologiaEntry[]>(`/admin/psi/${params.id}/deontologia`),
+  );
 
   const [form, setForm] = createStore<EditFormState>({} as EditFormState);
   const [saving, setSaving] = createSignal(false);
@@ -371,32 +396,46 @@ export default function AdminEditPsiPage() {
             onResetPassword={handleResetPassword}
             resettingPassword={resettingPassword()}
           />
-          <AdminStatusSection form={form} setForm={set} />
+          <CollapsibleSection title="Estatus Administrativo" accent="border-yellow-400">
+            <AdminStatusSection form={form} setForm={set} />
+          </CollapsibleSection>
 
-          <SolvenciesSection
-            solvencies={form.solvencies}
-            onAddLocalSolvency={(year) => {
-              const newSolv = { date: `${year}-12-31T00:00:00Z` };
-              set("solvencies", [...form.solvencies, newSolv]);
-            }}
-          />
+          <CollapsibleSection title="Historial de Solvencias" accent="border-emerald-400">
+            <SolvenciesSection
+              solvencies={form.solvencies}
+              onAddLocalSolvency={(year) => {
+                const newSolv = { date: `${year}-12-31T00:00:00Z` };
+                set("solvencies", [...form.solvencies, newSolv]);
+              }}
+            />
+          </CollapsibleSection>
 
-          <LegalIdentitySection form={form} setForm={set} />
-          <ContactVisibilitySection form={form} setForm={set} />
-          <LocationSection form={form} setForm={set} />
-          <ProfessionalSection
-            form={form}
-            setForm={set}
-            workAreas={workAreas()}
-          />
+          <CollapsibleSection title="Identidad Legal">
+            <LegalIdentitySection form={form} setForm={set} />
+          </CollapsibleSection>
+          <CollapsibleSection title="Gestión de Contacto y Privacidad" accent="border-colpsi-blue">
+            <ContactVisibilitySection form={form} setForm={set} />
+          </CollapsibleSection>
+          <CollapsibleSection title="Ubicación Geográfica y Privacidad" accent="border-indigo-400">
+            <LocationSection form={form} setForm={set} />
+          </CollapsibleSection>
+          <CollapsibleSection title="Perfil Profesional">
+            <ProfessionalSection
+              form={form}
+              setForm={set}
+              workAreas={workAreas()}
+            />
+          </CollapsibleSection>
 
           {/* Se pasan los estados de archivos a AcademicSection */}
-          <AcademicSection
-            form={form}
-            setForm={set}
-            files={files()}
-            setFiles={setFiles}
-          />
+          <CollapsibleSection title="Expediente Académico y Gremial" accent="border-colpsi-blue">
+            <AcademicSection
+              form={form}
+              setForm={set}
+              files={files()}
+              setFiles={setFiles}
+            />
+          </CollapsibleSection>
 
           <div class="sticky bottom-10 z-50 flex justify-end max-w-5xl mx-auto px-4">
             <button
@@ -415,23 +454,47 @@ export default function AdminEditPsiPage() {
           </div>
         </form>
 
-        <SocialNetworksBlock
-          profile={profile()}
-          onAdd={async (p) => {
-            const id = params.id ?? "";
-            if (!id) return;
-            await addSocialServer({ id, payload: p });
-            refetch();
-          }}
-          onDelete={async (sid) => {
-            const id = params.id ?? "";
-            if (!id || !confirm("¿Eliminar?")) return;
-            await deleteSocialServer({ psiId: id, socialId: sid });
-            refetch();
-          }}
-        />
+        <div class="mt-8 space-y-8">
+          <CollapsibleSection title="Presencia Digital / Redes Sociales" accent="border-gray-300">
+            <SocialNetworksBlock
+              profile={profile()}
+              onAdd={async (p) => {
+                const id = params.id ?? "";
+                if (!id) return;
+                await addSocialServer({ id, payload: p });
+                refetch();
+              }}
+              onDelete={async (sid) => {
+                const id = params.id ?? "";
+                if (!id || !confirm("¿Eliminar?")) return;
+                await deleteSocialServer({ psiId: id, socialId: sid });
+                refetch();
+              }}
+            />
+          </CollapsibleSection>
 
-        <AuditBlock profile={profile()} />
+          <CollapsibleSection title="Expediente Deontológico" accent="border-gray-300">
+            <DeontologiaBlock
+              entries={deontologia()}
+              onAdd={async (content) => {
+                const id = params.id ?? "";
+                if (!id) return;
+                await addDeontologiaServer({ id, content });
+                refetchDeontologia();
+              }}
+              onDelete={async (entryId) => {
+                const id = params.id ?? "";
+                if (!id || !confirm("¿Eliminar esta entrada deontológica?")) return;
+                await deleteDeontologiaServer({ psiId: id, entryId });
+                refetchDeontologia();
+              }}
+            />
+          </CollapsibleSection>
+
+          <CollapsibleSection title="Información de Auditoría (Solo Lectura)" accent="border-gray-400">
+            <AuditBlock profile={profile()} />
+          </CollapsibleSection>
+        </div>
       </Suspense>
     </main>
   );

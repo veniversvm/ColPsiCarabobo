@@ -3,7 +3,7 @@
 import { Show } from "solid-js";
 import { ToggleSwitch } from "~/components/ui/ToggleSwitch";
 import { MUNICIPIOS_CARABOBO, ESTADOS_VENEZUELA } from "~/lib/geo";
-import { Field, IC, SectionCard } from "../EditPrimitives";
+import { Field, IC } from "../EditPrimitives";
 import type { EditFormState } from "../types";
 
 interface Props {
@@ -19,8 +19,7 @@ export function LocationSection(props: Props) {
     props.form.state_outside && !ESTADOS_VENEZUELA.includes(props.form.state_outside);
 
   return (
-    <SectionCard title="Ubicación Geográfica y Privacidad" accent="border-indigo-400">
-      <div class="space-y-12">
+    <div class="space-y-12">
 
         {/* ── 1. CARABOBO ────────────────────────────────────────────────── */}
         <div class="space-y-6">
@@ -189,6 +188,5 @@ export function LocationSection(props: Props) {
         </div>
 
       </div>
-    </SectionCard>
   );
 }

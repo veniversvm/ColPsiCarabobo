@@ -53,6 +53,7 @@ func setupFullTestDB(t *testing.T) *gorm.DB {
 		&domain.PsiUserSocialNetwork{},
 		&domain.PsiSpecialtyModel{},
 		&domain.PsiUserSolvency{},
+		&domain.PsiODeontologia{},
 	)
 	require.NoError(t, err)
 
@@ -60,6 +61,7 @@ func setupFullTestDB(t *testing.T) *gorm.DB {
 	db.Exec("TRUNCATE TABLE psi_user_social_networks RESTART IDENTITY CASCADE")
 	db.Exec("TRUNCATE TABLE psi_user_post_grades RESTART IDENTITY CASCADE")
 	db.Exec("TRUNCATE TABLE psi_user_col_data RESTART IDENTITY CASCADE")
+	db.Exec("TRUNCATE TABLE psi_deontologia RESTART IDENTITY CASCADE")
 	db.Exec("TRUNCATE TABLE psi_users RESTART IDENTITY CASCADE")
 	db.Exec("TRUNCATE TABLE text_models RESTART IDENTITY CASCADE")
 	db.Exec("TRUNCATE TABLE psi_specialty_models RESTART IDENTITY CASCADE")
@@ -548,5 +550,60 @@ func TestPsiRepo_ComprehensiveSuite(t *testing.T) {
 		require.True(t, found[14000].Solvent)
 		require.False(t, found[15000].Solvent)
 		require.True(t, found[16000].DeletedAt.Valid, "soft-deleted debe traer DeletedAt poblado")
+	})
+
+	t.Run("Deontologia CRUD", func(t *testing.T) {
+		tx := mainDB.Begin()
+		defer tx.Rollback()
+		r := NewPsiRepository(tx)
+
+		// TextModel es una Foreign Key obligatoria (BioTextID) para PsiUserModel.
+		bio := domain.TextModel{ID: uuid.New(), Content: ""}
+		require.NoError(t, tx.Create(&bio).Error)
+
+		psi := domain.PsiUserModel{
+			ID: uuid.New(), CI: 20000, FPV: 20000, BornDate: time.Now(),
+			Genre: "M", Nationality: "V", ContactEmail: "deon@t.com", ContactPhone: "2020",
+			FirstName: "Deon", LastName: "Prueba", BioTextID: bio.ID, AudioBookShellId: "abs_deon",
+			Credentials: domain.Credentials{Username: "deon", Email: "deon@t.com", IsActive: true},
+		}
+		require.NoError(t, tx.Create(&psi).Error)
+
+		// Crear dos entradas
+		e1 := domain.PsiODeontologia{ID: uuid.New(), PsiUserID: psi.ID, Content: "Primera entrada"}
+		e2 := domain.PsiODeontologia{ID: uuid.New(), PsiUserID: psi.ID, Content: "Segunda entrada"}
+		require.NoError(t, r.CreateDeontologia(ctx, &e1))
+		require.NoError(t, r.CreateDeontologia(ctx, &e2))
+
+		// Listar: ambas presentes, la más reciente primero
+		entries, err := r.ListDeontologiaByPsiID(ctx, psi.ID)
+		require.NoError(t, err)
+		require.Len(t, entries, 2)
+		require.Equal(t, "Segunda entrada", entries[0].Content)
+
+		// GetDeontologiaByID
+		fetched, err := r.GetDeontologiaByID(ctx, e1.ID)
+		require.NoError(t, err)
+		require.Equal(t, "Primera entrada", fetched.Content)
+
+		// Delete (soft): ya no aparece en el listado
+		require.NoError(t, r.DeleteDeontologia(ctx, e1.ID))
+		entries, err = r.ListDeontologiaByPsiID(ctx, psi.ID)
+		require.NoError(t, err)
+		require.Len(t, entries, 1)
+
+		// Aislamiento entre psicólogos: otro psi no ve estas entradas
+		otherPsi := domain.PsiUserModel{
+			ID: uuid.New(), CI: 20001, FPV: 20001, BornDate: time.Now(),
+			Genre: "F", Nationality: "V", ContactEmail: "deon2@t.com", ContactPhone: "2021",
+			FirstName: "Otra", LastName: "Prueba", BioTextID: bio.ID, AudioBookShellId: "abs_deon2",
+			Credentials: domain.Credentials{Username: "deon2", Email: "deon2@t.com", IsActive: true},
+		}
+		require.NoError(t, tx.Create(&otherPsi).Error)
+		other := domain.PsiODeontologia{ID: uuid.New(), PsiUserID: otherPsi.ID, Content: "De otro"}
+		require.NoError(t, r.CreateDeontologia(ctx, &other))
+		entries, err = r.ListDeontologiaByPsiID(ctx, psi.ID)
+		require.NoError(t, err)
+		require.Len(t, entries, 1)
 	})
 }
