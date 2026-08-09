@@ -96,7 +96,7 @@ type DashboardStats struct {
 	PageViewsTotal      int64       `json:"page_views_total"`
 	PageViewsToday      int64       `json:"page_views_today"`
 	PageViewsThisWeek   int64       `json:"page_views_this_week"`
-	UniqueVisitorsToday int64       `json:"unique_users_today_page"`
+	UniqueVisitorsToday int64       `json:"unique_visitors_today"`
 	UniqueVisitorsWeek  int64       `json:"unique_visitors_week"`
 	SearchesTotal       int64       `json:"searches_total"`
 	SearchesToday       int64       `json:"searches_today"`

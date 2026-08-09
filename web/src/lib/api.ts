@@ -45,7 +45,7 @@ export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): 
   if (token) headers.set("Authorization", `Bearer ${token}`);
 
   try {
-    const response = await fetch(url, { ...options, headers });
+    const response = await fetch(url, { ...options, headers, credentials: options.credentials ?? "include" });
 
     if (!response.ok) {
       let errorData: any = null;
