@@ -64,6 +64,10 @@ func init() {
 	}
 }
 
+// testBrowserUA es un User-Agent realista para requests que deben pasar el
+// filtro de datos (los bots y UA vacíos se excluyen del tracking).
+const testBrowserUA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+
 // =========================================================================
 // TEST: shouldSkip (función pura)
 // =========================================================================
@@ -93,6 +97,88 @@ func TestShouldSkip(t *testing.T) {
 			result := shouldSkip(tc.path)
 			if result != tc.expect {
 				t.Errorf("shouldSkip(%q) = %v, want %v", tc.path, result, tc.expect)
+			}
+		})
+	}
+}
+
+// =========================================================================
+// TEST: isBotUA (función pura)
+// =========================================================================
+
+func TestIsBotUA(t *testing.T) {
+	tests := []struct {
+		name      string
+		userAgent string
+		expect    bool
+	}{
+		{
+			name:      "Googlebot detectado",
+			userAgent: "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+			expect:    true,
+		},
+		{
+			name:      "Bingbot detectado",
+			userAgent: "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)",
+			expect:    true,
+		},
+		{
+			name:      "AhrefsBot detectado",
+			userAgent: "Mozilla/5.0 (compatible; AhrefsBot/7.0; +http://ahrefs.com/robot/)",
+			expect:    true,
+		},
+		{
+			name:      "GPTBot detectado",
+			userAgent: "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; GPTBot/1.0; +https://openai.com/gptbot",
+			expect:    true,
+		},
+		{
+			name:      "Facebook external hit detectado",
+			userAgent: "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
+			expect:    true,
+		},
+		{
+			name:      "curl detectado",
+			userAgent: "curl/8.5.0",
+			expect:    true,
+		},
+		{
+			name:      "UA vacío considerado bot",
+			userAgent: "",
+			expect:    true,
+		},
+		{
+			name:      "UA solo con espacios considerado bot",
+			userAgent: "   ",
+			expect:    true,
+		},
+		{
+			name:      "Chrome real no es bot",
+			userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+			expect:    false,
+		},
+		{
+			name:      "Firefox real no es bot",
+			userAgent: "Mozilla/5.0 (X11; Linux x86_64; rv:127.0) Gecko/20100101 Firefox/127.0",
+			expect:    false,
+		},
+		{
+			name:      "Safari iOS real no es bot",
+			userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1",
+			expect:    false,
+		},
+		{
+			name:      "subcadena dentro de otro token detectada",
+			userAgent: "Mozilla/5.0 (compatible; NotGooglebot/1.0; +http://example.com/)",
+			expect:    true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result := isBotUA(tc.userAgent)
+			if result != tc.expect {
+				t.Errorf("isBotUA(%q) = %v, want %v", tc.userAgent, result, tc.expect)
 			}
 		})
 	}
@@ -204,6 +290,7 @@ func TestAnalyticsMiddleware(t *testing.T) {
 		})
 
 		req := httptest.NewRequest("GET", "/api/users", nil)
+		req.Header.Set("User-Agent", testBrowserUA)
 		resp, err := app.Test(req)
 		if err != nil {
 			t.Fatalf("app.Test error: %v", err)
@@ -241,6 +328,7 @@ func TestAnalyticsMiddleware(t *testing.T) {
 
 		req := httptest.NewRequest("GET", "/api/users", nil)
 		req.Header.Set("Cookie", "_sid="+existingSID)
+		req.Header.Set("User-Agent", testBrowserUA)
 		app.Test(req)
 		time.Sleep(50 * time.Millisecond)
 
@@ -272,6 +360,7 @@ func TestAnalyticsMiddleware(t *testing.T) {
 
 		req := httptest.NewRequest("GET", "/api/psi/profile", nil)
 		req.Header.Set("Referer", "https://google.com")
+		req.Header.Set("User-Agent", testBrowserUA)
 		app.Test(req)
 		time.Sleep(50 * time.Millisecond)
 
@@ -311,12 +400,14 @@ func TestAnalyticsMiddleware(t *testing.T) {
 		// Primera request con cookie
 		req1 := httptest.NewRequest("GET", "/api/users", nil)
 		req1.Header.Set("Cookie", "_sid="+sid)
+		req1.Header.Set("User-Agent", testBrowserUA)
 		app.Test(req1)
 		time.Sleep(50 * time.Millisecond)
 
 		// Segunda request con misma cookie (debouncing debería activarse)
 		req2 := httptest.NewRequest("GET", "/api/users", nil)
 		req2.Header.Set("Cookie", "_sid="+sid)
+		req2.Header.Set("User-Agent", testBrowserUA)
 		app.Test(req2)
 		time.Sleep(50 * time.Millisecond)
 
@@ -356,6 +447,7 @@ func TestAnalyticsMiddleware(t *testing.T) {
 		// Primera request
 		req1 := httptest.NewRequest("GET", "/api/users", nil)
 		req1.Header.Set("Cookie", "_sid="+sid)
+		req1.Header.Set("User-Agent", testBrowserUA)
 		app.Test(req1)
 		time.Sleep(50 * time.Millisecond)
 
@@ -363,6 +455,7 @@ func TestAnalyticsMiddleware(t *testing.T) {
 		// ya que la ventana de 30 min ya pasó
 		req2 := httptest.NewRequest("GET", "/api/users", nil)
 		req2.Header.Set("Cookie", "_sid="+sid)
+		req2.Header.Set("User-Agent", testBrowserUA)
 		app.Test(req2)
 		time.Sleep(50 * time.Millisecond)
 
@@ -404,6 +497,7 @@ func TestAnalyticsMiddleware(t *testing.T) {
 		)
 
 		req := httptest.NewRequest("GET", "/api/profile", nil)
+		req.Header.Set("User-Agent", testBrowserUA)
 		app.Test(req)
 		time.Sleep(50 * time.Millisecond)
 
@@ -438,6 +532,7 @@ func TestAnalyticsMiddleware(t *testing.T) {
 		})
 
 		req := httptest.NewRequest("GET", "/api/directory", nil)
+		req.Header.Set("User-Agent", testBrowserUA)
 		app.Test(req)
 		time.Sleep(50 * time.Millisecond)
 
@@ -445,6 +540,112 @@ func TestAnalyticsMiddleware(t *testing.T) {
 		defer mu.Unlock()
 		if capturedView.UserID != nil {
 			t.Errorf("UserID debería ser nil para usuario anónimo, got %v", *capturedView.UserID)
+		}
+	})
+}
+
+// TestAnalyticsMiddleware_BotSkip verifica que un User-Agent de bot no registra
+// page views ni genera cookie de sesión (es el origen del ruido: los bots no
+// persisten cookies, así que cada request contaba como "visita nueva").
+func TestAnalyticsMiddleware_BotSkip(t *testing.T) {
+	t.Run("Googlebot no registra ni crea _sid", func(t *testing.T) {
+		repo := &mockAnalyticsRepoForMiddleware{}
+		svc := service.NewAnalyticsService(repo)
+		var createCount int64
+
+		repo.CountRecentPageViewsFunc = func(ctx context.Context, sessionID string, since time.Time) (int64, error) {
+			return 0, nil
+		}
+		repo.CreatePageViewFunc = func(ctx context.Context, view domain.PageView) error {
+			atomic.AddInt64(&createCount, 1)
+			return nil
+		}
+
+		app := fiber.New()
+		app.Get("/api/users", AnalyticsMiddleware(svc), func(c *fiber.Ctx) error {
+			return c.JSON(fiber.Map{"ok": true})
+		})
+
+		req := httptest.NewRequest("GET", "/api/users", nil)
+		req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)")
+		resp, err := app.Test(req)
+		if err != nil {
+			t.Fatalf("app.Test error: %v", err)
+		}
+		time.Sleep(50 * time.Millisecond)
+
+		if atomic.LoadInt64(&createCount) != 0 {
+			t.Error("Googlebot no debería registrar page views")
+		}
+		if len(resp.Header.Values("Set-Cookie")) != 0 {
+			t.Error("Googlebot no debería recibir cookie _sid")
+		}
+	})
+
+	t.Run("UA vacío no registra ni crea _sid", func(t *testing.T) {
+		repo := &mockAnalyticsRepoForMiddleware{}
+		svc := service.NewAnalyticsService(repo)
+		var createCount int64
+
+		repo.CountRecentPageViewsFunc = func(ctx context.Context, sessionID string, since time.Time) (int64, error) {
+			return 0, nil
+		}
+		repo.CreatePageViewFunc = func(ctx context.Context, view domain.PageView) error {
+			atomic.AddInt64(&createCount, 1)
+			return nil
+		}
+
+		app := fiber.New()
+		app.Get("/api/users", AnalyticsMiddleware(svc), func(c *fiber.Ctx) error {
+			return c.JSON(fiber.Map{"ok": true})
+		})
+
+		req := httptest.NewRequest("GET", "/api/users", nil)
+		resp, err := app.Test(req)
+		if err != nil {
+			t.Fatalf("app.Test error: %v", err)
+		}
+		time.Sleep(50 * time.Millisecond)
+
+		if atomic.LoadInt64(&createCount) != 0 {
+			t.Error("UA vacío no debería registrar page views")
+		}
+		if len(resp.Header.Values("Set-Cookie")) != 0 {
+			t.Error("UA vacío no debería recibir cookie _sid")
+		}
+	})
+
+	t.Run("navegador real sí registra y crea _sid", func(t *testing.T) {
+		repo := &mockAnalyticsRepoForMiddleware{}
+		svc := service.NewAnalyticsService(repo)
+		var createCount int64
+
+		repo.CountRecentPageViewsFunc = func(ctx context.Context, sessionID string, since time.Time) (int64, error) {
+			return 0, nil
+		}
+		repo.CreatePageViewFunc = func(ctx context.Context, view domain.PageView) error {
+			atomic.AddInt64(&createCount, 1)
+			return nil
+		}
+
+		app := fiber.New()
+		app.Get("/api/users", AnalyticsMiddleware(svc), func(c *fiber.Ctx) error {
+			return c.JSON(fiber.Map{"ok": true})
+		})
+
+		req := httptest.NewRequest("GET", "/api/users", nil)
+		req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
+		resp, err := app.Test(req)
+		if err != nil {
+			t.Fatalf("app.Test error: %v", err)
+		}
+		time.Sleep(50 * time.Millisecond)
+
+		if atomic.LoadInt64(&createCount) != 1 {
+			t.Errorf("Chrome real debería registrar 1 page view, got %d", atomic.LoadInt64(&createCount))
+		}
+		if len(resp.Header.Values("Set-Cookie")) == 0 {
+			t.Error("Chrome real debería recibir cookie _sid")
 		}
 	})
 }
