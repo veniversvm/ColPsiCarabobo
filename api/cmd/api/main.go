@@ -15,13 +15,13 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/healthcheck"
-	"github.com/gofiber/fiber/v2/middleware/helmet"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	fiberRecover "github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
 	_ "github.com/veniversvm/ColPsiCarabobo/api/docs"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/config"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/logger"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/middleware"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/repository/postgres"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/router"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/service"
@@ -212,7 +212,7 @@ func main() {
 		},
 	}))
 
-	app.Use(helmet.New())
+	app.Use(middleware.SecurityHeaders())
 
 	app.Use(compress.New(compress.Config{
 		Level: compress.LevelDefault,

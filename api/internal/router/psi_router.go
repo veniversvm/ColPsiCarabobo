@@ -35,7 +35,7 @@ func SetupPsiRoutes(router fiber.Router, psiRepo domain.PsiUserRepository, admin
 	// =========================================================================
 	// ZONA 1: ADMINISTRACIÓN
 	// =========================================================================
-	adminGroup := router.Group("/admin/psi", authMid.ProtectedAdmin404())
+	adminGroup := router.Group("/admin/psi", middleware.NoStore(), authMid.ProtectedAdmin404())
 
 	adminGroup.Get("/list", h.ListAllPsis)
 
@@ -56,7 +56,7 @@ func SetupPsiRoutes(router fiber.Router, psiRepo domain.PsiUserRepository, admin
 	// =========================================================================
 	// ZONA 2: AUTOGESTIÓN
 	// =========================================================================
-	meGroup := router.Group("/psi/me", authMid.ProtectedPsiUser())
+	meGroup := router.Group("/psi/me", middleware.NoStore(), authMid.ProtectedPsiUser())
 
 	meGroup.Get("/", h.GetMe)
 	meGroup.Get("/audiobookshelf", h.GetAudiobookshelfAccess)
@@ -77,8 +77,8 @@ func SetupPsiRoutes(router fiber.Router, psiRepo domain.PsiUserRepository, admin
 	psiGroup.Get("/public/sitemap-data", h.GetSitemapData)
 
 	// Login con rate limiting — 10 intentos por IP cada 15 minutos
-	psiGroup.Post("/login", middleware.AuthRateLimiter(), h.Login)
-	psiGroup.Post("/login-library", middleware.AuthRateLimiter(), h.LoginLibrary)
+	psiGroup.Post("/login", middleware.NoStore(), middleware.AuthRateLimiter(), h.Login)
+	psiGroup.Post("/login-library", middleware.NoStore(), middleware.AuthRateLimiter(), h.LoginLibrary)
 	psiGroup.Get("/directory", h.SearchDirectory)
 	psiGroup.Get("/:id", h.GetPublicProfile)
 }

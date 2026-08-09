@@ -461,7 +461,41 @@ func TestSecurity_Headers_Present(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 
-	require.NotEmpty(t, resp.Header.Get("X-Content-Type-Options"))
+	require.Equal(t, "nosniff", resp.Header.Get("X-Content-Type-Options"))
+	require.Equal(t, "SAMEORIGIN", resp.Header.Get("X-Frame-Options"))
+	require.Equal(t, "no-referrer", resp.Header.Get("Referrer-Policy"))
+	require.Equal(t, "none", resp.Header.Get("X-Permitted-Cross-Domain-Policies"))
+	require.NotEmpty(t, resp.Header.Get("Permissions-Policy"))
+	require.NotEmpty(t, resp.Header.Get("Cross-Origin-Embedder-Policy"))
+	require.NotEmpty(t, resp.Header.Get("Cross-Origin-Opener-Policy"))
+
+	require.Empty(t, resp.Header.Get("Strict-Transport-Security"),
+		"HSTS no debe emitirse sobre HTTP (solo HTTPS)")
+}
+
+func TestSecurity_HSTS_OverHTTPS(t *testing.T) {
+	truncateAll(t)
+	app := buildTestApp(testDB)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/specialties/", nil)
+	req.Header.Set("X-Forwarded-Proto", "https")
+	resp, err := app.Test(req)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	hsts := resp.Header.Get("Strict-Transport-Security")
+	require.Contains(t, hsts, "max-age=31536000")
+	require.Contains(t, hsts, "includeSubDomains")
+}
+
+func TestSecurity_NoStore_OnSensitiveEndpoints(t *testing.T) {
+	truncateAll(t)
+	app := buildTestApp(testDB)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/admin/list", nil)
+	resp, err := app.Test(req)
+	require.NoError(t, err)
+	require.Equal(t, "no-store", resp.Header.Get("Cache-Control"))
 }
 
 // =========================================================================

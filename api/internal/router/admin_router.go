@@ -28,7 +28,7 @@ func SetupAdminRoutes(router fiber.Router, adminRepo domain.UserAdminRepository,
 	// =========================================================================
 	// RUTAS PÚBLICAS
 	// =========================================================================
-	auth := router.Group("/auth")
+	auth := router.Group("/auth", middleware.NoStore())
 
 	// Login de admin con rate limiting — 5 intentos por IP cada 30 minutos
 	auth.Post("/login", middleware.AdminAuthRateLimiter(), h.Login)
@@ -36,7 +36,7 @@ func SetupAdminRoutes(router fiber.Router, adminRepo domain.UserAdminRepository,
 	// =========================================================================
 	// RUTAS PROTEGIDAS
 	// =========================================================================
-	admin := router.Group("/admin", authMid.ProtectedAdmin404())
+	admin := router.Group("/admin", middleware.NoStore(), authMid.ProtectedAdmin404())
 
 	// Logout — requiere sesión activa
 	admin.Post("/logout", h.Logout)
