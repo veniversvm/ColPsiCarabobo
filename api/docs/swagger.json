@@ -802,6 +802,215 @@
                 }
             }
         },
+        "/admin/psi/{id}/deontologia": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna TODAS las entradas deontológicas de un psicólogo. Acceso exclusivo del personal administrativo autorizado; el psicólogo nunca ve su propio expediente.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Psicólogos"
+                ],
+                "summary": "Listar expediente deontológico (Admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del Psicólogo",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.PsiODeontologia"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "ID inválido",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Permisos insuficientes",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Psicólogo no encontrado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Registra una nueva entrada del expediente deontológico de un psicólogo. El contenido es texto plano y se sanitiza en la API.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Psicólogos"
+                ],
+                "summary": "Crear entrada deontológica (Admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del Psicólogo",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Contenido de la entrada",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.CreateDeontologiaRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "message: Entrada deontológica creada",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "error: ID inválido o contenido vacío",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "error: Permisos insuficientes",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "error: Psicólogo no encontrado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/psi/{id}/deontologia/{entryId}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Elimina lógicamente (Soft Delete) una entrada deontológica de un psicólogo.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Psicólogos"
+                ],
+                "summary": "Eliminar entrada deontológica (Admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del Psicólogo",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "UUID de la entrada deontológica",
+                        "name": "entryId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "message: Entrada deontológica eliminada",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "error: ID inválido",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "error: Permisos insuficientes",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "error: Entrada no encontrada",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/admin/psi/{id}/picture": {
             "delete": {
                 "security": [
@@ -2061,8 +2270,7 @@
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
-                                "type": "integer",
-                                "format": "int64"
+                                "type": "integer"
                             }
                         }
                     }
@@ -2219,6 +2427,44 @@
                 "PostStatusArchived",
                 "PostStatusScheduled"
             ]
+        },
+        "domain.PsiODeontologia": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "create_by": {
+                    "description": "CreateBy almacena el nombre o identificador textual del creador.",
+                    "type": "string"
+                },
+                "create_by_id": {
+                    "description": "CreateById es el UUID del usuario/administrador que creó el registro.\nEs un puntero para permitir valores nulos si la creación es automática por el sistema.",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "CreatedAt registra la fecha y hora exacta en que se creó el registro.\nGORM gestiona este campo automáticamente durante la inserción.",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "psi_user_id": {
+                    "type": "string"
+                },
+                "update_by": {
+                    "description": "UpdateBy almacena el nombre o identificador textual de la última persona en modificarlo.",
+                    "type": "string"
+                },
+                "update_by_id": {
+                    "description": "UpdateById es el UUID del usuario/administrador que realizó la última actualización.",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "UpdatedAt registra la última fecha y hora en que se modificó el registro.\nGORM actualiza este valor automáticamente en cada operación de guardado.",
+                    "type": "string"
+                }
+            }
         },
         "domain.PsiSpecialtyModel": {
             "type": "object",
@@ -2918,6 +3164,19 @@
                 "username": {
                     "type": "string",
                     "example": "staff_admin"
+                }
+            }
+        },
+        "request_structs.CreateDeontologiaRequest": {
+            "type": "object",
+            "required": [
+                "content"
+            ],
+            "properties": {
+                "content": {
+                    "description": "Content es el texto libre de la entrada (ej: descripción del expediente disciplinario).\nEs texto plano; la capa de servicio lo sanitiza con bluemonday antes de persistir.",
+                    "type": "string",
+                    "example": "Expediente abierto por el Tribunal Disciplinario."
                 }
             }
         },

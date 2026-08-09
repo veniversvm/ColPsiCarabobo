@@ -5,6 +5,7 @@ export * from "./EditPrimitives";
 export * from "./EditPageHeader";
 export * from "./EditAlert";
 export * from "./SocialNetworksBlock";
+export * from "./DeontologiaBlock";
 export * from "./AuditBlock";
 
 export * from "./sections/AccountSection";

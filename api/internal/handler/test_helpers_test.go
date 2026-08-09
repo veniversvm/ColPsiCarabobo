@@ -112,6 +112,10 @@ type mockPsiRepo struct {
 	DeleteSocialNetworkFunc        func(ctx context.Context, id uuid.UUID) error
 	GetSocialNetworkByIDFunc       func(ctx context.Context, id uuid.UUID) (*domain.PsiUserSocialNetwork, error)
 	CountSocialNetworksByPsiIDFunc func(ctx context.Context, psiID uuid.UUID) (int64, error)
+	CreateDeontologiaFunc            func(ctx context.Context, entry *domain.PsiODeontologia) error
+	ListDeontologiaByPsiIDFunc       func(ctx context.Context, psiID uuid.UUID) ([]domain.PsiODeontologia, error)
+	GetDeontologiaByIDFunc           func(ctx context.Context, id uuid.UUID) (*domain.PsiODeontologia, error)
+	DeleteDeontologiaFunc            func(ctx context.Context, id uuid.UUID) error
 }
 
 func (m *mockPsiRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.PsiUserModel, error) {
@@ -203,6 +207,30 @@ func (m *mockPsiRepo) CountSocialNetworksByPsiID(ctx context.Context, psiID uuid
 		return m.CountSocialNetworksByPsiIDFunc(ctx, psiID)
 	}
 	return 0, nil
+}
+func (m *mockPsiRepo) CreateDeontologia(ctx context.Context, entry *domain.PsiODeontologia) error {
+	if m.CreateDeontologiaFunc != nil {
+		return m.CreateDeontologiaFunc(ctx, entry)
+	}
+	return nil
+}
+func (m *mockPsiRepo) ListDeontologiaByPsiID(ctx context.Context, psiID uuid.UUID) ([]domain.PsiODeontologia, error) {
+	if m.ListDeontologiaByPsiIDFunc != nil {
+		return m.ListDeontologiaByPsiIDFunc(ctx, psiID)
+	}
+	return nil, nil
+}
+func (m *mockPsiRepo) GetDeontologiaByID(ctx context.Context, id uuid.UUID) (*domain.PsiODeontologia, error) {
+	if m.GetDeontologiaByIDFunc != nil {
+		return m.GetDeontologiaByIDFunc(ctx, id)
+	}
+	return nil, domain.ErrDeontologiaNotFound
+}
+func (m *mockPsiRepo) DeleteDeontologia(ctx context.Context, id uuid.UUID) error {
+	if m.DeleteDeontologiaFunc != nil {
+		return m.DeleteDeontologiaFunc(ctx, id)
+	}
+	return nil
 }
 func (m *mockPsiRepo) CreateWithColData(ctx context.Context, psi *domain.PsiUserModel, colData *domain.PsiUserColData, solvencies []domain.PsiUserSolvency, postgrades []domain.PsiUserPostGrade) error {
 	return nil

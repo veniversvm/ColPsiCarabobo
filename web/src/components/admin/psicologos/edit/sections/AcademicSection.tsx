@@ -2,7 +2,7 @@
 
 import { Show } from "solid-js";
 import { ToggleSwitch } from "~/components/ui/ToggleSwitch";
-import { Field, IC, SectionCard } from "../EditPrimitives";
+import { Field, IC } from "../EditPrimitives";
 import type { EditFormState } from "../types";
 
 interface Props {
@@ -32,7 +32,7 @@ export function AcademicSection(props: Props) {
   };
 
   return (
-    <SectionCard title="Expediente Académico y Gremial" accent="border-colpsi-blue">
+    <>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
 
         {/* ── Datos de Egreso ────────────────────────────────────────── */}
@@ -183,6 +183,6 @@ export function AcademicSection(props: Props) {
           />
         </div>
       </div>
-    </SectionCard>
+    </>
   );
 }

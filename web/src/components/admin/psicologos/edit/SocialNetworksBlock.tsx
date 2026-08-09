@@ -27,10 +27,7 @@ export function SocialNetworksBlock(props: Props) {
   };
 
   return (
-    <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 mt-8">
-      <h2 class="text-lg font-black text-blue-800 mb-6 border-l-4 border-gray-300 pl-3">
-        Presencia Digital / Redes Sociales
-      </h2>
+    <div>
 
       {/* Listado existente */}
       <Show when={(props.profile?.social_networks?.length ?? 0) > 0}>
@@ -98,6 +95,6 @@ export function SocialNetworksBlock(props: Props) {
           </button>
         </div>
       </form>
-    </section>
+    </div>
   );
 }

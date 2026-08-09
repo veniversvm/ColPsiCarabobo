@@ -2,7 +2,7 @@
 
 import { For, Show } from "solid-js";
 import { RichTextEditor } from "~/components/ui/RichTextEditor";
-import { Field, IC, SectionCard } from "../EditPrimitives";
+import { Field, IC } from "../EditPrimitives";
 import type { EditFormState } from "../types";
 
 interface Props {
@@ -16,8 +16,7 @@ export function ProfessionalSection(props: Props) {
   const getBioLength = () => props.form.mini_bio?.length || 0;
 
   return (
-    <SectionCard title="Perfil Profesional">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
 
         {/* Área de Desempeño 1 */}
         <div class="space-y-2">
@@ -99,6 +98,5 @@ export function ProfessionalSection(props: Props) {
         </div>
 
       </div>
-    </SectionCard>
   );
 }

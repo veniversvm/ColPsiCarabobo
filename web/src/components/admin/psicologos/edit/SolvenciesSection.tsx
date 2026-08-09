@@ -40,24 +40,9 @@ export const SolvenciesSection = (props: SolvenciesSectionProps) => {
   };
 
   return (
-    <section class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 mt-8">
-      <details class="group" open>
-        <summary class="flex items-center justify-between cursor-pointer list-none">
-          <div class="flex items-center gap-4">
-            <div class="bg-emerald-100 p-3 rounded-2xl">
-              <span class="text-2xl">📜</span>
-            </div>
-            <div>
-              <h2 class="text-xl font-black text-slate-800 uppercase tracking-tight">Historial de Solvencias</h2>
-              <p class="text-sm text-slate-500 font-medium">Control de registros anuales</p>
-            </div>
-          </div>
-          <span class="text-slate-400 group-open:rotate-180 transition-transform duration-300">▼</span>
-        </summary>
+    <div>
 
-        <div class="mt-6 pt-6 border-t border-slate-100">
-          
-          {/* Input de adición */}
+      {/* Input de adición */}
           <div class="flex items-end gap-4 mb-8 bg-slate-50 p-5 rounded-2xl border border-slate-100">
             <div class="flex-1 max-w-[200px]">
               <label class="block text-[10px] font-black text-slate-400 mb-1.5 uppercase tracking-widest">Año fiscal</label>
@@ -123,9 +108,6 @@ export const SolvenciesSection = (props: SolvenciesSectionProps) => {
               </tbody>
             </table>
           </div>
-          
-        </div>
-      </details>
-    </section>
+    </div>
   );
 };

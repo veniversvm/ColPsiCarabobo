@@ -141,4 +141,23 @@ type PsiUserRepository interface {
 
 	// CountSocialNetworksByPsiID retorna la cantidad de redes registradas por el usuario.
 	CountSocialNetworksByPsiID(ctx context.Context, psiID uuid.UUID) (int64, error)
+
+	// =========================================================================
+	// EXPEDIENTE DEONTOLÓGICO
+	// =========================================================================
+
+	// CreateDeontologia registra una nueva entrada del expediente deontológico.
+	// Acceso exclusivo del personal administrativo autorizado (el psicólogo NUNCA
+	// puede ver ni gestionar su propio expediente disciplinario).
+	CreateDeontologia(ctx context.Context, entry *PsiODeontologia) error
+
+	// ListDeontologiaByPsiID recupera todas las entradas deontológicas de un
+	// psicólogo, ordenadas de la más reciente a la más antigua.
+	ListDeontologiaByPsiID(ctx context.Context, psiID uuid.UUID) ([]PsiODeontologia, error)
+
+	// GetDeontologiaByID busca una entrada deontológica específica por su UUID.
+	GetDeontologiaByID(ctx context.Context, id uuid.UUID) (*PsiODeontologia, error)
+
+	// DeleteDeontologia elimina lógicamente (Soft Delete) una entrada deontológica.
+	DeleteDeontologia(ctx context.Context, id uuid.UUID) error
 }

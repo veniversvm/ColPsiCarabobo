@@ -1,6 +1,6 @@
 // web/src/components/admin/psicologos/edit/sections/LegalIdentitySection.tsx
 
-import { Field, IC, SectionCard } from "../EditPrimitives";
+import { Field, IC } from "../EditPrimitives";
 import type { EditFormState } from "../types";
 
 interface Props {
@@ -10,8 +10,7 @@ interface Props {
 
 export function LegalIdentitySection(props: Props) {
   return (
-    <SectionCard title="Identidad Legal">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
 
         <div class="md:col-span-2">
           <Field label="Nombres">
@@ -115,6 +114,5 @@ export function LegalIdentitySection(props: Props) {
         </div>
 
       </div>
-    </SectionCard>
   );
 }

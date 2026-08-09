@@ -11,13 +11,9 @@ interface Props {
 
 export function AdminStatusSection(props: Props) {
   return (
-    <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-blue-100 relative overflow-hidden">
-      <div class="absolute top-0 left-0 w-2 h-full bg-yellow-400" />
-      <h2 class="text-lg font-black text-blue-800 mb-6 ml-2">Estatus Administrativo</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 ml-2">
-
-        {/* Cuenta + Solvencia */}
+      {/* Cuenta + Solvencia */}
         <div class="space-y-4 bg-gray-50 p-6 rounded-2xl border border-gray-100">
           <ToggleSwitch
             label="Cuenta Activa en Sistema"
@@ -63,6 +59,5 @@ export function AdminStatusSection(props: Props) {
         </div>
 
       </div>
-    </section>
   );
 }
