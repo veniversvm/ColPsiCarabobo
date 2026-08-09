@@ -386,6 +386,52 @@ func TestListAllPsis(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, resp.StatusCode == fiber.StatusOK || resp.StatusCode == fiber.StatusForbidden)
 	})
+
+	t.Run("with_solvency_and_status_filters", func(t *testing.T) {
+		adminID := uuid.New()
+		admin := testAdmin(adminID, true, true)
+
+		adminRepo := &mockAdminRepo{
+			GetByIDFunc: func(_ context.Context, id uuid.UUID) (*domain.UserAdmin, error) {
+				return admin, nil
+			},
+		}
+		psiRepo := &mockPsiRepo{}
+		h := testPsiAdminHandler(psiRepo, adminRepo, &mockAnalyticsRepo{})
+
+		token := adminTestToken(admin)
+		app := setupAdminRouteForTest(fiber.MethodGet, "/psi/list", h.ListAllPsis, adminRepo, psiRepo)
+
+		req := httptest.NewRequest(fiber.MethodGet, "/api/v1/admin/psi/list?solvent=1&active=0&gender=F&specialty=2", nil)
+		req.Header.Set("Authorization", "Bearer "+token)
+
+		resp, err := app.Test(req)
+		require.NoError(t, err)
+		require.True(t, resp.StatusCode == fiber.StatusOK || resp.StatusCode == fiber.StatusForbidden)
+	})
+
+	t.Run("gender_invalid_se_limpia", func(t *testing.T) {
+		adminID := uuid.New()
+		admin := testAdmin(adminID, true, true)
+
+		adminRepo := &mockAdminRepo{
+			GetByIDFunc: func(_ context.Context, id uuid.UUID) (*domain.UserAdmin, error) {
+				return admin, nil
+			},
+		}
+		psiRepo := &mockPsiRepo{}
+		h := testPsiAdminHandler(psiRepo, adminRepo, &mockAnalyticsRepo{})
+
+		token := adminTestToken(admin)
+		app := setupAdminRouteForTest(fiber.MethodGet, "/psi/list", h.ListAllPsis, adminRepo, psiRepo)
+
+		req := httptest.NewRequest(fiber.MethodGet, "/api/v1/admin/psi/list?gender=masculino", nil)
+		req.Header.Set("Authorization", "Bearer "+token)
+
+		resp, err := app.Test(req)
+		require.NoError(t, err)
+		require.True(t, resp.StatusCode == fiber.StatusOK || resp.StatusCode == fiber.StatusForbidden)
+	})
 }
 
 // =========================================================================

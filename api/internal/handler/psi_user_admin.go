@@ -261,6 +261,8 @@ func (h *PsiHandler) ResetPsiPasswordByAdmin(c *fiber.Ctx) error {
 // @Param        specialty  query     int     false  "ID Especialidad"
 // @Param        location   query     string  false  "Municipio o Estado"
 // @Param        gender     query     string  false  "Género (M/F)"
+// @Param        solvent    query     string  false  "Estado de solvencia (1=solventes, 0=insolventes, vacío=todos)"
+// @Param        active     query     string  false  "Estado de cuenta (1=activos, 0=inactivos, vacío=todos)"
 // @Param        page       query     int     false  "Página (Def: 1)"
 // @Param        limit      query     int     false  "Límite (Def: 12)"
 // @Success      200        {object}  map[string]interface{}
@@ -277,11 +279,29 @@ func (h *PsiHandler) ListAllPsis(c *fiber.Ctx) error {
 	limit, _ := strconv.Atoi(c.Query("limit", "12"))
 	specID, _ := strconv.Atoi(c.Query("specialty", "0"))
 
+	// Filtros tri-estado (vacío = todos): "1" → true, "0" → false
+	var solvent, active *bool
+	if s := c.Query("solvent"); s != "" {
+		v := s == "1"
+		solvent = &v
+	}
+	if a := c.Query("active"); a != "" {
+		v := a == "1"
+		active = &v
+	}
+
+	gender := c.Query("gender")
+	if gender != "M" && gender != "F" {
+		gender = ""
+	}
+
 	filter := request_structs.PsiDirectoryFilterDTO{
 		SearchTerm:  c.Query("q"),
 		Location:    c.Query("location"),
-		Gender:      c.Query("gender"),
+		Gender:      gender,
 		SpecialtyID: uint32(specID),
+		Solvent:     solvent,
+		Active:      active,
 		Page:        page,
 		Limit:       limit,
 	}

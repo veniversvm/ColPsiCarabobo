@@ -2002,6 +2002,14 @@ paths:
         in: query
         name: gender
         type: string
+      - description: Estado de solvencia (1=solventes, 0=insolventes, vacío=todos)
+        in: query
+        name: solvent
+        type: string
+      - description: Estado de cuenta (1=activos, 0=inactivos, vacío=todos)
+        in: query
+        name: active
+        type: string
       - description: 'Página (Def: 1)'
         in: query
         name: page

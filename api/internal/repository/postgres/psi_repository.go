@@ -644,6 +644,16 @@ func (r *psiRepo) SearchAdmin(ctx context.Context, filter request_structs.PsiDir
 		query = query.Where("genre = ?", filter.Gender)
 	}
 
+	// Filtro por estado de solvencia (nil = todos)
+	if filter.Solvent != nil {
+		query = query.Where("solvent = ?", *filter.Solvent)
+	}
+
+	// Filtro por estado de cuenta (nil = todos)
+	if filter.Active != nil {
+		query = query.Where("is_active = ?", *filter.Active)
+	}
+
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
