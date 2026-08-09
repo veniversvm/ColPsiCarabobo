@@ -72,6 +72,10 @@ type Config struct {
 	// Origins
 	AllowedOrigins string
 
+	// Security headers (helmet)
+	HSTSMaxAge         int  // Segundos del Strict-Transport-Security (0 = desactivado)
+	HSTSPreloadEnabled bool // Incluye '; preload' en el header HSTS
+
 	// Valkey (rate limiting store)
 	ValkeyAddr string // Valkey/Redis address (e.g. "colpsi_valkey:6379"). Empty = in-memory fallback.
 
@@ -166,6 +170,10 @@ func InitConfig() {
 
 		// Origins
 		AllowedOrigins: getEnv("ALLOWED_ORIGINS", "http://127.0.0.1:3000, http://localhost:3000"),
+
+		// Security headers (helmet)
+		HSTSMaxAge:         getEnvInt("HSTS_MAX_AGE", 31536000),
+		HSTSPreloadEnabled: getEnv("HSTS_PRELOAD", "false") == "true",
 
 		// Valkey
 		ValkeyAddr: getEnv("VALKEY_ADDR", ""),

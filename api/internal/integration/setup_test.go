@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/helmet"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -32,6 +31,7 @@ func TestMain(m *testing.M) {
 		Environment:      "development",
 		JwtLibrarySecret: "test-library-secret",
 		AbsAdminToken:    "test-abs-token",
+		HSTSMaxAge:       31536000,
 	}
 
 	dsn := os.Getenv("TEST_DB_DSN")
@@ -281,7 +281,7 @@ func buildTestApp(db *gorm.DB) *fiber.App {
 	analyticsSvc := service.NewAnalyticsService(analyticsRepo)
 
 	app.Use(middleware.AnalyticsMiddleware(analyticsSvc))
-	app.Use(helmet.New())
+	app.Use(middleware.SecurityHeaders())
 
 	adminRepo := repopostgres.NewAdminRepository(db)
 	psiRepo := repopostgres.NewPsiRepository(db)
