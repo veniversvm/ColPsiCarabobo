@@ -1,4 +1,5 @@
 import { createResource, createSignal, onCleanup, Show, createEffect } from "solid-js";
+import { isServer } from "solid-js/web";
 import { apiGet } from "~/lib/api";
 import { PsiAdminListItem, PaginatedResponse } from "~/types/admin";
 // Cambiamos el nombre del componente de Importación (Asumiendo que actualizaste el componente a XLSX)
@@ -16,16 +17,40 @@ export default function AdminPsychologistsList() {
   const [inputValue, setInputValue] = createSignal("");
   const [debouncedQuery, setDebouncedQuery] = createSignal("");
   const [showImportModal, setShowImportModal] = createSignal(false);
-  
+
+  // Filtros tri-estado ("" = todos) y especialidad
+  const [solvent, setSolvent] = createSignal("");
+  const [active, setActive] = createSignal("");
+  const [gender, setGender] = createSignal("");
+  const [specialty, setSpecialty] = createSignal("");
+
+  // Catálogo de especialidades (mismo patrón que el directorio)
+  const [workAreas] = createResource(
+    () => !isServer,
+    async (ready) => {
+      if (!ready) return [];
+      try { return await apiGet<any[]>("/specialties"); }
+      catch { return []; }
+    }
+  );
+
   // Caché para mantener los datos visibles durante la carga (UX fluida)
   const [cachedData, setCachedData] = createSignal<PaginatedResponse<PsiAdminListItem> | undefined>(undefined);
 
   const [data, { refetch }] = createResource(
-    () => ({ p: page(), q: debouncedQuery(), l: limit() }),
-    async (params) =>
-      apiGet<PaginatedResponse<PsiAdminListItem>>(
-        `/admin/psi/list?page=${params.p}&limit=${params.l}&q=${encodeURIComponent(params.q)}`
-      )
+    () => ({
+      p: page(), q: debouncedQuery(), l: limit(),
+      solvent: solvent(), active: active(), gender: gender(), specialty: specialty(),
+    }),
+    async (params) => {
+      const queryParts = [`page=${params.p}`, `limit=${params.l}`];
+      if (params.q) queryParts.push(`q=${encodeURIComponent(params.q)}`);
+      if (params.solvent) queryParts.push(`solvent=${params.solvent}`);
+      if (params.active) queryParts.push(`active=${params.active}`);
+      if (params.gender) queryParts.push(`gender=${params.gender}`);
+      if (params.specialty) queryParts.push(`specialty=${params.specialty}`);
+      return apiGet<PaginatedResponse<PsiAdminListItem>>(`/admin/psi/list?${queryParts.join("&")}`);
+    }
   );
 
   // Actualizar caché solo cuando hay datos nuevos disponibles
@@ -50,6 +75,10 @@ export default function AdminPsychologistsList() {
   const clearSearch = () => {
     setInputValue("");
     setDebouncedQuery("");
+    setSolvent("");
+    setActive("");
+    setGender("");
+    setSpecialty("");
     setPage(1);
   };
 
@@ -101,6 +130,15 @@ export default function AdminPsychologistsList() {
         onInput={handleSearchInput}
         onClear={clearSearch}
         loading={data.loading}
+        solvent={solvent()}
+        onSolventChange={(v) => { setSolvent(v); setPage(1); }}
+        active={active()}
+        onActiveChange={(v) => { setActive(v); setPage(1); }}
+        gender={gender()}
+        onGenderChange={(v) => { setGender(v); setPage(1); }}
+        specialty={specialty()}
+        onSpecialtyChange={(v) => { setSpecialty(v); setPage(1); }}
+        workAreas={workAreas()}
       />
 
       {/* Tabla con paginación */}

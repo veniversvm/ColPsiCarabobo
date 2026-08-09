@@ -182,6 +182,8 @@ type PsiDirectoryFilterDTO struct {
 	SpecialtyID uint32 `query:"specialty"` // Filtrado por ID del catálogo de especialidades
 	Location    string `query:"location"`  // Filtro por Municipio o Estado
 	Gender      string `query:"gender"`    // Filtro por género (M / F)
+	Solvent     *bool  `query:"solvent"`   // nil = todos; true = solventes; false = insolventes
+	Active      *bool  `query:"active"`    // nil = todos; true = activos; false = inactivos
 	Page        int    `query:"page"`      // Número de página para paginación
 	Limit       int    `query:"limit"`     // Cantidad de registros por página
 }

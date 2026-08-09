@@ -280,6 +280,72 @@ func TestPsiRepo_ComprehensiveSuite(t *testing.T) {
 		require.Len(t, res, 2, "La paginación debe recuperar a ambos usuarios sin importar sus banderas")
 	})
 
+	t.Run("SearchAdmin filters by solvency, status and gender", func(t *testing.T) {
+		tx := mainDB.Begin()
+		defer tx.Rollback()
+		r := NewPsiRepository(tx)
+
+		bio := domain.TextModel{ID: uuid.New(), Content: "..."}
+		tx.Create(&bio)
+
+		now := time.Now()
+		create := func(ci int, solvent, isActive bool, genre string, abs string) {
+			require.NoError(t, tx.Create(&domain.PsiUserModel{
+				ID: uuid.New(), CI: ci, FPV: ci,
+				Solvent: solvent, BornDate: now, Genre: genre,
+				Nationality: "V", ContactEmail: "f@t.com", ContactPhone: "111",
+				FirstName: "Filtro", LastName: "Test", BioTextID: bio.ID,
+				AudioBookShellId: abs,
+				Credentials: domain.Credentials{
+					Username: abs, Email: abs + "@t.com", IsActive: isActive,
+				},
+			}).Error)
+			if !isActive {
+				require.NoError(t, tx.Model(&domain.PsiUserModel{}).
+					Where("audio_book_shell_id = ?", abs).
+					Update("is_active", false).Error)
+			}
+		}
+
+		// Solvente + Activo + M
+		create(3001, true, true, "M", "abs_f1")
+		// Solvente + Inactivo + F
+		create(3002, true, false, "F", "abs_f2")
+		// Insolvente + Activo + F
+		create(3003, false, true, "F", "abs_f3")
+		// Insolvente + Inactivo + M
+		create(3004, false, false, "M", "abs_f4")
+
+		// Solo solventes
+		_, total, err := r.SearchAdmin(ctx, request_structs.PsiDirectoryFilterDTO{
+			Page: 1, Limit: 10, Solvent: boolPtr(true),
+		})
+		require.NoError(t, err)
+		require.Equal(t, int64(2), total)
+
+		// Solo inactivos
+		_, total, err = r.SearchAdmin(ctx, request_structs.PsiDirectoryFilterDTO{
+			Page: 1, Limit: 10, Active: boolPtr(false),
+		})
+		require.NoError(t, err)
+		require.Equal(t, int64(2), total)
+
+		// Solventes Y activos
+		res, total, err := r.SearchAdmin(ctx, request_structs.PsiDirectoryFilterDTO{
+			Page: 1, Limit: 10, Solvent: boolPtr(true), Active: boolPtr(true),
+		})
+		require.NoError(t, err)
+		require.Equal(t, int64(1), total)
+		require.Equal(t, 3001, res[0].CI)
+
+		// Solo género femenino
+		_, total, err = r.SearchAdmin(ctx, request_structs.PsiDirectoryFilterDTO{
+			Page: 1, Limit: 10, Gender: "F",
+		})
+		require.NoError(t, err)
+		require.Equal(t, int64(2), total)
+	})
+
 	t.Run("CreateWithColData Atomic Insert", func(t *testing.T) {
 		tx := mainDB.Begin()
 		defer tx.Rollback()
@@ -607,3 +673,5 @@ func TestPsiRepo_ComprehensiveSuite(t *testing.T) {
 		require.Len(t, entries, 1)
 	})
 }
+
+func boolPtr(b bool) *bool { return &b }

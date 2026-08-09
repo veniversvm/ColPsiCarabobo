@@ -498,6 +498,18 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "string",
+                        "description": "Estado de solvencia (1=solventes, 0=insolventes, vacío=todos)",
+                        "name": "solvent",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Estado de cuenta (1=activos, 0=inactivos, vacío=todos)",
+                        "name": "active",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "Página (Def: 1)",
                         "name": "page",
