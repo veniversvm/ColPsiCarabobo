@@ -75,6 +75,31 @@ export async function GET() {
     <priority>0.8</priority>
     <changefreq>monthly</changefreq>
   </url>
+  <url>
+    <loc>${SITE_URL}/documentos</loc>
+    <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>${SITE_URL}/documentos/estatutos-fpv</loc>
+    <priority>0.6</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>${SITE_URL}/documentos/ley-ejercicio-psicologia</loc>
+    <priority>0.6</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>${SITE_URL}/documentos/codigo-etica</loc>
+    <priority>0.6</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>${SITE_URL}/documentos/reglamento-interno</loc>
+    <priority>0.6</priority>
+    <changefreq>monthly</changefreq>
+  </url>
 
   <!-- Noticias y Comunicados -->
   ${posts.map(post => `

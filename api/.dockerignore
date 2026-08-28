@@ -1,0 +1,8 @@
+.git
+db_data
+logs
+biblioteca
+db_data/
+notas.txt
+*.xlsx
+*.csv

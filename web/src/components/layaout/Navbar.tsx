@@ -38,6 +38,7 @@ export default function Navbar() {
             <A href="/noticias" class="text-gray-600 hover:text-[#1e3a8a] font-medium transition-colors">Noticias</A>
             <A href="/inscripcion" class="text-gray-600 hover:text-[#1e3a8a] font-medium transition-colors">Inscripción</A>
             <A href="/nosotros" class="text-gray-600 hover:text-[#1e3a8a] font-medium transition-colors">Nosotros</A>
+            <A href="/documentos" class="text-gray-600 hover:text-[#1e3a8a] font-medium transition-colors">Marco Legal</A>
             
             <Show 
               when={isAuthenticated()} 
@@ -110,6 +111,7 @@ export default function Navbar() {
             <A href="/noticias" onClick={() => setIsOpen(false)} class={navLinkClass}>Noticias y Avisos</A>
             <A href="/inscripcion" onClick={() => setIsOpen(false)} class={navLinkClass}>Trámites e Inscripción</A>
             <A href="/nosotros" onClick={() => setIsOpen(false)} class={navLinkClass}>Institución (Nosotros)</A>
+            <A href="/documentos" onClick={() => setIsOpen(false)} class={navLinkClass}>Marco Legal y Normativo</A>
             
             <div class="my-4 border-t border-gray-100 pt-4">
               <Show 

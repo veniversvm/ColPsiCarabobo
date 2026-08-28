@@ -521,12 +521,18 @@ export default function AboutUs() {
         </section>
 
         {/* ── FOOTER SUTIL ─────────────────────────────────────────────────── */}
-        <div class="max-w-4xl mx-auto px-6 text-center mt-6">
+        <div class="max-w-4xl mx-auto px-6 text-center mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
           <A
             href="/directorio"
             class="inline-flex items-center justify-center gap-3 bg-colpsi-yellow text-colpsi-blue font-black px-8 py-4 rounded-2xl hover:scale-105 active:scale-95 transition-all uppercase text-sm tracking-widest shadow-lg shadow-yellow-500/20"
           >
             Consultar Directorio de Profesionales <span>→</span>
+          </A>
+          <A
+            href="/documentos"
+            class="inline-flex items-center justify-center gap-3 bg-blue-50 text-colpsi-blue font-black px-8 py-4 rounded-2xl hover:bg-blue-100 active:scale-95 transition-all uppercase text-sm tracking-widest border border-blue-100"
+          >
+            Marco Legal y Normativo <span>→</span>
           </A>
         </div>
       </main>
