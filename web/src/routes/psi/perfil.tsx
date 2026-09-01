@@ -339,7 +339,7 @@ export default function ProfilePage() {
         <div class="max-w-6xl mx-auto flex items-center justify-between">
           <A
             href="/psi"
-            class="text-white hover:text-colpsi-yellow font-bold flex items-center gap-2 transition-colors"
+            class="bg-colpsi-yellow text-colpsi-blue px-5 py-2.5 rounded-full font-black text-sm shadow-lg hover:bg-colpsi-yellow/90 active:scale-95 transition-all inline-flex items-center gap-2"
           >
             <span>←</span> Volver al Panel
           </A>

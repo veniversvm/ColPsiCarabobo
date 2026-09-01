@@ -111,8 +111,11 @@ export default function AcademicoPage() {
       {/* ── HEADER ──────────────────────────────────────────────────────────── */}
       <div class="bg-colpsi-blue pt-10 pb-20 px-4 md:px-8 shadow-inner">
         <div class="max-w-4xl mx-auto flex items-center justify-between">
-          <A href="/psi" class="text-white font-bold flex items-center gap-2 hover:text-colpsi-yellow transition-colors">
-            <span>←</span> Panel
+          <A
+            href="/psi"
+            class="bg-colpsi-yellow text-colpsi-blue px-5 py-2.5 rounded-full font-black text-sm shadow-lg hover:bg-colpsi-yellow/90 active:scale-95 transition-all inline-flex items-center gap-2"
+          >
+            <span>←</span> Volver al Panel
           </A>
           <button
             onClick={() => showForm() ? setShowForm(false) : openCreate()}
@@ -222,6 +225,22 @@ export default function AcademicoPage() {
         {/* ── LISTADO ───────────────────────────────────────────────────────── */}
         <Suspense fallback={<div class="h-40 bg-white animate-pulse rounded-[2.5rem]" />}>
           <div class="space-y-6">
+            <Show when={!profile()?.post_grades?.length}>
+              <div class="bg-white rounded-[2.5rem] p-8 md:p-10 shadow-premium border-2 border-colpsi-yellow">
+                <div class="flex items-start gap-4">
+                  <span class="text-4xl">🎓</span>
+                  <div class="flex-grow space-y-3">
+                    <h3 class="text-lg font-black text-colpsi-blue">Completa tu formación académica</h3>
+                    <ol class="list-decimal list-inside text-sm text-gray-600 space-y-2">
+                      <li>Haz clic en <span class="font-bold text-colpsi-blue">"+ NUEVO TÍTULO"</span>.</li>
+                      <li>Ingresa el nombre del postgrado, la universidad y el año de egreso.</li>
+                      <li>Agrega una breve descripción y sube los soportes digitales (título, notas, etc.).</li>
+                      <li>Guarda y quedará visible en tu perfil público.</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+            </Show>
             <For each={profile()?.post_grades ?? []}>
               {(pg) => (
                 <div class="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-premium border border-gray-100 flex flex-col md:flex-row gap-6 relative group overflow-hidden">
