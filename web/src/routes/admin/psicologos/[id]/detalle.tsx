@@ -14,7 +14,6 @@ import { apiGet } from "~/lib/api";
 import {
   EditPageHeader,
   EditAlert,
-  CollapsibleSection,
   SocialNetworksBlock,
   DeontologiaBlock,
   AuditBlock,
@@ -28,6 +27,7 @@ import {
 } from "~/components/admin/psicologos/edit";
 import type { EditFormState, DeontologiaEntry } from "~/components/admin/psicologos/edit";
 import { SolvenciesSection } from "~/components/admin/psicologos/edit/SolvenciesSection";
+import { Panel, PanelSection } from "~/components/ui/Panel";
 
 // ─── Server Actions ───────────────────────────────────────────────────────────
 
@@ -384,59 +384,63 @@ export default function AdminEditPsiPage() {
       >
         <EditAlert message={message()} />
 
-        <form onSubmit={handleSave} class="space-y-8">
-          {/* Se pasa avatarFile y onFileChange para que AccountSection pueda capturar la foto */}
-          <AccountSection
-            form={form}
-            setForm={set}
-            url={canonicalUrl()}
-            avatarFile={avatarFile()}
-            onAvatarChange={setAvatarFile}
-            pictureUrl={profile()?.profile_picture_url || ""}
-            onDeletePicture={handleDeletePicture}
-            onResetPassword={handleResetPassword}
-            resettingPassword={resettingPassword()}
-          />
-          <CollapsibleSection title="Estatus Administrativo" accent="border-yellow-400">
-            <AdminStatusSection form={form} setForm={set} />
-          </CollapsibleSection>
+        <form onSubmit={handleSave}>
+          <Panel>
+            {/* Se pasa avatarFile y onFileChange para que AccountSection pueda capturar la foto */}
+            <PanelSection title="Cuenta y Perfil Visual" accent="border-colpsi-yellow" defaultOpen>
+              <AccountSection
+                form={form}
+                setForm={set}
+                url={canonicalUrl()}
+                avatarFile={avatarFile()}
+                onAvatarChange={setAvatarFile}
+                pictureUrl={profile()?.profile_picture_url || ""}
+                onDeletePicture={handleDeletePicture}
+                onResetPassword={handleResetPassword}
+                resettingPassword={resettingPassword()}
+              />
+            </PanelSection>
+            <PanelSection title="Estatus Administrativo" accent="border-yellow-400">
+              <AdminStatusSection form={form} setForm={set} />
+            </PanelSection>
 
-          <CollapsibleSection title="Historial de Solvencias" accent="border-emerald-400">
-            <SolvenciesSection
-              solvencies={form.solvencies}
-              onAddLocalSolvency={(year) => {
-                const newSolv = { date: `${year}-12-31T00:00:00Z` };
-                set("solvencies", [...form.solvencies, newSolv]);
-              }}
-            />
-          </CollapsibleSection>
+            <PanelSection title="Historial de Solvencias" accent="border-emerald-400">
+              <SolvenciesSection
+                solvencies={form.solvencies}
+                onAddLocalSolvency={(year) => {
+                  const newSolv = { date: `${year}-12-31T00:00:00Z` };
+                  set("solvencies", [...form.solvencies, newSolv]);
+                }}
+              />
+            </PanelSection>
 
-          <CollapsibleSection title="Identidad Legal">
-            <LegalIdentitySection form={form} setForm={set} />
-          </CollapsibleSection>
-          <CollapsibleSection title="Gestión de Contacto y Privacidad" accent="border-colpsi-blue">
-            <ContactVisibilitySection form={form} setForm={set} />
-          </CollapsibleSection>
-          <CollapsibleSection title="Ubicación Geográfica y Privacidad" accent="border-indigo-400">
-            <LocationSection form={form} setForm={set} />
-          </CollapsibleSection>
-          <CollapsibleSection title="Perfil Profesional">
-            <ProfessionalSection
-              form={form}
-              setForm={set}
-              workAreas={workAreas()}
-            />
-          </CollapsibleSection>
+            <PanelSection title="Identidad Legal">
+              <LegalIdentitySection form={form} setForm={set} />
+            </PanelSection>
+            <PanelSection title="Gestión de Contacto y Privacidad" accent="border-colpsi-blue">
+              <ContactVisibilitySection form={form} setForm={set} />
+            </PanelSection>
+            <PanelSection title="Ubicación Geográfica y Privacidad" accent="border-indigo-400">
+              <LocationSection form={form} setForm={set} />
+            </PanelSection>
+            <PanelSection title="Perfil Profesional">
+              <ProfessionalSection
+                form={form}
+                setForm={set}
+                workAreas={workAreas()}
+              />
+            </PanelSection>
 
-          {/* Se pasan los estados de archivos a AcademicSection */}
-          <CollapsibleSection title="Expediente Académico y Gremial" accent="border-colpsi-blue">
-            <AcademicSection
-              form={form}
-              setForm={set}
-              files={files()}
-              setFiles={setFiles}
-            />
-          </CollapsibleSection>
+            {/* Se pasan los estados de archivos a AcademicSection */}
+            <PanelSection title="Expediente Académico y Gremial" accent="border-colpsi-blue">
+              <AcademicSection
+                form={form}
+                setForm={set}
+                files={files()}
+                setFiles={setFiles}
+              />
+            </PanelSection>
+          </Panel>
 
           <div class="sticky bottom-10 z-50 flex justify-end max-w-5xl mx-auto px-4">
             <button
@@ -455,46 +459,48 @@ export default function AdminEditPsiPage() {
           </div>
         </form>
 
-        <div class="mt-8 space-y-8">
-          <CollapsibleSection title="Presencia Digital / Redes Sociales" accent="border-gray-300">
-            <SocialNetworksBlock
-              profile={profile()}
-              onAdd={async (p) => {
-                const id = params.id ?? "";
-                if (!id) return;
-                await addSocialServer({ id, payload: p });
-                refetch();
-              }}
-              onDelete={async (sid) => {
-                const id = params.id ?? "";
-                if (!id || !confirm("¿Eliminar?")) return;
-                await deleteSocialServer({ psiId: id, socialId: sid });
-                refetch();
-              }}
-            />
-          </CollapsibleSection>
+        <div class="mt-8">
+          <Panel>
+            <PanelSection title="Presencia Digital / Redes Sociales" accent="border-gray-300">
+              <SocialNetworksBlock
+                profile={profile()}
+                onAdd={async (p) => {
+                  const id = params.id ?? "";
+                  if (!id) return;
+                  await addSocialServer({ id, payload: p });
+                  refetch();
+                }}
+                onDelete={async (sid) => {
+                  const id = params.id ?? "";
+                  if (!id || !confirm("¿Eliminar?")) return;
+                  await deleteSocialServer({ psiId: id, socialId: sid });
+                  refetch();
+                }}
+              />
+            </PanelSection>
 
-          <CollapsibleSection title="Expediente Deontológico" accent="border-gray-300">
-            <DeontologiaBlock
-              entries={deontologia()}
-              onAdd={async (content) => {
-                const id = params.id ?? "";
-                if (!id) return;
-                await addDeontologiaServer({ id, content });
-                refetchDeontologia();
-              }}
-              onUpdate={async (entryId, content) => {
-                const id = params.id ?? "";
-                if (!id) return;
-                await updateDeontologiaServer({ psiId: id, entryId, content });
-                refetchDeontologia();
-              }}
-            />
-          </CollapsibleSection>
+            <PanelSection title="Expediente Deontológico" accent="border-gray-300">
+              <DeontologiaBlock
+                entries={deontologia()}
+                onAdd={async (content) => {
+                  const id = params.id ?? "";
+                  if (!id) return;
+                  await addDeontologiaServer({ id, content });
+                  refetchDeontologia();
+                }}
+                onUpdate={async (entryId, content) => {
+                  const id = params.id ?? "";
+                  if (!id) return;
+                  await updateDeontologiaServer({ psiId: id, entryId, content });
+                  refetchDeontologia();
+                }}
+              />
+            </PanelSection>
 
-          <CollapsibleSection title="Información de Auditoría (Solo Lectura)" accent="border-gray-400">
-            <AuditBlock profile={profile()} />
-          </CollapsibleSection>
+            <PanelSection title="Información de Auditoría (Solo Lectura)" accent="border-gray-400">
+              <AuditBlock profile={profile()} />
+            </PanelSection>
+          </Panel>
         </div>
       </Suspense>
     </main>

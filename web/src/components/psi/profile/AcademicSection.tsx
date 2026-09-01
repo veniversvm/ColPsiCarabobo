@@ -184,7 +184,7 @@ export function AcademicSection(props: AcademicSectionProps) {
   };
 
   return (
-    <section class="bg-white rounded-[2.5rem] p-8 shadow-premium border border-gray-100">
+    <section>
       <ImageModal
         src={modalImage()?.src || ""}
         alt={modalImage()?.alt || ""}
@@ -192,12 +192,7 @@ export function AcademicSection(props: AcademicSectionProps) {
         onClose={closeModal}
       />
 
-      <div class="mb-6 border-l-4 border-colpsi-yellow pl-3">
-        <h2 class="text-xl font-black text-colpsi-blue">Formación de Pregrado</h2>
-        <p class="text-xs text-colpsi-muted mt-1">
-          Datos certificados por el colegio. Contacta a administración para corregir datos erróneos.
-        </p>
-      </div>
+
 
       <div class="space-y-6">
         <div class="bg-gray-50 p-6 rounded-2xl border border-gray-100">

@@ -41,7 +41,7 @@ interface LocationSectionProps {
 
 export function LocationSection(props: LocationSectionProps) {
   return (
-    <section class="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-premium border border-gray-100 space-y-10">
+    <section class="space-y-10">
 
       {/* ── MENSAJE GLOBAL SOBRE PRIVACIDAD ────────────────────────────── */}
       <div class="bg-blue-50/80 p-5 rounded-3xl border border-blue-100 flex items-start gap-4">

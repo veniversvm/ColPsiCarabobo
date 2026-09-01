@@ -60,11 +60,7 @@ export function AccountSection(props: AccountSectionProps) {
   });
 
   return (
-    <section class="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-premium border border-gray-100">
-      <h2 class="text-xl font-black text-colpsi-blue mb-6 border-l-4 border-colpsi-yellow pl-3">
-        Datos de Cuenta
-      </h2>
-      
+    <div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <InputField
           label="Nombre de Usuario (Para Login)"
@@ -164,7 +160,7 @@ export function AccountSection(props: AccountSectionProps) {
           </div>
         </div>
       </Show>
-    </section>
+    </div>
   );
 }
 

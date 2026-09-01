@@ -25,7 +25,7 @@ export function SocialNetworksSection(props: SocialNetworksSectionProps) {
   };
 
   return (
-    <section class="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-premium border border-gray-100 mt-12 mb-20">
+    <section>
 
       {/* ── Modal de confirmación ────────────────────────────────────────── */}
       <Show when={pendingId()}>
@@ -54,9 +54,7 @@ export function SocialNetworksSection(props: SocialNetworksSectionProps) {
         </div>
       </Show>
 
-      <div class="mb-6 border-l-4 border-colpsi-yellow pl-3">
-        <h2 class="text-xl font-black text-colpsi-blue leading-tight">Presencia Digital</h2>
-      </div>
+
 
       <Show when={props.networks && props.networks.length > 0}>
         <div class="mb-8 space-y-3">

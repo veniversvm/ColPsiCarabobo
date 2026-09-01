@@ -39,10 +39,8 @@ export function ProfessionalSection(props: ProfessionalSectionProps) {
   const selectClass = "w-full bg-gray-50 border-2 border-transparent focus:border-colpsi-yellow rounded-xl px-5 py-3 text-colpsi-text";
 
   return (
-    <section class="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-premium border border-gray-100">
-      <h2 class="text-xl font-black text-colpsi-blue mb-6 border-l-4 border-colpsi-yellow pl-3">
-        Perfil Profesional
-      </h2>
+    <section>
+
 
       <div class="space-y-6">
 

@@ -27,6 +27,7 @@ import { AcademicSection } from "~/components/psi/profile/AcademicSection";
 import { SocialNetworksSection } from "~/components/psi/profile/SocialNetworksSection";
 import { SaveButton } from "~/components/psi/profile/SaveButton";
 import { AvatarUploader } from "~/components/psi/profile/AvatarUploader";
+import { Panel, PanelSection } from "~/components/ui/Panel";
 
 const updateProfileServer = action(async (formData: FormData) => {
   "use server";
@@ -381,218 +382,218 @@ export default function ProfilePage() {
             <MessageAlert type={message()!.type} text={message()!.text} />
           </Show>
 
-          <form onSubmit={handleSaveProfile} class="space-y-8">
-            <AccountSection
-              username={form.username}
-              email={form.email}
-              newPassword1={form.new_password_1 || ""}
-              newPassword2={form.new_password_2 || ""}
-              onUsernameChange={(v) => setForm("username", v)}
-              onEmailChange={(v) => setForm("email", v)}
-              onNewPassword1Change={(v) => setForm("new_password_1", v)}
-              onNewPassword2Change={(v) => setForm("new_password_2", v)}
-            />
+          <form onSubmit={handleSaveProfile}>
+            <Panel>
+              <PanelSection title="Cuenta y Seguridad" accent="border-colpsi-yellow" defaultOpen>
+                <AccountSection
+                  username={form.username}
+                  email={form.email}
+                  newPassword1={form.new_password_1 || ""}
+                  newPassword2={form.new_password_2 || ""}
+                  onUsernameChange={(v) => setForm("username", v)}
+                  onEmailChange={(v) => setForm("email", v)}
+                  onNewPassword1Change={(v) => setForm("new_password_1", v)}
+                  onNewPassword2Change={(v) => setForm("new_password_2", v)}
+                />
 
-            <ContactSection
-              contactEmail={form.contact_email ?? ""}
-              contactPhone={form.contact_phone ?? ""}
-              contactCellPhone={form.contact_cell_phone ?? ""}
-              onContactEmailChange={(v) => setForm("contact_email", v)}
-              onContactPhoneChange={(v) => setForm("contact_phone", v)}
-              onContactCellPhoneChange={(v) => setForm("contact_cell_phone", v)}
-            />
+                <SecuritySection
+                  password={form.password ?? ""}
+                  onPasswordChange={(v) => setForm("password", v)}
+                  message={message()}
+                />
+              </PanelSection>
 
-            <AcademicSection
-              undergraduateData={{
-                university_undergraduate:
-                  profile()?.col_data?.university_undergraduate,
-                graduate_date: profile()?.col_data?.graduate_date,
-                mention_undergraduate:
-                  profile()?.col_data?.mention_undergraduate,
-                title_image_one_url: profile()?.col_data?.title_image_one_url,
-                title_image_two_url: profile()?.col_data?.title_image_two_url,
-                title_image_three_url:
-                  profile()?.col_data?.title_image_three_url,
-                register_number: profile()?.col_data?.register_number,
-                register_folio: profile()?.col_data?.register_folio,
-                register_tome: profile()?.col_data?.register_tome,
-                register_title_date: profile()?.col_data?.register_title_date,
-                register_title_state: profile()?.col_data?.register_title_state,
-              }}
-              showUniversity={true}
-              showGraduateDate={true}
-              showMention={true}
-              files={files()}
-              setFiles={setFiles}
-            />
+              <PanelSection title="Información de Contacto" accent="border-colpsi-blue">
+                <ContactSection
+                  contactEmail={form.contact_email ?? ""}
+                  contactPhone={form.contact_phone ?? ""}
+                  contactCellPhone={form.contact_cell_phone ?? ""}
+                  onContactEmailChange={(v) => setForm("contact_email", v)}
+                  onContactPhoneChange={(v) => setForm("contact_phone", v)}
+                  onContactCellPhoneChange={(v) => setForm("contact_cell_phone", v)}
+                />
+              </PanelSection>
 
-            <LocationSection
-              // Carabobo
-              serviceAddress={form.service_address ?? ""} // NUEVO AQUI
-              municipalityCarabobo={form.municipality_carabobo ?? ""}
-              phoneCarabobo={form.phone_carabobo ?? ""}
-              celPhoneCarabobo={form.cel_phone_carabobo ?? ""}
-              // Venezuela
-              stateOutside={form.state_outside ?? ""}
-              municipalityOutside={form.municipality_outside_carabobo ?? ""}
-              phoneOutside={form.phone_outside_carabobo ?? ""}
-              celPhoneOutside={form.cel_phone_outside_carabobo ?? ""}
-              serviceAddressOutsideCarabobo={
-                form.service_address_outside_carabobo ?? ""
-              }
-              // Exterior
-              country={form.country ?? ""}
-              phoneOutsideVenezuela={form.phone_outside_venezuela ?? ""}
-              cellPhoneOutsideVenezuela={
-                form.cell_phone_outside_venezuela ?? ""
-              } // NUEVO PROP (Asegúrate de actualizar LocationSection.tsx)
-              serviceAddressOutsideVenezuela={
-                form.service_address_outside_venezuela ?? ""
-              }
-              onServiceAddressChange={(v) => setForm("service_address", v)}
-              // Handlers Carabobo
-              onMunicipalityCaraboboChange={(v) =>
-                setForm("municipality_carabobo", v)
-              }
-              onPhoneCaraboboChange={(v) => setForm("phone_carabobo", v)}
-              onCelPhoneCaraboboChange={(v) => setForm("cel_phone_carabobo", v)}
-              // Handlers Venezuela
-              onStateOutsideChange={(v) => setForm("state_outside", v)}
-              onMunicipalityOutsideChange={(v) =>
-                setForm("municipality_outside_carabobo", v)
-              }
-              onPhoneOutsideChange={(v) => setForm("phone_outside_carabobo", v)}
-              onCelPhoneOutsideChange={(v) =>
-                setForm("cel_phone_outside_carabobo", v)
-              }
-              onServiceAddressOutsideCaraboboChange={(v) =>
-                setForm("service_address_outside_carabobo", v)
-              }
-              // Handlers Exterior
-              onCountryChange={(v) => setForm("country", v)}
-              onPhoneOutsideVenezuelaChange={(v) =>
-                setForm("phone_outside_venezuela", v)
-              }
-              onCellPhoneOutsideVenezuelaChange={(v) =>
-                setForm("cell_phone_outside_venezuela", v)
-              } // NUEVO
-              onServiceAddressOutsideVenezuelaChange={(v) =>
-                setForm("service_address_outside_venezuela", v)
-              }
-            />
+              <PanelSection title="Expediente Académico" accent="border-colpsi-blue">
+                <AcademicSection
+                  undergraduateData={{
+                    university_undergraduate:
+                      profile()?.col_data?.university_undergraduate,
+                    graduate_date: profile()?.col_data?.graduate_date,
+                    mention_undergraduate:
+                      profile()?.col_data?.mention_undergraduate,
+                    title_image_one_url: profile()?.col_data?.title_image_one_url,
+                    title_image_two_url: profile()?.col_data?.title_image_two_url,
+                    title_image_three_url:
+                      profile()?.col_data?.title_image_three_url,
+                    register_number: profile()?.col_data?.register_number,
+                    register_folio: profile()?.col_data?.register_folio,
+                    register_tome: profile()?.col_data?.register_tome,
+                    register_title_date: profile()?.col_data?.register_title_date,
+                    register_title_state: profile()?.col_data?.register_title_state,
+                  }}
+                  showUniversity={true}
+                  showGraduateDate={true}
+                  showMention={true}
+                  files={files()}
+                  setFiles={setFiles}
+                />
+              </PanelSection>
 
-            <ProfessionalSection
-              primaryWorkArea={form.primary_work_area ?? ""} // NUEVO PROP (Asegúrate de actualizar ProfessionalSection.tsx)
-              secondaryWorkArea={form.secondary_work_area ?? ""} // NUEVO PROP
-              miniBio={form.mini_bio ?? ""}
-              fullBio={form.full_bio ?? ""}
-              specialties={specialties()} // Reutilizado o actualizar a workAreas si corresponde
-              onFullBioChange={(v) => setForm("full_bio", v)}
-              onPrimaryWorkAreaChange={(v) => setForm("primary_work_area", v)} // NUEVO
-              onSecondaryWorkAreaChange={(v) =>
-                setForm("secondary_work_area", v)
-              } // NUEVO
-              onMiniBioChange={(v) => setForm("mini_bio", v)}
-            />
+              <PanelSection title="Ubicación Geográfica" accent="border-indigo-400">
+                <LocationSection
+                  serviceAddress={form.service_address ?? ""}
+                  municipalityCarabobo={form.municipality_carabobo ?? ""}
+                  phoneCarabobo={form.phone_carabobo ?? ""}
+                  celPhoneCarabobo={form.cel_phone_carabobo ?? ""}
+                  stateOutside={form.state_outside ?? ""}
+                  municipalityOutside={form.municipality_outside_carabobo ?? ""}
+                  phoneOutside={form.phone_outside_carabobo ?? ""}
+                  celPhoneOutside={form.cel_phone_outside_carabobo ?? ""}
+                  serviceAddressOutsideCarabobo={
+                    form.service_address_outside_carabobo ?? ""
+                  }
+                  country={form.country ?? ""}
+                  phoneOutsideVenezuela={form.phone_outside_venezuela ?? ""}
+                  cellPhoneOutsideVenezuela={
+                    form.cell_phone_outside_venezuela ?? ""
+                  }
+                  serviceAddressOutsideVenezuela={
+                    form.service_address_outside_venezuela ?? ""
+                  }
+                  onServiceAddressChange={(v) => setForm("service_address", v)}
+                  onMunicipalityCaraboboChange={(v) =>
+                    setForm("municipality_carabobo", v)
+                  }
+                  onPhoneCaraboboChange={(v) => setForm("phone_carabobo", v)}
+                  onCelPhoneCaraboboChange={(v) => setForm("cel_phone_carabobo", v)}
+                  onStateOutsideChange={(v) => setForm("state_outside", v)}
+                  onMunicipalityOutsideChange={(v) =>
+                    setForm("municipality_outside_carabobo", v)
+                  }
+                  onPhoneOutsideChange={(v) => setForm("phone_outside_carabobo", v)}
+                  onCelPhoneOutsideChange={(v) =>
+                    setForm("cel_phone_outside_carabobo", v)
+                  }
+                  onServiceAddressOutsideCaraboboChange={(v) =>
+                    setForm("service_address_outside_carabobo", v)
+                  }
+                  onCountryChange={(v) => setForm("country", v)}
+                  onPhoneOutsideVenezuelaChange={(v) =>
+                    setForm("phone_outside_venezuela", v)
+                  }
+                  onCellPhoneOutsideVenezuelaChange={(v) =>
+                    setForm("cell_phone_outside_venezuela", v)
+                  }
+                  onServiceAddressOutsideVenezuelaChange={(v) =>
+                    setForm("service_address_outside_venezuela", v)
+                  }
+                />
+              </PanelSection>
 
-            <PrivacySection
-              // Contacto principal
-              showContactEmail={form.show_contact_email}
-              showServiceAddress={form.show_public_service_address}
-              // Carabobo (NUEVOS - Actualizar PrivacySection.tsx)
-              showMunicipalityCarabobo={form.show_municipality_carabobo}
-              showPhoneCarabobo={form.show_phone_carabobo}
-              showCelPhoneCarabobo={form.show_cel_phone_carabobo}
-              // Fuera de Carabobo
-              showStateOutside={form.show_state_outside} // NUEVO
-              showMunicipalityOutsideCarabobo={
-                form.show_municipality_outside_carabobo
-              } // NUEVO
-              showPhoneOutsideCarabobo={form.show_phone_outside_carabobo}
-              showCelPhoneOutsideCarabobo={form.show_cel_phone_outside_carabobo}
-              showServiceAddressOutsideCarabobo={
-                form.show_public_service_address_outside_carabobo
-              }
-              // Exterior
-              showPhoneOutsideVenezuela={form.show_phone_outside_venezuela}
-              showCelPhoneOutsideVenezuela={
-                form.show_cel_phone_outside_venezuela
-              }
-              showServiceAddressOutsideVenezuela={
-                form.show_public_service_address_outside_venezuela
-              }
-              // Datos académicos
-              showUniversity={form.show_university_undergraduate}
-              showGraduateDate={form.show_graduate_date}
-              showMention={form.show_mention_undergraduate}
-              // Handlers contacto
-              onShowContactEmailChange={(v) => setForm("show_contact_email", v)}
-              onShowServiceAddressChange={(v) =>
-                setForm("show_public_service_address", v)
-              }
-              // Handlers Carabobo (NUEVOS)
-              onShowMunicipalityCaraboboChange={(v) =>
-                setForm("show_municipality_carabobo", v)
-              }
-              onShowPhoneCaraboboChange={(v) =>
-                setForm("show_phone_carabobo", v)
-              }
-              onShowCelPhoneCaraboboChange={(v) =>
-                setForm("show_cel_phone_carabobo", v)
-              }
-              // Handlers fuera de Carabobo
-              onShowStateOutsideChange={(v) => setForm("show_state_outside", v)} // NUEVO
-              onShowMunicipalityOutsideCaraboboChange={(v) =>
-                setForm("show_municipality_outside_carabobo", v)
-              } // NUEVO
-              onShowPhoneOutsideCaraboboChange={(v) =>
-                setForm("show_phone_outside_carabobo", v)
-              }
-              onShowCelPhoneOutsideCaraboboChange={(v) =>
-                setForm("show_cel_phone_outside_carabobo", v)
-              }
-              onShowServiceAddressOutsideCaraboboChange={(v) =>
-                setForm("show_public_service_address_outside_carabobo", v)
-              }
-              // Handlers exterior
-              onShowPhoneOutsideVenezuelaChange={(v) =>
-                setForm("show_phone_outside_venezuela", v)
-              }
-              onShowCelPhoneOutsideVenezuelaChange={(v) =>
-                setForm("show_cel_phone_outside_venezuela", v)
-              }
-              onShowServiceAddressOutsideVenezuelaChange={(v) =>
-                setForm("show_public_service_address_outside_venezuela", v)
-              }
-              // Handlers académicos
-              onShowUniversity={(v) =>
-                setForm("show_university_undergraduate", v)
-              }
-              onShowGraduateDateChange={(v) => setForm("show_graduate_date", v)}
-              onShowMentionChange={(v) =>
-                setForm("show_mention_undergraduate", v)
-              }
-            />
+              <PanelSection title="Perfil Profesional">
+                <ProfessionalSection
+                  primaryWorkArea={form.primary_work_area ?? ""}
+                  secondaryWorkArea={form.secondary_work_area ?? ""}
+                  miniBio={form.mini_bio ?? ""}
+                  fullBio={form.full_bio ?? ""}
+                  specialties={specialties()}
+                  onFullBioChange={(v) => setForm("full_bio", v)}
+                  onPrimaryWorkAreaChange={(v) => setForm("primary_work_area", v)}
+                  onSecondaryWorkAreaChange={(v) =>
+                    setForm("secondary_work_area", v)
+                  }
+                  onMiniBioChange={(v) => setForm("mini_bio", v)}
+                />
+              </PanelSection>
 
-            <SecuritySection
-              password={form.password ?? ""}
-              onPasswordChange={(v) => setForm("password", v)}
-              message={message()}
-            />
+              <PanelSection title="Privacidad y Visibilidad" accent="border-colpsi-yellow">
+                <PrivacySection
+                  showContactEmail={form.show_contact_email}
+                  showServiceAddress={form.show_public_service_address}
+                  showMunicipalityCarabobo={form.show_municipality_carabobo}
+                  showPhoneCarabobo={form.show_phone_carabobo}
+                  showCelPhoneCarabobo={form.show_cel_phone_carabobo}
+                  showStateOutside={form.show_state_outside}
+                  showMunicipalityOutsideCarabobo={
+                    form.show_municipality_outside_carabobo
+                  }
+                  showPhoneOutsideCarabobo={form.show_phone_outside_carabobo}
+                  showCelPhoneOutsideCarabobo={form.show_cel_phone_outside_carabobo}
+                  showServiceAddressOutsideCarabobo={
+                    form.show_public_service_address_outside_carabobo
+                  }
+                  showPhoneOutsideVenezuela={form.show_phone_outside_venezuela}
+                  showCelPhoneOutsideVenezuela={
+                    form.show_cel_phone_outside_venezuela
+                  }
+                  showServiceAddressOutsideVenezuela={
+                    form.show_public_service_address_outside_venezuela
+                  }
+                  showUniversity={form.show_university_undergraduate}
+                  showGraduateDate={form.show_graduate_date}
+                  showMention={form.show_mention_undergraduate}
+                  onShowContactEmailChange={(v) => setForm("show_contact_email", v)}
+                  onShowServiceAddressChange={(v) =>
+                    setForm("show_public_service_address", v)
+                  }
+                  onShowMunicipalityCaraboboChange={(v) =>
+                    setForm("show_municipality_carabobo", v)
+                  }
+                  onShowPhoneCaraboboChange={(v) =>
+                    setForm("show_phone_carabobo", v)
+                  }
+                  onShowCelPhoneCaraboboChange={(v) =>
+                    setForm("show_cel_phone_carabobo", v)
+                  }
+                  onShowStateOutsideChange={(v) => setForm("show_state_outside", v)}
+                  onShowMunicipalityOutsideCaraboboChange={(v) =>
+                    setForm("show_municipality_outside_carabobo", v)
+                  }
+                  onShowPhoneOutsideCaraboboChange={(v) =>
+                    setForm("show_phone_outside_carabobo", v)
+                  }
+                  onShowCelPhoneOutsideCaraboboChange={(v) =>
+                    setForm("show_cel_phone_outside_carabobo", v)
+                  }
+                  onShowServiceAddressOutsideCaraboboChange={(v) =>
+                    setForm("show_public_service_address_outside_carabobo", v)
+                  }
+                  onShowPhoneOutsideVenezuelaChange={(v) =>
+                    setForm("show_phone_outside_venezuela", v)
+                  }
+                  onShowCelPhoneOutsideVenezuelaChange={(v) =>
+                    setForm("show_cel_phone_outside_venezuela", v)
+                  }
+                  onShowServiceAddressOutsideVenezuelaChange={(v) =>
+                    setForm("show_public_service_address_outside_venezuela", v)
+                  }
+                  onShowUniversity={(v) =>
+                    setForm("show_university_undergraduate", v)
+                  }
+                  onShowGraduateDateChange={(v) => setForm("show_graduate_date", v)}
+                  onShowMentionChange={(v) =>
+                    setForm("show_mention_undergraduate", v)
+                  }
+                />
+              </PanelSection>
+
+              <PanelSection title="Redes Sociales">
+                <SocialNetworksSection
+                  networks={profile()?.social_networks}
+                  newNetworkName={socialForm.name}
+                  newNetworkUrl={socialForm.url}
+                  saving={savingSocial()}
+                  onNetworkNameChange={(v) => setSocialForm("name", v)}
+                  onNetworkUrlChange={(v) => setSocialForm("url", v)}
+                  onAddNetwork={handleAddSocial}
+                  onDeleteNetwork={handleDeleteSocial}
+                />
+              </PanelSection>
+            </Panel>
 
             <SaveButton saving={saving()} />
           </form>
-
-          <SocialNetworksSection
-            networks={profile()?.social_networks}
-            newNetworkName={socialForm.name}
-            newNetworkUrl={socialForm.url}
-            saving={savingSocial()}
-            onNetworkNameChange={(v) => setSocialForm("name", v)}
-            onNetworkUrlChange={(v) => setSocialForm("url", v)}
-            onAddNetwork={handleAddSocial}
-            onDeleteNetwork={handleDeleteSocial}
-          />
         </Suspense>
       </div>
     </main>

@@ -52,11 +52,8 @@ interface PrivacySectionProps {
 
 export function PrivacySection(props: PrivacySectionProps) {
   return (
-    <section class="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-premium border border-gray-100">
-      <div class="mb-6 border-l-4 border-colpsi-yellow pl-3">
-        <h2 class="text-xl font-black text-colpsi-blue leading-tight">Centro de Privacidad</h2>
-        <p class="text-sm text-colpsi-muted mt-1">Controla qué información es visible para el público en el directorio.</p>
-      </div>
+    <section>
+
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 

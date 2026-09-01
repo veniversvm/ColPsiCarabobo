@@ -12,14 +12,11 @@ interface ContactSectionProps {
 
 export function ContactSection(props: ContactSectionProps) {
   return (
-    <section class="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-premium border border-gray-100">
-      <div class="mb-6 border-l-4 border-colpsi-blue pl-3">
-        <h2 class="text-xl font-black text-colpsi-blue leading-tight">Contacto Gremial</h2>
-        <p class="text-[11px] text-gray-500 mt-1 font-medium leading-relaxed">
-          Estos datos son de <span class="font-bold">uso exclusivo e interno</span> del Colegio de Psicólogos. 
-          No serán publicados en el directorio bajo ninguna circunstancia.
-        </p>
-      </div>
+    <section>
+      <p class="text-[11px] text-gray-500 mb-4 font-medium leading-relaxed">
+        Estos datos son de <span class="font-bold">uso exclusivo e interno</span> del Colegio de Psicólogos.
+        No serán publicados en el directorio bajo ninguna circunstancia.
+      </p>
       
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Fila 1 - Ocupa todo el ancho */}

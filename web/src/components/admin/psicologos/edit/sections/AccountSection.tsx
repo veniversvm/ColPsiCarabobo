@@ -3,7 +3,7 @@
 import { Show, createMemo } from "solid-js";
 import QRCodeGenerator from "~/components/psi/profile/QrCode";
 import { bucketUrl } from "~/lib/bucket";
-import { Field, IC, SectionCard } from "../EditPrimitives";
+import { Field, IC } from "../EditPrimitives";
 import type { EditFormState } from "../types";
 
 interface Props {
@@ -36,8 +36,7 @@ export function AccountSection(props: Props) {
   };
 
   return (
-    <SectionCard title="Cuenta y Perfil Visual" accent="border-colpsi-yellow">
-      <div class="flex flex-col xl:flex-row gap-10">
+    <div class="flex flex-col xl:flex-row gap-10">
         
         {/* 1. Gestión de Foto de Perfil */}
         <div class="flex flex-col items-center space-y-4">
@@ -147,6 +146,5 @@ export function AccountSection(props: Props) {
         </div>
 
       </div>
-    </SectionCard>
   );
 }

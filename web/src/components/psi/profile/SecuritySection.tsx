@@ -12,7 +12,7 @@ interface SecuritySectionProps {
 
 export function SecuritySection(props: SecuritySectionProps) {
   return (
-    <section class="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-premium border border-gray-100 transition-all hover:border-red-100">
+    <section>
       
       {/* 
         Muestra alertas de éxito o error específicas del proceso de guardado 
@@ -24,16 +24,7 @@ export function SecuritySection(props: SecuritySectionProps) {
         </div>
       </Show>
 
-      <div class="flex items-center gap-3 mb-6 border-l-4 border-colpsi-red pl-3">
-        <div class="bg-red-50 p-2 rounded-lg">
-           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-colpsi-red" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-          </svg>
-        </div>
-        <h2 class="text-xl font-black text-colpsi-red leading-tight">
-          Validación de Seguridad
-        </h2>
-      </div>
+
       
       <div class="grid grid-cols-1 gap-6">
         <div class="space-y-1 w-full md:max-w-md">
