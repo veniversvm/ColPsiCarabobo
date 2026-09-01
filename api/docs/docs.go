@@ -959,20 +959,20 @@ const docTemplate = `{
             }
         },
         "/admin/psi/{id}/deontologia/{entryId}": {
-            "delete": {
+            "patch": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Elimina lógicamente (Soft Delete) una entrada deontológica de un psicólogo.",
+                "description": "Edita el contenido de una entrada deontológica existente. El contenido es texto plano y se sanitiza en la API. El expediente no se puede eliminar, solo corregir.",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
-                "tags": [
-                    "Administración - Psicólogos"
-                ],
-                "summary": "Eliminar entrada deontológica (Admin)",
+                "summary": "Editar entrada deontológica (Admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -987,11 +987,20 @@ const docTemplate = `{
                         "name": "entryId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Nuevo contenido de la entrada",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.UpdateDeontologiaRequest"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "message: Entrada deontológica eliminada",
+                        "description": "message: Entrada deontológica actualizada",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1000,7 +1009,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "error: ID inválido",
+                        "description": "error: ID inválido o contenido vacío",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -2288,7 +2297,8 @@ const docTemplate = `{
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
-                                "type": "integer"
+                                "type": "integer",
+                                "format": "int64"
                             }
                         }
                     }
@@ -3741,6 +3751,16 @@ const docTemplate = `{
                 "username": {
                     "type": "string",
                     "example": "nuevo_username"
+                }
+            }
+        },
+        "request_structs.UpdateDeontologiaRequest": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "Content es el nuevo texto de la entrada (texto plano; se sanitiza en la API).",
+                    "type": "string",
+                    "example": "Expediente actualizado por el Tribunal Disciplinario."
                 }
             }
         },

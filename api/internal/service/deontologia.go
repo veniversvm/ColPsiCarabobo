@@ -73,17 +73,33 @@ func (s *PsiService) ListDeontologiaByPsiID(ctx context.Context, admin *domain.U
 	return s.repo.ListDeontologiaByPsiID(ctx, psiID)
 }
 
-// DeleteDeontologiaByAdmin elimina lógicamente una entrada deontológica.
-func (s *PsiService) DeleteDeontologiaByAdmin(ctx context.Context, admin *domain.UserAdmin, entryID uuid.UUID) error {
+// UpdateDeontologiaByAdmin edita el contenido de una entrada deontológica existente.
+// Las entradas son un expediente histórico: se pueden corregir, pero no eliminar.
+func (s *PsiService) UpdateDeontologiaByAdmin(ctx context.Context, admin *domain.UserAdmin, entryID uuid.UUID, req request_structs.UpdateDeontologiaRequest) error {
 	// 1. VALIDACIÓN DE PERMISOS (Gatekeeping)
 	if !admin.Sudo && !admin.CanUpdatePsi && !admin.CanCreatePsi {
 		return domain.ErrInsufficientPerms
 	}
 
-	// 2. EXISTENCIA (404 si no está)
+	// 2. EXISTENCIA (404 si no está) — e integridad: la entrada debe pertenecer a un psicólogo real
 	if _, err := s.repo.GetDeontologiaByID(ctx, entryID); err != nil {
 		return domain.ErrDeontologiaNotFound
 	}
 
-	return s.repo.DeleteDeontologia(ctx, entryID)
+	// 3. EL CONTENIDO ES OBLIGATORIO EN EL PATCH
+	if req.Content == nil {
+		return domain.ErrInvalidRequest
+	}
+
+	// 4. NORMALIZACIÓN Y SANITIZACIÓN
+	content := strings.TrimSpace(bluemonday.StrictPolicy().Sanitize(*req.Content))
+	if content == "" {
+		return domain.ErrInvalidRequest
+	}
+	if len(content) > 10000 {
+		return domain.ErrInvalidRequest
+	}
+
+	// 5. PERSISTENCIA CON AUDITORÍA DEL EJECUTOR
+	return s.repo.UpdateDeontologia(ctx, entryID, content, admin.Username, admin.ID)
 }

@@ -1112,6 +1112,14 @@ definitions:
     required:
     - id
     type: object
+  request_structs.UpdateDeontologiaRequest:
+    properties:
+      content:
+        description: Content es el nuevo texto de la entrada (texto plano; se sanitiza
+          en la API).
+        example: Expediente actualizado por el Tribunal Disciplinario.
+        type: string
+    type: object
   request_structs.UpdatePsiAdminRequest:
     properties:
       born_date:
@@ -1799,9 +1807,12 @@ paths:
       tags:
       - Administración - Psicólogos
   /admin/psi/{id}/deontologia/{entryId}:
-    delete:
-      description: Elimina lógicamente (Soft Delete) una entrada deontológica de un
-        psicólogo.
+    patch:
+      consumes:
+      - application/json
+      description: Edita el contenido de una entrada deontológica existente. El contenido
+        es texto plano y se sanitiza en la API. El expediente no se puede eliminar,
+        solo corregir.
       parameters:
       - description: UUID del Psicólogo
         in: path
@@ -1813,17 +1824,23 @@ paths:
         name: entryId
         required: true
         type: string
+      - description: Nuevo contenido de la entrada
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.UpdateDeontologiaRequest'
       produces:
       - application/json
       responses:
         "200":
-          description: 'message: Entrada deontológica eliminada'
+          description: 'message: Entrada deontológica actualizada'
           schema:
             additionalProperties:
               type: string
             type: object
         "400":
-          description: 'error: ID inválido'
+          description: 'error: ID inválido o contenido vacío'
           schema:
             additionalProperties:
               type: string
@@ -1842,9 +1859,7 @@ paths:
             type: object
       security:
       - BearerAuth: []
-      summary: Eliminar entrada deontológica (Admin)
-      tags:
-      - Administración - Psicólogos
+      summary: Editar entrada deontológica (Admin)
   /admin/psi/{id}/picture:
     delete:
       description: 'Elimina el avatar del psicólogo: borra el objeto de S3 y limpia
@@ -2856,6 +2871,7 @@ paths:
           description: count
           schema:
             additionalProperties:
+              format: int64
               type: integer
             type: object
       summary: Contar total de especialidades

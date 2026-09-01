@@ -18,7 +18,7 @@ type mockPsiRepoDeontologia struct {
 	CreateDeontologiaFunc    func(ctx context.Context, entry *domain.PsiODeontologia) error
 	ListDeontologiaByPsiIDFunc func(ctx context.Context, psiID uuid.UUID) ([]domain.PsiODeontologia, error)
 	GetDeontologiaByIDFunc   func(ctx context.Context, id uuid.UUID) (*domain.PsiODeontologia, error)
-	DeleteDeontologiaFunc    func(ctx context.Context, id uuid.UUID) error
+	UpdateDeontologiaFunc    func(ctx context.Context, id uuid.UUID, content, updateBy string, updateById uuid.UUID) error
 }
 
 func (m *mockPsiRepoDeontologia) GetByID(ctx context.Context, id uuid.UUID) (*domain.PsiUserModel, error) {
@@ -46,9 +46,9 @@ func (m *mockPsiRepoDeontologia) GetDeontologiaByID(ctx context.Context, id uuid
 	return nil, nil
 }
 
-func (m *mockPsiRepoDeontologia) DeleteDeontologia(ctx context.Context, id uuid.UUID) error {
-	if m.DeleteDeontologiaFunc != nil {
-		return m.DeleteDeontologiaFunc(ctx, id)
+func (m *mockPsiRepoDeontologia) UpdateDeontologia(ctx context.Context, id uuid.UUID, content, updateBy string, updateById uuid.UUID) error {
+	if m.UpdateDeontologiaFunc != nil {
+		return m.UpdateDeontologiaFunc(ctx, id, content, updateBy, updateById)
 	}
 	return nil
 }
@@ -177,36 +177,69 @@ func TestPsiService_Deontologia(t *testing.T) {
 		}
 	})
 
-	t.Run("DeleteDeontologiaByAdmin: éxito", func(t *testing.T) {
+	t.Run("UpdateDeontologiaByAdmin: éxito", func(t *testing.T) {
 		repo := &mockPsiRepoDeontologia{}
 		svc := NewPsiService(repo, nil, &mockMailService{})
 		repo.GetDeontologiaByIDFunc = func(ctx context.Context, id uuid.UUID) (*domain.PsiODeontologia, error) {
 			return &domain.PsiODeontologia{ID: entryID}, nil
 		}
-		deleted := false
-		repo.DeleteDeontologiaFunc = func(ctx context.Context, id uuid.UUID) error {
-			deleted = true
+		updated := false
+		repo.UpdateDeontologiaFunc = func(ctx context.Context, id uuid.UUID, content, updateBy string, updateById uuid.UUID) error {
+			updated = true
 			return nil
 		}
+		content := "Expediente corregido"
+		req := request_structs.UpdateDeontologiaRequest{Content: &content}
 
-		if err := svc.DeleteDeontologiaByAdmin(ctx, adminSudo, entryID); err != nil {
+		if err := svc.UpdateDeontologiaByAdmin(ctx, adminSudo, entryID, req); err != nil {
 			t.Fatalf("No se esperaba error: %v", err)
 		}
-		if !deleted {
-			t.Error("DeleteDeontologia no fue invocado")
+		if !updated {
+			t.Error("UpdateDeontologia no fue invocado")
 		}
 	})
 
-	t.Run("DeleteDeontologiaByAdmin: entrada inexistente", func(t *testing.T) {
+	t.Run("UpdateDeontologiaByAdmin: entrada inexistente", func(t *testing.T) {
 		repo := &mockPsiRepoDeontologia{}
 		svc := NewPsiService(repo, nil, &mockMailService{})
 		repo.GetDeontologiaByIDFunc = func(ctx context.Context, id uuid.UUID) (*domain.PsiODeontologia, error) {
 			return nil, domain.ErrDeontologiaNotFound
 		}
+		content := "X"
+		req := request_structs.UpdateDeontologiaRequest{Content: &content}
 
-		err := svc.DeleteDeontologiaByAdmin(ctx, adminSudo, entryID)
+		err := svc.UpdateDeontologiaByAdmin(ctx, adminSudo, entryID, req)
 		if !errors.Is(err, domain.ErrDeontologiaNotFound) {
 			t.Errorf("Se esperaba ErrDeontologiaNotFound, got %v", err)
+		}
+	})
+
+	t.Run("UpdateDeontologiaByAdmin: sin permisos", func(t *testing.T) {
+		repo := &mockPsiRepoDeontologia{}
+		svc := NewPsiService(repo, nil, &mockMailService{})
+		repo.GetDeontologiaByIDFunc = func(ctx context.Context, id uuid.UUID) (*domain.PsiODeontologia, error) {
+			return &domain.PsiODeontologia{ID: entryID}, nil
+		}
+		content := "X"
+		req := request_structs.UpdateDeontologiaRequest{Content: &content}
+
+		err := svc.UpdateDeontologiaByAdmin(ctx, adminSinPermiso, entryID, req)
+		if !errors.Is(err, domain.ErrInsufficientPerms) {
+			t.Errorf("Se esperaba ErrInsufficientPerms, got %v", err)
+		}
+	})
+
+	t.Run("UpdateDeontologiaByAdmin: contenido nulo", func(t *testing.T) {
+		repo := &mockPsiRepoDeontologia{}
+		svc := NewPsiService(repo, nil, &mockMailService{})
+		repo.GetDeontologiaByIDFunc = func(ctx context.Context, id uuid.UUID) (*domain.PsiODeontologia, error) {
+			return &domain.PsiODeontologia{ID: entryID}, nil
+		}
+		req := request_structs.UpdateDeontologiaRequest{Content: nil}
+
+		err := svc.UpdateDeontologiaByAdmin(ctx, adminSudo, entryID, req)
+		if !errors.Is(err, domain.ErrInvalidRequest) {
+			t.Errorf("Se esperaba ErrInvalidRequest, got %v", err)
 		}
 	})
 }

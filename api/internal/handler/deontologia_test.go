@@ -220,7 +220,7 @@ func TestAddDeontologiaByAdmin(t *testing.T) {
 	})
 }
 
-func TestDeleteDeontologiaByAdmin(t *testing.T) {
+func TestUpdateDeontologiaByAdmin(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		admin := testAdmin(uuid.New(), true, true)
 		psiID := uuid.New()
@@ -229,7 +229,7 @@ func TestDeleteDeontologiaByAdmin(t *testing.T) {
 			GetDeontologiaByIDFunc: func(_ context.Context, id uuid.UUID) (*domain.PsiODeontologia, error) {
 				return &domain.PsiODeontologia{ID: entryID, PsiUserID: psiID}, nil
 			},
-			DeleteDeontologiaFunc: func(_ context.Context, id uuid.UUID) error {
+			UpdateDeontologiaFunc: func(_ context.Context, id uuid.UUID, content, updateBy string, updateById uuid.UUID) error {
 				return nil
 			},
 		}
@@ -240,9 +240,10 @@ func TestDeleteDeontologiaByAdmin(t *testing.T) {
 		}
 		h := testPsiAdminHandler(psiRepo, adminRepo, &mockAnalyticsRepo{})
 		token := adminTestToken(admin)
-		app := setupAdminRouteForTest(fiber.MethodDelete, "/psi/:id/deontologia/:entryId", h.DeleteDeontologiaByAdmin, adminRepo, psiRepo)
+		app := setupAdminRouteForTest(fiber.MethodPatch, "/psi/:id/deontologia/:entryId", h.UpdateDeontologiaByAdmin, adminRepo, psiRepo)
 
-		req := httptest.NewRequest(fiber.MethodDelete, "/api/v1/admin/psi/"+psiID.String()+"/deontologia/"+entryID.String(), nil)
+		req := httptest.NewRequest(fiber.MethodPatch, "/api/v1/admin/psi/"+psiID.String()+"/deontologia/"+entryID.String(), strings.NewReader(`{"content":"nuevo contenido"}`))
+		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Authorization", "Bearer "+token)
 
 		resp, err := app.Test(req)
@@ -261,9 +262,10 @@ func TestDeleteDeontologiaByAdmin(t *testing.T) {
 		}
 		h := testPsiAdminHandler(psiRepo, adminRepo, &mockAnalyticsRepo{})
 		token := adminTestToken(admin)
-		app := setupAdminRouteForTest(fiber.MethodDelete, "/psi/:id/deontologia/:entryId", h.DeleteDeontologiaByAdmin, adminRepo, psiRepo)
+		app := setupAdminRouteForTest(fiber.MethodPatch, "/psi/:id/deontologia/:entryId", h.UpdateDeontologiaByAdmin, adminRepo, psiRepo)
 
-		req := httptest.NewRequest(fiber.MethodDelete, "/api/v1/admin/psi/"+psiID.String()+"/deontologia/not-a-uuid", nil)
+		req := httptest.NewRequest(fiber.MethodPatch, "/api/v1/admin/psi/"+psiID.String()+"/deontologia/not-a-uuid", strings.NewReader(`{"content":"x"}`))
+		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Authorization", "Bearer "+token)
 
 		resp, err := app.Test(req)
@@ -287,13 +289,41 @@ func TestDeleteDeontologiaByAdmin(t *testing.T) {
 		}
 		h := testPsiAdminHandler(psiRepo, adminRepo, &mockAnalyticsRepo{})
 		token := adminTestToken(admin)
-		app := setupAdminRouteForTest(fiber.MethodDelete, "/psi/:id/deontologia/:entryId", h.DeleteDeontologiaByAdmin, adminRepo, psiRepo)
+		app := setupAdminRouteForTest(fiber.MethodPatch, "/psi/:id/deontologia/:entryId", h.UpdateDeontologiaByAdmin, adminRepo, psiRepo)
 
-		req := httptest.NewRequest(fiber.MethodDelete, "/api/v1/admin/psi/"+psiID.String()+"/deontologia/"+entryID.String(), nil)
+		req := httptest.NewRequest(fiber.MethodPatch, "/api/v1/admin/psi/"+psiID.String()+"/deontologia/"+entryID.String(), strings.NewReader(`{"content":"x"}`))
+		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Authorization", "Bearer "+token)
 
 		resp, err := app.Test(req)
 		require.NoError(t, err)
 		require.Equal(t, fiber.StatusNotFound, resp.StatusCode)
+	})
+
+	t.Run("empty_content", func(t *testing.T) {
+		admin := testAdmin(uuid.New(), true, true)
+		psiID := uuid.New()
+		entryID := uuid.New()
+		psiRepo := &mockPsiRepo{
+			GetDeontologiaByIDFunc: func(_ context.Context, id uuid.UUID) (*domain.PsiODeontologia, error) {
+				return &domain.PsiODeontologia{ID: entryID, PsiUserID: psiID}, nil
+			},
+		}
+		adminRepo := &mockAdminRepo{
+			GetByIDFunc: func(_ context.Context, id uuid.UUID) (*domain.UserAdmin, error) {
+				return admin, nil
+			},
+		}
+		h := testPsiAdminHandler(psiRepo, adminRepo, &mockAnalyticsRepo{})
+		token := adminTestToken(admin)
+		app := setupAdminRouteForTest(fiber.MethodPatch, "/psi/:id/deontologia/:entryId", h.UpdateDeontologiaByAdmin, adminRepo, psiRepo)
+
+		req := httptest.NewRequest(fiber.MethodPatch, "/api/v1/admin/psi/"+psiID.String()+"/deontologia/"+entryID.String(), strings.NewReader(`{"content":"   "}`))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+token)
+
+		resp, err := app.Test(req)
+		require.NoError(t, err)
+		require.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
 	})
 }

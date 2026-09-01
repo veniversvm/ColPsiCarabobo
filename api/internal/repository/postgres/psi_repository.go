@@ -853,9 +853,16 @@ func (r *psiRepo) GetDeontologiaByID(ctx context.Context, id uuid.UUID) (*domain
 	return &entry, err
 }
 
-// DeleteDeontologia elimina lógicamente (Soft Delete) una entrada deontológica.
-func (r *psiRepo) DeleteDeontologia(ctx context.Context, id uuid.UUID) error {
-	return r.db.WithContext(ctx).Delete(&domain.PsiODeontologia{}, "id = ?", id).Error
+// UpdateDeontologia actualiza el contenido de una entrada deontológica existente y
+// refresca la auditoría del último editor. No elimina el registro histórico.
+func (r *psiRepo) UpdateDeontologia(ctx context.Context, id uuid.UUID, content, updateBy string, updateById uuid.UUID) error {
+	return r.db.WithContext(ctx).Model(&domain.PsiODeontologia{}).
+		Where("id = ?", id).
+		Updates(map[string]interface{}{
+			"content":     content,
+			"update_by":   updateBy,
+			"update_by_id": updateById,
+		}).Error
 }
 
 // GetTextContentByID recupera el contenido de un TextModel dado su UUID.

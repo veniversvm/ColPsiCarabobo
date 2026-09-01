@@ -158,6 +158,8 @@ type PsiUserRepository interface {
 	// GetDeontologiaByID busca una entrada deontológica específica por su UUID.
 	GetDeontologiaByID(ctx context.Context, id uuid.UUID) (*PsiODeontologia, error)
 
-	// DeleteDeontologia elimina lógicamente (Soft Delete) una entrada deontológica.
-	DeleteDeontologia(ctx context.Context, id uuid.UUID) error
+	// UpdateDeontologia actualiza el contenido (y la auditoría de edición) de una
+	// entrada deontológica existente. Las entradas del expediente no se eliminan:
+	// solo pueden corregirse.
+	UpdateDeontologia(ctx context.Context, id uuid.UUID, content, updateBy string, updateById uuid.UUID) error
 }

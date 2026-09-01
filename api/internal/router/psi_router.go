@@ -56,7 +56,7 @@ func SetupPsiRoutes(router fiber.Router, psiRepo domain.PsiUserRepository, admin
 	// Expediente deontológico (acceso exclusivo admin)
 	adminGroup.Get("/:id<uuid>/deontologia", h.ListDeontologiaByAdmin)
 	adminGroup.Post("/:id<uuid>/deontologia", h.AddDeontologiaByAdmin)
-	adminGroup.Delete("/:id<uuid>/deontologia/:entryId<uuid>", h.DeleteDeontologiaByAdmin)
+	adminGroup.Patch("/:id<uuid>/deontologia/:entryId<uuid>", h.UpdateDeontologiaByAdmin)
 
 	// =========================================================================
 	// ZONA 2: AUTOGESTIÓN

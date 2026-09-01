@@ -652,11 +652,11 @@ func TestPsiRepo_ComprehensiveSuite(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "Primera entrada", fetched.Content)
 
-		// Delete (soft): ya no aparece en el listado
-		require.NoError(t, r.DeleteDeontologia(ctx, e1.ID))
-		entries, err = r.ListDeontologiaByPsiID(ctx, psi.ID)
+		// Update: corrige el contenido de e1 (el expediente no se puede eliminar)
+		require.NoError(t, r.UpdateDeontologia(ctx, e1.ID, "Primera entrada corregida", "admin", uuid.New()))
+		fetched, err = r.GetDeontologiaByID(ctx, e1.ID)
 		require.NoError(t, err)
-		require.Len(t, entries, 1)
+		require.Equal(t, "Primera entrada corregida", fetched.Content)
 
 		// Aislamiento entre psicólogos: otro psi no ve estas entradas
 		otherPsi := domain.PsiUserModel{

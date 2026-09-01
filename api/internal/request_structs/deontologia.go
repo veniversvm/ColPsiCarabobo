@@ -14,3 +14,11 @@ type CreateDeontologiaRequest struct {
 	// Es texto plano; la capa de servicio lo sanitiza con bluemonday antes de persistir.
 	Content string `json:"content" validate:"required" example:"Expediente abierto por el Tribunal Disciplinario."`
 }
+
+// UpdateDeontologiaRequest define la carga útil (Payload) necesaria para editar una
+// entrada deontológica existente. Usa un puntero para soportar semántica PATCH:
+// solo se actualiza el campo si viene presente en el cuerpo.
+type UpdateDeontologiaRequest struct {
+	// Content es el nuevo texto de la entrada (texto plano; se sanitiza en la API).
+	Content *string `json:"content" example:"Expediente actualizado por el Tribunal Disciplinario."`
+}

@@ -82,12 +82,13 @@ const addDeontologiaServer = action(
   },
 );
 
-const deleteDeontologiaServer = action(
-  async (params: { psiId: string; entryId: string }) => {
+const updateDeontologiaServer = action(
+  async (params: { psiId: string; entryId: string; content: string }) => {
     "use server";
-    const { apiDelete } = await import("~/lib/api");
-    return await apiDelete(
+    const { apiPatch } = await import("~/lib/api");
+    return await apiPatch(
       `/admin/psi/${params.psiId}/deontologia/${params.entryId}`,
+      { content: params.content },
     );
   },
 );
@@ -482,10 +483,10 @@ export default function AdminEditPsiPage() {
                 await addDeontologiaServer({ id, content });
                 refetchDeontologia();
               }}
-              onDelete={async (entryId) => {
+              onUpdate={async (entryId, content) => {
                 const id = params.id ?? "";
-                if (!id || !confirm("¿Eliminar esta entrada deontológica?")) return;
-                await deleteDeontologiaServer({ psiId: id, entryId });
+                if (!id) return;
+                await updateDeontologiaServer({ psiId: id, entryId, content });
                 refetchDeontologia();
               }}
             />

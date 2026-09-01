@@ -89,20 +89,21 @@ func (h *PsiHandler) AddDeontologiaByAdmin(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "Entrada deontológica creada"})
 }
 
-// DeleteDeontologiaByAdmin godoc
-// @Summary      Eliminar entrada deontológica (Admin)
-// @Description  Elimina lógicamente (Soft Delete) una entrada deontológica de un psicólogo.
+// UpdateDeontologiaByAdmin godoc
+// @Summary      Editar entrada deontológica (Admin)
+// @Description  Edita el contenido de una entrada deontológica existente. El contenido es texto plano y se sanitiza en la API. El expediente no se puede eliminar, solo corregir.
 // @Security     BearerAuth
-// @Tags         Administración - Psicólogos
+// @Accept       json
 // @Produce      json
-// @Param        id       path      string  true  "UUID del Psicólogo"
-// @Param        entryId  path      string  true  "UUID de la entrada deontológica"
-// @Success      200      {object}  map[string]string "message: Entrada deontológica eliminada"
-// @Failure      400      {object}  map[string]string "error: ID inválido"
+// @Param        id       path      string                             true  "UUID del Psicólogo"
+// @Param        entryId  path      string                             true  "UUID de la entrada deontológica"
+// @Param        request  body      request_structs.UpdateDeontologiaRequest true "Nuevo contenido de la entrada"
+// @Success      200      {object}  map[string]string "message: Entrada deontológica actualizada"
+// @Failure      400      {object}  map[string]string "error: ID inválido o contenido vacío"
 // @Failure      403      {object}  map[string]string "error: Permisos insuficientes"
 // @Failure      404      {object}  map[string]string "error: Entrada no encontrada"
-// @Router       /admin/psi/{id}/deontologia/{entryId} [delete]
-func (h *PsiHandler) DeleteDeontologiaByAdmin(c *fiber.Ctx) error {
+// @Router       /admin/psi/{id}/deontologia/{entryId} [patch]
+func (h *PsiHandler) UpdateDeontologiaByAdmin(c *fiber.Ctx) error {
 	admin, err := middleware.GetAuthenticatedAdmin(c)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
@@ -113,12 +114,21 @@ func (h *PsiHandler) DeleteDeontologiaByAdmin(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "El ID de la entrada no es un UUID válido"})
 	}
 
-	if err := h.service.DeleteDeontologiaByAdmin(c.UserContext(), admin, entryID); err != nil {
-		if errors.Is(err, domain.ErrDeontologiaNotFound) {
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": err.Error()})
-		}
-		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": err.Error()})
+	var req request_structs.UpdateDeontologiaRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "JSON inválido"})
 	}
 
-	return c.JSON(fiber.Map{"message": "Entrada deontológica eliminada"})
+	if err := h.service.UpdateDeontologiaByAdmin(c.UserContext(), admin, entryID, req); err != nil {
+		switch {
+		case errors.Is(err, domain.ErrInvalidRequest):
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		case errors.Is(err, domain.ErrDeontologiaNotFound):
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": err.Error()})
+		default:
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": err.Error()})
+		}
+	}
+
+	return c.JSON(fiber.Map{"message": "Entrada deontológica actualizada"})
 }

@@ -115,7 +115,7 @@ type mockPsiRepo struct {
 	CreateDeontologiaFunc            func(ctx context.Context, entry *domain.PsiODeontologia) error
 	ListDeontologiaByPsiIDFunc       func(ctx context.Context, psiID uuid.UUID) ([]domain.PsiODeontologia, error)
 	GetDeontologiaByIDFunc           func(ctx context.Context, id uuid.UUID) (*domain.PsiODeontologia, error)
-	DeleteDeontologiaFunc            func(ctx context.Context, id uuid.UUID) error
+	UpdateDeontologiaFunc            func(ctx context.Context, id uuid.UUID, content, updateBy string, updateById uuid.UUID) error
 }
 
 func (m *mockPsiRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.PsiUserModel, error) {
@@ -226,9 +226,9 @@ func (m *mockPsiRepo) GetDeontologiaByID(ctx context.Context, id uuid.UUID) (*do
 	}
 	return nil, domain.ErrDeontologiaNotFound
 }
-func (m *mockPsiRepo) DeleteDeontologia(ctx context.Context, id uuid.UUID) error {
-	if m.DeleteDeontologiaFunc != nil {
-		return m.DeleteDeontologiaFunc(ctx, id)
+func (m *mockPsiRepo) UpdateDeontologia(ctx context.Context, id uuid.UUID, content, updateBy string, updateById uuid.UUID) error {
+	if m.UpdateDeontologiaFunc != nil {
+		return m.UpdateDeontologiaFunc(ctx, id, content, updateBy, updateById)
 	}
 	return nil
 }
