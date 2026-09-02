@@ -13,6 +13,7 @@
 coverage*.out
 logs/
 biblioteca/
+db_data/
 *.csv
 
 # ── Documentación y planificación ───────────────────────────────────────────

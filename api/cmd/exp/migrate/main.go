@@ -29,6 +29,10 @@ func main() {
 		&domain.SearchEvent{},
 		&domain.ProfileView{},
 		&domain.ActiveSession{},
+		&domain.Notification{},
+		&domain.NotificationTarget{},
+		&domain.NotificationFilter{},
+		&domain.NotificationAttach{},
 	)
 	if err != nil {
 		log.Fatal().Err(err).Str("component", "migrate").Msg("Failed to load gorm schema")
