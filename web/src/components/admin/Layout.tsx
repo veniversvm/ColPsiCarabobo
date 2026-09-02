@@ -22,6 +22,7 @@ export default function AdminLayout(props: { children: JSX.Element }) {
     { title: "Psicólogos", path: "/admin/psicologos", icon: "👥" },
     { title: "Areas de Ejercicio", path: "/admin/areas_de_ejercicio_profesional", icon: "🔖" },
     { title: "Noticias", path: "/admin/noticias", icon: "📰" },
+    { title: "Notificaciones", path: "/admin/notificaciones", icon: "🔔" },
     { title: "Staff (SUDO)", path: "/admin/staff", icon: "🛡️" },
   ];
 

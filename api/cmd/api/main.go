@@ -126,6 +126,32 @@ func main() {
 		s3Client,
 	)
 
+	// ── MailService: una sola instancia compartida entre todos los routers ────
+	// Se elige el transporte por MAIL_TRANSPORT: "resend" usa la API de Resend;
+	// cualquier otro valor usa SMTP (Mailpit/MailHog en desarrollo).
+	var (
+		mailSvc service.IMailService
+		mailErr error
+	)
+	if config.Envs.MailTransport == "resend" {
+		mailSvc, mailErr = service.NewResendMailService()
+		if mailErr != nil {
+			log.Warn().Err(mailErr).Str("component", "mail").Msg("Advertencia: No se pudo inicializar el transporte Resend")
+		}
+	} else {
+		mailSvc, mailErr = service.NewMailService()
+		if mailErr != nil {
+			log.Warn().Err(mailErr).Str("component", "mail").Msg("Advertencia: No se pudo conectar al servidor SMTP")
+		}
+	}
+
+	// ── NotificationService: se comparte entre worker y rutas ────────────────
+	notificationSvc := service.NewNotificationService(
+		postgres.NewNotificationRepository(db),
+		s3Client,
+		mailSvc,
+	)
+
 	// ── Contexto raíz para goroutines de background ────────────────────────────
 	bgCtx, bgCancel := context.WithCancel(context.Background())
 	defer bgCancel()
@@ -159,6 +185,22 @@ func main() {
 				pubCtx, pubCancel := context.WithTimeout(bgCtx, 30*time.Second)
 				postSvc.PublishScheduled(pubCtx)
 				pubCancel()
+			}
+		}
+	}()
+	// ── Worker de notificaciones programadas ─────────────────────────────────
+	// Cada 30 segundos envía las notificaciones programadas cuyo scheduled_at ya llegó.
+	go func() {
+		ticker := time.NewTicker(30 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-bgCtx.Done():
+				return
+			case <-ticker.C:
+				notifCtx, notifCancel := context.WithTimeout(bgCtx, 60*time.Second)
+				notificationSvc.ProcessScheduled(notifCtx)
+				notifCancel()
 			}
 		}
 	}()
@@ -227,7 +269,7 @@ func main() {
 	// 8. RUTAS
 	// =========================================================================
 
-	router.SetupRouter(app, db, s3Client, appCache)
+	router.SetupRouter(app, db, s3Client, appCache, mailSvc, notificationSvc)
 
 	app.Use(func(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{

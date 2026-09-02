@@ -19,6 +19,12 @@ export default function PsiDashboard() {
   const [profile] = createResource(() => apiGet<any>("/psi/me"));
   const [news] = createResource(() => apiGet<any>("/posts?limit=3"));
 
+  // Contador de notificaciones no leídas (para el badge)
+  const [unread] = createResource(
+    () => apiGet<{ unread_count: number }>("/notifications/psi-user/unread-count"),
+    { initialValue: { unread_count: 0 } }
+  );
+
   // Acceso a la Biblioteca Virtual (Audiobookshelf). Solo agremiados solventes.
   const [opening, setOpening] = createSignal(false);
   const [libError, setLibError] = createSignal("");
@@ -118,6 +124,17 @@ export default function PsiDashboard() {
             </div>
             <span class="text-xs font-bold text-[#1e3a8a]">Postgrados</span>
           </A>
+          <A href="/psi/notificaciones" class="relative bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center text-center group active:scale-95 transition-transform">
+            <div class="w-12 h-12 bg-blue-50 text-[#1e3a8a] rounded-2xl flex items-center justify-center mb-2 group-hover:bg-[#facc15] transition-colors">
+              🔔
+            </div>
+            <span class="text-xs font-bold text-[#1e3a8a]">Notificaciones</span>
+            <Show when={(unread()?.unread_count ?? 0) > 0}>
+              <span class="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow">
+                {unread()?.unread_count}
+              </span>
+            </Show>
+          </A>
         </div>
 
         {/* Noticias Recientes */}
@@ -153,6 +170,15 @@ export default function PsiDashboard() {
         <A href="/psi" class="text-[#1e3a8a] flex flex-col items-center">
           <span class="text-xl">🏠</span>
           <span class="text-[10px] font-bold uppercase">Inicio</span>
+        </A>
+        <A href="/psi/notificaciones" class="relative text-gray-400 flex flex-col items-center">
+          <span class="text-xl">🔔</span>
+          <span class="text-[10px] font-bold uppercase">Avisos</span>
+          <Show when={(unread()?.unread_count ?? 0) > 0}>
+            <span class="absolute -top-1 -right-2 bg-red-500 text-white text-[9px] font-black min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1">
+              {unread()?.unread_count}
+            </span>
+          </Show>
         </A>
         <A href="/directorio" class="text-gray-400 flex flex-col items-center">
           <span class="text-xl">🔍</span>

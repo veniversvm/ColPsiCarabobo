@@ -41,3 +41,20 @@ var (
 	// ErrDeontologiaNotFound is returned when a deontological record cannot be found.
 	ErrDeontologiaNotFound = errors.New("entrada deontológica no encontrada")
 )
+
+var (
+	// ErrNotificationNotFound is returned when a notification cannot be found.
+	ErrNotificationNotFound = errors.New("notificación no encontrada")
+	// ErrNotificationPermDenied is returned when an admin lacks notification permissions.
+	ErrNotificationPermDenied = errors.New("no tienes permiso para gestionar notificaciones")
+	// ErrNotificationCannotCancel is returned when a notification is not in a cancellable state.
+	ErrNotificationCannotCancel = errors.New("solo se pueden cancelar notificaciones programadas pendientes")
+	// ErrNotificationTargetNotOwned is returned when a user tries to mark a notification they don't own.
+	ErrNotificationTargetNotOwned = errors.New("no puedes marcar una notificación que no te pertenece")
+	// ErrNotificationInvalidSchedule is returned when scheduled_at is in the past.
+	ErrNotificationInvalidSchedule = errors.New("la fecha programada debe ser futura")
+	// ErrNotificationInvalidTargetType is returned when target_type es inválido.
+	ErrNotificationInvalidTargetType = errors.New("target_type inválido")
+	// ErrAttachmentNotFound is returned when a notification attachment cannot be found.
+	ErrAttachmentNotFound = errors.New("adjunto no encontrado")
+)

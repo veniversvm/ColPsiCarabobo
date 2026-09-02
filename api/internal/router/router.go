@@ -21,7 +21,7 @@ import (
 )
 
 // SetupRouter initializes all API routes, middleware, and dependency injection.
-func SetupRouter(app *fiber.App, db *gorm.DB, s3Client *s3.S3Client, appCache *cache.Cache) {
+func SetupRouter(app *fiber.App, db *gorm.DB, s3Client *s3.S3Client, appCache *cache.Cache, mailSvc service.IMailService, notificationSvc *service.NotificationService) {
 
 	// ── Analytics: instanciar repo, servicio y registrar middleware global ────
 	analyticsRepo := postgres.NewAnalyticsRepository(db)
@@ -33,25 +33,6 @@ func SetupRouter(app *fiber.App, db *gorm.DB, s3Client *s3.S3Client, appCache *c
 	psiRepo := postgres.NewPsiRepository(db)
 	postRepo := postgres.NewPostRepository(db)
 	specialtyRepo := postgres.NewSpecialtyRepository(db)
-
-	// ── MailService: una sola instancia compartida entre todos los routers ────
-	// Se elige el transporte por MAIL_TRANSPORT: "resend" usa la API de Resend;
-	// cualquier otro valor usa SMTP (Mailpit/MailHog en desarrollo).
-	var (
-		mailSvc service.IMailService
-		err     error
-	)
-	if config.Envs.MailTransport == "resend" {
-		mailSvc, err = service.NewResendMailService()
-		if err != nil {
-			log.Warn().Err(err).Str("component", "router").Msg("Advertencia: No se pudo inicializar el transporte Resend")
-		}
-	} else {
-		mailSvc, err = service.NewMailService()
-		if err != nil {
-			log.Warn().Err(err).Str("component", "router").Msg("Advertencia: No se pudo conectar al servidor SMTP")
-		}
-	}
 
 	// Agrupación principal
 	api := app.Group("/api/v1")
@@ -67,6 +48,7 @@ func SetupRouter(app *fiber.App, db *gorm.DB, s3Client *s3.S3Client, appCache *c
 	SetupPsiRoutes(api, psiRepo, adminRepo, s3Client, analyticsSvc, mailSvc, appCache)
 	SetupSpecialtyRoutes(api, psiRepo, adminRepo, specialtyRepo, analyticsSvc)
 	SetupPostRoutes(api, adminRepo, psiRepo, postRepo, s3Client, analyticsSvc)
+	SetupNotificationRoutes(api, adminRepo, psiRepo, analyticsSvc, notificationSvc)
 
 	// =========================================================================
 	// DEFAULT 404 HANDLER (CATCH-ALL)
