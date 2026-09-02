@@ -50,4 +50,12 @@ func SetupAdminRoutes(router fiber.Router, adminRepo domain.UserAdminRepository,
 	admin.Get("/list", h.GetAdmins)
 	admin.Patch("/update", h.UpdateAdmin)
 	admin.Delete("/delete/:id", h.DeleteAdmin)
+
+	// =========================================================================
+	// VALIDACIÓN DE SESIÓN (retorna 401 explícito, no 404 enmascarado)
+	// =========================================================================
+	// Grupo aparte con ProtectedAdmin() para que el frontend pueda distinguir
+	// "sesión inválida" (401) de "ruta inexistente" (404).
+	adminValidate := router.Group("/admin", middleware.NoStore(), authMid.ProtectedAdmin())
+	adminValidate.Get("/validate", h.ValidateSession)
 }

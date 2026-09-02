@@ -92,6 +92,15 @@ type PsiUserModel struct {
 	ServiceAddress           string `gorm:"size:255" json:"service_address"`
 	ShowPublicServiceAddress bool   `gorm:"default:false" json:"show_public_service_address"`
 
+	// ── Modalidad de servicio ─────────────────────────────────────────────
+	// Cómo atiende el psicólogo (puede ser combinación de varias). Si ninguna
+	// está activa, significa que actualmente no presta servicio.
+	ServiceModalityPresencial bool `gorm:"default:false" json:"service_modality_presencial"`
+	ServiceModalityDistance   bool `gorm:"default:false" json:"service_modality_distance"`
+	ServiceModalityTelephone  bool `gorm:"default:false" json:"service_modality_telephone"`
+	// Opt-in del Privacy Shield: controla si la modalidad se muestra en el directorio público.
+	ShowServiceModality bool `gorm:"default:false" json:"show_service_modality"`
+
 	// ── Ubicación: Carabobo ───────────────────────────────────────────────
 	// Para miembros residentes o con consulta dentro del estado Carabobo.
 	// MunicipalityCarabobo debe restringirse al catálogo de municipios del estado.
@@ -193,6 +202,10 @@ type PsiUserColData struct {
 	PublicEmployee      bool `gorm:"default:false" json:"public_employee"`      // Empleado público
 	Discapacity         bool `gorm:"default:false" json:"discapacity"`          // Discapacidad
 	UniversityProfessor bool `gorm:"default:false" json:"university_professor"` // Docente universitario
+
+	// El psicólogo autoriza que el sistema avise a la administración en su cumpleaños.
+	// Solo se usará si el miembro lo activa desde su portal de perfil (opt-in explícito).
+	BirthdayNotification bool `gorm:"default:false" json:"birthday_notification"`
 
 	// ── Solvencia y membresías ────────────────────────────────────────────
 	DateOfLastSolvency  time.Time `gorm:"type:date" json:"date_of_last_solvency"` // Última fecha de pago de cuota

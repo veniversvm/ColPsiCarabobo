@@ -121,6 +121,20 @@ func (s *PsiService) UpdateProfileSelf(
 		psi.ShowPublicServiceAddress = *v
 	}
 
+	// ── Modalidad de servicio (auto-gestión) ──────────────────────────────
+	if v := req.ServiceModalityPresencial(); v != nil {
+		psi.ServiceModalityPresencial = *v
+	}
+	if v := req.ServiceModalityDistance(); v != nil {
+		psi.ServiceModalityDistance = *v
+	}
+	if v := req.ServiceModalityTelephone(); v != nil {
+		psi.ServiceModalityTelephone = *v
+	}
+	if v := req.ShowServiceModality(); v != nil {
+		psi.ShowServiceModality = *v
+	}
+
 	if req.MunicipalityCarabobo != nil {
 		mun, ok := utils.NormalizeMunicipioCarabobo(*req.MunicipalityCarabobo)
 		if !ok {
@@ -249,6 +263,7 @@ func (s *PsiService) UpdateProfileSelf(
 	hasColDataChanges := req.ShowUniversityUndergraduateRaw != "" ||
 		req.ShowGraduateDateRaw != "" ||
 		req.ShowMentionUndergraduateRaw != "" ||
+		req.BirthdayNotificationRaw != "" ||
 		titleImgOne != nil || titleImgTwo != nil || titleImgThree != nil
 
 	if hasColDataChanges {
@@ -265,6 +280,9 @@ func (s *PsiService) UpdateProfileSelf(
 		}
 		if v := req.ShowMentionUndergraduate(); v != nil {
 			currentColData.ShowMentionUndergraduate = *v
+		}
+		if v := req.BirthdayNotification(); v != nil {
+			currentColData.BirthdayNotification = *v
 		}
 
 		processTitleImage := func(file *multipart.FileHeader, orderNum string, oldKey string) (string, error) {

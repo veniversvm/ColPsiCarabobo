@@ -24,6 +24,7 @@ export interface Undergraduate {
   register_title_date?: string;
   register_title_date_raw?: string;
   register_title_state?: string;
+  birthday_notification?: boolean;
 }
 
 // ── Ubicación multi-zona ──────────────────────────────────────────────────────
@@ -72,6 +73,7 @@ export type PsiProfile = {
   specialties: string[]; // Aquí el backend mapea las WorkAreas
   mini_bio?: string;
   full_bio_content?: string;
+  service_modality?: { presencial: boolean; distance: boolean; telephone: boolean };
   undergraduate: Undergraduate;
   post_grades?: PostGrade[];
   social_networks?: SocialNetwork[];
@@ -117,6 +119,15 @@ export type PsiProfileSettings = {
   full_bio?: string;
   primary_work_area?: string;   // Reemplaza a specialty
   secondary_work_area?: string; // Reemplaza a specialty
+
+  // Modalidad de servicio (auto-gestión)
+  service_modality_presencial?: boolean;
+  service_modality_distance?: boolean;
+  service_modality_telephone?: boolean;
+  show_service_modality?: boolean;
+
+  // Aviso de cumpleaños (opt-in)
+  birthday_notification: boolean;
 
   // --- PRIVACIDAD (Privacy Shield) ---
   
@@ -173,6 +184,7 @@ export type DirectoryPsychologist = {
   profile_picture: string;
   specialties: string[];
   mini_bio: string;
+  service_modality?: { presencial: boolean; distance: boolean; telephone: boolean };
 };
 
 export interface PostGradeModalProps {

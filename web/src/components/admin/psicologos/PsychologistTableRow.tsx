@@ -33,6 +33,9 @@ export function PsychologistTableRow(props: Props) {
       <td class="px-6 py-4">
         <p class="text-sm font-bold text-gray-700">FPV: {psi().fpv}</p>
         <p class="text-xs text-gray-500">CI: {psi().ci}</p>
+        <Show when={psi().age && psi().age! > 0}>
+          <p class="text-xs text-gray-500 mt-0.5">Edad: {psi().age} años</p>
+        </Show>
       </td>
       <td class="px-6 py-4">
         <Show

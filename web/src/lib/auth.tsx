@@ -6,10 +6,15 @@
 // - El JWT "real" vive en la cookie HttpOnly (seteada por server actions);
 //   aquí solo se guarda una copia en sessionStorage para las llamadas fetch.
 // - Timer de expiración: cierra sesión localmente en el instante en que vence el JWT.
+// - Verificación periódica contra el backend: cada 60s valida que la sesión siga
+//   vigente en el servidor (detecta revocaciones reales) y fuerza logout si no.
 import { createContext, useContext, createSignal, JSX, onMount, onCleanup } from "solid-js";
 import Cookies from "js-cookie";
 import { isServer } from "solid-js/web";
+import { apiGet, ApiError } from "~/lib/api";
 import { AuthUser, UserRole } from "~/types/auth";
+
+const CHECK_INTERVAL_MS = 60_000;
 
 interface AuthContextValue {
   user: () => AuthUser | null;
@@ -44,7 +49,7 @@ function msUntilExpiry(token: string): number {
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function AuthProvider(props: { children: JSX.Element }) {
+export function AuthProvider(props: { children: JSX.Element; onServerLogout?: () => Promise<void> | void }) {
   const [user, setUser] = createSignal<AuthUser | null>(null);
 
   const clearLocalSession = () => {
@@ -78,7 +83,45 @@ export function AuthProvider(props: { children: JSX.Element }) {
     if (!isServer) window.location.href = "/";
   };
 
+  // Logout forzado por sesión inválida/revocada en el backend.
+  // Limpia el estado local Y, si el root lo provee, la cookie HttpOnly `jwt` del
+  // servidor (vía server action), para que las server actions dejen de autenticar.
+  const forceLogout = async () => {
+    clearLocalSession();
+    const clearServer = props.onServerLogout;
+    try {
+      if (clearServer) await clearServer();
+    } catch {
+      // Continuar con la limpieza/navegación de todos modos.
+    }
+    if (!isServer) window.location.href = "/";
+  };
+
+  // Verifica contra el backend que la sesión siga vigente.
+  // - 401/403/404 del endpoint de validación → sesión revocada → forzar logout.
+  // - 503 (error de red) → se ignora para no desloguear por un blip de conectividad.
+  const checkSession = async () => {
+    const token = sessionStorage.getItem("jwt");
+    const currentUser = user();
+    if (!token || !currentUser) return;
+
+    const endpoint = currentUser.role === "admin" ? "/admin/validate" : "/psi/me/validate";
+
+    try {
+      await apiGet(endpoint);
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 401 || error.status === 403 || error.status === 404)) {
+        forceLogout();
+      }
+    }
+  };
+
   onMount(() => {
+    // Verificación periódica contra el backend: corre de forma continua y
+    // no-op cuando no hay sesión (checkSession valida token/usuario).
+    const interval = setInterval(checkSession, CHECK_INTERVAL_MS);
+    onCleanup(() => clearInterval(interval));
+
     const savedUser = Cookies.get("user_data");
     const token     = sessionStorage.getItem("jwt");
 

@@ -6,6 +6,7 @@ export * from "./EditPageHeader";
 export * from "./EditAlert";
 export * from "./SocialNetworksBlock";
 export * from "./DeontologiaBlock";
+export * from "./ObservationsBlock";
 export * from "./AuditBlock";
 
 export * from "./sections/AccountSection";

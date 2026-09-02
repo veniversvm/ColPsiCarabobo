@@ -1,5 +1,163 @@
 basePath: /api/v1
 definitions:
+  domain.Notification:
+    properties:
+      attachments:
+        items:
+          $ref: '#/definitions/domain.NotificationAttach'
+        type: array
+      create_by:
+        description: CreateBy almacena el nombre o identificador textual del creador.
+        type: string
+      create_by_id:
+        description: |-
+          CreateById es el UUID del usuario/administrador que creó el registro.
+          Es un puntero para permitir valores nulos si la creación es automática por el sistema.
+        type: string
+      created_at:
+        description: |-
+          CreatedAt registra la fecha y hora exacta en que se creó el registro.
+          GORM gestiona este campo automáticamente durante la inserción.
+        type: string
+      filters:
+        items:
+          $ref: '#/definitions/domain.NotificationFilter'
+        type: array
+      id:
+        type: string
+      message:
+        type: string
+      scheduled_at:
+        type: string
+      send_email:
+        type: boolean
+      sender_id:
+        type: string
+      sent_at:
+        type: string
+      status:
+        $ref: '#/definitions/domain.NotificationStatus'
+      target_type:
+        $ref: '#/definitions/domain.NotificationTargetType'
+      targets:
+        items:
+          $ref: '#/definitions/domain.NotificationTarget'
+        type: array
+      title:
+        type: string
+      update_by:
+        description: UpdateBy almacena el nombre o identificador textual de la última
+          persona en modificarlo.
+        type: string
+      update_by_id:
+        description: UpdateById es el UUID del usuario/administrador que realizó la
+          última actualización.
+        type: string
+      updated_at:
+        description: |-
+          UpdatedAt registra la última fecha y hora en que se modificó el registro.
+          GORM actualiza este valor automáticamente en cada operación de guardado.
+        type: string
+    type: object
+  domain.NotificationAttach:
+    properties:
+      content_type:
+        type: string
+      create_by:
+        description: CreateBy almacena el nombre o identificador textual del creador.
+        type: string
+      create_by_id:
+        description: |-
+          CreateById es el UUID del usuario/administrador que creó el registro.
+          Es un puntero para permitir valores nulos si la creación es automática por el sistema.
+        type: string
+      created_at:
+        description: |-
+          CreatedAt registra la fecha y hora exacta en que se creó el registro.
+          GORM gestiona este campo automáticamente durante la inserción.
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      notification_id:
+        type: string
+      s3_key:
+        type: string
+      update_by:
+        description: UpdateBy almacena el nombre o identificador textual de la última
+          persona en modificarlo.
+        type: string
+      update_by_id:
+        description: UpdateById es el UUID del usuario/administrador que realizó la
+          última actualización.
+        type: string
+      updated_at:
+        description: |-
+          UpdatedAt registra la última fecha y hora en que se modificó el registro.
+          GORM actualiza este valor automáticamente en cada operación de guardado.
+        type: string
+    type: object
+  domain.NotificationFilter:
+    properties:
+      genre:
+        type: string
+      id:
+        type: string
+      municipality:
+        type: string
+      notification_id:
+        type: string
+      solvent:
+        type: boolean
+      specialty_id:
+        type: integer
+      state:
+        type: string
+      target_user_ids:
+        type: string
+    type: object
+  domain.NotificationStatus:
+    enum:
+    - pending
+    - sent
+    - failed
+    - cancelled
+    type: string
+    x-enum-varnames:
+    - NotificationStatusPending
+    - NotificationStatusSent
+    - NotificationStatusFailed
+    - NotificationStatusCancelled
+  domain.NotificationTarget:
+    properties:
+      email_sent:
+        type: boolean
+      email_sent_at:
+        type: string
+      id:
+        type: string
+      is_read:
+        type: boolean
+      notification_id:
+        type: string
+      psi_user:
+        $ref: '#/definitions/domain.PsiUserModel'
+      psi_user_id:
+        type: string
+      read_at:
+        type: string
+    type: object
+  domain.NotificationTargetType:
+    enum:
+    - global
+    - individual
+    - group
+    type: string
+    x-enum-varnames:
+    - NotificationTargetGlobal
+    - NotificationTargetIndividual
+    - NotificationTargetGroup
   domain.Post:
     properties:
       create_by:
@@ -128,6 +286,41 @@ definitions:
           GORM actualiza este valor automáticamente en cada operación de guardado.
         type: string
     type: object
+  domain.PsiObservations:
+    properties:
+      content:
+        type: string
+      create_by:
+        description: CreateBy almacena el nombre o identificador textual del creador.
+        type: string
+      create_by_id:
+        description: |-
+          CreateById es el UUID del usuario/administrador que creó el registro.
+          Es un puntero para permitir valores nulos si la creación es automática por el sistema.
+        type: string
+      created_at:
+        description: |-
+          CreatedAt registra la fecha y hora exacta en que se creó el registro.
+          GORM gestiona este campo automáticamente durante la inserción.
+        type: string
+      id:
+        type: string
+      psi_user_id:
+        type: string
+      update_by:
+        description: UpdateBy almacena el nombre o identificador textual de la última
+          persona en modificarlo.
+        type: string
+      update_by_id:
+        description: UpdateById es el UUID del usuario/administrador que realizó la
+          última actualización.
+        type: string
+      updated_at:
+        description: |-
+          UpdatedAt registra la última fecha y hora en que se modificó el registro.
+          GORM actualiza este valor automáticamente en cada operación de guardado.
+        type: string
+    type: object
   domain.PsiSpecialtyModel:
     properties:
       active:
@@ -167,6 +360,11 @@ definitions:
     type: object
   domain.PsiUserColData:
     properties:
+      birthday_notification:
+        description: |-
+          El psicólogo autoriza que el sistema avise a la administración en su cumpleaños.
+          Solo se usará si el miembro lo activa desde su portal de perfil (opt-in explícito).
+        type: boolean
       cpsm:
         description: Miembro del Colegio de Psicólogos de Miranda
         type: boolean
@@ -394,6 +592,16 @@ definitions:
         type: string
       service_address_outside_venezuela:
         type: string
+      service_modality_distance:
+        type: boolean
+      service_modality_presencial:
+        description: |-
+          ── Modalidad de servicio ─────────────────────────────────────────────
+          Cómo atiende el psicólogo (puede ser combinación de varias). Si ninguna
+          está activa, significa que actualmente no presta servicio.
+        type: boolean
+      service_modality_telephone:
+        type: boolean
       show_cel_phone_carabobo:
         type: boolean
       show_cel_phone_outside_carabobo:
@@ -417,6 +625,10 @@ definitions:
       show_public_service_address_outside_carabobo:
         type: boolean
       show_public_service_address_outside_venezuela:
+        type: boolean
+      show_service_modality:
+        description: 'Opt-in del Privacy Shield: controla si la modalidad se muestra
+          en el directorio público.'
         type: boolean
       show_state_outside:
         type: boolean
@@ -717,6 +929,45 @@ definitions:
     required:
     - content
     type: object
+  request_structs.CreateNotificationRequest:
+    properties:
+      filters:
+        $ref: '#/definitions/request_structs.NotificationFilterDTO'
+      message:
+        type: string
+      scheduled_at:
+        type: string
+      send_email:
+        type: boolean
+      target_type:
+        enum:
+        - global
+        - individual
+        - group
+        type: string
+      target_user_ids:
+        items:
+          type: string
+        type: array
+      title:
+        maxLength: 255
+        type: string
+    required:
+    - message
+    - target_type
+    - title
+    type: object
+  request_structs.CreateObservacionesRequest:
+    properties:
+      content:
+        description: |-
+          Content es el texto libre de la observación.
+          Es texto plano; la capa de servicio lo sanitiza con bluemonday antes de persistir.
+        example: Nota interna de seguimiento.
+        type: string
+    required:
+    - content
+    type: object
   request_structs.CreatePsiAdminRequest:
     properties:
       born_date:
@@ -900,6 +1151,19 @@ definitions:
     required:
     - name
     type: object
+  request_structs.NotificationFilterDTO:
+    properties:
+      genre:
+        type: string
+      municipality:
+        type: string
+      solvent:
+        type: boolean
+      specialty_id:
+        type: integer
+      state:
+        type: string
+    type: object
   request_structs.PostGradeDTO:
     properties:
       description:
@@ -921,6 +1185,23 @@ definitions:
         type: string
       year:
         type: integer
+    type: object
+  request_structs.PreviewNotificationRequest:
+    properties:
+      filters:
+        $ref: '#/definitions/request_structs.NotificationFilterDTO'
+      target_type:
+        enum:
+        - global
+        - individual
+        - group
+        type: string
+      target_user_ids:
+        items:
+          type: string
+        type: array
+    required:
+    - target_type
     type: object
   request_structs.PsiFullProfileDTO:
     properties:
@@ -973,6 +1254,11 @@ definitions:
         type: integer
       secondary_work_area:
         type: string
+      service_modality:
+        allOf:
+        - $ref: '#/definitions/request_structs.ServiceModalityDTO'
+        description: ── Modalidad de servicio (solo si el psicólogo autorizó su visibilidad)
+          ──
       social_networks:
         items:
           $ref: '#/definitions/request_structs.SocialNetworkDTO'
@@ -1052,6 +1338,15 @@ definitions:
     - identifier
     - password
     type: object
+  request_structs.ServiceModalityDTO:
+    properties:
+      distance:
+        type: boolean
+      presencial:
+        type: boolean
+      telephone:
+        type: boolean
+    type: object
   request_structs.SocialNetworkDTO:
     properties:
       name:
@@ -1118,6 +1413,14 @@ definitions:
         description: Content es el nuevo texto de la entrada (texto plano; se sanitiza
           en la API).
         example: Expediente actualizado por el Tribunal Disciplinario.
+        type: string
+    type: object
+  request_structs.UpdateObservacionesRequest:
+    properties:
+      content:
+        description: Content es el nuevo texto de la observación (texto plano; se
+          sanitiza en la API).
+        example: Nota interna actualizada.
         type: string
     type: object
   request_structs.UpdatePsiAdminRequest:
@@ -1231,6 +1534,13 @@ definitions:
         type: string
       service_address_outside_venezuela:
         type: string
+      service_modality_distance:
+        type: string
+      service_modality_presencial:
+        description: ── Modalidad de servicio ─────────────────────────────────────────────
+        type: string
+      service_modality_telephone:
+        type: string
       show_cel_phone_carabobo:
         type: string
       show_cel_phone_outside_carabobo:
@@ -1259,6 +1569,8 @@ definitions:
       show_public_service_address_outside_carabobo:
         type: string
       show_public_service_address_outside_venezuela:
+        type: string
+      show_service_modality:
         type: string
       show_state_outside:
         type: string
@@ -1329,6 +1641,25 @@ definitions:
           que el nuevo nombre no colisione con otra especialidad existente (Restricción UNIQUE).
         example: Psicología Organizacional
         type: string
+    type: object
+  service.BirthdayInfoProjection:
+    properties:
+      day:
+        type: integer
+      first_name:
+        type: string
+      fpv:
+        type: integer
+      id:
+        type: string
+      is_active:
+        type: boolean
+      last_name:
+        type: string
+      month:
+        description: Mes y día del cumpleaños (para mostrarlos como fecha sin exponer
+          el año real).
+        type: integer
     type: object
 host: localhost:8080
 info:
@@ -1860,6 +2191,151 @@ paths:
       security:
       - BearerAuth: []
       summary: Editar entrada deontológica (Admin)
+  /admin/psi/{id}/observaciones:
+    get:
+      description: Retorna TODAS las observaciones internas de un psicólogo. Acceso
+        exclusivo del personal administrativo autorizado; el psicólogo nunca ve sus
+        propias observaciones.
+      parameters:
+      - description: UUID del Psicólogo
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.PsiObservations'
+            type: array
+        "400":
+          description: ID inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Permisos insuficientes
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Psicólogo no encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Listar observaciones internas (Admin)
+      tags:
+      - Administración - Psicólogos
+    post:
+      consumes:
+      - application/json
+      description: Registra una nueva observación interna sobre un psicólogo. El contenido
+        es texto plano y se sanitiza en la API.
+      parameters:
+      - description: UUID del Psicólogo
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Contenido de la observación
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.CreateObservacionesRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 'message: Observación creada'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: 'error: ID inválido o contenido vacío'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: 'error: Permisos insuficientes'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: 'error: Psicólogo no encontrado'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Crear observación interna (Admin)
+      tags:
+      - Administración - Psicólogos
+  /admin/psi/{id}/observaciones/{entryId}:
+    patch:
+      consumes:
+      - application/json
+      description: Edita el contenido de una observación interna existente. El contenido
+        es texto plano y se sanitiza en la API.
+      parameters:
+      - description: UUID del Psicólogo
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: UUID de la observación
+        in: path
+        name: entryId
+        required: true
+        type: string
+      - description: Nuevo contenido de la observación
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.UpdateObservacionesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'message: Observación actualizada'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: 'error: ID inválido o contenido vacío'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: 'error: Permisos insuficientes'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: 'error: Observación no encontrada'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Editar observación interna (Admin)
   /admin/psi/{id}/picture:
     delete:
       description: 'Elimina el avatar del psicólogo: borra el objeto de S3 y limpia
@@ -1949,6 +2425,36 @@ paths:
       security:
       - BearerAuth: []
       summary: Reiniciar clave de un psicólogo
+      tags:
+      - Administración - Psicólogos
+  /admin/psi/birthdays:
+    get:
+      description: Retorna los agremiados que cumplen años hoy o en los próximos días
+        y han autorizado el aviso de cumpleaños (opt-in).
+      parameters:
+      - description: 'rango: ''today'' (hoy) o ''week'' (próximos 7 días). Default:
+          today'
+        in: query
+        name: range
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/service.BirthdayInfoProjection'
+            type: array
+        "401":
+          description: No autorizado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Aviso de cumpleaños (Admin)
       tags:
       - Administración - Psicólogos
   /admin/psi/create:
@@ -2252,6 +2758,27 @@ paths:
       summary: Actualizar administrador
       tags:
       - Administración - Gestión
+  /admin/validate:
+    get:
+      description: Devuelve 200 si el token JWT es válido y la sesión sigue activa;
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Validar sesión de administrador
+      tags:
+      - Administración - Sesión
   /auth/login:
     post:
       consumes:
@@ -2310,6 +2837,341 @@ paths:
       summary: Cerrar sesión administrativo
       tags:
       - Administración - Auth
+  /notifications/admin:
+    get:
+      description: Lista las notificaciones creadas por el administrador, paginadas
+        por fecha desc.
+      parameters:
+      - description: 'Número de página (Default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items por página (Default: 10)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Listar notificaciones del admin
+      tags:
+      - Administración - Notificaciones
+    post:
+      consumes:
+      - application/json
+      description: Crea una notificación. Si lleva scheduled_at futuro se programa;
+        si no, se envía inmediatamente.
+      parameters:
+      - description: Datos de la notificación
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.CreateNotificationRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Crear notificación
+      tags:
+      - Administración - Notificaciones
+  /notifications/admin/{id}:
+    delete:
+      description: Cancela una notificación programada pendiente (solo status = pending).
+      parameters:
+      - description: UUID de la notificación
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Cancelar notificación programada
+      tags:
+      - Administración - Notificaciones
+    get:
+      description: Retorna el detalle con estadísticas de lectura (leídos/total).
+      parameters:
+      - description: UUID de la notificación
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Detalle de notificación (admin)
+      tags:
+      - Administración - Notificaciones
+  /notifications/admin/{id}/attach:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Sube una imagen/archivo adjunto a una notificación y la guarda
+        en S3.
+      parameters:
+      - description: UUID de la notificación
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Archivo adjunto
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Adjuntar archivo a notificación
+      tags:
+      - Administración - Notificaciones
+  /notifications/admin/{id}/targets:
+    get:
+      description: Retorna la lista de destinatarios de una notificación con su estado
+        de lectura.
+      parameters:
+      - description: UUID de la notificación
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.NotificationTarget'
+            type: array
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Ver destinatarios de notificación
+      tags:
+      - Administración - Notificaciones
+  /notifications/admin/preview:
+    post:
+      consumes:
+      - application/json
+      description: Retorna los destinatarios potenciales de una notificación sin crearla.
+      parameters:
+      - description: Datos de la previsualización
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.PreviewNotificationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Previsualizar destinatarios
+      tags:
+      - Administración - Notificaciones
+  /notifications/psi-user:
+    get:
+      description: Lista las notificaciones del psicólogo autenticado, paginadas por
+        fecha desc.
+      parameters:
+      - description: 'Número de página (Default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items por página (Default: 10)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Listar notificaciones del agremiado
+      tags:
+      - Agremiado - Notificaciones
+  /notifications/psi-user/{id}:
+    get:
+      description: Retorna el detalle y marca la notificación como leída automáticamente.
+      parameters:
+      - description: UUID de la notificación
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Notification'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Detalle de notificación (agremiado)
+      tags:
+      - Agremiado - Notificaciones
+  /notifications/psi-user/{id}/attach/{attachId}:
+    get:
+      description: Retorna la URL pública de un adjunto si el agremiado es destinatario.
+      parameters:
+      - description: UUID de la notificación
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: UUID del adjunto
+        in: path
+        name: attachId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Descargar adjunto de notificación
+      tags:
+      - Agremiado - Notificaciones
+  /notifications/psi-user/unread-count:
+    get:
+      description: Retorna el número de notificaciones no leídas del agremiado (para
+        badge).
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              format: int64
+              type: integer
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Contador de notificaciones no leídas
+      tags:
+      - Agremiado - Notificaciones
   /posts:
     get:
       description: 'Obtiene noticias. El contenido varía según el usuario: Público
@@ -2796,6 +3658,27 @@ paths:
       summary: Actualizar red social
       tags:
       - Psicólogos - Perfil
+  /psi/me/validate:
+    get:
+      description: Devuelve 200 si el token JWT es válido y la sesión sigue activa;
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Validar sesión de psicólogo
+      tags:
+      - Psicólogos - Sesión
   /specialties:
     get:
       description: Retorna el catálogo. Los usuarios ven solo las activas. Admins

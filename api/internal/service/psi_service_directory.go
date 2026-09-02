@@ -52,6 +52,15 @@ func (s *PsiService) GetPublicDirectory(ctx context.Context, filter request_stru
 			mini.Specialties = append(mini.Specialties, u.SecondaryWorkArea)
 		}
 
+		// Modalidad de servicio: solo si el psicólogo autorizó su visibilidad.
+		if u.ShowServiceModality {
+			mini.ServiceModality = &request_structs.ServiceModalityDTO{
+				Presencial: u.ServiceModalityPresencial,
+				Distance:   u.ServiceModalityDistance,
+				Telephone:  u.ServiceModalityTelephone,
+			}
+		}
+
 		list = append(list, mini)
 	}
 
@@ -122,6 +131,15 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 
 	if psi.ShowContactEmail {
 		dto.Email = psi.ContactEmail
+	}
+
+	// Modalidad de servicio: solo si el psicólogo autorizó su visibilidad.
+	if psi.ShowServiceModality {
+		dto.ServiceModality = &request_structs.ServiceModalityDTO{
+			Presencial: psi.ServiceModalityPresencial,
+			Distance:   psi.ServiceModalityDistance,
+			Telephone:  psi.ServiceModalityTelephone,
+		}
 	}
 
 	hasCaraboboData := false

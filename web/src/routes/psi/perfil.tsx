@@ -21,6 +21,7 @@ import { ContactSection } from "~/components/psi/profile/ContactSection";
 import { LocationSection } from "~/components/psi/profile/LocationSection";
 import { ProfessionalSection } from "~/components/psi/profile/ProfessionalSection";
 import { PrivacySection } from "~/components/psi/profile/PrivacySection";
+import { ServicePreferencesSection } from "~/components/psi/profile/ServicePreferencesSection";
 import { SecuritySection } from "~/components/psi/profile/SecuritySection";
 import { MessageAlert } from "~/components/psi/profile/MessageAlert";
 import { AcademicSection } from "~/components/psi/profile/AcademicSection";
@@ -194,6 +195,15 @@ export default function ProfilePage() {
         show_graduate_date: p.col_data?.show_graduate_date ?? false,
         show_mention_undergraduate:
           p.col_data?.show_mention_undergraduate ?? false,
+
+        // Modalidad de servicio (auto-gestión)
+        service_modality_presencial: p.service_modality_presencial ?? false,
+        service_modality_distance: p.service_modality_distance ?? false,
+        service_modality_telephone: p.service_modality_telephone ?? false,
+        show_service_modality: p.show_service_modality ?? false,
+
+        // Aviso de cumpleaños (opt-in)
+        birthday_notification: p.col_data?.birthday_notification ?? false,
       } as ProfileFormData);
     }
   });
@@ -275,6 +285,13 @@ export default function ProfilePage() {
       "show_university_undergraduate",
       "show_graduate_date",
       "show_mention_undergraduate",
+      // Modalidad de servicio
+      "service_modality_presencial",
+      "service_modality_distance",
+      "service_modality_telephone",
+      "show_service_modality",
+      // Aviso de cumpleaños
+      "birthday_notification",
     ];
 
     for (const key of boolFields) {
@@ -504,6 +521,35 @@ export default function ProfilePage() {
                     setForm("secondary_work_area", v)
                   }
                   onMiniBioChange={(v) => setForm("mini_bio", v)}
+                />
+              </PanelSection>
+
+              <PanelSection title="Servicio y Preferencias" accent="border-teal-400">
+                <ServicePreferencesSection
+                  serviceModalityPresencial={
+                    form.service_modality_presencial ?? false
+                  }
+                  serviceModalityDistance={form.service_modality_distance ?? false}
+                  serviceModalityTelephone={
+                    form.service_modality_telephone ?? false
+                  }
+                  showServiceModality={form.show_service_modality ?? false}
+                  birthdayNotification={form.birthday_notification ?? false}
+                  onServiceModalityPresencialChange={(v) =>
+                    setForm("service_modality_presencial", v)
+                  }
+                  onServiceModalityDistanceChange={(v) =>
+                    setForm("service_modality_distance", v)
+                  }
+                  onServiceModalityTelephoneChange={(v) =>
+                    setForm("service_modality_telephone", v)
+                  }
+                  onShowServiceModalityChange={(v) =>
+                    setForm("show_service_modality", v)
+                  }
+                  onBirthdayNotificationChange={(v) =>
+                    setForm("birthday_notification", v)
+                  }
                 />
               </PanelSection>
 

@@ -7,6 +7,7 @@ export interface PsiAdminListItem {
   fpv: number;
   email: string;
   control_number: string;
+  age?: number;
   solvent: boolean;
   is_active: boolean;
 }

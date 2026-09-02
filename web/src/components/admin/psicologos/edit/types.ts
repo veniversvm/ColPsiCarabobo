@@ -120,6 +120,13 @@ export interface DeontologiaEntry {
   create_by?: string;
 }
 
+export interface ObservacionesEntry {
+  id?: string;
+  content: string;
+  created_at?: string;
+  create_by?: string;
+}
+
 export interface PostGrade {
   post_grade_title: string;
   post_grade_graduation_year: string;

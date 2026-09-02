@@ -8,6 +8,7 @@ import { Sparkline }            from "~/components/admin/dashboard/Sparkline";
 import { RankingList }          from "~/components/admin/dashboard/RankingList";
 import { TopProfiles }          from "~/components/admin/dashboard/TopProfiles";
 import { ActiveSessionsBanner } from "~/components/admin/dashboard/ActiveSessionsBanner";
+import { BirthdayBanner } from "~/components/admin/dashboard/BirthdayBanner";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 interface TopItem     { value: string; count: number; name: string }
@@ -110,6 +111,9 @@ export default function AdminDashboard() {
       <Show when={cachedStats()}>
         {(s) => <ActiveSessionsBanner count={s().active_sessions_now} />}
       </Show>
+
+      {/* ── BANNER: CUMPLEAÑOS DEL AGREMIADO (opt-in) ────────────────────── */}
+      <BirthdayBanner />
 
       {/* ── SECCIÓN: LOGINS ──────────────────────────────────────────────── */}
       <section>

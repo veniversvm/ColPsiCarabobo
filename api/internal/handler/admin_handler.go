@@ -83,6 +83,25 @@ func (h *AdminHandler) Logout(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"message": "Sesión cerrada correctamente"})
 }
 
+// ValidateSession verifican que la sesión del administrador siga siendo válida.
+//
+// @Summary      Validar sesión de administrador
+// @Description  Devuelve 200 si el token JWT es válido y la sesión sigue activa;
+//               devuelve 401 (via el middleware ProtectedAdmin) si fue revocada o expiró.
+// @Tags         Administración - Sesión
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200 {object} map[string]interface{}
+// @Failure      401 {object} map[string]interface{}
+// @Router       /admin/validate [get]
+func (h *AdminHandler) ValidateSession(c *fiber.Ctx) error {
+	if _, err := middleware.GetAuthenticatedAdmin(c); err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Sesión inválida o expirada."})
+	}
+
+	return c.JSON(fiber.Map{"valid": true})
+}
+
 // CreateAdmin godoc
 // @Summary      Crear un nuevo administrador
 // @Description  Registra un nuevo miembro del staff administrativo verificando la jerarquía de permisos.

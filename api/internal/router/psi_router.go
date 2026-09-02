@@ -39,6 +39,9 @@ func SetupPsiRoutes(router fiber.Router, psiRepo domain.PsiUserRepository, admin
 
 	adminGroup.Get("/list", h.ListAllPsis)
 
+	// Aviso de cumpleaños al admin (opt-in del psicólogo)
+	adminGroup.Get("/birthdays", h.GetBirthdaysByAdmin)
+
 	// Idempotencia en crear — evita duplicados por doble click o reintento
 	adminGroup.Post(
 		"/create",
@@ -58,6 +61,11 @@ func SetupPsiRoutes(router fiber.Router, psiRepo domain.PsiUserRepository, admin
 	adminGroup.Post("/:id<uuid>/deontologia", h.AddDeontologiaByAdmin)
 	adminGroup.Patch("/:id<uuid>/deontologia/:entryId<uuid>", h.UpdateDeontologiaByAdmin)
 
+	// Observaciones internas (acceso exclusivo admin)
+	adminGroup.Get("/:id<uuid>/observaciones", h.ListObservacionesByAdmin)
+	adminGroup.Post("/:id<uuid>/observaciones", h.AddObservacionesByAdmin)
+	adminGroup.Patch("/:id<uuid>/observaciones/:entryId<uuid>", h.UpdateObservacionesByAdmin)
+
 	// =========================================================================
 	// ZONA 2: AUTOGESTIÓN
 	// =========================================================================
@@ -72,6 +80,7 @@ func SetupPsiRoutes(router fiber.Router, psiRepo domain.PsiUserRepository, admin
 	meGroup.Patch("/social/:id", h.UpdateSocialNetwork)
 	meGroup.Delete("/social/:id", h.DeleteSocialNetwork)
 	meGroup.Post("/logout", h.Logout)
+	meGroup.Get("/validate", h.ValidateSession)
 
 	// =========================================================================
 	// ZONA 3: PÚBLICO

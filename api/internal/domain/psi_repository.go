@@ -4,6 +4,7 @@ package domain
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/request_structs"
@@ -162,4 +163,30 @@ type PsiUserRepository interface {
 	// entrada deontológica existente. Las entradas del expediente no se eliminan:
 	// solo pueden corregirse.
 	UpdateDeontologia(ctx context.Context, id uuid.UUID, content, updateBy string, updateById uuid.UUID) error
+
+	// =========================================================================
+	// OBSERVACIONES INTERNAS
+	// =========================================================================
+
+	// CreateObservations registra una nueva nota interna sobre un psicólogo.
+	// Acceso exclusivo del personal administrativo (el psicólogo NUNCA la ve).
+	CreateObservations(ctx context.Context, entry *PsiObservations) error
+
+	// ListObservationsByPsiID recupera las notas internas de un psicólogo.
+	ListObservationsByPsiID(ctx context.Context, psiID uuid.UUID) ([]PsiObservations, error)
+
+	// GetObservationsByID busca una nota interna específica por su UUID.
+	GetObservationsByID(ctx context.Context, id uuid.UUID) (*PsiObservations, error)
+
+	// UpdateObservations actualiza el contenido (y la auditoría) de una nota interna.
+	UpdateObservations(ctx context.Context, id uuid.UUID, content, updateBy string, updateById uuid.UUID) error
+
+	// =========================================================================
+	// CUMPLEAÑOS (AVISO AL ADMIN)
+	// =========================================================================
+
+	// GetBirthdays recupera los agremiados que cumplen años dentro del rango de fechas
+	// [from, to] y que han autorizado el aviso de cumpleaños (birthday_notification).
+	// La comparación se hace por mes/día (sin importar el año) para cubrir el cruce de año.
+	GetBirthdays(ctx context.Context, from, to time.Time) ([]PsiUserModel, error)
 }

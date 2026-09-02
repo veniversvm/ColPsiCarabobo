@@ -40,6 +40,8 @@ var (
 	ErrInvalidRequest = errors.New("solicitud inválida")
 	// ErrDeontologiaNotFound is returned when a deontological record cannot be found.
 	ErrDeontologiaNotFound = errors.New("entrada deontológica no encontrada")
+	// ErrObservacionesNotFound is returned when an internal observation cannot be found.
+	ErrObservacionesNotFound = errors.New("observación no encontrada")
 )
 
 var (

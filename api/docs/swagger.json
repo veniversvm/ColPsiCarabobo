@@ -382,6 +382,51 @@
                 }
             }
         },
+        "/admin/psi/birthdays": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna los agremiados que cumplen años hoy o en los próximos días y han autorizado el aviso de cumpleaños (opt-in).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Psicólogos"
+                ],
+                "summary": "Aviso de cumpleaños (Admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "rango: 'today' (hoy) o 'week' (próximos 7 días). Default: today",
+                        "name": "range",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/service.BirthdayInfoProjection"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "No autorizado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/admin/psi/create": {
             "post": {
                 "security": [
@@ -1032,6 +1077,224 @@
                 }
             }
         },
+        "/admin/psi/{id}/observaciones": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna TODAS las observaciones internas de un psicólogo. Acceso exclusivo del personal administrativo autorizado; el psicólogo nunca ve sus propias observaciones.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Psicólogos"
+                ],
+                "summary": "Listar observaciones internas (Admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del Psicólogo",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.PsiObservations"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "ID inválido",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Permisos insuficientes",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Psicólogo no encontrado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Registra una nueva observación interna sobre un psicólogo. El contenido es texto plano y se sanitiza en la API.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Psicólogos"
+                ],
+                "summary": "Crear observación interna (Admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del Psicólogo",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Contenido de la observación",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.CreateObservacionesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "message: Observación creada",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "error: ID inválido o contenido vacío",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "error: Permisos insuficientes",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "error: Psicólogo no encontrado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/psi/{id}/observaciones/{entryId}": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Edita el contenido de una observación interna existente. El contenido es texto plano y se sanitiza en la API.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Editar observación interna (Admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del Psicólogo",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "UUID de la observación",
+                        "name": "entryId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Nuevo contenido de la observación",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.UpdateObservacionesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "message: Observación actualizada",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "error: ID inválido o contenido vacío",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "error: Permisos insuficientes",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "error: Observación no encontrada",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/admin/psi/{id}/picture": {
             "delete": {
                 "security": [
@@ -1398,6 +1661,39 @@
                 }
             }
         },
+        "/admin/validate": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Devuelve 200 si el token JWT es válido y la sesión sigue activa;",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Sesión"
+                ],
+                "summary": "Validar sesión de administrador",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "description": "Valida las credenciales del administrador (email o username) y retorna un JWT dinámico.",
@@ -1475,6 +1771,524 @@
                     },
                     "401": {
                         "description": "error: no autenticado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/notifications/admin": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Lista las notificaciones creadas por el administrador, paginadas por fecha desc.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Notificaciones"
+                ],
+                "summary": "Listar notificaciones del admin",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Número de página (Default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items por página (Default: 10)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Crea una notificación. Si lleva scheduled_at futuro se programa; si no, se envía inmediatamente.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Notificaciones"
+                ],
+                "summary": "Crear notificación",
+                "parameters": [
+                    {
+                        "description": "Datos de la notificación",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.CreateNotificationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/notifications/admin/preview": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna los destinatarios potenciales de una notificación sin crearla.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Notificaciones"
+                ],
+                "summary": "Previsualizar destinatarios",
+                "parameters": [
+                    {
+                        "description": "Datos de la previsualización",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.PreviewNotificationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/notifications/admin/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna el detalle con estadísticas de lectura (leídos/total).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Notificaciones"
+                ],
+                "summary": "Detalle de notificación (admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID de la notificación",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Cancela una notificación programada pendiente (solo status = pending).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Notificaciones"
+                ],
+                "summary": "Cancelar notificación programada",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID de la notificación",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/notifications/admin/{id}/attach": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Sube una imagen/archivo adjunto a una notificación y la guarda en S3.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Notificaciones"
+                ],
+                "summary": "Adjuntar archivo a notificación",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID de la notificación",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Archivo adjunto",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/notifications/admin/{id}/targets": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna la lista de destinatarios de una notificación con su estado de lectura.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Notificaciones"
+                ],
+                "summary": "Ver destinatarios de notificación",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID de la notificación",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.NotificationTarget"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/notifications/psi-user": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Lista las notificaciones del psicólogo autenticado, paginadas por fecha desc.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Agremiado - Notificaciones"
+                ],
+                "summary": "Listar notificaciones del agremiado",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Número de página (Default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items por página (Default: 10)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/notifications/psi-user/unread-count": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna el número de notificaciones no leídas del agremiado (para badge).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Agremiado - Notificaciones"
+                ],
+                "summary": "Contador de notificaciones no leídas",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "integer",
+                                "format": "int64"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/notifications/psi-user/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna el detalle y marca la notificación como leída automáticamente.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Agremiado - Notificaciones"
+                ],
+                "summary": "Detalle de notificación (agremiado)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID de la notificación",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.Notification"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/notifications/psi-user/{id}/attach/{attachId}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna la URL pública de un adjunto si el agremiado es destinatario.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Agremiado - Notificaciones"
+                ],
+                "summary": "Descargar adjunto de notificación",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID de la notificación",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "UUID del adjunto",
+                        "name": "attachId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -2189,6 +3003,39 @@
                 }
             }
         },
+        "/psi/me/validate": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Devuelve 200 si el token JWT es válido y la sesión sigue activa;",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Psicólogos - Sesión"
+                ],
+                "summary": "Validar sesión de psicólogo",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/psi/{id}": {
             "get": {
                 "description": "Retorna la ficha técnica. Oculta datos privados según configuración del usuario.",
@@ -2348,6 +3195,210 @@
         }
     },
     "definitions": {
+        "domain.Notification": {
+            "type": "object",
+            "properties": {
+                "attachments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.NotificationAttach"
+                    }
+                },
+                "create_by": {
+                    "description": "CreateBy almacena el nombre o identificador textual del creador.",
+                    "type": "string"
+                },
+                "create_by_id": {
+                    "description": "CreateById es el UUID del usuario/administrador que creó el registro.\nEs un puntero para permitir valores nulos si la creación es automática por el sistema.",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "CreatedAt registra la fecha y hora exacta en que se creó el registro.\nGORM gestiona este campo automáticamente durante la inserción.",
+                    "type": "string"
+                },
+                "filters": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.NotificationFilter"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "scheduled_at": {
+                    "type": "string"
+                },
+                "send_email": {
+                    "type": "boolean"
+                },
+                "sender_id": {
+                    "type": "string"
+                },
+                "sent_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/domain.NotificationStatus"
+                },
+                "target_type": {
+                    "$ref": "#/definitions/domain.NotificationTargetType"
+                },
+                "targets": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.NotificationTarget"
+                    }
+                },
+                "title": {
+                    "type": "string"
+                },
+                "update_by": {
+                    "description": "UpdateBy almacena el nombre o identificador textual de la última persona en modificarlo.",
+                    "type": "string"
+                },
+                "update_by_id": {
+                    "description": "UpdateById es el UUID del usuario/administrador que realizó la última actualización.",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "UpdatedAt registra la última fecha y hora en que se modificó el registro.\nGORM actualiza este valor automáticamente en cada operación de guardado.",
+                    "type": "string"
+                }
+            }
+        },
+        "domain.NotificationAttach": {
+            "type": "object",
+            "properties": {
+                "content_type": {
+                    "type": "string"
+                },
+                "create_by": {
+                    "description": "CreateBy almacena el nombre o identificador textual del creador.",
+                    "type": "string"
+                },
+                "create_by_id": {
+                    "description": "CreateById es el UUID del usuario/administrador que creó el registro.\nEs un puntero para permitir valores nulos si la creación es automática por el sistema.",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "CreatedAt registra la fecha y hora exacta en que se creó el registro.\nGORM gestiona este campo automáticamente durante la inserción.",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "notification_id": {
+                    "type": "string"
+                },
+                "s3_key": {
+                    "type": "string"
+                },
+                "update_by": {
+                    "description": "UpdateBy almacena el nombre o identificador textual de la última persona en modificarlo.",
+                    "type": "string"
+                },
+                "update_by_id": {
+                    "description": "UpdateById es el UUID del usuario/administrador que realizó la última actualización.",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "UpdatedAt registra la última fecha y hora en que se modificó el registro.\nGORM actualiza este valor automáticamente en cada operación de guardado.",
+                    "type": "string"
+                }
+            }
+        },
+        "domain.NotificationFilter": {
+            "type": "object",
+            "properties": {
+                "genre": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "municipality": {
+                    "type": "string"
+                },
+                "notification_id": {
+                    "type": "string"
+                },
+                "solvent": {
+                    "type": "boolean"
+                },
+                "specialty_id": {
+                    "type": "integer"
+                },
+                "state": {
+                    "type": "string"
+                },
+                "target_user_ids": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.NotificationStatus": {
+            "type": "string",
+            "enum": [
+                "pending",
+                "sent",
+                "failed",
+                "cancelled"
+            ],
+            "x-enum-varnames": [
+                "NotificationStatusPending",
+                "NotificationStatusSent",
+                "NotificationStatusFailed",
+                "NotificationStatusCancelled"
+            ]
+        },
+        "domain.NotificationTarget": {
+            "type": "object",
+            "properties": {
+                "email_sent": {
+                    "type": "boolean"
+                },
+                "email_sent_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_read": {
+                    "type": "boolean"
+                },
+                "notification_id": {
+                    "type": "string"
+                },
+                "psi_user": {
+                    "$ref": "#/definitions/domain.PsiUserModel"
+                },
+                "psi_user_id": {
+                    "type": "string"
+                },
+                "read_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.NotificationTargetType": {
+            "type": "string",
+            "enum": [
+                "global",
+                "individual",
+                "group"
+            ],
+            "x-enum-varnames": [
+                "NotificationTargetGlobal",
+                "NotificationTargetIndividual",
+                "NotificationTargetGroup"
+            ]
+        },
         "domain.Post": {
             "type": "object",
             "properties": {
@@ -2488,6 +3539,44 @@
                 }
             }
         },
+        "domain.PsiObservations": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "create_by": {
+                    "description": "CreateBy almacena el nombre o identificador textual del creador.",
+                    "type": "string"
+                },
+                "create_by_id": {
+                    "description": "CreateById es el UUID del usuario/administrador que creó el registro.\nEs un puntero para permitir valores nulos si la creación es automática por el sistema.",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "CreatedAt registra la fecha y hora exacta en que se creó el registro.\nGORM gestiona este campo automáticamente durante la inserción.",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "psi_user_id": {
+                    "type": "string"
+                },
+                "update_by": {
+                    "description": "UpdateBy almacena el nombre o identificador textual de la última persona en modificarlo.",
+                    "type": "string"
+                },
+                "update_by_id": {
+                    "description": "UpdateById es el UUID del usuario/administrador que realizó la última actualización.",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "UpdatedAt registra la última fecha y hora en que se modificó el registro.\nGORM actualiza este valor automáticamente en cada operación de guardado.",
+                    "type": "string"
+                }
+            }
+        },
         "domain.PsiSpecialtyModel": {
             "type": "object",
             "properties": {
@@ -2532,6 +3621,10 @@
         "domain.PsiUserColData": {
             "type": "object",
             "properties": {
+                "birthday_notification": {
+                    "description": "El psicólogo autoriza que el sistema avise a la administración en su cumpleaños.\nSolo se usará si el miembro lo activa desde su portal de perfil (opt-in explícito).",
+                    "type": "boolean"
+                },
                 "cpsm": {
                     "description": "Miembro del Colegio de Psicólogos de Miranda",
                     "type": "boolean"
@@ -2814,6 +3907,16 @@
                 "service_address_outside_venezuela": {
                     "type": "string"
                 },
+                "service_modality_distance": {
+                    "type": "boolean"
+                },
+                "service_modality_presencial": {
+                    "description": "── Modalidad de servicio ─────────────────────────────────────────────\nCómo atiende el psicólogo (puede ser combinación de varias). Si ninguna\nestá activa, significa que actualmente no presta servicio.",
+                    "type": "boolean"
+                },
+                "service_modality_telephone": {
+                    "type": "boolean"
+                },
                 "show_cel_phone_carabobo": {
                     "type": "boolean"
                 },
@@ -2848,6 +3951,10 @@
                     "type": "boolean"
                 },
                 "show_public_service_address_outside_venezuela": {
+                    "type": "boolean"
+                },
+                "show_service_modality": {
+                    "description": "Opt-in del Privacy Shield: controla si la modalidad se muestra en el directorio público.",
                     "type": "boolean"
                 },
                 "show_state_outside": {
@@ -3202,6 +4309,59 @@
                 }
             }
         },
+        "request_structs.CreateNotificationRequest": {
+            "type": "object",
+            "required": [
+                "message",
+                "target_type",
+                "title"
+            ],
+            "properties": {
+                "filters": {
+                    "$ref": "#/definitions/request_structs.NotificationFilterDTO"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "scheduled_at": {
+                    "type": "string"
+                },
+                "send_email": {
+                    "type": "boolean"
+                },
+                "target_type": {
+                    "type": "string",
+                    "enum": [
+                        "global",
+                        "individual",
+                        "group"
+                    ]
+                },
+                "target_user_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 255
+                }
+            }
+        },
+        "request_structs.CreateObservacionesRequest": {
+            "type": "object",
+            "required": [
+                "content"
+            ],
+            "properties": {
+                "content": {
+                    "description": "Content es el texto libre de la observación.\nEs texto plano; la capa de servicio lo sanitiza con bluemonday antes de persistir.",
+                    "type": "string",
+                    "example": "Nota interna de seguimiento."
+                }
+            }
+        },
         "request_structs.CreatePsiAdminRequest": {
             "type": "object",
             "required": [
@@ -3441,6 +4601,26 @@
                 }
             }
         },
+        "request_structs.NotificationFilterDTO": {
+            "type": "object",
+            "properties": {
+                "genre": {
+                    "type": "string"
+                },
+                "municipality": {
+                    "type": "string"
+                },
+                "solvent": {
+                    "type": "boolean"
+                },
+                "specialty_id": {
+                    "type": "integer"
+                },
+                "state": {
+                    "type": "string"
+                }
+            }
+        },
         "request_structs.PostGradeDTO": {
             "type": "object",
             "properties": {
@@ -3470,6 +4650,31 @@
                 },
                 "year": {
                     "type": "integer"
+                }
+            }
+        },
+        "request_structs.PreviewNotificationRequest": {
+            "type": "object",
+            "required": [
+                "target_type"
+            ],
+            "properties": {
+                "filters": {
+                    "$ref": "#/definitions/request_structs.NotificationFilterDTO"
+                },
+                "target_type": {
+                    "type": "string",
+                    "enum": [
+                        "global",
+                        "individual",
+                        "group"
+                    ]
+                },
+                "target_user_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -3543,6 +4748,14 @@
                 },
                 "secondary_work_area": {
                     "type": "string"
+                },
+                "service_modality": {
+                    "description": "── Modalidad de servicio (solo si el psicólogo autorizó su visibilidad) ──",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/request_structs.ServiceModalityDTO"
+                        }
+                    ]
                 },
                 "social_networks": {
                     "type": "array",
@@ -3671,6 +4884,20 @@
                 }
             }
         },
+        "request_structs.ServiceModalityDTO": {
+            "type": "object",
+            "properties": {
+                "distance": {
+                    "type": "boolean"
+                },
+                "presencial": {
+                    "type": "boolean"
+                },
+                "telephone": {
+                    "type": "boolean"
+                }
+            }
+        },
         "request_structs.SocialNetworkDTO": {
             "type": "object",
             "properties": {
@@ -3755,6 +4982,16 @@
                     "description": "Content es el nuevo texto de la entrada (texto plano; se sanitiza en la API).",
                     "type": "string",
                     "example": "Expediente actualizado por el Tribunal Disciplinario."
+                }
+            }
+        },
+        "request_structs.UpdateObservacionesRequest": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "Content es el nuevo texto de la observación (texto plano; se sanitiza en la API).",
+                    "type": "string",
+                    "example": "Nota interna actualizada."
                 }
             }
         },
@@ -3923,6 +5160,16 @@
                 "service_address_outside_venezuela": {
                     "type": "string"
                 },
+                "service_modality_distance": {
+                    "type": "string"
+                },
+                "service_modality_presencial": {
+                    "description": "── Modalidad de servicio ─────────────────────────────────────────────",
+                    "type": "string"
+                },
+                "service_modality_telephone": {
+                    "type": "string"
+                },
                 "show_cel_phone_carabobo": {
                     "type": "string"
                 },
@@ -3964,6 +5211,9 @@
                     "type": "string"
                 },
                 "show_public_service_address_outside_venezuela": {
+                    "type": "string"
+                },
+                "show_service_modality": {
                     "type": "string"
                 },
                 "show_state_outside": {
@@ -4037,6 +5287,33 @@
                     "description": "Name es opcional. Si se proporciona, el controlador/servicio debe validar\nque el nuevo nombre no colisione con otra especialidad existente (Restricción UNIQUE).",
                     "type": "string",
                     "example": "Psicología Organizacional"
+                }
+            }
+        },
+        "service.BirthdayInfoProjection": {
+            "type": "object",
+            "properties": {
+                "day": {
+                    "type": "integer"
+                },
+                "first_name": {
+                    "type": "string"
+                },
+                "fpv": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "last_name": {
+                    "type": "string"
+                },
+                "month": {
+                    "description": "Mes y día del cumpleaños (para mostrarlos como fecha sin exponer el año real).",
+                    "type": "integer"
                 }
             }
         }

@@ -153,6 +153,49 @@ func (m *AuthMiddleware) ProtectedAdmin404() fiber.Handler {
 	}
 }
 
+// ProtectedAdmin protege una ruta exclusiva del panel de administración pero,
+// a diferencia de ProtectedAdmin404, devuelve un 401 (Unauthorized) explícito
+// en lugar de enmascarar la respuesta como 404.
+//
+// Está pensada para endpoints de validación de sesión del lado del cliente
+// (p. ej. GET /admin/validate), donde el frontend necesita distinguir con
+// claridad "sesión inválida/revocada" (401) de "ruta inexistente".
+func (m *AuthMiddleware) ProtectedAdmin() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		token, err := m.validateToken(c, func(userID string) (string, error) {
+			uid, err := uuid.Parse(userID)
+			if err != nil {
+				return "", err
+			}
+
+			admin, err := m.adminRepo.GetByID(c.UserContext(), uid)
+			if err != nil {
+				return "", err
+			}
+			// Inyección de Contexto: Permite a los controladores acceder al admin
+			// sin tener que hacer una segunda consulta a la base de datos.
+			c.Locals("admin", admin)
+			if admin.Key == "" {
+				return "", errors.New("session expired")
+			}
+			return admin.Key, nil
+		})
+
+		if err != nil || !token.Valid {
+			return jwtError(c, fiber.StatusUnauthorized, "Sesión inválida o expirada.")
+		}
+
+		// ── Heartbeat (Telemetría Asíncrona) ──────────────────────────────────
+		// Renueva la estampa de "Última vez visto" (Active Session) del administrador.
+		if admin, ok := c.Locals("admin").(*domain.UserAdmin); ok && admin != nil {
+			m.analytics.HeartbeatSession(admin.ID)
+		}
+		// ─────────────────────────────────────────────────────────────────────
+
+		return c.Next()
+	}
+}
+
 // OptionalHybridAuth implementa un patrón de "Soft Authentication" (Autenticación Híbrida).
 //
 // Es un middleware no bloqueante. Intenta decodificar el token y extraer la identidad

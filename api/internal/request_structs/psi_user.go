@@ -106,10 +106,21 @@ type PsiUserUpdateRequestSelf struct {
 	MiniBio              *string `json:"mini_bio" form:"mini_bio"`
 	FullBio              *string `json:"full_bio" form:"full_bio"`
 
+	// ── Modalidad de servicio (auto-gestión) ─────────────────────────────
+	// "0"/"1"/"true"/"false" — usar getters ServiceModality...()
+	ServiceModalityPresencialRaw string `form:"service_modality_presencial"`
+	ServiceModalityDistanceRaw   string `form:"service_modality_distance"`
+	ServiceModalityTelephoneRaw  string `form:"service_modality_telephone"`
+	ShowServiceModalityRaw       string `form:"show_service_modality"`
+
 	// ── Visibilidad de Datos Colegiales ──────────────────────────────────
 	ShowUniversityUndergraduateRaw string `form:"show_university_undergraduate"`
 	ShowGraduateDateRaw            string `form:"show_graduate_date"`
 	ShowMentionUndergraduateRaw    string `form:"show_mention_undergraduate"`
+
+	// ── Preferencias ─────────────────────────────────────────────────────
+	// El psicólogo autoriza que se avise a la administración en su cumpleaños.
+	BirthdayNotificationRaw string `form:"birthday_notification"`
 }
 
 // ── Getters de booleanos de privacidad ────────────────────────────────────────
@@ -172,6 +183,25 @@ func (r *PsiUserUpdateRequestSelf) ShowMentionUndergraduate() *bool {
 	return utils.BoolFromForm(r.ShowMentionUndergraduateRaw)
 }
 
+// ── Preferencias ──
+func (r *PsiUserUpdateRequestSelf) BirthdayNotification() *bool {
+	return utils.BoolFromForm(r.BirthdayNotificationRaw)
+}
+
+// ── Modalidad de servicio ──
+func (r *PsiUserUpdateRequestSelf) ServiceModalityPresencial() *bool {
+	return utils.BoolFromForm(r.ServiceModalityPresencialRaw)
+}
+func (r *PsiUserUpdateRequestSelf) ServiceModalityDistance() *bool {
+	return utils.BoolFromForm(r.ServiceModalityDistanceRaw)
+}
+func (r *PsiUserUpdateRequestSelf) ServiceModalityTelephone() *bool {
+	return utils.BoolFromForm(r.ServiceModalityTelephoneRaw)
+}
+func (r *PsiUserUpdateRequestSelf) ShowServiceModality() *bool {
+	return utils.BoolFromForm(r.ShowServiceModalityRaw)
+}
+
 // =========================================================================
 // DIRECTORIO PÚBLICO (BÚSQUEDA Y LECTURA)
 // =========================================================================
@@ -199,6 +229,8 @@ type PsiMiniProfileDTO struct {
 	ProfilePicture string    `json:"profile_picture"` // Contiene el S3 Key o la URL de la imagen
 	MiniBio        string    `json:"mini_bio"`
 	Specialties    []string  `json:"specialties"` // Slice de especialidades principales
+	// Modalidad de servicio (solo si el psicólogo autorizó su visibilidad).
+	ServiceModality *ServiceModalityDTO `json:"service_modality,omitempty"`
 }
 
 type UndergraduateDTO struct {
@@ -236,6 +268,9 @@ type PsiFullProfileDTO struct {
 	// y solo se incluye si tiene datos.
 	Location PsiLocationDTO `json:"location"`
 
+	// ── Modalidad de servicio (solo si el psicólogo autorizó su visibilidad) ──
+	ServiceModality *ServiceModalityDTO `json:"service_modality,omitempty"`
+
 	// ── Perfil Profesional ────────────────────────────────────────────────
 	WorkAreas            []string `json:"work_areas"`
 	MiniBio              string   `json:"mini_bio,omitempty"`
@@ -251,6 +286,14 @@ type PsiFullProfileDTO struct {
 	// ── Relaciones ────────────────────────────────────────────────────────
 	PostGrades     []PostGradeDTO     `json:"post_grades,omitempty"`
 	SocialNetworks []SocialNetworkDTO `json:"social_networks,omitempty"`
+}
+
+// ServiceModalityDTO describe cómo atiende un psicólogo (puede ser combinación).
+// Si los tres son false, el profesional no presta servicio actualmente.
+type ServiceModalityDTO struct {
+	Presencial bool `json:"presencial"`
+	Distance   bool `json:"distance"`
+	Telephone  bool `json:"telephone"`
 }
 
 // PsiLocationDTO agrupa las tres zonas geográficas posibles de un psicólogo.

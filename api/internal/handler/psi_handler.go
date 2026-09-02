@@ -466,6 +466,25 @@ func (h *PsiHandler) Logout(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"message": "Sesión cerrada correctamente"})
 }
 
+// ValidateSession verifica que la sesión del psicólogo siga siendo válida.
+//
+// @Summary      Validar sesión de psicólogo
+// @Description  Devuelve 200 si el token JWT es válido y la sesión sigue activa;
+//               devuelve 401 (via el middleware ProtectedPsiUser) si fue revocada o expiró.
+// @Tags         Psicólogos - Sesión
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200 {object} map[string]interface{}
+// @Failure      401 {object} map[string]interface{}
+// @Router       /psi/me/validate [get]
+func (h *PsiHandler) ValidateSession(c *fiber.Ctx) error {
+	if _, err := middleware.GetAuthenticatedPsi(c); err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Sesión inválida o expirada."})
+	}
+
+	return c.JSON(fiber.Map{"valid": true})
+}
+
 // AddPostGrade godoc
 // @Summary      Agregar postgrado con soportes
 // @Security     BearerAuth

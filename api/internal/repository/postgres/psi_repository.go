@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
@@ -536,7 +537,7 @@ func (r *psiRepo) SearchDirectory(ctx context.Context, filter request_structs.Ps
 	//    el catálogo oficial. El campo legacy primary/secondary_work_area queda
 	//    fuera (COALESCE a vacío): si la FK no está asignada no se pinta chip.
 	query := r.db.WithContext(ctx).Model(&domain.PsiUserModel{}).
-		Select("psi_users.id, psi_users.first_name, psi_users.last_name, psi_users.ci, psi_users.fpv, psi_users.profile_picture_s3_key, psi_users.mini_bio, psi_users.solvent, psi_users.primary_specialty_id, psi_users.secondary_specialty_id, psi_users.updated_at, COALESCE(sp1.name, '') AS primary_work_area, COALESCE(sp2.name, '') AS secondary_work_area").
+		Select("psi_users.id, psi_users.first_name, psi_users.last_name, psi_users.ci, psi_users.fpv, psi_users.profile_picture_s3_key, psi_users.mini_bio, psi_users.solvent, psi_users.primary_specialty_id, psi_users.secondary_specialty_id, psi_users.updated_at, psi_users.service_modality_presencial, psi_users.service_modality_distance, psi_users.service_modality_telephone, psi_users.show_service_modality, COALESCE(sp1.name, '') AS primary_work_area, COALESCE(sp2.name, '') AS secondary_work_area").
 		Joins("LEFT JOIN psi_specialty_models sp1 ON sp1.id = psi_users.primary_specialty_id").
 		Joins("LEFT JOIN psi_specialty_models sp2 ON sp2.id = psi_users.secondary_specialty_id").
 		Where("psi_users.is_active = ?", true)
@@ -605,7 +606,7 @@ func (r *psiRepo) SearchAdmin(ctx context.Context, filter request_structs.PsiDir
 	var total int64
 
 	query := r.db.WithContext(ctx).Model(&domain.PsiUserModel{}).
-		Select("id, first_name, last_name, ci, fpv, email, solvent, is_active, control_number, primary_work_area, secondary_work_area, primary_specialty_id, secondary_specialty_id")
+		Select("id, first_name, last_name, ci, fpv, email, solvent, is_active, control_number, born_date, primary_work_area, secondary_work_area, primary_specialty_id, secondary_specialty_id")
 
 	if filter.SearchTerm != "" {
 		// Limpiamos espacios
@@ -863,6 +864,72 @@ func (r *psiRepo) UpdateDeontologia(ctx context.Context, id uuid.UUID, content, 
 			"update_by":   updateBy,
 			"update_by_id": updateById,
 		}).Error
+}
+
+// =========================================================================
+// OBSERVACIONES INTERNAS
+// =========================================================================
+
+// CreateObservations registra una nueva nota interna sobre un psicólogo.
+func (r *psiRepo) CreateObservations(ctx context.Context, entry *domain.PsiObservations) error {
+	return r.db.WithContext(ctx).Create(entry).Error
+}
+
+// ListObservationsByPsiID recupera las notas internas de un psicólogo,
+// ordenadas de la más reciente a la más antigua.
+func (r *psiRepo) ListObservationsByPsiID(ctx context.Context, psiID uuid.UUID) ([]domain.PsiObservations, error) {
+	var entries []domain.PsiObservations
+	err := r.db.WithContext(ctx).
+		Where("psi_user_id = ?", psiID).
+		Order("created_at DESC").
+		Find(&entries).Error
+	return entries, err
+}
+
+// GetObservationsByID busca una nota interna específica por su UUID.
+func (r *psiRepo) GetObservationsByID(ctx context.Context, id uuid.UUID) (*domain.PsiObservations, error) {
+	var entry domain.PsiObservations
+	err := r.db.WithContext(ctx).First(&entry, "id = ?", id).Error
+	return &entry, err
+}
+
+// UpdateObservations actualiza el contenido de una nota interna existente y
+// refresca la auditoría del último editor.
+func (r *psiRepo) UpdateObservations(ctx context.Context, id uuid.UUID, content, updateBy string, updateById uuid.UUID) error {
+	return r.db.WithContext(ctx).Model(&domain.PsiObservations{}).
+		Where("id = ?", id).
+		Updates(map[string]interface{}{
+			"content":      content,
+			"update_by":    updateBy,
+			"update_by_id": updateById,
+		}).Error
+}
+
+// =========================================================================
+// CUMPLEAÑOS (AVISO AL ADMIN)
+// =========================================================================
+
+// GetBirthdays recupera los agremiados que cumplen años en el rango [from;to]
+// y han autorizado el aviso (birthday_notification=true). Une psi_users con su
+// col_data para leer el opt-in. La coincidencia es por mes/día.
+func (r *psiRepo) GetBirthdays(ctx context.Context, from, to time.Time) ([]domain.PsiUserModel, error) {
+	var users []domain.PsiUserModel
+	err := r.db.WithContext(ctx).
+		Table("psi_users").
+		Select("psi_users.id, psi_users.first_name, psi_users.second_name, psi_users.last_name, psi_users.second_last_name, psi_users.fpv, psi_users.born_date, psi_users.is_active").
+		Joins("JOIN psi_user_col_data cd ON cd.psi_user_model_id = psi_users.id").
+		Where("cd.birthday_notification = ?", true).
+		Where("psi_users.deleted_at IS NULL").
+		Where(`(EXTRACT(MONTH FROM psi_users.born_date) > EXTRACT(MONTH FROM ?::timestamp)
+				OR (EXTRACT(MONTH FROM psi_users.born_date) = EXTRACT(MONTH FROM ?::timestamp)
+					AND EXTRACT(DAY FROM psi_users.born_date) >= EXTRACT(DAY FROM ?::timestamp)))
+				AND (EXTRACT(MONTH FROM psi_users.born_date) < EXTRACT(MONTH FROM ?::timestamp)
+				OR (EXTRACT(MONTH FROM psi_users.born_date) = EXTRACT(MONTH FROM ?::timestamp)
+					AND EXTRACT(DAY FROM psi_users.born_date) <= EXTRACT(DAY FROM ?::timestamp)))`,
+			from, from, from, to, to, to).
+		Order("EXTRACT(MONTH FROM psi_users.born_date), EXTRACT(DAY FROM psi_users.born_date)").
+		Find(&users).Error
+	return users, err
 }
 
 // GetTextContentByID recupera el contenido de un TextModel dado su UUID.

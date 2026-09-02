@@ -1,11 +1,13 @@
 // web/src/components/admin/psicologos/edit/sections/LegalIdentitySection.tsx
 
 import { Field, IC } from "../EditPrimitives";
+import { Show } from "solid-js";
 import type { EditFormState } from "../types";
 
 interface Props {
   form: EditFormState;
   setForm: (key: keyof EditFormState, value: any) => void;
+  age?: number;
 }
 
 export function LegalIdentitySection(props: Props) {
@@ -105,11 +107,21 @@ export function LegalIdentitySection(props: Props) {
 
         <div>
           <Field label="Fecha de Nacimiento">
-            <input type="date" required
-              value={props.form.born_date}
-              onInput={(e) => props.setForm("born_date", e.currentTarget.value)}
-              class={IC}
-            />
+            <div class="flex gap-2 items-start">
+              <input type="date" required
+                value={props.form.born_date}
+                onInput={(e) => props.setForm("born_date", e.currentTarget.value)}
+                class={`${IC} flex-1`}
+              />
+              <div class="w-28 flex-shrink-0 bg-gray-100 border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-600">
+                <Show when={props.age && props.age! > 0}>
+                  {props.age} años
+                </Show>
+                <Show when={!(props.age && props.age! > 0)}>
+                  —
+                </Show>
+              </div>
+            </div>
           </Field>
         </div>
 

@@ -314,6 +314,20 @@ func (s *PsiService) UpdatePsiByAdmin(
 		psi.ShowPublicServiceAddress = *v
 	}
 
+	// ── Modalidad de servicio ──────────────────────────────────────────────
+	if v := req.ServiceModalityPresencial(); v != nil {
+		psi.ServiceModalityPresencial = *v
+	}
+	if v := req.ServiceModalityDistance(); v != nil {
+		psi.ServiceModalityDistance = *v
+	}
+	if v := req.ServiceModalityTelephone(); v != nil {
+		psi.ServiceModalityTelephone = *v
+	}
+	if v := req.ShowServiceModality(); v != nil {
+		psi.ShowServiceModality = *v
+	}
+
 	// 4f. Ubicación: Carabobo
 	if req.MunicipalityCarabobo != nil {
 		val := strings.TrimSpace(*req.MunicipalityCarabobo)
@@ -887,6 +901,7 @@ func (s *PsiService) GetAdminDirectory(ctx context.Context, admin *domain.UserAd
 			FPV:           u.FPV,
 			Email:         u.Email,
 			ControlNumber: u.ControlNumber,
+			Age:           calculateAge(u.BornDate),
 			Solvent:       u.Solvent,
 			IsActive:      u.IsActive,
 		})
@@ -911,6 +926,24 @@ func (s *PsiService) GetAdminDirectory(ctx context.Context, admin *domain.UserAd
 // Las siguientes funciones abstraen la complejidad de inicialización de los grafos
 // de objetos del dominio, previniendo que la función principal de registro
 // (CreatePsiByAdmin) se convierta en un monolito inmanejable.
+
+// calculateAge devuelve los años cumplidos según la fecha de nacimiento.
+// Considera mes y día para no sumar el año hasta cumplir años (edad exacta).
+func calculateAge(born time.Time) int {
+	if born.IsZero() {
+		return 0
+	}
+	now := time.Now()
+	years := now.Year() - born.Year()
+	// Aún no ha cumplido años este año si la fecha actual es anterior a su cumpleaños.
+	if now.Month() < born.Month() || (now.Month() == born.Month() && now.Day() < born.Day()) {
+		years--
+	}
+	if years < 0 {
+		return 0
+	}
+	return years
+}
 
 // buildSolvencyHistory genera el historial anual de solvencias desde el año de
 // colegiatura (mínimo 2024) hasta el año de la última solvencia conocida.

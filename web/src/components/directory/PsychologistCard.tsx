@@ -88,6 +88,26 @@ export function PsychologistCard(props: PsychologistCardProps) {
           </For>
         </div>
       </Show>
+
+      <Show when={psychologist.service_modality}>
+        <div class="mt-2 flex flex-wrap gap-1">
+          <Show when={psychologist.service_modality!.presencial}>
+            <span class="text-[10px] bg-teal-50 text-teal-700 font-bold px-2.5 py-1 rounded-lg uppercase tracking-tighter">
+              Presencial
+            </span>
+          </Show>
+          <Show when={psychologist.service_modality!.distance}>
+            <span class="text-[10px] bg-teal-50 text-teal-700 font-bold px-2.5 py-1 rounded-lg uppercase tracking-tighter">
+              A distancia
+            </span>
+          </Show>
+          <Show when={psychologist.service_modality!.telephone}>
+            <span class="text-[10px] bg-teal-50 text-teal-700 font-bold px-2.5 py-1 rounded-lg uppercase tracking-tighter">
+              Telefónica
+            </span>
+          </Show>
+        </div>
+      </Show>
     </A>
   );
 }

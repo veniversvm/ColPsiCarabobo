@@ -21,8 +21,7 @@ export function PsychologistTable(props: Props) {
             <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Credenciales</th>
             <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Solvencia</th>
             <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Estatus</th>
-            <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Acciones</th>
-          </tr>
+            <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Acciones</th>          </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
           <Suspense fallback={

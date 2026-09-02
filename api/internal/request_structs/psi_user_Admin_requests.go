@@ -191,6 +191,12 @@ type UpdatePsiAdminRequest struct {
 	MiniBio              *string `json:"mini_bio" form:"mini_bio"`
 	FullBio              *string `json:"full_bio" form:"full_bio"`
 
+	// ── Modalidad de servicio ─────────────────────────────────────────────
+	ServiceModalityPresencialRaw string `json:"service_modality_presencial" form:"service_modality_presencial"`
+	ServiceModalityDistanceRaw   string `json:"service_modality_distance" form:"service_modality_distance"`
+	ServiceModalityTelephoneRaw  string `json:"service_modality_telephone" form:"service_modality_telephone"`
+	ShowServiceModalityRaw       string `json:"show_service_modality" form:"show_service_modality"`
+
 	// ─────────────── Datos Colegiales ─────────────── //
 
 	// ── Registro legal del título ─────────────────────────────────────────
@@ -282,6 +288,20 @@ func (r *UpdatePsiAdminRequest) ShowMentionUndergraduate() *bool {
 	return utils.BoolFromForm(r.ShowMentionUndergraduateRaw)
 }
 
+// ── Modalidad de servicio ──
+func (r *UpdatePsiAdminRequest) ServiceModalityPresencial() *bool {
+	return utils.BoolFromForm(r.ServiceModalityPresencialRaw)
+}
+func (r *UpdatePsiAdminRequest) ServiceModalityDistance() *bool {
+	return utils.BoolFromForm(r.ServiceModalityDistanceRaw)
+}
+func (r *UpdatePsiAdminRequest) ServiceModalityTelephone() *bool {
+	return utils.BoolFromForm(r.ServiceModalityTelephoneRaw)
+}
+func (r *UpdatePsiAdminRequest) ShowServiceModality() *bool {
+	return utils.BoolFromForm(r.ShowServiceModalityRaw)
+}
+
 // SolvenciesUpdate define la estructura para actualizar el historial de solvencias
 // a través de un array JSON embebido en las peticiones administrativas.
 type SolvenciesUpdate struct {
@@ -308,6 +328,9 @@ type PsiAdminListDTO struct {
 
 	// Nº de control interno (columna 'Nº' del Excel maestro); visible solo admin.
 	ControlNumber string `json:"control_number"`
+
+	// Edad calculada por el backend desde born_date (años cumplidos). Solo admin.
+	Age int `json:"age"`
 
 	// Banderas UI: Permiten al Frontend renderizar componentes visuales (Badges) sin hacer lógica pesada.
 	Solvent  bool `json:"solvent"`   // Activa etiquetas visuales de Alerta Roja / Verde.

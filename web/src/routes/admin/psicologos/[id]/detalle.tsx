@@ -16,6 +16,7 @@ import {
   EditAlert,
   SocialNetworksBlock,
   DeontologiaBlock,
+  ObservationsBlock,
   AuditBlock,
   AccountSection,
   AdminStatusSection,
@@ -25,7 +26,7 @@ import {
   ProfessionalSection,
   AcademicSection,
 } from "~/components/admin/psicologos/edit";
-import type { EditFormState, DeontologiaEntry } from "~/components/admin/psicologos/edit";
+import type { EditFormState, DeontologiaEntry, ObservacionesEntry } from "~/components/admin/psicologos/edit";
 import { SolvenciesSection } from "~/components/admin/psicologos/edit/SolvenciesSection";
 import { Panel, PanelSection } from "~/components/ui/Panel";
 
@@ -93,9 +94,45 @@ const updateDeontologiaServer = action(
   },
 );
 
+const addObservacionesServer = action(
+  async (params: { id: string; content: string }) => {
+    "use server";
+    const { apiPost } = await import("~/lib/api");
+    return await apiPost(`/admin/psi/${params.id}/observaciones`, {
+      content: params.content,
+    });
+  },
+);
+
+const updateObservacionesServer = action(
+  async (params: { psiId: string; entryId: string; content: string }) => {
+    "use server";
+    const { apiPatch } = await import("~/lib/api");
+    return await apiPatch(
+      `/admin/psi/${params.psiId}/observaciones/${params.entryId}`,
+      { content: params.content },
+    );
+  },
+);
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const formatDate = (dateStr?: string) => (dateStr ? dateStr.split("T")[0] : "");
+
+const calculateAge = (dateStr?: string) => {
+  if (!dateStr) return 0;
+  const born = new Date(dateStr);
+  if (isNaN(born.getTime())) return 0;
+  const now = new Date();
+  let years = now.getFullYear() - born.getFullYear();
+  if (
+    now.getMonth() < born.getMonth() ||
+    (now.getMonth() === born.getMonth() && now.getDate() < born.getDate())
+  ) {
+    years--;
+  }
+  return years < 0 ? 0 : years;
+};
 
 // Campos que el backend de Go espera recibir como "1" o "0" desde el FormData
 const RAW_BOOL_FIELDS = [
@@ -140,6 +177,9 @@ export default function AdminEditPsiPage() {
   const [workAreas] = createResource(() => apiGet<any[]>("/specialties"));
   const [deontologia, { refetch: refetchDeontologia }] = createResource(
     () => apiGet<DeontologiaEntry[]>(`/admin/psi/${params.id}/deontologia`),
+  );
+  const [observaciones, { refetch: refetchObservaciones }] = createResource(
+    () => apiGet<ObservacionesEntry[]>(`/admin/psi/${params.id}/observaciones`),
   );
 
   const [form, setForm] = createStore<EditFormState>({} as EditFormState);
@@ -415,7 +455,7 @@ export default function AdminEditPsiPage() {
             </PanelSection>
 
             <PanelSection title="Identidad Legal">
-              <LegalIdentitySection form={form} setForm={set} />
+              <LegalIdentitySection form={form} setForm={set} age={calculateAge(form.born_date)} />
             </PanelSection>
             <PanelSection title="Gestión de Contacto y Privacidad" accent="border-colpsi-blue">
               <ContactVisibilitySection form={form} setForm={set} />
@@ -493,6 +533,24 @@ export default function AdminEditPsiPage() {
                   if (!id) return;
                   await updateDeontologiaServer({ psiId: id, entryId, content });
                   refetchDeontologia();
+                }}
+              />
+            </PanelSection>
+
+            <PanelSection title="Observaciones Internas" accent="border-gray-300">
+              <ObservationsBlock
+                entries={observaciones()}
+                onAdd={async (content) => {
+                  const id = params.id ?? "";
+                  if (!id) return;
+                  await addObservacionesServer({ id, content });
+                  refetchObservaciones();
+                }}
+                onUpdate={async (entryId, content) => {
+                  const id = params.id ?? "";
+                  if (!id) return;
+                  await updateObservacionesServer({ psiId: id, entryId, content });
+                  refetchObservaciones();
                 }}
               />
             </PanelSection>
