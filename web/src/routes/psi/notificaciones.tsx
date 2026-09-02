@@ -10,39 +10,36 @@ export default function PsiNotificaciones() {
     () => apiGet<UnreadCountResponse>("/notifications/psi-user/unread-count"),
     { initialValue: { unread_count: 0 } }
   );
-  const [list, { refetch: refetchList }] = createResource(
+  const [list] = createResource(
     () => apiGet<{ data: Notification[]; total: number; page: number }>("/notifications/psi-user?page=1&limit=50"),
     { initialValue: { data: [], total: 0, page: 1 } }
   );
 
-  // Detalle de la notificación abierta (contenido completo + marca como leída).
-  const [opened, setOpened] = createSignal<Notification | null>(null);
+  // Id de la notificación expandida (el mensaje se lee del propio item del listado,
+  // así la apertura es inmediata y sin parpadeo: no espera a la red ni re-renderiza la lista).
+  const [opened, setOpened] = createSignal<string | null>(null);
   const [openError, setOpenError] = createSignal("");
 
-  const openDetail = async (n: Notification) => {
+  const toggleDetail = async (n: Notification) => {
     setOpenError("");
-    if (opened()?.id === n.id) {
-      setOpened(null);
-      return;
-    }
-    setOpened(null);
+    const isOpen = opened() === n.id;
+    // Cerrar (toggle) sin petición.
+    setOpened(isOpen ? null : n.id);
+    if (isOpen) return;
+    // Marcar como leída en segundo plano y refrescar el badge; evitar refetch de la
+    // lista para no re-renderizar los items ni provocar parpadeo del contenido.
     try {
-      const detail = await apiGet<Notification>(`/notifications/psi-user/${n.id}`);
-      setOpened(detail);
+      await apiGet<Notification>(`/notifications/psi-user/${n.id}`);
     } catch (e) {
       // eslint-disable-next-line no-console
-      console.error("Error al abrir notificación:", e);
-      setOpenError(getUserFacingError(e));
-      return;
+      console.error("Error al marcar leída:", e);
     }
-    // Actualizar contador y listado; nunca dejar que un rechazo se propague.
     try { await refetchUnread(); } catch (e) { /* eslint-disable-next-line no-console */ console.error(e); }
-    try { await refetchList(); } catch (e) { /* eslint-disable-next-line no-console */ console.error(e); }
   };
 
   const items = () => list()?.data ?? [];
 
-  const isRead = (n: Notification) => opened()?.id === n.id || n.targets?.[0]?.is_read === true;
+  const isRead = (n: Notification) => opened() === n.id || n.targets?.[0]?.is_read === true;
 
   return (
     <main class="bg-[#f8fafc] min-h-screen pb-24">
@@ -80,11 +77,11 @@ export default function PsiNotificaciones() {
           <For each={items()}>
             {(n) => {
               const read = isRead(n);
-              const expanded = opened()?.id === n.id;
+              const expanded = opened() === n.id;
               return (
                 <div>
                   <button
-                    onClick={() => openDetail(n)}
+                    onClick={() => toggleDetail(n)}
                     class={`w-full text-left bg-white rounded-3xl p-5 shadow-sm border transition-all active:scale-[0.99] ${
                       read ? "border-gray-100" : "border-blue-300 ring-1 ring-blue-100"
                     }`}
@@ -95,7 +92,7 @@ export default function PsiNotificaciones() {
                         <div class="flex items-center gap-2">
                           <h4 class={`text-sm font-bold truncate ${read ? "text-gray-600" : "text-gray-900"}`}>{n.title}</h4>
                         </div>
-                        <p class={`text-xs mt-1 line-clamp-3 ${read ? "text-gray-400" : "text-gray-600"}`}>{n.message}</p>
+                        <p class={`text-xs mt-1 ${read ? "text-gray-400" : "text-gray-600"} ${expanded ? "" : "line-clamp-3"}`}>{n.message}</p>
                         <p class="text-[10px] text-gray-400 font-bold mt-2 uppercase tracking-wider">
                           {formatDate(n.sent_at || n.created_at)}
                         </p>
@@ -103,11 +100,6 @@ export default function PsiNotificaciones() {
                       {expanded && <span class="text-blue-600 shrink-0 font-black">▲</span>}
                     </div>
                   </button>
-                  <Show when={expanded && opened()}>
-                    <div class="bg-blue-50/60 border border-blue-100 rounded-b-3xl -mt-2 px-5 py-4 text-sm text-gray-800 whitespace-pre-wrap">
-                      {opened()?.message}
-                    </div>
-                  </Show>
                 </div>
               );
             }}
