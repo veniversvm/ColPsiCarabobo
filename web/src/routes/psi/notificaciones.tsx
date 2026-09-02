@@ -1,35 +1,48 @@
 // web/src/routes/psi/notificaciones.tsx
-import { createResource, createSignal, For, Show, Suspense, ErrorBoundary } from "solid-js";
+import { createResource, createSignal, For, Show, Suspense } from "solid-js";
 import { A } from "@solidjs/router";
 import { apiGet } from "~/lib/api";
 import { getUserFacingError } from "~/lib/errors";
 import { Notification, UnreadCountResponse } from "~/types/notifications";
 
 export default function PsiNotificaciones() {
-  const [unread] = createResource(() => apiGet<UnreadCountResponse>("/notifications/psi-user/unread-count"));
-  const [list, { refetch }] = createResource(
+  const [unread, { refetch: refetchUnread }] = createResource(
+    () => apiGet<UnreadCountResponse>("/notifications/psi-user/unread-count"),
+    { initialValue: { unread_count: 0 } }
+  );
+  const [list, { refetch: refetchList }] = createResource(
     () => apiGet<{ data: Notification[]; total: number; page: number }>("/notifications/psi-user?page=1&limit=50"),
     { initialValue: { data: [], total: 0, page: 1 } }
   );
 
-  // Marcar como leída: GET del detalle la marca en el backend.
-  const [opened, setOpened] = createSignal<string | null>(null);
+  // Detalle de la notificación abierta (contenido completo + marca como leída).
+  const [opened, setOpened] = createSignal<Notification | null>(null);
   const [openError, setOpenError] = createSignal("");
 
   const openDetail = async (n: Notification) => {
     setOpenError("");
+    if (opened()?.id === n.id) {
+      setOpened(null);
+      return;
+    }
     setOpened(null);
     try {
-      await apiGet(`/notifications/psi-user/${n.id}`);
-      setOpened(n.id);
-      refetch();
-      unread.refetch();
-    } catch (e: any) {
+      const detail = await apiGet<Notification>(`/notifications/psi-user/${n.id}`);
+      setOpened(detail);
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error("Error al abrir notificación:", e);
       setOpenError(getUserFacingError(e));
+      return;
     }
+    // Actualizar contador y listado; nunca dejar que un rechazo se propague.
+    try { await refetchUnread(); } catch (e) { /* eslint-disable-next-line no-console */ console.error(e); }
+    try { await refetchList(); } catch (e) { /* eslint-disable-next-line no-console */ console.error(e); }
   };
 
   const items = () => list()?.data ?? [];
+
+  const isRead = (n: Notification) => opened()?.id === n.id || n.targets?.[0]?.is_read === true;
 
   return (
     <main class="bg-[#f8fafc] min-h-screen pb-24">
@@ -47,59 +60,59 @@ export default function PsiNotificaciones() {
       </div>
 
       <div class="max-w-3xl mx-auto px-4 -mt-12 space-y-3">
-        <ErrorBoundary fallback={(err) => (
-          <div class="bg-white rounded-3xl p-8 text-center shadow-sm border border-gray-100">
-            <p class="text-3xl mb-3">🚨</p>
-            <p class="text-red-600 font-bold text-sm">{getUserFacingError(err)}</p>
+        <Suspense fallback={
+          <div class="space-y-3">
+            <For each={[1, 2, 3]}>{() => <div class="h-24 bg-white animate-pulse rounded-3xl border border-gray-100" />}</For>
           </div>
-        )}>
-          <Suspense fallback={
-            <div class="space-y-3">
-              <For each={[1, 2, 3]}>{() => <div class="h-24 bg-white animate-pulse rounded-3xl border border-gray-100" />}</For>
+        }>
+          <Show when={!list.loading && items().length === 0}>
+            <div class="bg-white rounded-3xl p-12 text-center shadow-sm border border-gray-100">
+              <p class="text-5xl mb-4">📭</p>
+              <h3 class="font-black text-gray-700">Sin notificaciones</h3>
+              <p class="text-sm text-gray-500 mt-1">No tienes comunicados pendientes.</p>
             </div>
-          }>
-            <Show when={!list.loading && items().length === 0}>
-              <div class="bg-white rounded-3xl p-12 text-center shadow-sm border border-gray-100">
-                <p class="text-5xl mb-4">📭</p>
-                <h3 class="font-black text-gray-700">Sin notificaciones</h3>
-                <p class="text-sm text-gray-500 mt-1">No tienes comunicados pendientes.</p>
-              </div>
-            </Show>
+          </Show>
 
-            <Show when={openError()}>
-              <div class="bg-red-50 border border-red-200 text-red-700 text-sm font-semibold px-4 py-3 rounded-2xl">{openError()}</div>
-            </Show>
+          <Show when={openError()}>
+            <div class="bg-red-50 border border-red-200 text-red-700 text-sm font-semibold px-4 py-3 rounded-2xl">{openError()}</div>
+          </Show>
 
-            <For each={items()}>
-              {(n) => {
-                const isTarget = n.targets && n.targets.length > 0 ? n.targets[0] : null;
-                const isRead = isTarget?.is_read ?? true;
-                return (
+          <For each={items()}>
+            {(n) => {
+              const read = isRead(n);
+              const expanded = opened()?.id === n.id;
+              return (
+                <div>
                   <button
                     onClick={() => openDetail(n)}
                     class={`w-full text-left bg-white rounded-3xl p-5 shadow-sm border transition-all active:scale-[0.99] ${
-                      isRead ? "border-gray-100" : "border-blue-300 ring-1 ring-blue-100"
+                      read ? "border-gray-100" : "border-blue-300 ring-1 ring-blue-100"
                     }`}
                   >
                     <div class="flex items-start gap-3">
-                      <div class={`w-2.5 h-2.5 rounded-full mt-2 shrink-0 ${isRead ? "bg-transparent" : "bg-blue-600"}`} />
+                      <div class={`w-2.5 h-2.5 rounded-full mt-2 shrink-0 ${read ? "bg-transparent" : "bg-blue-600"}`} />
                       <div class="min-w-0 flex-1">
                         <div class="flex items-center gap-2">
-                          <h4 class={`text-sm font-bold truncate ${isRead ? "text-gray-600" : "text-gray-900"}`}>{n.title}</h4>
+                          <h4 class={`text-sm font-bold truncate ${read ? "text-gray-600" : "text-gray-900"}`}>{n.title}</h4>
                         </div>
-                        <p class={`text-xs mt-1 line-clamp-3 ${isRead ? "text-gray-400" : "text-gray-600"}`}>{n.message}</p>
+                        <p class={`text-xs mt-1 line-clamp-3 ${read ? "text-gray-400" : "text-gray-600"}`}>{n.message}</p>
                         <p class="text-[10px] text-gray-400 font-bold mt-2 uppercase tracking-wider">
                           {formatDate(n.sent_at || n.created_at)}
                         </p>
                       </div>
-                      {isRead && opened() === n.id && <span class="text-green-600 shrink-0">✓</span>}
+                      {expanded && <span class="text-blue-600 shrink-0 font-black">▲</span>}
                     </div>
                   </button>
-                );
-              }}
-            </For>
-          </Suspense>
-        </ErrorBoundary>
+                  <Show when={expanded && opened()}>
+                    <div class="bg-blue-50/60 border border-blue-100 rounded-b-3xl -mt-2 px-5 py-4 text-sm text-gray-800 whitespace-pre-wrap">
+                      {opened()?.message}
+                    </div>
+                  </Show>
+                </div>
+              );
+            }}
+          </For>
+        </Suspense>
       </div>
     </main>
   );
