@@ -84,7 +84,7 @@ export default function PsiNotificaciones() {
                     onClick={() => toggleDetail(n)}
                     class={`w-full text-left bg-white rounded-3xl p-5 shadow-sm border transition-all active:scale-[0.99] ${
                       read ? "border-gray-100" : "border-blue-300 ring-1 ring-blue-100"
-                    }`}
+                    } ${expanded ? "rounded-b-none border-b-0" : ""}`}
                   >
                     <div class="flex items-start gap-3">
                       <div class={`w-2.5 h-2.5 rounded-full mt-2 shrink-0 ${read ? "bg-transparent" : "bg-blue-600"}`} />
@@ -92,7 +92,7 @@ export default function PsiNotificaciones() {
                         <div class="flex items-center gap-2">
                           <h4 class={`text-sm font-bold truncate ${read ? "text-gray-600" : "text-gray-900"}`}>{n.title}</h4>
                         </div>
-                        <p class={`text-xs mt-1 ${read ? "text-gray-400" : "text-gray-600"} ${expanded ? "" : "line-clamp-3"}`}>{n.message}</p>
+                        <p class={`text-xs mt-1 line-clamp-3 ${read ? "text-gray-400" : "text-gray-600"}`}>{n.message}</p>
                         <p class="text-[10px] text-gray-400 font-bold mt-2 uppercase tracking-wider">
                           {formatDate(n.sent_at || n.created_at)}
                         </p>
@@ -100,6 +100,11 @@ export default function PsiNotificaciones() {
                       {expanded && <span class="text-blue-600 shrink-0 font-black">▲</span>}
                     </div>
                   </button>
+                  <Show when={expanded}>
+                    <div class="bg-blue-50/60 border border-blue-100 border-t-0 rounded-b-3xl -mt-px px-5 py-4 text-sm text-gray-800 whitespace-pre-wrap">
+                      {n.message}
+                    </div>
+                  </Show>
                 </div>
               );
             }}

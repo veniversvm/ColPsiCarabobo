@@ -117,7 +117,7 @@ export default function ProfilePage() {
   const runUpdateAction = useAction(updateProfileServer);
 
   const SITE_URL =
-    import.meta.env.VITE_SITE_URL || "http://localhost:8080/api/v1";
+    import.meta.env.VITE_SITE_URL || "http://localhost:28080/api/v1";
 
   const canonicalUrl = `${SITE_URL}/directorio/${profile()?.first_name}-${profile()?.last_name}-fpv${profile()?.fpv}`;
 
