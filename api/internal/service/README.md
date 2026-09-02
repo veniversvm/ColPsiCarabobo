@@ -605,6 +605,56 @@ if executorRole == "psi" {
 
 ---
 
+## 🎂 Observaciones, Cumpleaños y Modalidad de Servicio
+
+### Observaciones Internas (`observaciones.go`)
+
+Registro interno de notas sobre un psicólogo, gestionado **solo por admin**
+(a diferencia de deontología, que lo edita el propio psicólogo). No hay
+operación de borrado.
+
+| Método del servicio | Descripción |
+|---|---|
+| `AddObservacion` | Crea una observación para un psicólogo |
+| `ListObservaciones` | Devuelve las observaciones de un psicólogo |
+| `UpdateObservacion` | Edita una observación existente |
+
+**Seguridad:** El contenido se sanitiza con `bluemonday` y se limita a
+`10000` caracteres. Todo escribe viajando por el `AuditModel` (trazabilidad).
+
+### Aviso de Cumpleaños (`birthdays.go`)
+
+Notifica a la administración cuando un psicólogo cumple años, **solo si el
+psicólogo habilitó el opt-in** `BirthdayNotification` (en `PsiUserColData`).
+
+| Método del servicio | Descripción |
+|---|---|
+| `GetBirthdaysByRange` | Devuelve los psicólogos con cumpleaños en `today` o `week`. Proyección `BirthdayInfoProjection`. |
+
+El banner admin (`BirthdayBanner`) consume `GET /admin/psi/birthdays?range=week`.
+
+### Modalidad de Servicio (booleans en `PsiUserModel`)
+
+El psicólogo declara sus modalidades de atención autogestionándose en el
+portal (`/psi/perfil`): `ServiceModalityPresencial`, `ServiceModalityDistance`,
+`ServiceModalityTelephone`. Si las tres son `false` → no presta servicio
+actualmente (default).
+
+En `psi_service_directory.go` la modalidad se expone en el directorio público
+**solo si** `ShowServiceModality` está activo (Privacy Shield). Los booleans
+en forms multipart viajan como `Raw` string y se parsean con
+`utils.BoolFromForm`.
+
+### Edad calculada en Backend (admin)
+
+`PsiUserAdminService.GetAdminDirectory` calcula la edad en «años cumplidos»
+(compara mes/día, no resta años) vía `calculateAge()`, y la devuelve en
+`PsiAdminListDTO.Age`. La edad se muestra **solo en admin** (lista y detalle,
+como campo no editable junto a la fecha de nacimiento). Requiere `born_date`
+en el `Select` de `SearchAdmin`.
+
+---
+
 ## 🏗️ Decisiones de Diseño Clave
 
 ### 1. Inyección de Dependencias (DI)

@@ -19,8 +19,8 @@
 
 Sitio web del Colegio de Psicólogos de Carabobo. Incluye:
 - Páginas públicas (inicio, directorio, noticias, nosotros, explorar)
-- Portal del psicólogo (`/psi/` — perfil, académico, etc.)
-- Administración (`/admin/` — CRUD de psicólogos, noticias, áreas, staff)
+- Portal del psicólogo (`/psi/` — perfil, académico, modalidad de servicio, aviso de cumpleaños)
+- Administración (`/admin/` — CRUD de psicólogos, noticias, áreas, staff, edad calculada, banner de cumpleaños, observaciones internas)
 - Inscripciones (`/inscripcion`)
 
 ## Seguridad aplicada (fixes recientes)

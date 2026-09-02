@@ -50,6 +50,15 @@ This package defines ALL API routes using **Fiber v2** and mounts middleware per
 | `PATCH` | `/api/v1/admin/:id` | `AdminController.UpdateAdmin` | `Analytics`, `AuthRequired` |
 | `DELETE` | `/api/v1/admin/:id` | `AdminController.DeleteAdmin` | `Analytics`, `AuthRequired` |
 
+### Admin — Psicólogos (`/api/v1/admin/psi/`)
+
+| Method | Path | Handler | Middleware |
+|---|---|---|---|
+| `GET` | `/api/v1/admin/psi/birthdays` | `GetBirthdaysByAdmin` | `ProtectedAdmin404` |
+| `GET` | `/api/v1/admin/psi/:id/observaciones` | `GetObservacionesByAdmin` | `ProtectedAdmin404` |
+| `POST` | `/api/v1/admin/psi/:id/observaciones` | `AddObservacionByAdmin` | `ProtectedAdmin404` |
+| `PATCH` | `/api/v1/admin/psi/:id/observaciones/:entryId` | `UpdateObservacionByAdmin` | `ProtectedAdmin404` |
+
 ### Psychologist Directory (`/api/v1/psi/`)
 
 | Method | Path | Handler | Middleware |

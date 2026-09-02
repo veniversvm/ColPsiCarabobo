@@ -93,6 +93,8 @@ La entidad central del sistema. Agrupa identidad legal, contacto, ubicación geo
 
 **Especialidades:** `PrimaryWorkArea`, `SecondaryWorkArea`
 
+**Modalidad de servicio:** `ServiceModalityPresencial`, `ServiceModalityDistance`, `ServiceModalityTelephone` (booleans combinables; si las tres son `false` → no presta servicio actualmente). `ShowServiceModality` = opt-in que expone la modalidad en el directorio público (Privacy Shield).
+
 **Biografía:** `MiniBio` (max 250 chars), `BioTextID` (FK → TextModel), `FullBio` (GORM preload)
 
 **Tabla:** `psi_users`
@@ -142,6 +144,7 @@ Información regulatoria y académica del Colegio. Relación **1:1** con `PsiUse
 | `DoubleGuild` | `bool` | Colegiado en más de un estado |
 | `DoubleGuildLocation` | `string` | Ubicación de doble colegiación |
 | `CPSM` | `bool` | Miembro del Colegio de Psicólogos de Miranda |
+| `BirthdayNotification` | `bool` | Opt-in: el psicólogo autoriza que el sistema avise a la administración en su cumpleaños |
 
 Todos los campos de contacto/ubicación tienen flags `Show*` para control de visibilidad pública.
 
@@ -203,7 +206,7 @@ Títulos académicos adicionales: Especializaciones, Maestrías, Doctorados, Dip
 
 ### PsiObservaciones — Observaciones Internas
 
-Notas internas del Colegio sobre un psicólogo. **ACCESO EXCLUSIVO** del personal autorizado — los psicólogos NUNCA pueden verlas.
+Notas internas del Colegio sobre un psicólogo. **ACCESO EXCLUSIVO** del personal autorizado — los psicólogos NUNCA pueden verlas. Gestión **solo admin** (a diferencia de deontología, que lo edita el propio psicólogo). **Sin operación de borrado.**
 
 | Campo | Tipo | Descripción |
 |---|---|---|

@@ -55,6 +55,16 @@ Endpoints exclusivos para administradores con acceso total a los registros de ps
 | `DeletePsiByAdmin` | `DELETE /admin/psi/:id` | Bearer (admin) | Soft delete con auditoría |
 | `ListAllPsis` | `GET /admin/psi/list` | Bearer (admin) | Listado "Rayos X" — ignora solvencia e inactivos |
 
+Endpoints adicionales de administración sobre psicólogos (observaciones
+internas y cumpleaños):
+
+| Método | Endpoint | Auth | Descripción |
+|---|---|---|---|
+| `GetObservacionesByAdmin` | `GET /admin/psi/:id/observaciones` | Bearer (admin) | Lista observaciones internas del psicólogo |
+| `AddObservacionByAdmin` | `POST /admin/psi/:id/observaciones` | Bearer (admin) | Crea una observación interna |
+| `UpdateObservacionByAdmin` | `PATCH /admin/psi/:id/observaciones/:entryId` | Bearer (admin) | Edita una observación interna |
+| `GetBirthdaysByAdmin` | `GET /admin/psi/birthdays` | Bearer (admin) | Cumpleaños (opt-in) de hoy o de la semana `?range=today\|week` |
+
 ---
 
 ### `posts_handler.go` — PostHandler
