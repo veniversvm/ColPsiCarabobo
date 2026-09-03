@@ -96,6 +96,18 @@ export default function MainLayout(props: { children: JSX.Element }) {
             >
               Noticias
             </a>
+            <a
+              href="/nosotros"
+              class="block py-3 text-gray-700 font-medium border-b border-gray-50"
+            >
+              Nosotros
+            </a>
+            <a
+              href="/documentos"
+              class="block py-3 text-gray-700 font-medium border-b border-gray-50"
+            >
+              Marco Legal
+            </a>
             <Show when={!isAuthenticated()}>
               <a href="/login" class="block py-3 text-colpsi-blue font-bold">
                 Iniciar Sesión
