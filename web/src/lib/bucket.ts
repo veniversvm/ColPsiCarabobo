@@ -18,8 +18,9 @@ const SITE_URL = import.meta.env.VITE_SITE_URL || "";
  * la retorna sin modificar para evitar prefijos duplicados.
  */
 export function bucketUrl(key: string | null | undefined): string {
-  if (!key || !BUCKET_URL) return "";
+  if (!key) return "";
   if (/^https?:\/\//i.test(key)) return key;
+  if (!BUCKET_URL) return "";
   return `${BUCKET_URL}/${key}`;
 }
 

@@ -19,7 +19,10 @@ type Credentials struct {
 	Key string `gorm:"size:512;" json:"-"`
 
 	// IsActive controla si la cuenta puede iniciar sesión.
-	IsActive bool `gorm:"column:is_active;default:true" json:"is_active"`
+	// Default false: un psicólogo creado desde una inscripción aprobada nace inactivo
+	// y solo puede activarse manualmente cuando la administración confirma los 3
+	// requisitos legales (Ministerio, N° FPV y solvencia).
+	IsActive bool `gorm:"column:is_active;default:false" json:"is_active"`
 
 	// MustChangePassword indica que el usuario debe cambiar su contraseña en el próximo login.
 	// Se activa automáticamente cuando se crea una cuenta con contraseña temporal (imports masivos).

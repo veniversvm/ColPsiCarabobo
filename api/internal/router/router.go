@@ -33,6 +33,7 @@ func SetupRouter(app *fiber.App, db *gorm.DB, s3Client *s3.S3Client, appCache *c
 	psiRepo := postgres.NewPsiRepository(db)
 	postRepo := postgres.NewPostRepository(db)
 	specialtyRepo := postgres.NewSpecialtyRepository(db)
+	inscriptionRepo := postgres.NewInscriptionRepository(db)
 
 	// Agrupación principal
 	api := app.Group("/api/v1")
@@ -49,6 +50,7 @@ func SetupRouter(app *fiber.App, db *gorm.DB, s3Client *s3.S3Client, appCache *c
 	SetupSpecialtyRoutes(api, psiRepo, adminRepo, specialtyRepo, analyticsSvc)
 	SetupPostRoutes(api, adminRepo, psiRepo, postRepo, s3Client, analyticsSvc)
 	SetupNotificationRoutes(api, adminRepo, psiRepo, analyticsSvc, notificationSvc)
+	SetupInscriptionRoutes(api, inscriptionRepo, psiRepo, adminRepo, s3Client, mailSvc, analyticsSvc)
 
 	// =========================================================================
 	// DEFAULT 404 HANDLER (CATCH-ALL)

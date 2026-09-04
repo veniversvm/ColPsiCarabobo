@@ -9,6 +9,52 @@ interface Props {
   setForm: (key: keyof EditFormState, value: any) => void;
 }
 
+// Requisitos legales de activación (Art. 5 Ley de Ejercicio + Art. 18 Estatutos FPV)
+function ActivationSection(props: { form: EditFormState }) {
+  const reqs = () => [
+    {
+      label: "Inscripción en el Ministerio",
+      ok: !!props.form.ministry_registration_confirmed,
+    },
+    {
+      label: "N° de FPV asignado",
+      ok: !!props.form.fpv,
+    },
+    {
+      label: "Psicólogo solvente",
+      ok: !!props.form.solvent,
+    },
+  ];
+  const allOk = () => reqs().every((r) => r.ok);
+
+  return (
+    <div class={`pt-3 border-t ${allOk() ? "border-green-200" : "border-amber-200"}`}>
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="text-xs font-bold text-gray-600 uppercase tracking-widest">
+          Requisitos de Activación
+        </h3>
+        <span class={`text-[10px] font-black px-2 py-0.5 rounded-full ${allOk() ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
+          {allOk() ? "Completos" : "Pendientes"}
+        </span>
+      </div>
+      <ul class="space-y-1.5">
+        {reqs().map((r) => (
+          <li class="flex items-center gap-2 text-xs font-semibold text-gray-600">
+            <span class={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black ${r.ok ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
+              {r.ok ? "✓" : "!"}
+            </span>
+            {r.label}
+          </li>
+        ))}
+      </ul>
+      <p class="mt-2 text-[10px] text-gray-400 leading-relaxed">
+        Un psicólogo solo puede activarse cuando la administración confirma estos
+        3 requisitos legales (Art. 5 Ley de Ejercicio de la Psicología + Art. 18 Estatutos FPV).
+      </p>
+    </div>
+  );
+}
+
 export function AdminStatusSection(props: Props) {
   return (
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -30,6 +76,11 @@ export function AdminStatusSection(props: Props) {
             checked={props.form.proof_of_life}
             onChange={(v) => props.setForm("proof_of_life", v)}
           />
+          <ToggleSwitch
+            label="Inscripción confirmada en Ministerio"
+            checked={props.form.ministry_registration_confirmed}
+            onChange={(v) => props.setForm("ministry_registration_confirmed", v)}
+          />
           <div class="pt-3">
             <Field label="Fecha Última Solvencia">
               <input
@@ -40,6 +91,7 @@ export function AdminStatusSection(props: Props) {
               />
             </Field>
           </div>
+          <ActivationSection form={props.form} />
         </div>
 
         {/* Roles Gremiales */}

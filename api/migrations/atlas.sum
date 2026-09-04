@@ -1,3 +1,5 @@
-h1:2/CCt0KGzRJzWtTv3bYuIjBnyiTxa0StDpyfUvx0hUA=
+h1:8hytYqoOslA5v+lZg/t2pdPyHYQcYCHJ9yiEDz4/X2s=
 20260902161912_baseline_from_scratch.sql h1:JAmOt033FlWkUK/9PZjomovOc5nPanSzf7djWlg9zFU=
 20260902211420_add_modality_and_birthday_notification.sql h1:7sUNvIn2URh1YATmA31nWT08unOjWwUFAUN6f07stWQ=
+20260903100000_add_inscription_requests.sql h1:XYNV7QkHBetYiWm2yncqFyQRsSfHESUeGwIOU18gL+U=
+20260903100001_add_ministry_confirmed.sql h1:woiE/VcG8CzMxxPKKqVWddWWXQ08S24Ons1qL8kRvWo=

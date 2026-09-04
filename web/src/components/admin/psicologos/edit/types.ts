@@ -21,6 +21,7 @@ export interface EditFormState {
   is_active: boolean;
   solvent: boolean;
   proof_of_life: boolean;
+  ministry_registration_confirmed: boolean;
 
   // 3. Contacto y Privacidad General
   contact_email: string;
