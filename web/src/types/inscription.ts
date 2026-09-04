@@ -26,6 +26,9 @@ export interface InscriptionDetail {
   nacionalidad: string;
   nombres: string;
   apellidos: string;
+  segundo_nombre: string;
+  segundo_apellido: string;
+  genero: string;
   fpv: number;
   telefono: string;
   correo: string;
@@ -35,12 +38,16 @@ export interface InscriptionDetail {
   titulo_mencion: string;
   titulo_registro_numero: string;
   titulo_registro_estado: string;
+  titulo_registro_tomo: string;
+  titulo_registro_folio: string;
   rif: string;
   foto_url: string;
   comprobante_url: string;
   status: string;
   control_number: string;
   notes: string;
+  psi_user_id: string | null;
+  solvency_count: number;
   created_at: string;
   updated_at: string;
 }
@@ -55,4 +62,8 @@ export interface ApproveInscriptionResponse {
 export interface UniquenessCheckResponse {
   exists: boolean;
   message?: string;
+}
+
+export interface SendEmailToApplicantResponse {
+  email_sent: boolean;
 }

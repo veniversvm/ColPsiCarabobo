@@ -98,6 +98,15 @@ func (r *inscriptionRepo) ExistsPendingFPV(ctx context.Context, fpv int) (bool, 
 	return count > 0, err
 }
 
+// ExistsPendingEmail retorna true si existe una solicitud pendiente con ese correo.
+func (r *inscriptionRepo) ExistsPendingEmail(ctx context.Context, email string) (bool, error) {
+	var count int64
+	err := r.db.WithContext(ctx).Model(&domain.PsiInscriptionRequest{}).
+		Where("LOWER(correo) = LOWER(?) AND status = ?", email, domain.InscriptionPending).
+		Count(&count).Error
+	return count > 0, err
+}
+
 // CIInPsiUsers retorna si la cédula ya está registrada en psi_users.
 func (r *inscriptionRepo) CIInPsiUsers(ctx context.Context, ci int) (bool, error) {
 	var count int64
@@ -112,6 +121,16 @@ func (r *inscriptionRepo) FPVInPsiUsers(ctx context.Context, fpv int) (bool, err
 	var count int64
 	err := r.db.WithContext(ctx).Table("psi_users").
 		Where("fpv = ?", fpv).
+		Count(&count).Error
+	return count > 0, err
+}
+
+// EmailInPsiUsers retorna si el correo ya está registrado en psi_users.
+// No filtra soft-deleted para respetar el constraint único uni_psi_users_email.
+func (r *inscriptionRepo) EmailInPsiUsers(ctx context.Context, email string) (bool, error) {
+	var count int64
+	err := r.db.WithContext(ctx).Table("psi_users").
+		Where("LOWER(email) = LOWER(?)", email).
 		Count(&count).Error
 	return count > 0, err
 }
@@ -133,6 +152,13 @@ func (r *inscriptionRepo) NextControlNumber(ctx context.Context) (int, error) {
 // Update actualiza el estado de una solicitud (aprobación/rechazo).
 func (r *inscriptionRepo) Update(ctx context.Context, req *domain.PsiInscriptionRequest) error {
 	return r.db.WithContext(ctx).Save(req).Error
+}
+
+// UpdateNotes actualiza solo las notas administrativas de una solicitud.
+func (r *inscriptionRepo) UpdateNotes(ctx context.Context, id uuid.UUID, notes string) error {
+	return r.db.WithContext(ctx).Model(&domain.PsiInscriptionRequest{}).
+		Where("id = ?", id).
+		Update("notes", notes).Error
 }
 
 // Delete elimina físicamente una solicitud.

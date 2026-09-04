@@ -788,3 +788,66 @@ curl http://localhost:28080/api/v1/inscripcion/check-ci?ci=12345678  # check
 - Firma digital del formulario de inscripción FPV
 - Generación automática del expediente en PDF
 - Integración con pasarela de pago para calcular monto automáticamente
+
+---
+
+## 14. Iteración: aprobación activa + campos opcionales + solvencias
+
+Cambios aplicados tras la revisión del flujo de aprobación (03/09/2026).
+
+### 14.1 Objetivo
+
+- Al aprobar una inscripción el psicólogo debe nacer **activo** (`is_active=true`) y
+  **solvente** (`solvent=true`), y la **foto tipo carnet** pasa a ser su **foto de
+  perfil**.
+- Añadir campos **opcionales** al formulario: segundo nombre, segundo apellido,
+  género (M/F), tomo del registro y folio del registro.
+- Mostrar el **número de solvencias pagadas** en el detalle admin de la inscripción.
+
+### 14.2 Cambios de backend
+
+| Archivo | Cambio |
+|---------|--------|
+| `internal/domain/inscription_request_model.go` | Modelo `PsiInscriptionRequest`: `SecondName`, `SecondLastName`, `Genero`, `TituloRegistroTomo`, `TituloRegistroFolio`, `PsiUserID *uuid.UUID` (índice) |
+| `migrations/20260903100002_add_inscription_optional_fields.sql` | 6 columnas + índice `idx_inscription_requests_psi_user_id` |
+| `internal/service/inscription_service.go` | `Submit`: persiste los 5 campos nuevos; `Approve`: crea el psi **activo+solvente**, `ProfilePictureS3Key=req.FotoS3Key`, mapea campos opcionales, crea la solvencia del año de ingreso (31-dic), vincula `req.PsiUserID`, y setea `AudioBookShellId=psiID` (único) para no violar `uni_psi_users_audio_book_shell_id` |
+| `internal/request_structs/inscription_requests.go` | `InscriptionDetailDTO`: campos nuevos + `SolvencyCount` |
+| `internal/handler/inscription_handler.go` | `parseSubmitForm`: parser de los 5 campos nuevos (`genero` en mayúsculas) |
+
+### 14.3 Cambios de frontend
+
+- `web/src/components/inscripcion/InscriptionForm.tsx`: campos opcionales (2º
+  nombre/apellido, selector de género, tomo y folio) y label de la foto →
+  "Foto de perfil (tipo carnet)".
+- `web/src/routes/admin/inscripciones/[id].tsx`: muestra los datos personales
+  completos (aplica 2º nombre/apellido y género), tomo/folio, el nº de solvencias
+  cuando hay control number, y texto del modal de aprobar actualizado.
+- `web/src/types/inscription.ts`: `InscriptionDetail` con los campos nuevos +
+  `solvency_count`.
+
+### 14.4 Fix de bug preexistente en el approve
+
+Al aprobar una segunda inscripción, `POST /approve` daba 500 por
+`duplicate key value violates unique constraint "uni_psi_users_audio_book_shell_id"`,
+porque `AudioBookShellId` quedaba en `''` (zero value) en todos los psi. Se corrige
+copiando el patrón del import: `AudioBookShellId: psiID.String()` (valor único por
+psi).
+
+### 14.5 Verificación (probada 03/09/2026)
+
+- Submit con campos opcionales → 200, solicitud `pending` con los campos persistidos.
+- Approve → 200, `psi_user_id` vinculado, `control_number` secuencial, email enviado.
+- Detalle → `solvency_count: 1`.
+- En BD el psi nace: `is_active=t`, `solvent=t`, `profile_picture_s3_key` = foto de
+  la solicitud, `genre/second_name/second_last_name` poblados, colData con
+  `register_tome`/`register_folio`, y `psi_user_solvency` con fecha 31-dic del año.
+
+### 14.6 Comandos de despliegue usados
+
+```bash
+cd api
+/usr/bin/docker compose build api
+# regenerar atlas.sum cuando se añade una migración:
+/usr/bin/docker run --rm -v "$PWD/migrations:/migrations" arigaio/atlas:latest-alpine migrate hash --dir "file:///migrations"
+/usr/bin/docker compose up -d migrador api   # migrador aplica la SQL; API toma el binario nuevo
+```

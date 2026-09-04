@@ -38,6 +38,9 @@ type PsiInscriptionRequest struct {
 	Nacionalidad string `gorm:"size:1;not null" json:"nacionalidad"` // V / E
 	Nombres     string `gorm:"size:255;not null" json:"nombres"`
 	Apellidos   string `gorm:"size:255;not null" json:"apellidos"`
+	SegundoNombre   string `gorm:"size:255" json:"segundo_nombre"`
+	SegundoApellido string `gorm:"size:255" json:"segundo_apellido"`
+	Genero          string `gorm:"size:1" json:"genero"` // M / F (opcional)
 	FPV         int    `gorm:"" json:"fpv"` // Nullable (puede no tener FPV aún)
 	Telefono    string `gorm:"size:50" json:"telefono"`
 	Correo      string `gorm:"size:255;not null" json:"correo"`
@@ -49,6 +52,8 @@ type PsiInscriptionRequest struct {
 	TituloMencion         string     `gorm:"size:255" json:"titulo_mencion"`
 	TituloRegistroNumero  string     `gorm:"size:100" json:"titulo_registro_numero"`
 	TituloRegistroEstado  string     `gorm:"size:100" json:"titulo_registro_estado"`
+	TituloRegistroTomo    string     `gorm:"size:100" json:"titulo_registro_tomo"`
+	TituloRegistroFolio   string     `gorm:"size:100" json:"titulo_registro_folio"`
 	RIF                   string     `gorm:"size:50" json:"rif"`
 
 	// ── Archivos (S3 keys) ────────────────────────────────────────────────
@@ -59,6 +64,10 @@ type PsiInscriptionRequest struct {
 	Status        InscriptionStatus `gorm:"size:20;default:pending" json:"status"`
 	ControlNumber string            `gorm:"size:50" json:"control_number"`
 	Notes         string            `gorm:"type:text" json:"notes"`
+
+	// ── Vínculo ───────────────────────────────────────────────────────────
+	// PsiUserID se rellena al aprobar: id del expediente creado en psi_users.
+	PsiUserID *uuid.UUID `gorm:"type:uuid;index" json:"psi_user_id,omitempty"`
 }
 
 // TableName devuelve el nombre de la tabla en la base de datos.

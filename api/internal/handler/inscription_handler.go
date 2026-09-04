@@ -111,7 +111,7 @@ func (h *InscriptionHandler) Submit(c *fiber.Ctx) error {
 
 	inscription, err := h.svc.Submit(c.UserContext(), req)
 	if err != nil {
-		if errors.Is(err, service.ErrCIExists) || errors.Is(err, service.ErrFPVExists) {
+		if errors.Is(err, service.ErrCIExists) || errors.Is(err, service.ErrFPVExists) || errors.Is(err, service.ErrEmailExists) {
 			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": err.Error()})
 		}
 		log.Error().Err(err).Str("component", "inscription").Msg("Error al procesar solicitud de inscripción")
@@ -135,12 +135,17 @@ func (h *InscriptionHandler) parseSubmitForm(c *fiber.Ctx) (*service.SubmitInscr
 		Nacionalidad:   strings.ToUpper(strings.TrimSpace(first(form, "nacionalidad"))),
 		Nombres:        strings.TrimSpace(first(form, "nombres")),
 		Apellidos:      strings.TrimSpace(first(form, "apellidos")),
+		SegundoNombre:  strings.TrimSpace(first(form, "segundo_nombre")),
+		SegundoApellido: strings.TrimSpace(first(form, "segundo_apellido")),
+		Genero:         strings.ToUpper(strings.TrimSpace(first(form, "genero"))),
 		Telefono:       strings.TrimSpace(first(form, "telefono")),
 		Correo:         strings.ToLower(strings.TrimSpace(first(form, "correo"))),
 		TituloUniversidad:    strings.TrimSpace(first(form, "titulo_universidad")),
 		TituloMencion:        strings.TrimSpace(first(form, "titulo_mencion")),
 		TituloRegistroNumero: strings.TrimSpace(first(form, "titulo_registro_numero")),
 		TituloRegistroEstado: strings.TrimSpace(first(form, "titulo_registro_estado")),
+		TituloRegistroTomo:   strings.TrimSpace(first(form, "titulo_registro_tomo")),
+		TituloRegistroFolio:  strings.TrimSpace(first(form, "titulo_registro_folio")),
 		RIF:                  strings.TrimSpace(first(form, "rif")),
 	}
 
@@ -312,7 +317,7 @@ func (h *InscriptionHandler) Approve(c *fiber.Ctx) error {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": err.Error()})
 		case errors.Is(err, service.ErrInscriptionNotPending):
 			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": err.Error()})
-		case errors.Is(err, service.ErrCIExists), errors.Is(err, service.ErrFPVExists):
+		case errors.Is(err, service.ErrCIExists), errors.Is(err, service.ErrFPVExists), errors.Is(err, service.ErrEmailExists):
 			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": err.Error()})
 		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "error al aprobar la inscripción"})
@@ -346,4 +351,68 @@ func (h *InscriptionHandler) Reject(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "error al rechazar la inscripción"})
 	}
 	return c.SendStatus(fiber.StatusNoContent)
+}
+
+// UpdateNotes godoc
+// @Summary      Guardar notas administrativas (admin)
+// @Description  Persiste las notas de texto simple del administrador sobre la solicitud.
+// @Tags         Administración - Inscripciones
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Router       /admin/inscripciones/{id}/notes [patch]
+func (h *InscriptionHandler) UpdateNotes(c *fiber.Ctx) error {
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ID inválido"})
+	}
+
+	var body request_structs.UpdateNotesRequest
+	if err := c.BodyParser(&body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "cuerpo inválido"})
+	}
+
+	if err := h.svc.UpdateNotes(c.UserContext(), id, body.Notes); err != nil {
+		if errors.Is(err, service.ErrInscriptionNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": err.Error()})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "error al guardar las notas"})
+	}
+
+	return c.JSON(fiber.Map{"message": "Notas guardadas"})
+}
+
+// SendEmailToApplicant godoc
+// @Summary      Enviar correo al solicitante (admin)
+// @Description  Envía un correo con asunto y mensaje del administrador al correo del solicitante.
+// @Tags         Administración - Inscripciones
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Router       /admin/inscripciones/{id}/email [post]
+func (h *InscriptionHandler) SendEmailToApplicant(c *fiber.Ctx) error {
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ID inválido"})
+	}
+
+	var body request_structs.SendEmailToApplicantRequest
+	if err := c.BodyParser(&body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "cuerpo inválido"})
+	}
+	body.Subject = strings.TrimSpace(body.Subject)
+	body.Message = strings.TrimSpace(body.Message)
+	if body.Subject == "" || body.Message == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "asunto y mensaje son obligatorios"})
+	}
+
+	emailSent, err := h.svc.SendEmailToApplicant(c.UserContext(), id, body.Subject, body.Message)
+	if err != nil {
+		if errors.Is(err, service.ErrInscriptionNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": err.Error()})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "error al enviar el correo"})
+	}
+
+	return c.JSON(request_structs.SendEmailToApplicantResponse{EmailSent: emailSent})
 }

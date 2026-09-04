@@ -26,11 +26,17 @@ type InscriptionRepository interface {
 	// ExistsPendingFPV retorna true si existe una solicitud pendiente con ese FPV.
 	ExistsPendingFPV(ctx context.Context, fpv int) (bool, error)
 
+	// ExistsPendingEmail retorna true si existe una solicitud pendiente con ese correo.
+	ExistsPendingEmail(ctx context.Context, email string) (bool, error)
+
 	// CIExistsDevuelve si la cédula ya está registrada en psi_users.
 	CIInPsiUsers(ctx context.Context, ci int) (bool, error)
 
 	// FPVInPsiUsers retorna si el FPV ya está registrado en psi_users.
 	FPVInPsiUsers(ctx context.Context, fpv int) (bool, error)
+
+	// EmailInPsiUsers retorna si el correo ya está registrado en psi_users.
+	EmailInPsiUsers(ctx context.Context, email string) (bool, error)
 
 	// NextControlNumber calcula el siguiente número de control secuencial
 	// basado en el MAX(control_number numérico) de psi_users + 1.
@@ -39,6 +45,9 @@ type InscriptionRepository interface {
 	// UpdateChangedStatus actualiza el estado de una solicitud (approve/reject)
 	// junto con su número de control si corresponde.
 	Update(ctx context.Context, req *PsiInscriptionRequest) error
+
+	// UpdateNotes actualiza solo las notas administrativas de una solicitud.
+	UpdateNotes(ctx context.Context, id uuid.UUID, notes string) error
 
 	// Delete elimina físicamente una solicitud.
 	Delete(ctx context.Context, id uuid.UUID) error

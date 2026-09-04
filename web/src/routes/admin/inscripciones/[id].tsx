@@ -1,10 +1,10 @@
 // web/src/routes/admin/inscripciones/[id].tsx
-import { createResource, createSignal, Show } from "solid-js";
+import { createResource, createSignal, createEffect, Show } from "solid-js";
 import { useParams, useNavigate } from "@solidjs/router";
-import { apiGet, apiPost, apiDelete, ApiError } from "~/lib/api";
+import { apiGet, apiPost, apiPatch, apiDelete, ApiError } from "~/lib/api";
 import { bucketUrl } from "~/lib/bucket";
 import { ImageModal } from "~/components/ui/ImageModal";
-import type { InscriptionDetail, ApproveInscriptionResponse } from "~/types/inscription";
+import type { InscriptionDetail, ApproveInscriptionResponse, SendEmailToApplicantResponse } from "~/types/inscription";
 
 export default function AdminInscriptionDetail() {
   const params = useParams();
@@ -23,6 +23,52 @@ export default function AdminInscriptionDetail() {
 
   // El comprobante puede ser imagen o PDF: solo las imágenes se expanden en el modal.
   const isImageUrl = (url?: string) => !!url && /\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$)/i.test(url);
+
+  // ── Notas administrativas ──────────────────────────────────────────────
+  const [notesDraft, setNotesDraft] = createSignal("");
+  const [savingNotes, setSavingNotes] = createSignal(false);
+  const [notesFeedback, setNotesFeedback] = createSignal<{ type: "ok" | "err"; text: string } | null>(null);
+  let loadedID: string | null = null;
+  createEffect(() => {
+    const d = detail();
+    if (d && d.id !== loadedID) {
+      loadedID = d.id;
+      setNotesDraft(d.notes || "");
+    }
+  });
+
+  const saveNotes = async () => {
+    setSavingNotes(true);
+    setNotesFeedback(null);
+    try {
+      await apiPatch(`/admin/inscripciones/${params.id}/notes`, { notes: notesDraft() });
+      setNotesFeedback({ type: "ok", text: "Notas guardadas" });
+    } catch (err) {
+      setNotesFeedback({ type: "err", text: err instanceof ApiError ? err.message : "Error al guardar las notas" });
+    } finally { setSavingNotes(false); }
+  };
+
+  // ── Enviar correo al solicitante ───────────────────────────────────────
+  const [emailSubject, setEmailSubject] = createSignal("");
+  const [emailMessage, setEmailMessage] = createSignal("");
+  const [sendingEmail, setSendingEmail] = createSignal(false);
+  const [emailFeedback, setEmailFeedback] = createSignal<{ type: "ok" | "err"; text: string } | null>(null);
+
+  const sendEmail = async () => {
+    setSendingEmail(true);
+    setEmailFeedback(null);
+    try {
+      const res = await apiPost<SendEmailToApplicantResponse>(`/admin/inscripciones/${params.id}/email`, {
+        subject: emailSubject(),
+        message: emailMessage(),
+      });
+      setEmailFeedback({ type: "ok", text: `Correo ${res.email_sent ? "enviado" : "encolado"} a ${d()?.correo || "la solicitante"}` });
+      setEmailSubject("");
+      setEmailMessage("");
+    } catch (err) {
+      setEmailFeedback({ type: "err", text: err instanceof ApiError ? err.message : "Error al enviar el correo" });
+    } finally { setSendingEmail(false); }
+  };
 
   const status = () => detail()?.status;
 
@@ -77,8 +123,13 @@ export default function AdminInscriptionDetail() {
             </div>
 
             <Show when={d().control_number}>
-              <div class="bg-blue-50 border border-blue-100 rounded-2xl p-4 text-sm font-black text-colpsi-blue">
-                N° de control asignado: {d().control_number}
+              <div class="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex flex-wrap items-center gap-x-6 gap-y-1">
+                <span class="text-sm font-black text-colpsi-blue">
+                  N° de control asignado: {d().control_number}
+                </span>
+                <span class="text-xs font-bold text-blue-600/70">
+                  Solvencias pagadas: {d().solvency_count}
+                </span>
               </div>
             </Show>
 
@@ -94,6 +145,9 @@ export default function AdminInscriptionDetail() {
                 <h2 class="text-sm font-black text-gray-400 uppercase tracking-widest">Datos Personales</h2>
                 <div>
                   {row("Cédula", `${d().cedula} ${d().nacionalidad}`)}
+                  {row("Nombres", [d().nombres, d().segundo_nombre].filter(Boolean).join(" ") || null)}
+                  {row("Apellidos", [d().apellidos, d().segundo_apellido].filter(Boolean).join(" ") || null)}
+                  {row("Género", d().genero === "M" ? "Masculino" : d().genero === "F" ? "Femenino" : null)}
                   {row("N° FPV", d().fpv || null)}
                   {row("Teléfono", d().telefono)}
                   {row("Correo", d().correo)}
@@ -107,6 +161,8 @@ export default function AdminInscriptionDetail() {
                   {row("Fecha de graduación", d().titulo_fecha_graduacion ? new Date(d().titulo_fecha_graduacion).toLocaleDateString() : null)}
                   {row("Mención", d().titulo_mencion)}
                   {row("N° Registro título", d().titulo_registro_numero)}
+                  {row("Tomo del registro", d().titulo_registro_tomo)}
+                  {row("Folio del registro", d().titulo_registro_folio)}
                   {row("Estado del registro", d().titulo_registro_estado)}
                 </div>
               </div>
@@ -163,6 +219,67 @@ export default function AdminInscriptionDetail() {
               </div>
             </div>
 
+            {/* Notas administrativas */}
+            <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 space-y-4">
+              <h2 class="text-sm font-black text-gray-400 uppercase tracking-widest">Notas administrativas</h2>
+              <textarea
+                value={notesDraft()}
+                onInput={(e) => setNotesDraft(e.currentTarget.value)}
+                rows={4}
+                placeholder="Escribe notas internas sobre esta solicitud..."
+                class="w-full rounded-2xl border border-gray-200 p-3 text-sm text-gray-700 focus:outline-none focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/20 resize-y"
+              />
+              <Show when={notesFeedback()}>
+                <div class={`rounded-xl p-3 text-sm font-bold ${notesFeedback()!.type === "ok" ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
+                  {notesFeedback()!.text}
+                </div>
+              </Show>
+              <div class="flex justify-end">
+                <button
+                  onClick={saveNotes}
+                  disabled={savingNotes()}
+                  class="px-5 py-2.5 rounded-xl bg-colpsi-blue text-white font-black text-sm hover:bg-colpsi-blue/90 transition-colors disabled:opacity-50"
+                >
+                  {savingNotes() ? "Guardando..." : "Guardar notas"}
+                </button>
+              </div>
+            </div>
+
+            {/* Enviar correo al solicitante */}
+            <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 space-y-4">
+              <h2 class="text-sm font-black text-gray-400 uppercase tracking-widest">Enviar correo al solicitante</h2>
+              <p class="text-sm text-gray-500">
+                Para: <span class="font-bold text-gray-700">{d().correo}</span>
+              </p>
+              <input
+                value={emailSubject()}
+                onInput={(e) => setEmailSubject(e.currentTarget.value)}
+                placeholder="Asunto"
+                class="w-full rounded-2xl border border-gray-200 p-3 text-sm text-gray-700 focus:outline-none focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/20"
+              />
+              <textarea
+                value={emailMessage()}
+                onInput={(e) => setEmailMessage(e.currentTarget.value)}
+                rows={4}
+                placeholder="Mensaje para el solicitante..."
+                class="w-full rounded-2xl border border-gray-200 p-3 text-sm text-gray-700 focus:outline-none focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/20 resize-y"
+              />
+              <Show when={emailFeedback()}>
+                <div class={`rounded-xl p-3 text-sm font-bold ${emailFeedback()!.type === "ok" ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
+                  {emailFeedback()!.text}
+                </div>
+              </Show>
+              <div class="flex justify-end">
+                <button
+                  onClick={sendEmail}
+                  disabled={sendingEmail() || !emailSubject().trim() || !emailMessage().trim()}
+                  class="px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-black text-sm hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                >
+                  {sendingEmail() ? "Enviando..." : "Enviar correo"}
+                </button>
+              </div>
+            </div>
+
             <Show when={status() === "pending"}>
               <div class="flex flex-col sm:flex-row gap-3 pt-2">
                 <button
@@ -189,8 +306,9 @@ export default function AdminInscriptionDetail() {
       <Show when={confirmApprove()}>
         <Modal title="Aprobar inscripción" onClose={() => setConfirmApprove(false)}>
           <p class="text-sm text-gray-600 leading-relaxed">
-            Se creará la cuenta del psicólogo con <strong>is_active=false</strong>. Se le
-            asignará un número de control secuencial y se enviará un correo con las credenciales. ¿Confirmar?
+            Se creará la cuenta del psicólogo <strong>activa y solvente</strong> (la foto
+            tipo carnet pasará a ser su foto de perfil). Se le asignará un número de
+            control secuencial y se enviará un correo con las credenciales. ¿Confirmar?
           </p>
           <ModalActions onCancel={() => setConfirmApprove(false)} onConfirm={doApprove} busy={busy()} confirmLabel="Aprobar" />
         </Modal>

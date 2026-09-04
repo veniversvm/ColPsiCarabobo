@@ -78,6 +78,9 @@ type InscriptionDetailDTO struct {
 	Nacionalidad  string                `json:"nacionalidad"`
 	Nombres       string                `json:"nombres"`
 	Apellidos     string                `json:"apellidos"`
+	SegundoNombre   string              `json:"segundo_nombre"`
+	SegundoApellido string              `json:"segundo_apellido"`
+	Genero          string              `json:"genero"`
 	FPV           int                   `json:"fpv"`
 	Telefono      string                `json:"telefono"`
 	Correo        string                `json:"correo"`
@@ -87,12 +90,16 @@ type InscriptionDetailDTO struct {
 	TituloMencion         string        `json:"titulo_mencion"`
 	TituloRegistroNumero  string        `json:"titulo_registro_numero"`
 	TituloRegistroEstado  string        `json:"titulo_registro_estado"`
+	TituloRegistroTomo    string        `json:"titulo_registro_tomo"`
+	TituloRegistroFolio   string        `json:"titulo_registro_folio"`
 	RIF                   string        `json:"rif"`
 	FotoURL               string        `json:"foto_url"`
 	ComprobanteURL        string        `json:"comprobante_url"`
 	Status                string        `json:"status"`
 	ControlNumber         string        `json:"control_number"`
 	Notes                 string        `json:"notes"`
+	PsiUserID             *uuid.UUID    `json:"psi_user_id,omitempty"`
+	SolvencyCount         int           `json:"solvency_count"`
 	CreatedAt             time.Time     `json:"created_at"`
 	UpdatedAt             time.Time     `json:"updated_at"`
 }
@@ -107,4 +114,24 @@ type ApproveInscriptionResponse struct {
 	PsiUserID     uuid.UUID `json:"psi_user_id"`
 	ControlNumber string    `json:"control_number"`
 	EmailSent     bool      `json:"email_sent"`
+}
+
+// =========================================================================
+// NOTAS Y CONTACTO (ADMIN)
+// =========================================================================
+
+// UpdateNotesRequest contiene las notas administrativas de una solicitud.
+type UpdateNotesRequest struct {
+	Notes string `json:"notes"`
+}
+
+// SendEmailToApplicantRequest define el correo que el admin envía al solicitante.
+type SendEmailToApplicantRequest struct {
+	Subject string `json:"subject" validate:"required"`
+	Message string `json:"message" validate:"required"`
+}
+
+// SendEmailToApplicantResponse es la respuesta del envío de correo al solicitante.
+type SendEmailToApplicantResponse struct {
+	EmailSent bool `json:"email_sent"`
 }

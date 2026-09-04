@@ -47,6 +47,10 @@ var ErrCIExists = errors.New("la cédula ya se encuentra registrada o tiene una 
 // ErrFPVExists se retorna cuando el FPV ya está registrado.
 var ErrFPVExists = errors.New("el número de FPV ya se encuentra registrado")
 
+// ErrEmailExists se retorna cuando el correo ya está registrado en psi_users
+// o tiene una solicitud pendiente.
+var ErrEmailExists = errors.New("el correo electrónico ya se encuentra registrado")
+
 // ErrInscriptionNotFound se retorna cuando no existe la solicitud.
 var ErrInscriptionNotFound = errors.New("solicitud de inscripción no encontrada")
 
@@ -109,19 +113,24 @@ func (s *InscriptionService) CheckFPV(ctx context.Context, fpv int) (*request_st
 
 // SubmitInscriptionRequest agrupa los campos ya validados de la solicitud pública.
 type SubmitInscriptionRequest struct {
-	Cedula                 int
-	Nacionalidad           string
-	Nombres                string
-	Apellidos              string
-	FPV                    int
-	Telefono               string
-	Correo                 string
-	FechaNacimiento        *time.Time
+	Cedula         int
+	Nacionalidad   string
+	Nombres        string
+	Apellidos      string
+	SegundoNombre  string
+	SegundoApellido string
+	Genero         string
+	FPV            int
+	Telefono       string
+	Correo         string
+	FechaNacimiento *time.Time
 	TituloUniversidad      string
 	TituloFechaGraduacion  *time.Time
 	TituloMencion          string
 	TituloRegistroNumero   string
 	TituloRegistroEstado   string
+	TituloRegistroTomo     string
+	TituloRegistroFolio    string
 	RIF                    string
 	Foto                   *multipart.FileHeader
 	Comprobante            *multipart.FileHeader
@@ -163,6 +172,24 @@ func (s *InscriptionService) Submit(ctx context.Context, req *SubmitInscriptionR
 		}
 	}
 
+	// 2.1 Validar unicidad de correo
+	if req.Correo != "" {
+		emailExists, err := s.repo.EmailInPsiUsers(ctx, req.Correo)
+		if err != nil {
+			return nil, err
+		}
+		if emailExists {
+			return nil, ErrEmailExists
+		}
+		emailPending, err := s.repo.ExistsPendingEmail(ctx, req.Correo)
+		if err != nil {
+			return nil, err
+		}
+		if emailPending {
+			return nil, ErrEmailExists
+		}
+	}
+
 	// 3. Subir archivos a S3 (primero, para poder hacer rollback si algo falla)
 	fotoKey, err := s.uploadFile(req.Foto, "inscripciones/fotos")
 	if err != nil {
@@ -183,6 +210,9 @@ func (s *InscriptionService) Submit(ctx context.Context, req *SubmitInscriptionR
 		Nacionalidad:          req.Nacionalidad,
 		Nombres:               s.sanitizer.Sanitize(req.Nombres),
 		Apellidos:             s.sanitizer.Sanitize(req.Apellidos),
+		SegundoNombre:         s.sanitizer.Sanitize(req.SegundoNombre),
+		SegundoApellido:       s.sanitizer.Sanitize(req.SegundoApellido),
+		Genero:                s.sanitizer.Sanitize(strings.ToUpper(req.Genero)),
 		FPV:                   req.FPV,
 		Telefono:              s.sanitizer.Sanitize(req.Telefono),
 		Correo:                s.sanitizer.Sanitize(req.Correo),
@@ -192,6 +222,8 @@ func (s *InscriptionService) Submit(ctx context.Context, req *SubmitInscriptionR
 		TituloMencion:         s.sanitizer.Sanitize(req.TituloMencion),
 		TituloRegistroNumero:  s.sanitizer.Sanitize(req.TituloRegistroNumero),
 		TituloRegistroEstado:  s.sanitizer.Sanitize(req.TituloRegistroEstado),
+		TituloRegistroTomo:    s.sanitizer.Sanitize(req.TituloRegistroTomo),
+		TituloRegistroFolio:   s.sanitizer.Sanitize(req.TituloRegistroFolio),
 		RIF:                   s.sanitizer.Sanitize(req.RIF),
 		FotoS3Key:             fotoKey,
 		ComprobanteS3Key:      comprobanteKey,
@@ -278,6 +310,9 @@ func (s *InscriptionService) Detail(ctx context.Context, id uuid.UUID) (*request
 		Nacionalidad:          req.Nacionalidad,
 		Nombres:               req.Nombres,
 		Apellidos:             req.Apellidos,
+		SegundoNombre:         req.SegundoNombre,
+		SegundoApellido:       req.SegundoApellido,
+		Genero:                req.Genero,
 		FPV:                   req.FPV,
 		Telefono:              req.Telefono,
 		Correo:                req.Correo,
@@ -287,12 +322,22 @@ func (s *InscriptionService) Detail(ctx context.Context, id uuid.UUID) (*request
 		TituloMencion:         req.TituloMencion,
 		TituloRegistroNumero:  req.TituloRegistroNumero,
 		TituloRegistroEstado:  req.TituloRegistroEstado,
+		TituloRegistroTomo:    req.TituloRegistroTomo,
+		TituloRegistroFolio:   req.TituloRegistroFolio,
 		RIF:                   req.RIF,
 		Status:                string(req.Status),
 		ControlNumber:         req.ControlNumber,
 		Notes:                 req.Notes,
+		PsiUserID:             req.PsiUserID,
 		CreatedAt:             req.CreatedAt,
 		UpdatedAt:             req.UpdatedAt,
+	}
+
+	if req.PsiUserID != nil {
+		solvencies, err := s.psiRepo.GetSolvencies(ctx, *req.PsiUserID)
+		if err == nil {
+			dto.SolvencyCount = len(solvencies)
+		}
 	}
 
 	if s.s3Client != nil {
@@ -328,6 +373,18 @@ func (s *InscriptionService) Approve(ctx context.Context, admin *domain.UserAdmi
 		return nil, errors.New("error al procesar seguridad")
 	}
 
+	// 2.5 Validar unicidad de correo antes de crear el psicólogo, para
+	// no depender del constraint único (evita errores 500 en el approve).
+	if req.Correo != "" {
+		emailExists, err := s.repo.EmailInPsiUsers(ctx, req.Correo)
+		if err != nil {
+			return nil, err
+		}
+		if emailExists {
+			return nil, ErrEmailExists
+		}
+	}
+
 	// 3. Construir expediente
 	psiID := uuid.Must(uuid.NewV7())
 	colDataID := uuid.Must(uuid.NewV7())
@@ -356,19 +413,25 @@ func (s *InscriptionService) Approve(ctx context.Context, admin *domain.UserAdmi
 			Username:           username,
 			Email:              req.Correo,
 			Password:           string(hashed),
-			IsActive:           false,
+			IsActive:           true, // Parametrizable: al aprobar la inscripción la cuenta nace activa
 			MustChangePassword: true,
 		},
-		FirstName:      req.Nombres,
-		LastName:       req.Apellidos,
-		CI:             req.Cedula,
-		FPV:            req.FPV,
-		BornDate:       bornDate,
-		Nationality:    req.Nacionalidad,
-		ControlNumber:  fmt.Sprintf("%d", controlNumber),
-		ContactEmail:   req.Correo,
-		ContactPhone:   req.Telefono,
-		ContactCellPhone: req.Telefono,
+		FirstName:           req.Nombres,
+		SecondName:          req.SegundoNombre,
+		LastName:            req.Apellidos,
+		SecondLastName:      req.SegundoApellido,
+		CI:                  req.Cedula,
+		FPV:                 req.FPV,
+		Nationality:         req.Nacionalidad,
+		Genre:               req.Genero, // M / F (se adopta vacío si no se indicó)
+		BornDate:            bornDate,
+		AudioBookShellId:    psiID.String(), // Único por psi (constraint uni) — igual que en el import
+		Solvent:             true, // Inscripción aprobada ⇒ psicólogo solvente
+		ControlNumber:       fmt.Sprintf("%d", controlNumber),
+		ProfilePictureS3Key: req.FotoS3Key, // La foto tipo carnet pasa a ser la foto de perfil
+		ContactEmail:        req.Correo,
+		ContactPhone:        req.Telefono,
+		ContactCellPhone:    req.Telefono,
 	}
 
 	colData := &domain.PsiUserColData{
@@ -381,15 +444,28 @@ func (s *InscriptionService) Approve(ctx context.Context, admin *domain.UserAdmi
 		MentionUndergraduate:   req.TituloMencion,
 		RegisterNumber:         parseRegisterNumber(req.TituloRegistroNumero),
 		RegisterTitleState:     req.TituloRegistroEstado,
+		RegisterTome:           req.TituloRegistroTomo,
+		RegisterFolio:          req.TituloRegistroFolio,
 	}
 
-	if err := s.psiRepo.CreateWithColData(ctx, psi, colData, []domain.PsiUserSolvency{}, []domain.PsiUserPostGrade{}); err != nil {
+	// Solvencia del año de ingreso, consistente con la regla existente de
+	// "solvente = año vigente pagado" y con el conteo de solvencias pagadas.
+	solvencyDate := time.Date(now.Year(), 12, 31, 0, 0, 0, 0, time.UTC)
+	solvency := domain.PsiUserSolvency{
+		ID:             uuid.Must(uuid.NewV7()),
+		AuditModel:     audit,
+		PsiUserModelID: psiID,
+		Date:           solvencyDate,
+	}
+
+	if err := s.psiRepo.CreateWithColData(ctx, psi, colData, []domain.PsiUserSolvency{solvency}, []domain.PsiUserPostGrade{}); err != nil {
 		return nil, MapDBError(err)
 	}
 
-	// 4. Marcar solicitud como aprobada
+	// 4. Marcar solicitud como aprobada y vincular el expediente creado
 	req.Status = domain.InscriptionApproved
 	req.ControlNumber = fmt.Sprintf("%d", controlNumber)
+	req.PsiUserID = &psiID
 	if err := s.repo.Update(ctx, req); err != nil {
 		return nil, err
 	}
@@ -436,6 +512,32 @@ func (s *InscriptionService) Reject(ctx context.Context, admin *domain.UserAdmin
 	}
 
 	return s.repo.Delete(ctx, id)
+}
+
+// UpdateNotes actualiza las notas administrativas de una solicitud (texto simple).
+func (s *InscriptionService) UpdateNotes(ctx context.Context, id uuid.UUID, notes string) error {
+	if _, err := s.repo.GetByID(ctx, id); err != nil {
+		return ErrInscriptionNotFound
+	}
+	return s.repo.UpdateNotes(ctx, id, s.sanitizer.Sanitize(notes))
+}
+
+// SendEmailToApplicant envía un correo al solicitante con el mensaje del admin.
+// Retorna true si el correo fue encolado correctamente (envío no bloqueante).
+func (s *InscriptionService) SendEmailToApplicant(ctx context.Context, id uuid.UUID, subject, message string) (bool, error) {
+	req, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return false, ErrInscriptionNotFound
+	}
+	if s.mailService == nil {
+		return false, errors.New("servicio de correo no disponible")
+	}
+
+	err = s.mailService.SendEmail(req.Correo, subject, "notification", map[string]interface{}{
+		"Title":   "Notificación del Colegio de Psicólogos",
+		"Message": s.sanitizer.Sanitize(message),
+	})
+	return err == nil, err
 }
 
 // transliterateUsername genera un username en snake_case desde nombres y apellidos.

@@ -97,6 +97,9 @@ export function InscriptionForm() {
   const [nacionalidad, setNacionalidad] = createSessionField("nacionalidad", "V");
   const [nombres, setNombres] = createSessionField("nombres", "");
   const [apellidos, setApellidos] = createSessionField("apellidos", "");
+  const [segundoNombre, setSegundoNombre] = createSessionField("segundo_nombre", "");
+  const [segundoApellido, setSegundoApellido] = createSessionField("segundo_apellido", "");
+  const [genero, setGenero] = createSessionField("genero", "");
   const [fpv, setFpv] = createSessionField("fpv", "");
   const [telefono, setTelefono] = createSessionField("telefono", "");
   const [correo, setCorreo] = createSessionField("correo", "");
@@ -106,6 +109,8 @@ export function InscriptionForm() {
   const [mencion, setMencion] = createSessionField("mencion", "");
   const [regNumero, setRegNumero] = createSessionField("reg_numero", "");
   const [regEstado, setRegEstado] = createSessionField("reg_estado", "");
+  const [regTomo, setRegTomo] = createSessionField("reg_tomo", "");
+  const [regFolio, setRegFolio] = createSessionField("reg_folio", "");
   const [rif, setRif] = createSessionField("rif", "");
 
   // Archivos: conservamos el File en memoria y su metadato en sessionStorage
@@ -144,6 +149,9 @@ export function InscriptionForm() {
       fd.set("nacionalidad", nacionalidad());
       fd.set("nombres", nombres());
       fd.set("apellidos", apellidos());
+      if (segundoNombre()) fd.set("segundo_nombre", segundoNombre());
+      if (segundoApellido()) fd.set("segundo_apellido", segundoApellido());
+      if (genero()) fd.set("genero", genero());
       if (fpv()) fd.set("fpv", fpv());
       if (telefono()) fd.set("telefono", telefono());
       fd.set("correo", correo());
@@ -153,6 +161,8 @@ export function InscriptionForm() {
       if (mencion()) fd.set("titulo_mencion", mencion());
       if (regNumero()) fd.set("titulo_registro_numero", regNumero());
       if (regEstado()) fd.set("titulo_registro_estado", regEstado());
+      if (regTomo()) fd.set("titulo_registro_tomo", regTomo());
+      if (regFolio()) fd.set("titulo_registro_folio", regFolio());
       if (rif()) fd.set("rif", rif());
       if (foto()) fd.set("foto", foto()!);
       if (comprobante()) fd.set("comprobante", comprobante()!);
@@ -242,6 +252,20 @@ export function InscriptionForm() {
               </div>
               <Field label="Nombres" required value={nombres} onChange={setNombres} />
               <Field label="Apellidos" required value={apellidos} onChange={setApellidos} />
+              <Field label="Segundo nombre" value={segundoNombre} onChange={setSegundoNombre} />
+              <Field label="Segundo apellido" value={segundoApellido} onChange={setSegundoApellido} />
+              <div>
+                <span class="block text-sm font-bold text-gray-700 mb-1.5">Género</span>
+                <select
+                  value={genero()}
+                  onInput={(e) => setGenero((e.target as HTMLSelectElement).value)}
+                  class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                >
+                  <option value="">Seleccionar</option>
+                  <option value="M">Masculino</option>
+                  <option value="F">Femenino</option>
+                </select>
+              </div>
               <CheckField
                 label="N° FPV (si lo posee)"
                 endpoint="/inscripcion/check-fpv"
@@ -264,6 +288,8 @@ export function InscriptionForm() {
               <Field label="Mención" value={mencion} onChange={setMencion} />
               <Field label="N° Registro del título" value={regNumero} onChange={setRegNumero} />
               <Field label="Estado del registro" value={regEstado} onChange={setRegEstado} />
+              <Field label="Tomo del registro" value={regTomo} onChange={setRegTomo} />
+              <Field label="Folio del registro" value={regFolio} onChange={setRegFolio} />
               <Field label="RIF" value={rif} onChange={setRif} />
             </div>
           </Section>
@@ -271,7 +297,7 @@ export function InscriptionForm() {
           <Section n={3} title="Documentos Requeridos">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <FileUpload
-                label="Foto tipo carnet"
+                label="Foto de perfil (tipo carnet)"
                 accept="image/*"
                 description="Imagen (máx. 5MB)"
                 file={foto()}
