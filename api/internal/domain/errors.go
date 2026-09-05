@@ -64,6 +64,37 @@ var (
 )
 
 var (
+	// ErrTicketNotFound is returned when a ticket cannot be found.
+	ErrTicketNotFound = errors.New("ticket no encontrado")
+	// ErrTicketLimitReached is returned the psi already reached the open-ticket limit for a motivo.
+	ErrTicketLimitReached = errors.New("límite de tickets abiertos alcanzado para este motivo")
+	// ErrTicketClosed is returned when trying to interact with a closed ticket's conversation.
+	ErrTicketClosed = errors.New("el ticket está cerrado y no admite más comentarios")
+	// ErrTicketNotOwner is returned when a psi tries to access another psi's ticket.
+	ErrTicketNotOwner = errors.New("no puedes acceder a un ticket que no te pertenece")
+	// ErrMaxConsecutiveComments is returned when the psi publishes more than 3 messages in a row.
+	ErrMaxConsecutiveComments = errors.New("no puedes publicar más de 3 mensajes seguidos en la conversación")
+	// ErrMensajeTooLong is returned when a message exceeds the character limit.
+	ErrMensajeTooLong = errors.New("el mensaje excede el límite de caracteres")
+	// ErrMensajeVacio is returned when a message is empty.
+	ErrMensajeVacio = errors.New("el mensaje no puede estar vacío")
+	// ErrCloseReasonRequired is returned when closing a ticket without a reason.
+	ErrCloseReasonRequired = errors.New("debes indicar un motivo de cierre")
+	// ErrMotivoNotFound is returned when a ticket motivo cannot be found.
+	ErrMotivoNotFound = errors.New("motivo de ticket no encontrado")
+	// ErrEstadoNotFound is returned when a ticket estado cannot be found.
+	ErrEstadoNotFound = errors.New("estado de ticket no encontrado")
+	// ErrEstadoNotInMotivo is returned when the estado does not belong to the ticket's motivo.
+	ErrEstadoNotInMotivo = errors.New("el estado no pertenece al motivo del ticket")
+	// ErrMotivoInUse is returned when trying to delete a motivo that already has tickets.
+	ErrMotivoInUse = errors.New("el motivo tiene tickets asociados y no se puede eliminar")
+	// ErrEstadoInUse is returned when trying to delete an estado that is in use by tickets.
+	ErrEstadoInUse = errors.New("el estado está en uso por algún ticket y no se puede eliminar")
+	// ErrMotivoLimitInvalid is returned when tickets_per_psi is lower than 1.
+	ErrMotivoLimitInvalid = errors.New("el límite de tickets por psicólogo para este motivo debe ser al menos 1")
+)
+
+var (
 	// ErrProjectNotFound is returned when a kanban project cannot be found.
 	ErrProjectNotFound = errors.New("proyecto no encontrado")
 	// ErrColumnNotFound is returned when a kanban column cannot be found.

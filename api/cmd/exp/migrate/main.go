@@ -41,6 +41,12 @@ func main() {
 		&domain.KanbanColumn{},
 		&domain.KanbanCard{},
 		&domain.KanbanNote{},
+&domain.TicketMotivo{},
+		&domain.TicketEstado{},
+		&domain.Ticket{},
+		&domain.TicketStatusLog{},
+		&domain.TicketMensaje{},
+		&domain.TicketAdjunto{},
 	)
 	if err != nil {
 		log.Fatal().Err(err).Str("component", "migrate").Msg("Failed to load gorm schema")

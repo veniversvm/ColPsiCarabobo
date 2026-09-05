@@ -50,6 +50,11 @@ type UserAdmin struct {
 	// quién sea el dueño. Los admins sin este flag solo ven sus proyectos y
 	// los que les compartieron como viewer/editor.
 	CanManageProjects bool `gorm:"default:false" json:"can_manage_projects"`
+
+	// ── Permisos: Tickets de Solicitudes ──────────────────────────────────
+	// Otorga acceso a la cola FIFO de tickets y a la configuración del módulo
+	// (áreas, motivos y estados). Sin este flag (y sin Sudo) el admin no ve el menú.
+	CanManageTickets bool `gorm:"default:false" json:"can_manage_tickets"`
 }
 
 func (UserAdmin) TableName() string { return "user_admins" }

@@ -292,9 +292,40 @@ func (s *NotificationService) ProcessScheduled(ctx context.Context) {
 	}
 }
 
-// =========================================================================
-// ADMIN — GESTIÓN
-// =========================================================================
+// NotifyPSI crea una notificación inmediata dirigida a un agremiado concreto,
+// marcada como "sent" desde el inicio (sin email ni programación). Se usa para
+// avisos generados por submódulos internos — ej. el módulo de Tickets: cuando
+// el admin cambia el estado de un ticket, responde o lo cierra. No requiere
+// permisos de notificaciones ni tablero admin: el poller del portal psi
+// (/notifications/psi-user) la recoge y reproduce el sonido de aviso.
+func (s *NotificationService) NotifyPSI(ctx context.Context, senderID uuid.UUID, senderName string, psiUserID uuid.UUID, title, message string) error {
+	now := time.Now()
+	sentAt := now
+	notification := &domain.Notification{
+		Title:      title,
+		Message:    message,
+		TargetType: domain.NotificationTargetIndividual,
+		SenderID:   senderID,
+		SendEmail:  false,
+		Status:     domain.NotificationStatusSent,
+		SentAt:     &sentAt,
+		AuditModel: domain.AuditModel{
+			CreateBy:   senderName,
+			CreateById: &senderID,
+			CreatedAt:  now,
+			UpdatedAt:  now,
+		},
+	}
+
+	if err := s.repo.Create(ctx, notification); err != nil {
+		return err
+	}
+	return s.repo.CreateTargets(ctx, []domain.NotificationTarget{{
+		NotificationID: notification.ID,
+		PsiUserID:      psiUserID,
+		IsRead:         false,
+	}})
+}
 
 // ListMyNotifications lista las notificaciones creadas por un admin (paginado).
 func (s *NotificationService) ListMyNotifications(ctx context.Context, admin *domain.UserAdmin, page, limit int) (map[string]interface{}, error) {

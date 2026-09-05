@@ -35,6 +35,8 @@ func SetupRouter(app *fiber.App, db *gorm.DB, s3Client *s3.S3Client, appCache *c
 	specialtyRepo := postgres.NewSpecialtyRepository(db)
 	inscriptionRepo := postgres.NewInscriptionRepository(db)
 	kanbanRepo := postgres.NewKanbanRepository(db)
+	ticketRepo := postgres.NewTicketRepository(db)
+	ticketConfigRepo := postgres.NewTicketConfigRepository(db)
 
 	// Agrupación principal
 	api := app.Group("/api/v1")
@@ -46,13 +48,19 @@ func SetupRouter(app *fiber.App, db *gorm.DB, s3Client *s3.S3Client, appCache *c
 	}
 
 	// Rutas de dominio — se pasan repos, analyticsSvc y mailSvc
+	// IMPORTANTE: SetupTicketRoutes va ANTES de SetupPsiRoutes. En gofiber, a
+	// igual especificidad gana la ruta registrada primero; el `/psi/:id` público
+	// (SetupPsiRoutes) se tragaría la raíz estática `/psi/tickets` del portal
+	// psicólogo (ListMyTickets) si se registrara después.
 	SetupAdminRoutes(api, adminRepo, psiRepo, analyticsSvc, mailSvc)
+	SetupTicketRoutes(api, adminRepo, psiRepo, s3Client, ticketRepo, ticketConfigRepo, notificationSvc, analyticsSvc)
 	SetupPsiRoutes(api, psiRepo, adminRepo, s3Client, analyticsSvc, mailSvc, appCache)
 	SetupSpecialtyRoutes(api, psiRepo, adminRepo, specialtyRepo, analyticsSvc)
 	SetupPostRoutes(api, adminRepo, psiRepo, postRepo, s3Client, analyticsSvc)
 	SetupNotificationRoutes(api, adminRepo, psiRepo, analyticsSvc, notificationSvc)
 	SetupInscriptionRoutes(api, inscriptionRepo, psiRepo, adminRepo, s3Client, mailSvc, analyticsSvc)
 	SetupKanbanRoutes(api, adminRepo, psiRepo, kanbanRepo, analyticsSvc)
+	SetupTicketRoutes(api, adminRepo, psiRepo, s3Client, ticketRepo, ticketConfigRepo, notificationSvc, analyticsSvc)
 
 	// =========================================================================
 	// DEFAULT 404 HANDLER (CATCH-ALL)

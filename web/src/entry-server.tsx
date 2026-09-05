@@ -18,35 +18,50 @@ import { createHandler, StartServer } from "@solidjs/start/server";
 const BUCKET_ORIGIN =
   (import.meta.env.VITE_BUCKET_URL || "").match(/^https?:\/\/[^/]+/i)?.[0] || "";
 
-const CSP = `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:${BUCKET_ORIGIN ? ` ${BUCKET_ORIGIN}` : ""}; connect-src 'self' https: http://localhost:* ws://localhost:* wss://localhost:*; font-src 'self' data:; form-action 'self'; base-uri 'self'`;
+const CSP = `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:${BUCKET_ORIGIN ? ` ${BUCKET_ORIGIN}` : ""}; connect-src 'self' data: https: http://localhost:* ws://localhost:* wss://localhost:*; font-src 'self' data:; form-action 'self'; base-uri 'self'`;
 
-export default createHandler(() => (
-  <StartServer
-    document={({ assets, children, scripts }) => (
-      <html lang="es"> {/* <-- Cambiado a español */}
-        <head>
-          <meta charset="utf-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1" />
-          
-          {/* Título de la pestaña */}
-          <title>Colegio de Psicólogos del Estado Carabobo</title>
+// Los paneles privados (/admin y /psi) se renderizan SOLO en el cliente (SPA).
+// En SSR se devuelve la carcasa vacía y el documento NO accede a props.children,
+// así el App (y sus rutas con código solo-cliente, p.ej. el kanban) nunca se
+// evalúa en el servidor. El navegador monta la ruta desde window.location.
+const isSpaPath = (pathname: string) =>
+  pathname === "/admin" ||
+  pathname.startsWith("/admin/") ||
+  pathname === "/psi" ||
+  pathname.startsWith("/psi/");
 
-          {/* Content Security Policy */}
-          <meta
-            http-equiv="Content-Security-Policy"
-            content={CSP}
-          />
-          
-          {/* Ícono de la pestaña referenciando a la carpeta public */}
-          <link rel="icon" href="/psi.png" />
-          
-          {assets}
-        </head>
-        <body>
-          <div id="app">{children}</div>
-          {scripts}
-        </body>
-      </html>
-    )}
-  />
-));
+export default createHandler((event) => {
+  const pathname = new URL(event.request.url).pathname;
+  const spa = isSpaPath(pathname);
+
+  return (
+    <StartServer
+      document={(props) => (
+        <html lang="es"> {/* <-- Cambiado a español */}
+          <head>
+            <meta charset="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            
+            {/* Título de la pestaña */}
+            <title>Colegio de Psicólogos del Estado Carabobo</title>
+
+            {/* Content Security Policy */}
+            <meta
+              http-equiv="Content-Security-Policy"
+              content={CSP}
+            />
+            
+            {/* Ícono de la pestaña referenciando a la carpeta public */}
+            <link rel="icon" href="/psi.png" />
+            
+            {props.assets}
+          </head>
+          <body>
+            <div id="app">{spa ? null : props.children}</div>
+            {props.scripts}
+          </body>
+        </html>
+      )}
+    />
+  );
+});

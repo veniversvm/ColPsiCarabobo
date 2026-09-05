@@ -1,8 +1,9 @@
 // web/src/routes/admin.tsx
-import { JSX, createSignal, Show, createEffect } from "solid-js";
+import { JSX, createSignal, Show, createEffect, createResource } from "solid-js";
 import { A, useNavigate } from "@solidjs/router";
 import { useAuth } from "~/lib/auth";
-import RouteTransition from "~/components/ui/RouteTransition";
+import { apiGet } from "~/lib/api";
+import type { PendientesResponse } from "~/types/tickets";
 
 export default function AdminLayout(props: { children: JSX.Element }) {
   const { role, isAuthenticated, user, logout } = useAuth();
@@ -16,6 +17,20 @@ export default function AdminLayout(props: { children: JSX.Element }) {
     }
   });
 
+  // Badge de tickets pendientes (polling cada 30s). Silencioso si falla.
+  const [pendientes] = createResource(
+    () => "",
+    async (_k) => {
+      try {
+        return await apiGet<PendientesResponse>("/admin/tickets/pendientes-count");
+      } catch {
+        return { pendientes: 0 };
+      }
+    },
+    { initialValue: { pendientes: 0 }, refetchInterval: 30000 }
+  );
+  const ticketsPendientes = () => pendientes()?.pendientes ?? 0;
+
   const menuItems = [
     { title: "Dashboard", path: "/admin", icon: "📊" },
     { title: "Psicólogos", path: "/admin/psicologos", icon: "👥" },
@@ -23,6 +38,7 @@ export default function AdminLayout(props: { children: JSX.Element }) {
     { title: "Areas de Ejercicio Psi", path: "/admin/areas_de_ejercicio_profesional", icon: "🔖" },
     { title: "Noticias", path: "/admin/noticias", icon: "📰" },
     { title: "Notificaciones", path: "/admin/notificaciones", icon: "🔔" },
+    { title: "Tickets", path: "/admin/tickets", icon: "🎫" },
     { title: "Proyectos", path: "/admin/proyectos", icon: "📋" },
     { title: "Staff", path: "/admin/staff", icon: "🛡️" },
   ];
@@ -54,6 +70,11 @@ export default function AdminLayout(props: { children: JSX.Element }) {
               <A href={item.path} end={item.path === "/admin"} class="flex items-center px-3 py-3.5 rounded-xl text-blue-100 hover:bg-blue-800 transition-all" activeClass="bg-colpsi-yellow !text-colpsi-blue font-black shadow-lg">
                 <span class={`text-xl ${isCollapsed() ? "mx-auto" : "mr-4"}`}>{item.icon}</span>
                 {!isCollapsed() && <span>{item.title}</span>}
+                <Show when={item.path === "/admin/tickets" && ticketsPendientes() > 0}>
+                  <span class="ml-auto bg-red-500 text-white text-[10px] font-black min-w-6 h-6 px-1.5 rounded-full flex items-center justify-center shadow-lg">
+                    {ticketsPendientes() > 99 ? "99+" : ticketsPendientes()}
+                  </span>
+                </Show>
               </A>
             ))}
           </nav>
@@ -73,7 +94,7 @@ export default function AdminLayout(props: { children: JSX.Element }) {
 
           <main class="p-4 md:p-8 lg:p-10 flex-grow max-w-7xl mx-auto w-full">
             {/* LAS PÁGINAS SE CARGAN AQUÍ */}
-            <RouteTransition>{props.children}</RouteTransition>
+            {props.children}
           </main>
         </div>
 
