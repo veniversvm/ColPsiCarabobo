@@ -2,6 +2,7 @@
 import { JSX, createSignal, Show, createEffect } from "solid-js";
 import { A, useNavigate } from "@solidjs/router";
 import { useAuth } from "~/lib/auth";
+import RouteTransition from "~/components/ui/RouteTransition";
 
 export default function AdminLayout(props: { children: JSX.Element }) {
   const { role, isAuthenticated, user, logout } = useAuth();
@@ -72,7 +73,7 @@ export default function AdminLayout(props: { children: JSX.Element }) {
 
           <main class="p-4 md:p-8 lg:p-10 flex-grow max-w-7xl mx-auto w-full">
             {/* LAS PÁGINAS SE CARGAN AQUÍ */}
-            {props.children}
+            <RouteTransition>{props.children}</RouteTransition>
           </main>
         </div>
 

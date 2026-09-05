@@ -9,7 +9,6 @@ import { deleteCookie } from "vinxi/http";
 import { AuthProvider } from "~/lib/auth";
 import OfflineAlert from "~/components/ui/OfflineAlert";
 import Navbar from "~/components/layaout/Navbar";
-import RouteTransition from "~/components/ui/RouteTransition";
 import "./app.css";
 
 // Server action que borra las cookies de sesión HttpOnly del frontend.
@@ -41,7 +40,6 @@ export default function App() {
                 }}
               >
                 <Suspense>{props.children}</Suspense>
-                <RouteTransition />
               </ErrorBoundary>
             </AuthProvider>
           );

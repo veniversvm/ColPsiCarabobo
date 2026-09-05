@@ -1,30 +1,26 @@
 // web/src/components/ui/RouteTransition.tsx
-// Transición cross-fade nativa del navegador (View Transitions API) al navegar.
-// Intercepta la navegación con useBeforeLeave y la envuelve en
-// document.startViewTransition(): el navegador captura el snapshot de la página
-// saliente y hace el cross-fade hacia la entrante sin clonar el DOM ni usar
-// overlays (el clonado causaba parpadeo en franjas animadas y congelaba rutas
-// con layout compartido como admin). Fallbacks seguros:
-//   - Sin startViewTransition o prefers-reduced-motion → no preventDefault,
-//     la navegación sigue normal (sin efecto, cero riesgo de romper el SPA).
-// Componente pasivo (solo registra el listener); se monta desde app.tsx.
-import { useBeforeLeave } from "@solidjs/router";
+// Transición suave al navegar entre rutas usando la Web Animations API.
+// IMPORTANTE: NO usar keyed <Show> para esta animación (rompe la navegación SPA);
+// se anima el contenedor actual disparado por useLocation().pathname.
+import { createEffect, JSX } from "solid-js";
+import { useLocation } from "@solidjs/router";
 
-export default function RouteTransition() {
-  let inTransition = false;
+export default function RouteTransition(props: { children: JSX.Element }) {
+  const location = useLocation();
+  let ref: HTMLDivElement | undefined;
 
-  useBeforeLeave((e) => {
+  createEffect(() => {
+    location.pathname;
     if (typeof window === "undefined") return;
-    if (e.defaultPrevented || inTransition) return;
-    if (typeof document.startViewTransition !== "function") return;
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) return;
-    e.preventDefault();
-    inTransition = true;
-    const vt = document.startViewTransition(() => e.retry());
-    void vt.finished.finally(() => {
-      inTransition = false;
+    queueMicrotask(() => {
+      if (!ref || typeof ref.animate !== "function") return;
+      ref.animate(
+        [{ opacity: 0, transform: "translateY(4px)" }, { opacity: 1, transform: "translateY(0)" }],
+        { duration: 220, easing: "ease-out" }
+      );
     });
   });
 
-  return null;
+  return <div ref={ref}>{props.children}</div>;
 }
