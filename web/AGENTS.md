@@ -75,6 +75,29 @@ deno task build      # igual que npm run build (lo usa el dockerfile)
    `Internacional` (verde). Si añades una ubicación nueva, mantenlo en la lista
    vertical y dale su `tag`; no vuelvas al grid.
 
+10. **Kanban de proyectos (módulo `admin/proyectos`)** — El tablero se construye
+    con `@thisbeyond/solid-dnd`, **vendoriado** en `src/vendor/thisbeyond-solid-dnd/`
+    (ver su `README.md`). Gotchas que ya rompieron/confundieron:
+    - **El tablero es solo-cliente.** `DragOverlay` accede a `document.body`
+      (mount del Portal) durante el render, lo que QUIEBRA el SSR de la ruta al
+      cargar/refrescar la URL directamente. Por eso el árbol DnD vive dentro de
+      `<Show when={!isServer}>` en `src/routes/admin/proyectos/[id].tsx`. No lo
+      saques de ahí ni pongas animaciones de DnD en rutas con SSR.
+    - **El drag necesita invocar la función `draggable(element)`** (vía
+      `ref={(el) => draggable(el, () => ({ skipTransform: true }))}`). Usar
+      `ref={draggable.ref}` NO aplica el transform (la tarjeta nunca seguía al
+      puntero). Con `skipTransform` la tarjeta origen queda estática (dim) y una
+      copia flota en el `DragOverlay` siguiendo al cursor; la colisión usa
+      `draggable.transformed` del overlay, así que el drop cae donde el usuario
+      ve la tarjeta.
+    - **Soltar fuera de una columna es no-op** (guards `!draggable || !droppable`
+      en `onDragEnd`); mover la tarjeta persiste con
+      `PATCH /admin/projects/cards/{id}` (`{ column_id }`), con actualización
+      optimista y revert en caso de error.
+    - La columna droppable se resalta con `droppable.isActiveDroppable` (ring
+      azul); la tarjeta usa `transition-shadow` (NO `transition-all`: anima el
+      transform y laggea el arrastre).
+
 ## Estructura
 
 ```
