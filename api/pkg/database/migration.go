@@ -34,6 +34,7 @@ func RunMigrations(db *gorm.DB) error {
 		&domain.KanbanColumn{},      // Columnas del tablero Kanban
 		&domain.KanbanCard{},        // Tarjetas Kanban
 		&domain.KanbanNote{},        // Notas de tarjetas Kanban (máx 10 × 500 chars)
+		&domain.AdminPermissionLog{}, // Auditoría forense de cambios de permisos
 	)
 
 	if err != nil {

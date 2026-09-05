@@ -203,6 +203,35 @@ func (h *AdminHandler) GetRolePresets(c *fiber.Ctx) error {
 	return c.JSON(h.service.GetRolePresets())
 }
 
+// TransferSudo godoc
+// @Summary      Transferir el rol de Super Usuario
+// @Description  Permite al Sudo actual ceder su rol a un administrador de confianza. Requiere confirmar la contraseña del Sudo. La conmutación es atómica y queda registrada en la auditoría de permisos.
+// @Tags         Administración - Gestión
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        request  body      request_structs.TransferSudoRequest  true  "Destinatario del Sudo y confirmación de la contraseña"
+// @Success      200      {object}  map[string]string      "message: rol transferido"
+// @Failure      403      {object}  map[string]string      "error: permiso denegado o contraseña incorrecta"
+// @Router       /admin/transfer-sudo [post]
+func (h *AdminHandler) TransferSudo(c *fiber.Ctx) error {
+	current, err := middleware.GetAuthenticatedAdmin(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	var req request_structs.TransferSudoRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "El formato del JSON es inválido"})
+	}
+
+	if err := h.service.TransferSudo(c.UserContext(), current, req.TargetID, req.Password); err != nil {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"message": "Rol de Super Usuario transferido correctamente"})
+}
+
 // UpdateAdmin godoc
 // @Summary      Actualizar administrador
 // @Description  Modifica los datos y permisos de un administrador. Actualiza automáticamente la auditoría.

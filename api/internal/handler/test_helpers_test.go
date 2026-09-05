@@ -90,6 +90,12 @@ func (m *mockAdminRepo) CountSudos(ctx context.Context) (int64, error) {
 	}
 	return 0, nil
 }
+func (m *mockAdminRepo) TransferSudo(ctx context.Context, fromID, toID uuid.UUID) error {
+	return nil
+}
+func (m *mockAdminRepo) CreatePermissionLog(ctx context.Context, log *domain.AdminPermissionLog) error {
+	return nil
+}
 
 // =========================================================================
 // MOCK PSI REPOSITORY

@@ -31,6 +31,8 @@ type mockAdminRepo struct {
 	CreateFunc          func(ctx context.Context, admin *domain.UserAdmin) error
 	DeleteFunc          func(ctx context.Context, id uuid.UUID) error
 	ListFunc            func(ctx context.Context, active *bool, search string, page, limit int) ([]domain.UserAdmin, int64, error)
+	TransferSudoFunc    func(ctx context.Context, fromID, toID uuid.UUID) error
+	CreatePermissionLogFunc func(ctx context.Context, log *domain.AdminPermissionLog) error
 }
 
 func (m *mockAdminRepo) GetByIdentifier(ctx context.Context, id string) (*domain.UserAdmin, error) {
@@ -56,6 +58,18 @@ func (m *mockAdminRepo) Delete(ctx context.Context, id uuid.UUID) error {
 }
 func (m *mockAdminRepo) List(ctx context.Context, a *bool, s string, p, l int) ([]domain.UserAdmin, int64, error) {
 	return m.ListFunc(ctx, a, s, p, l)
+}
+func (m *mockAdminRepo) TransferSudo(ctx context.Context, fromID, toID uuid.UUID) error {
+	if m.TransferSudoFunc != nil {
+		return m.TransferSudoFunc(ctx, fromID, toID)
+	}
+	return nil
+}
+func (m *mockAdminRepo) CreatePermissionLog(ctx context.Context, log *domain.AdminPermissionLog) error {
+	if m.CreatePermissionLogFunc != nil {
+		return m.CreatePermissionLogFunc(ctx, log)
+	}
+	return nil
 }
 
 // =========================================================================

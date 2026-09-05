@@ -35,4 +35,12 @@ type UserAdminRepository interface {
 	UpdateKey(ctx context.Context, user *UserAdmin) error
 
 	CountSudos(ctx context.Context) (int64, error)
+
+	// TransferSudo intercambia el estado de Sudo entre dos administradores en
+	// una sola transacción (atómico): el que lo cede pasa a false y el sucesor
+	// pasa a true, respetando el índice único parcial sobre sudo.
+	TransferSudo(ctx context.Context, fromID, toID uuid.UUID) error
+
+	// CreatePermissionLog persiste una entrada de auditoría de permisos.
+	CreatePermissionLog(ctx context.Context, log *AdminPermissionLog) error
 }

@@ -98,3 +98,10 @@ type UpdateAdminRequest struct {
 	// Sub-estructura que será evaluada por el Motor de Permisos.
 	Permissions AdminPermissionsDTO `json:"permissions"`
 }
+
+// TransferSudoRequest define la carga útil para la sucesión de Super Usuario.
+// Exige la contraseña del Sudo actual como confirmación (segundo factor semántico).
+type TransferSudoRequest struct {
+	TargetID uuid.UUID `json:"target_id" validate:"required" example:"00000000-0000-0000-0000-000000000000"`
+	Password string    `json:"password" validate:"required" example:"••••••••"`
+}
