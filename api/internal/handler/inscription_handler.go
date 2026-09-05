@@ -35,6 +35,22 @@ const (
 	allowedPdfMIME   = "application/pdf"
 )
 
+// GetStatus godoc
+// @Summary      Estado de recepción de inscripciones (público)
+// @Description  Indica si la pre-inscripción de profesionales está habilitada. Cuando está desactivada, el campo `message` explica el motivo público.
+// @Tags         Inscripcion
+// @Produce      json
+// @Success      200 {object} domain.ReceptionSetting
+// @Router       /inscripcion/status [get]
+func (h *InscriptionHandler) GetStatus(c *fiber.Ctx) error {
+	status, err := h.svc.ReceptionStatus(c.UserContext())
+	if err != nil {
+		log.Error().Err(err).Str("component", "inscription").Msg("Error al consultar estado de recepción de inscripciones")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "error al consultar el estado"})
+	}
+	return c.JSON(status)
+}
+
 // CheckCI godoc
 // @Summary      Validar unicidad de cédula (público)
 // @Description  Verifica si una cédula ya está registrada en el sistema o tiene una solicitud activa.
@@ -149,6 +165,13 @@ func (h *InscriptionHandler) Submit(c *fiber.Ctx) error {
 	if err != nil {
 		if errors.Is(err, service.ErrCIExists) || errors.Is(err, service.ErrFPVExists) || errors.Is(err, service.ErrEmailExists) {
 			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": err.Error()})
+		}
+		var rdErr *service.ReceptionDisabledError
+		if errors.As(err, &rdErr) {
+			return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+				"code":    "reception_disabled",
+				"message": rdErr.Error(),
+			})
 		}
 		log.Error().Err(err).Str("component", "inscription").Msg("Error al procesar solicitud de inscripción")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "no se pudo procesar la solicitud, intente nuevamente"})

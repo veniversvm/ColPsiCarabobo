@@ -25,20 +25,27 @@ import (
 type InscriptionService struct {
 	repo        domain.InscriptionRepository
 	psiRepo     domain.PsiUserRepository
+	settings    domain.AppSettingsRepository
 	s3Client    *s3.S3Client
 	mailService IMailService
 	sanitizer   *bluemonday.Policy
 }
 
 // NewInscriptionService crea un nuevo InscriptionService.
-func NewInscriptionService(repo domain.InscriptionRepository, psiRepo domain.PsiUserRepository, s3Client *s3.S3Client, mailService IMailService) *InscriptionService {
+func NewInscriptionService(repo domain.InscriptionRepository, psiRepo domain.PsiUserRepository, settings domain.AppSettingsRepository, s3Client *s3.S3Client, mailService IMailService) *InscriptionService {
 	return &InscriptionService{
 		repo:        repo,
 		psiRepo:     psiRepo,
+		settings:    settings,
 		s3Client:    s3Client,
 		mailService: mailService,
 		sanitizer:   bluemonday.UGCPolicy(),
 	}
+}
+
+// ReceptionStatus devuelve el estado del interruptor de inscripciones.
+func (s *InscriptionService) ReceptionStatus(ctx context.Context) (domain.ReceptionSetting, error) {
+	return GetReceptionSetting(ctx, s.settings, domain.SettingsKeyInscriptionsReception)
 }
 
 // ErrCIExists se retorna cuando la cédula ya está registrada (solicitud o psi_users).
@@ -202,6 +209,11 @@ type InscriptionDocumentUpload struct {
 
 // Submit crea una nueva solicitud de pre-inscripción con estado "pending".
 func (s *InscriptionService) Submit(ctx context.Context, req *SubmitInscriptionRequest) (*domain.PsiInscriptionRequest, error) {
+	// 0. Recepción global: si el colegio desactivó las inscripciones, bloquear.
+	if err := AssertReceptionEnabled(ctx, s.settings, domain.SettingsKeyInscriptionsReception); err != nil {
+		return nil, err
+	}
+
 	// 1. Validar unicidad de cédula
 	exists, err := s.repo.CIInPsiUsers(ctx, req.Cedula)
 	if err != nil {

@@ -19,8 +19,8 @@ import (
 // filtros, detalle, respuesta, cambio de estado, cierre y conteo de pendientes
 // (badge). La configuración (motivos/estados) vive también aquí y se protege
 // con el permiso granular CanManageTickets + NoStore.
-func SetupTicketRoutes(router fiber.Router, adminRepo domain.UserAdminRepository, psiRepo domain.PsiUserRepository, s3Client *s3.S3Client, ticketRepo domain.TicketRepository, ticketConfigRepo domain.TicketConfigRepository, notificationSvc *service.NotificationService, analyticsSvc *service.AnalyticsService) {
-	svc := service.NewTicketService(ticketRepo, ticketConfigRepo, s3Client, notificationSvc)
+func SetupTicketRoutes(router fiber.Router, adminRepo domain.UserAdminRepository, psiRepo domain.PsiUserRepository, s3Client *s3.S3Client, ticketRepo domain.TicketRepository, ticketConfigRepo domain.TicketConfigRepository, settingsRepo domain.AppSettingsRepository, notificationSvc *service.NotificationService, analyticsSvc *service.AnalyticsService) {
+	svc := service.NewTicketService(ticketRepo, ticketConfigRepo, settingsRepo, s3Client, notificationSvc)
 	h := handler.NewTicketHandler(svc)
 	authMid := middleware.NewAuthMiddleware(adminRepo, psiRepo, analyticsSvc)
 
@@ -53,6 +53,7 @@ func SetupTicketRoutes(router fiber.Router, adminRepo domain.UserAdminRepository
 	// =========================================================================
 	psi := router.Group("/psi/tickets", middleware.NoStore(), authMid.ProtectedPsiUser())
 
+	psi.Get("/status", h.GetStatus)
 	psi.Get("/config", h.GetConfigPSI)
 	psi.Get("/", h.ListMyTickets)
 	psi.Post("/", h.CreateTicket)

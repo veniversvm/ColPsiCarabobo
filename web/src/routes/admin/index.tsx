@@ -9,6 +9,7 @@ import { RankingList }          from "~/components/admin/dashboard/RankingList";
 import { TopProfiles }          from "~/components/admin/dashboard/TopProfiles";
 import { ActiveSessionsBanner } from "~/components/admin/dashboard/ActiveSessionsBanner";
 import { BirthdayBanner } from "~/components/admin/dashboard/BirthdayBanner";
+import { ReceptionSwitchesCard } from "~/components/admin/settings/ReceptionSwitchesCard";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 interface TopItem     { value: string; count: number; name: string }
@@ -114,6 +115,9 @@ export default function AdminDashboard() {
 
       {/* ── BANNER: CUMPLEAÑOS DEL AGREMIADO (opt-in) ────────────────────── */}
       <BirthdayBanner />
+
+      {/* ── RECEPCIÓN GLOBAL (solo SUDO gestiona) ───────────────────────── */}
+      <ReceptionSwitchesCard />
 
       {/* ── SECCIÓN: LOGINS ──────────────────────────────────────────────── */}
       <section>

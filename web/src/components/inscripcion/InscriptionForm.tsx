@@ -95,6 +95,18 @@ export function InscriptionForm() {
   const [fpvInvalid, setFpvInvalid] = createSignal("");
   const [emailInvalid, setEmailInvalid] = createSignal("");
 
+  // Interruptor global de recepción: si el colegio la desactivó, el formulario
+  // se bloquea y se muestra el mensaje público con el motivo.
+  const [reception] = createResource<{ enabled: boolean; message?: string }>(async () => {
+    try {
+      const res = await apiGet<{ enabled: boolean; message?: string }>("/inscripcion/status");
+      return res ?? { enabled: true };
+    } catch {
+      return { enabled: true };
+    }
+  });
+  const receptionDisabled = () => reception() ? reception()!.enabled === false : false;
+
   // Datos del formulario (persistidos en sessionStorage)
   const [cedula, setCedula] = createSessionField("cedula", "");
   const [nacionalidad, setNacionalidad] = createSessionField("nacionalidad", "V");
@@ -185,6 +197,10 @@ export function InscriptionForm() {
 
   const handleSubmit = async (e: Event) => {
     e.preventDefault();
+    if (receptionDisabled()) {
+      setError(reception()?.message || "La recepción de inscripciones se encuentra temporalmente desactivada. Intentarás nuevamente más tarde.");
+      return;
+    }
     const v = validate();
     if (v) { setError(v); return; }
     setError("");
@@ -288,6 +304,17 @@ export function InscriptionForm() {
       when={submitted()}
       fallback={(
         <form onSubmit={handleSubmit} class="space-y-8">
+          <Show when={receptionDisabled()}>
+            <div class="bg-amber-50 border-2 border-amber-200 text-amber-800 rounded-2xl p-5 flex items-start gap-4">
+              <span class="text-2xl">⏸️</span>
+              <div>
+                <p class="font-black">Recepción de inscripciones temporalmente desactivada</p>
+                <p class="text-sm mt-1">
+                  {reception()?.message || "Por favor intenta nuevamente en los próximos días."}
+                </p>
+              </div>
+            </div>
+          </Show>
           <Section n={1} title="Datos Personales">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <CheckField
@@ -508,10 +535,10 @@ export function InscriptionForm() {
 
           <button
             type="submit"
-            disabled={submitting()}
+            disabled={submitting() || receptionDisabled()}
             class="w-full bg-colpsi-yellow text-colpsi-blue py-4 px-6 rounded-2xl font-black text-lg shadow-premium hover:scale-[1.01] active:scale-[0.99] transition-transform disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
           >
-            <Show when={submitting()} fallback={<span>Enviar solicitud</span>}>
+            <Show when={submitting()} fallback={<span>{receptionDisabled() ? "Recepción desactivada" : "Enviar solicitud"}</span>}>
               <span class="animate-spin inline-block h-5 w-5 border-2 border-colpsi-blue border-t-transparent rounded-full" />
               Enviando...
             </Show>

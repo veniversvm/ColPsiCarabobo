@@ -1,6 +1,9 @@
 package database
 
 import (
+	"encoding/json"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/config"
@@ -82,6 +85,37 @@ func SeedAdmin(db *gorm.DB) {
 				log.Info().Str("component", "seed").Str("user", admin.Username).Str("id", admin.ID.String()).Msg("Super Admin creado")
 				log.Warn().Str("component", "seed").Msg("La contraseña fue generada automáticamente. Cámbiela al iniciar sesión.")
 			}
+		}
+	}
+}
+
+// SeedAppSettings siembra los defaults de la configuración global (KV) si las
+// claves no existen aún. No sobrescribe valores ya configurados.
+func SeedAppSettings(db *gorm.DB) {
+	defaults := map[string]domain.ReceptionSetting{
+		domain.SettingsKeyTicketsReception:     {Enabled: true},
+		domain.SettingsKeyInscriptionsReception: {Enabled: true},
+	}
+	for key, setting := range defaults {
+		var count int64
+		db.Model(&domain.AppSetting{}).Where("key = ?", key).Count(&count)
+		if count > 0 {
+			continue
+		}
+		value, err := json.Marshal(setting)
+		if err != nil {
+			log.Error().Err(err).Str("component", "seed").Str("key", key).Msg("Error al serializar default de app_settings")
+			continue
+		}
+		record := &domain.AppSetting{
+			Key:       key,
+			Value:     value,
+			UpdatedAt: time.Now(),
+		}
+		if err := db.Create(record).Error; err != nil {
+			log.Error().Err(err).Str("component", "seed").Str("key", key).Msg("Error al sembrar default de app_settings")
+		} else {
+			log.Info().Str("component", "seed").Str("key", key).Msg("app_settings sembrado con recepción habilitada")
 		}
 	}
 }

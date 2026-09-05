@@ -74,13 +74,25 @@ type ticketNotifier interface {
 type TicketService struct {
 	repo       domain.TicketRepository
 	configRepo domain.TicketConfigRepository
+	settings   domain.AppSettingsRepository
 	s3Client   *s3.S3Client
 	notifier   ticketNotifier
 }
 
 // NewTicketService construye el servicio con sus dependencias inyectadas (DI).
-func NewTicketService(repo domain.TicketRepository, configRepo domain.TicketConfigRepository, s3Client *s3.S3Client, notifier ticketNotifier) *TicketService {
-	return &TicketService{repo: repo, configRepo: configRepo, s3Client: s3Client, notifier: notifier}
+func NewTicketService(repo domain.TicketRepository, configRepo domain.TicketConfigRepository, settings domain.AppSettingsRepository, s3Client *s3.S3Client, notifier ticketNotifier) *TicketService {
+	return &TicketService{
+		repo:       repo,
+		configRepo: configRepo,
+		settings:   settings,
+		s3Client:   s3Client,
+		notifier:   notifier,
+	}
+}
+
+// ReceptionStatus devuelve el estado del interruptor de tickets de solicitudes.
+func (s *TicketService) ReceptionStatus(ctx context.Context) (domain.ReceptionSetting, error) {
+	return GetReceptionSetting(ctx, s.settings, domain.SettingsKeyTicketsReception)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -478,6 +490,11 @@ func (s *TicketService) GetTicketAsPsi(ctx context.Context, psi *domain.PsiUserM
 //   - siembra una conversación con un primer mensaje = descripción inicial
 //     (con los anexos opcionales de la creación).
 func (s *TicketService) CreateTicket(ctx context.Context, psi *domain.PsiUserModel, req request_structs.CreateTicketRequest, files []*multipart.FileHeader) (*domain.Ticket, error) {
+	// Recepción global: si el colegio desactivó la apertura de tickets, bloquear.
+	if err := AssertReceptionEnabled(ctx, s.settings, domain.SettingsKeyTicketsReception); err != nil {
+		return nil, err
+	}
+
 	motivo, err := s.configRepo.GetMotivo(ctx, req.MotivoID)
 	if err != nil {
 		return nil, domain.ErrMotivoNotFound

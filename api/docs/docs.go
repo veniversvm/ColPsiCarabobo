@@ -2715,6 +2715,95 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/settings/reception": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Devuelve el estado de recepción de tickets y de inscripciones. Los cambios solo los puede hacer el Sudo.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Configuración"
+                ],
+                "summary": "Estado de los interruptores de recepción (admin)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/service.ReceptionSwitchesSnapshot"
+                        }
+                    },
+                    "500": {
+                        "description": "error: fallo interno",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Activa/desactiva la recepción de tickets o inscripciones con un mensaje público opcional. Requiere rol Sudo.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Configuración"
+                ],
+                "summary": "Actualizar interruptor de recepción (solo Sudo)",
+                "parameters": [
+                    {
+                        "description": "Cambio de recepción",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.UpdateReceptionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/service.ReceptionSwitchesSnapshot"
+                        }
+                    },
+                    "400": {
+                        "description": "error: validación",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "error: solo SUDO",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/admin/specialties": {
             "post": {
                 "security": [
@@ -3789,6 +3878,26 @@ const docTemplate = `{
                             "additionalProperties": {
                                 "type": "string"
                             }
+                        }
+                    }
+                }
+            }
+        },
+        "/inscripcion/status": {
+            "get": {
+                "description": "Indica si la pre-inscripción de profesionales está habilitada. Cuando está desactivada, el campo ` + "`" + `message` + "`" + ` explica el motivo público.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Inscripcion"
+                ],
+                "summary": "Estado de recepción de inscripciones (público)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ReceptionSetting"
                         }
                     }
                 }
@@ -5430,6 +5539,31 @@ const docTemplate = `{
                 }
             }
         },
+        "/psi/tickets/status": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Indica si la recepción de tickets de solicitudes está habilitada. Cuando está desactivada, el campo ` + "`" + `message` + "`" + ` explica el motivo público.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tickets - Portal Psi"
+                ],
+                "summary": "Estado de recepción de tickets (portal psi)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ReceptionSetting"
+                        }
+                    }
+                }
+            }
+        },
         "/psi/tickets/{id}": {
             "get": {
                 "security": [
@@ -7027,6 +7161,18 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "description": "UpdatedAt registra la última fecha y hora en que se modificó el registro.\nGORM actualiza este valor automáticamente en cada operación de guardado.",
+                    "type": "string"
+                }
+            }
+        },
+        "domain.ReceptionSetting": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "message": {
+                    "description": "Razón pública mostrada al usuario",
                     "type": "string"
                 }
             }
@@ -8834,6 +8980,24 @@ const docTemplate = `{
                 }
             }
         },
+        "request_structs.UpdateReceptionRequest": {
+            "type": "object",
+            "required": [
+                "enabled",
+                "key"
+            ],
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
         "request_structs.UpdateSocialNetworkRequest": {
             "type": "object",
             "properties": {
@@ -9007,6 +9171,17 @@ const docTemplate = `{
                 },
                 "can_update_publish": {
                     "type": "boolean"
+                }
+            }
+        },
+        "service.ReceptionSwitchesSnapshot": {
+            "type": "object",
+            "properties": {
+                "inscriptions": {
+                    "$ref": "#/definitions/domain.ReceptionSetting"
+                },
+                "tickets": {
+                    "$ref": "#/definitions/domain.ReceptionSetting"
                 }
             }
         },

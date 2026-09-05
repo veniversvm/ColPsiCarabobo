@@ -9,6 +9,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"github.com/rs/zerolog/log"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/middleware"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/request_structs"
@@ -23,6 +24,23 @@ type TicketHandler struct {
 // NewTicketHandler crea una instancia del handler inyectando el servicio.
 func NewTicketHandler(svc *service.TicketService) *TicketHandler {
 	return &TicketHandler{service: svc}
+}
+
+// GetStatus godoc
+// @Summary      Estado de recepción de tickets (portal psi)
+// @Description  Indica si la recepción de tickets de solicitudes está habilitada. Cuando está desactivada, el campo `message` explica el motivo público.
+// @Security     BearerAuth
+// @Tags         Tickets - Portal Psi
+// @Produce      json
+// @Success      200 {object} domain.ReceptionSetting
+// @Router       /psi/tickets/status [get]
+func (h *TicketHandler) GetStatus(c *fiber.Ctx) error {
+	status, err := h.service.ReceptionStatus(c.UserContext())
+	if err != nil {
+		log.Error().Err(err).Str("component", "tickets").Msg("Error al consultar estado de recepción de tickets")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "error al consultar el estado"})
+	}
+	return c.JSON(status)
 }
 
 // parseTicketUint extrae y valida un ID numérico (uint) de los parámetros de ruta.
@@ -57,6 +75,13 @@ func mapTicketError(c *fiber.Ctx, err error) error {
 		errors.Is(err, domain.ErrInvalidRequest):
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	default:
+		var rdErr *service.ReceptionDisabledError
+		if errors.As(err, &rdErr) {
+			return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+				"code":    "reception_disabled",
+				"message": rdErr.Error(),
+			})
+		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 }
