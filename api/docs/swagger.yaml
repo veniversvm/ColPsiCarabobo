@@ -1862,6 +1862,19 @@ paths:
       summary: Detalle de solicitud (admin)
       tags:
       - Administración - Inscripciones
+    patch:
+      consumes:
+      - application/json
+      description: Actualiza los campos escalares de la ficha (ubicación, modalidades,
+        áreas, datos personales). Solo admins con permiso de edición de psicólogos.
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Editar ficha de inscripción (admin)
+      tags:
+      - Administración - Inscripciones
   /admin/inscripciones/{id}/approve:
     post:
       description: Aprueba la solicitud, crea el psicólogo con is_active=false y envía
@@ -1872,6 +1885,41 @@ paths:
       security:
       - BearerAuth: []
       summary: Aprobar inscripción (admin)
+      tags:
+      - Administración - Inscripciones
+  /admin/inscripciones/{id}/documents:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Agrega o reemplaza la foto de un documento de la ficha (cedula,
+        titulo, rif, otro).
+      parameters:
+      - description: cedula | titulo | rif | otro
+        in: formData
+        name: document_type
+        required: true
+        type: string
+      - description: Archivo de imagen o PDF
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Agregar o reemplazar foto de documento (admin)
+      tags:
+      - Administración - Inscripciones
+  /admin/inscripciones/{id}/documents/{docId}:
+    delete:
+      description: Elimina la foto de un documento de la ficha y su archivo en el
+        bucket.
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Eliminar foto de documento (admin)
       tags:
       - Administración - Inscripciones
   /admin/inscripciones/{id}/email:
@@ -1899,6 +1947,30 @@ paths:
       security:
       - BearerAuth: []
       summary: Guardar notas administrativas (admin)
+      tags:
+      - Administración - Inscripciones
+  /admin/inscripciones/{id}/photo:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Reemplaza la foto tipo carnet o el comprobante de pago de la ficha.
+      parameters:
+      - description: foto | comprobante
+        in: formData
+        name: kind
+        required: true
+        type: string
+      - description: Archivo de imagen o PDF
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Reemplazar foto de la ficha (admin)
       tags:
       - Administración - Inscripciones
   /admin/inscripciones/list:
@@ -3254,6 +3326,32 @@ paths:
       summary: Validar unicidad de cédula (público)
       tags:
       - Inscripcion
+  /inscripcion/check-email:
+    get:
+      description: Verifica si un correo ya está registrado en el sistema o tiene
+        una solicitud activa.
+      parameters:
+      - description: Correo electrónico
+        in: query
+        name: correo
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/request_structs.UniquenessCheckResponse'
+        "400":
+          description: 'error: parámetro inválido'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Validar unicidad de correo (público)
+      tags:
+      - Inscripcion
   /inscripcion/check-fpv:
     get:
       description: Verifica si un número FPV ya está registrado en el sistema o tiene
@@ -3348,6 +3446,46 @@ paths:
         in: formData
         name: rif
         type: string
+      - description: Dirección del consultorio
+        in: formData
+        name: service_address
+        type: string
+      - description: Municipio (Carabobo)
+        in: formData
+        name: municipality_carabobo
+        type: string
+      - description: Estado (fuera de Carabobo)
+        in: formData
+        name: state_outside
+        type: string
+      - description: Municipio (fuera de Carabobo)
+        in: formData
+        name: municipality_outside_carabobo
+        type: string
+      - description: País (fuera de Venezuela)
+        in: formData
+        name: country
+        type: string
+      - description: Modalidad presencial
+        in: formData
+        name: service_modality_presencial
+        type: boolean
+      - description: Modalidad a distancia
+        in: formData
+        name: service_modality_distance
+        type: boolean
+      - description: Modalidad telefónica
+        in: formData
+        name: service_modality_telephone
+        type: boolean
+      - description: Área de trabajo principal (id del catálogo)
+        in: formData
+        name: primary_specialty_id
+        type: integer
+      - description: Área de trabajo secundaria (id del catálogo)
+        in: formData
+        name: secondary_specialty_id
+        type: integer
       - description: Foto tipo carnet
         in: formData
         name: foto
@@ -3355,6 +3493,22 @@ paths:
       - description: Comprobante de pago
         in: formData
         name: comprobante
+        type: file
+      - description: Foto de la cédula
+        in: formData
+        name: doc_cedula
+        type: file
+      - description: Foto del título
+        in: formData
+        name: doc_titulo
+        type: file
+      - description: Foto del RIF
+        in: formData
+        name: doc_rif
+        type: file
+      - description: Foto de otro documento
+        in: formData
+        name: doc_otro
         type: file
       produces:
       - application/json

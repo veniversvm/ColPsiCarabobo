@@ -12,6 +12,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/middleware"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/request_structs"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/service"
@@ -76,6 +77,27 @@ func (h *InscriptionHandler) CheckFPV(c *fiber.Ctx) error {
 	return c.JSON(res)
 }
 
+// CheckEmail godoc
+// @Summary      Validar unicidad de correo (público)
+// @Description  Verifica si un correo ya está registrado en el sistema o tiene una solicitud activa.
+// @Tags         Inscripcion
+// @Produce      json
+// @Param        correo query string true "Correo electrónico"
+// @Success      200 {object} request_structs.UniquenessCheckResponse
+// @Failure      400 {object} map[string]string "error: parámetro inválido"
+// @Router       /inscripcion/check-email [get]
+func (h *InscriptionHandler) CheckEmail(c *fiber.Ctx) error {
+	email := strings.TrimSpace(c.Query("correo"))
+	if email == "" || !isValidEmail(email) {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "correo electrónico inválido"})
+	}
+	res, err := h.svc.CheckEmail(c.UserContext(), email)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "error interno al validar el correo"})
+	}
+	return c.JSON(res)
+}
+
 // Submit godoc
 // @Summary      Enviar solicitud de pre-inscripción (público)
 // @Description  Crea una solicitud de pre-inscripción en estado "pending" con sus archivos adjuntos.
@@ -96,8 +118,22 @@ func (h *InscriptionHandler) CheckFPV(c *fiber.Ctx) error {
 // @Param        titulo_registro_numero formData string false "Nº registro del título"
 // @Param        titulo_registro_estado formData string false "Estado del registro"
 // @Param        rif formData string false "RIF"
+// @Param        service_address formData string false "Dirección del consultorio"
+// @Param        municipality_carabobo formData string false "Municipio (Carabobo)"
+// @Param        state_outside formData string false "Estado (fuera de Carabobo)"
+// @Param        municipality_outside_carabobo formData string false "Municipio (fuera de Carabobo)"
+// @Param        country formData string false "País (fuera de Venezuela)"
+// @Param        service_modality_presencial formData bool false "Modalidad presencial"
+// @Param        service_modality_distance formData bool false "Modalidad a distancia"
+// @Param        service_modality_telephone formData bool false "Modalidad telefónica"
+// @Param        primary_specialty_id formData int false "Área de trabajo principal (id del catálogo)"
+// @Param        secondary_specialty_id formData int false "Área de trabajo secundaria (id del catálogo)"
 // @Param        foto formData file false "Foto tipo carnet"
 // @Param        comprobante formData file false "Comprobante de pago"
+// @Param        doc_cedula formData file false "Foto de la cédula"
+// @Param        doc_titulo formData file false "Foto del título"
+// @Param        doc_rif formData file false "Foto del RIF"
+// @Param        doc_otro formData file false "Foto de otro documento"
 // @Success      201 {object} map[string]string "message: Solicitud recibida correctamente"
 // @Failure      400 {object} map[string]string "error: validación fallida"
 // @Failure      409 {object} map[string]string "error: cédula o FPV duplicado"
@@ -147,6 +183,14 @@ func (h *InscriptionHandler) parseSubmitForm(c *fiber.Ctx) (*service.SubmitInscr
 		TituloRegistroTomo:   strings.TrimSpace(first(form, "titulo_registro_tomo")),
 		TituloRegistroFolio:  strings.TrimSpace(first(form, "titulo_registro_folio")),
 		RIF:                  strings.TrimSpace(first(form, "rif")),
+		ServiceAddress:              strings.TrimSpace(first(form, "service_address")),
+		MunicipalityCarabobo:        strings.TrimSpace(first(form, "municipality_carabobo")),
+		StateOutside:                strings.TrimSpace(first(form, "state_outside")),
+		MunicipalityOutSideCarabobo: strings.TrimSpace(first(form, "municipality_outside_carabobo")),
+		Country:                     strings.TrimSpace(first(form, "country")),
+		ServiceModalityPresencial:   formBool(form, "service_modality_presencial"),
+		ServiceModalityDistance:     formBool(form, "service_modality_distance"),
+		ServiceModalityTelephone:    formBool(form, "service_modality_telephone"),
 	}
 
 	// Validaciones requeridas
@@ -190,6 +234,20 @@ func (h *InscriptionHandler) parseSubmitForm(c *fiber.Ctx) (*service.SubmitInscr
 		req.TituloFechaGraduacion = &t
 	}
 
+	// Áreas de trabajo (ids del catálogo de especialidades)
+	if v := strings.TrimSpace(first(form, "primary_specialty_id")); v != "" {
+		if n, err := strconv.ParseUint(v, 10, 32); err == nil {
+			id := uint32(n)
+			req.PrimarySpecialtyID = &id
+		}
+	}
+	if v := strings.TrimSpace(first(form, "secondary_specialty_id")); v != "" {
+		if n, err := strconv.ParseUint(v, 10, 32); err == nil {
+			id := uint32(n)
+			req.SecondarySpecialtyID = &id
+		}
+	}
+
 	// Archivos
 	foto, err := fileFromForm(form, "foto")
 	if err != nil {
@@ -203,19 +261,48 @@ func (h *InscriptionHandler) parseSubmitForm(c *fiber.Ctx) (*service.SubmitInscr
 	}
 	req.Comprobante = comprobante
 
+	// Fotos de documentos requeridos (cedula, titulo, rif, otro)
+	for _, docType := range []string{"cedula", "titulo", "rif", "otro"} {
+		fh, err := fileFromFormOptional(form, "doc_"+docType)
+		if err != nil {
+			return nil, err
+		}
+		if fh != nil {
+			req.Documents = append(req.Documents, service.InscriptionDocumentUpload{
+				DocumentType: docType,
+				File:         fh,
+			})
+		}
+	}
+
 	return req, nil
 }
 
-// fileFromForm extrae y valida un archivo multipart.
+// formBool interpreta un campo de formulario como boolean (ausente o "false" ⇒ false).
+func formBool(form *multipart.Form, key string) bool {
+	v := strings.ToLower(strings.TrimSpace(first(form, key)))
+	return v != "" && v != "0" && v != "false" && v != "no"
+}
+
+// fileFromForm extrae y valida un archivo multipart obligatorio.
 func fileFromForm(form *multipart.Form, field string) (*multipart.FileHeader, error) {
-	files := form.File[field]
-	if len(files) == 0 {
+	fh, err := fileFromFormOptional(form, field)
+	if err != nil {
+		return nil, err
+	}
+	if fh == nil {
 		return nil, errors.New("archivo " + field + " es obligatorio")
 	}
-	fh := files[0]
-	if fh == nil {
+	return fh, nil
+}
+
+// fileFromFormOptional extrae y valida un archivo multipart opcional (nil si ausente).
+func fileFromFormOptional(form *multipart.Form, field string) (*multipart.FileHeader, error) {
+	files := form.File[field]
+	if len(files) == 0 || files[0] == nil {
 		return nil, nil
 	}
+	fh := files[0]
 	if fh.Size > maxFileSize {
 		return nil, errors.New("el archivo " + field + " supera el tamaño máximo de 5MB")
 	}
@@ -255,6 +342,11 @@ func isValidEmail(email string) bool {
 // @Security     BearerAuth
 // @Router       /admin/inscripciones/list [get]
 func (h *InscriptionHandler) List(c *fiber.Ctx) error {
+	admin, err := middleware.GetAuthenticatedAdmin(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
+	}
+
 	filter := request_structs.InscriptionListFilter{
 		Status: c.Query("status", "pending"),
 		Q:      c.Query("q"),
@@ -266,9 +358,9 @@ func (h *InscriptionHandler) List(c *fiber.Ctx) error {
 		filter.Limit = v
 	}
 
-	res, err := h.svc.List(c.UserContext(), filter)
+	res, err := h.svc.List(c.UserContext(), admin, filter)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "error al listar solicitudes"})
+		return mapInscriptionErr(c, err, "error al listar solicitudes")
 	}
 	return c.JSON(res)
 }
@@ -280,18 +372,180 @@ func (h *InscriptionHandler) List(c *fiber.Ctx) error {
 // @Security     BearerAuth
 // @Router       /admin/inscripciones/{id} [get]
 func (h *InscriptionHandler) Detail(c *fiber.Ctx) error {
+	admin, err := middleware.GetAuthenticatedAdmin(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
+	}
+
 	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ID inválido"})
 	}
-	dto, err := h.svc.Detail(c.UserContext(), id)
+	dto, err := h.svc.Detail(c.UserContext(), admin, id)
 	if err != nil {
-		if errors.Is(err, service.ErrInscriptionNotFound) {
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": err.Error()})
-		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "error al obtener la solicitud"})
+		return mapInscriptionErr(c, err, "error al obtener la solicitud")
 	}
 	return c.JSON(dto)
+}
+
+// UpdateFicha godoc
+// @Summary      Editar ficha de inscripción (admin)
+// @Description  Actualiza los campos escalares de la ficha (ubicación, modalidades, áreas, datos personales). Solo admins con permiso de edición de psicólogos.
+// @Tags         Administración - Inscripciones
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Router       /admin/inscripciones/{id} [patch]
+func (h *InscriptionHandler) UpdateFicha(c *fiber.Ctx) error {
+	admin, err := middleware.GetAuthenticatedAdmin(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ID inválido"})
+	}
+
+	var body request_structs.UpdateInscriptionRequest
+	if err := c.BodyParser(&body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "cuerpo inválido"})
+	}
+
+	dto, err := h.svc.UpdateFicha(c.UserContext(), admin, id, &body)
+	if err != nil {
+		return mapInscriptionErr(c, err, "error al actualizar la ficha")
+	}
+	return c.JSON(dto)
+}
+
+// UpdateFichaPhoto godoc
+// @Summary      Reemplazar foto de la ficha (admin)
+// @Description  Reemplaza la foto tipo carnet o el comprobante de pago de la ficha.
+// @Tags         Administración - Inscripciones
+// @Accept       multipart/form-data
+// @Produce      json
+// @Security     BearerAuth
+// @Param        kind formData string true "foto | comprobante"
+// @Param        file formData file true "Archivo de imagen o PDF"
+// @Router       /admin/inscripciones/{id}/photo [post]
+func (h *InscriptionHandler) UpdateFichaPhoto(c *fiber.Ctx) error {
+	admin, err := middleware.GetAuthenticatedAdmin(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ID inválido"})
+	}
+
+	kind := strings.TrimSpace(c.FormValue("kind"))
+	if kind != "foto" && kind != "comprobante" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "kind debe ser foto o comprobante"})
+	}
+	file, err := c.FormFile("file")
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "archivo obligatorio"})
+	}
+	if file.Size > maxFileSize {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "el archivo supera el tamaño máximo de 5MB"})
+	}
+	ct := file.Header.Get("Content-Type")
+	if !strings.HasPrefix(ct, allowedImageMIME) && ct != allowedPdfMIME {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "el archivo debe ser una imagen o PDF"})
+	}
+
+	dto, err := h.svc.UpdateFichaPhoto(c.UserContext(), admin, id, kind, file)
+	if err != nil {
+		return mapInscriptionErr(c, err, "error al reemplazar el archivo")
+	}
+	return c.JSON(dto)
+}
+
+// AddInscriptionDocument godoc
+// @Summary      Agregar o reemplazar foto de documento (admin)
+// @Description  Agrega o reemplaza la foto de un documento de la ficha (cedula, titulo, rif, otro).
+// @Tags         Administración - Inscripciones
+// @Accept       multipart/form-data
+// @Produce      json
+// @Security     BearerAuth
+// @Param        document_type formData string true "cedula | titulo | rif | otro"
+// @Param        file formData file true "Archivo de imagen o PDF"
+// @Router       /admin/inscripciones/{id}/documents [post]
+func (h *InscriptionHandler) AddInscriptionDocument(c *fiber.Ctx) error {
+	admin, err := middleware.GetAuthenticatedAdmin(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ID inválido"})
+	}
+
+	docType := strings.TrimSpace(c.FormValue("document_type"))
+	file, err := c.FormFile("file")
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "archivo obligatorio"})
+	}
+	if file.Size > maxFileSize {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "el archivo supera el tamaño máximo de 5MB"})
+	}
+	ct := file.Header.Get("Content-Type")
+	if !strings.HasPrefix(ct, allowedImageMIME) && ct != allowedPdfMIME {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "el archivo debe ser una imagen o PDF"})
+	}
+
+	dto, err := h.svc.AddInscriptionDocument(c.UserContext(), admin, id, docType, file)
+	if err != nil {
+		return mapInscriptionErr(c, err, "error al agregar el documento")
+	}
+	return c.JSON(dto)
+}
+
+// DeleteInscriptionDocument godoc
+// @Summary      Eliminar foto de documento (admin)
+// @Description  Elimina la foto de un documento de la ficha y su archivo en el bucket.
+// @Tags         Administración - Inscripciones
+// @Security     BearerAuth
+// @Router       /admin/inscripciones/{id}/documents/{docId} [delete]
+func (h *InscriptionHandler) DeleteInscriptionDocument(c *fiber.Ctx) error {
+	admin, err := middleware.GetAuthenticatedAdmin(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ID inválido"})
+	}
+	docID, err := uuid.Parse(c.Params("docId"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ID de documento inválido"})
+	}
+
+	err = h.svc.DeleteInscriptionDocument(c.UserContext(), admin, id, docID)
+	if err != nil {
+		return mapInscriptionErr(c, err, "error al eliminar el documento")
+	}
+	return c.SendStatus(fiber.StatusNoContent)
+}
+
+// mapInscriptionErr traduce errores del service a códigos HTTP.
+func mapInscriptionErr(c *fiber.Ctx, err error, fallback string) error {
+	switch {
+	case errors.Is(err, service.ErrInscriptionNotFound):
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": err.Error()})
+	case errors.Is(err, service.ErrInscriptionNotPending):
+		return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": err.Error()})
+	case errors.Is(err, service.ErrCIExists), errors.Is(err, service.ErrFPVExists), errors.Is(err, service.ErrEmailExists):
+		return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": err.Error()})
+	case errors.Is(err, domain.ErrPermissionDenied):
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": err.Error()})
+	default:
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": fallback})
+	}
 }
 
 // Approve godoc
@@ -362,6 +616,11 @@ func (h *InscriptionHandler) Reject(c *fiber.Ctx) error {
 // @Security     BearerAuth
 // @Router       /admin/inscripciones/{id}/notes [patch]
 func (h *InscriptionHandler) UpdateNotes(c *fiber.Ctx) error {
+	admin, err := middleware.GetAuthenticatedAdmin(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
+	}
+
 	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ID inválido"})
@@ -372,11 +631,8 @@ func (h *InscriptionHandler) UpdateNotes(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "cuerpo inválido"})
 	}
 
-	if err := h.svc.UpdateNotes(c.UserContext(), id, body.Notes); err != nil {
-		if errors.Is(err, service.ErrInscriptionNotFound) {
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": err.Error()})
-		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "error al guardar las notas"})
+	if err := h.svc.UpdateNotes(c.UserContext(), admin, id, body.Notes); err != nil {
+		return mapInscriptionErr(c, err, "error al guardar las notas")
 	}
 
 	return c.JSON(fiber.Map{"message": "Notas guardadas"})
@@ -391,6 +647,11 @@ func (h *InscriptionHandler) UpdateNotes(c *fiber.Ctx) error {
 // @Security     BearerAuth
 // @Router       /admin/inscripciones/{id}/email [post]
 func (h *InscriptionHandler) SendEmailToApplicant(c *fiber.Ctx) error {
+	admin, err := middleware.GetAuthenticatedAdmin(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
+	}
+
 	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ID inválido"})
@@ -406,12 +667,9 @@ func (h *InscriptionHandler) SendEmailToApplicant(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "asunto y mensaje son obligatorios"})
 	}
 
-	emailSent, err := h.svc.SendEmailToApplicant(c.UserContext(), id, body.Subject, body.Message)
+	emailSent, err := h.svc.SendEmailToApplicant(c.UserContext(), admin, id, body.Subject, body.Message)
 	if err != nil {
-		if errors.Is(err, service.ErrInscriptionNotFound) {
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": err.Error()})
-		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "error al enviar el correo"})
+		return mapInscriptionErr(c, err, "error al enviar el correo")
 	}
 
 	return c.JSON(request_structs.SendEmailToApplicantResponse{EmailSent: emailSent})

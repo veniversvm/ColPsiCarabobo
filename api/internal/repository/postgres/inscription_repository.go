@@ -89,6 +89,15 @@ func (r *inscriptionRepo) ExistsPendingCI(ctx context.Context, ci int) (bool, er
 	return count > 0, err
 }
 
+// ExistsPendingCIExcluding retorna true si existe OTRA solicitud pendiente con esa cédula.
+func (r *inscriptionRepo) ExistsPendingCIExcluding(ctx context.Context, ci int, excludeID uuid.UUID) (bool, error) {
+	var count int64
+	err := r.db.WithContext(ctx).Model(&domain.PsiInscriptionRequest{}).
+		Where("id <> ? AND cedula = ? AND status = ?", excludeID, ci, domain.InscriptionPending).
+		Count(&count).Error
+	return count > 0, err
+}
+
 // ExistsPendingFPV retorna true si existe una solicitud pendiente con ese FPV.
 func (r *inscriptionRepo) ExistsPendingFPV(ctx context.Context, fpv int) (bool, error) {
 	var count int64
@@ -98,11 +107,29 @@ func (r *inscriptionRepo) ExistsPendingFPV(ctx context.Context, fpv int) (bool, 
 	return count > 0, err
 }
 
+// ExistsPendingFPVExcluding retorna true si existe OTRA solicitud pendiente con ese FPV.
+func (r *inscriptionRepo) ExistsPendingFPVExcluding(ctx context.Context, fpv int, excludeID uuid.UUID) (bool, error) {
+	var count int64
+	err := r.db.WithContext(ctx).Model(&domain.PsiInscriptionRequest{}).
+		Where("id <> ? AND fpv = ? AND status = ? AND fpv IS NOT NULL", excludeID, fpv, domain.InscriptionPending).
+		Count(&count).Error
+	return count > 0, err
+}
+
 // ExistsPendingEmail retorna true si existe una solicitud pendiente con ese correo.
 func (r *inscriptionRepo) ExistsPendingEmail(ctx context.Context, email string) (bool, error) {
 	var count int64
 	err := r.db.WithContext(ctx).Model(&domain.PsiInscriptionRequest{}).
 		Where("LOWER(correo) = LOWER(?) AND status = ?", email, domain.InscriptionPending).
+		Count(&count).Error
+	return count > 0, err
+}
+
+// ExistsPendingEmailExcluding retorna true si existe OTRA solicitud pendiente con ese correo.
+func (r *inscriptionRepo) ExistsPendingEmailExcluding(ctx context.Context, email string, excludeID uuid.UUID) (bool, error) {
+	var count int64
+	err := r.db.WithContext(ctx).Model(&domain.PsiInscriptionRequest{}).
+		Where("id <> ? AND LOWER(correo) = LOWER(?) AND status = ?", excludeID, email, domain.InscriptionPending).
 		Count(&count).Error
 	return count > 0, err
 }
@@ -164,4 +191,50 @@ func (r *inscriptionRepo) UpdateNotes(ctx context.Context, id uuid.UUID, notes s
 // Delete elimina físicamente una solicitud.
 func (r *inscriptionRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	return r.db.WithContext(ctx).Delete(&domain.PsiInscriptionRequest{}, "id = ?", id).Error
+}
+
+// =========================================================================
+// DOCUMENTOS DE LA FICHA
+// =========================================================================
+
+// CreateDocuments persiste las fotos de documentos de la solicitud.
+func (r *inscriptionRepo) CreateDocuments(ctx context.Context, docs []domain.PsiInscriptionDocument) error {
+	if len(docs) == 0 {
+		return nil
+	}
+	return r.db.WithContext(ctx).Create(&docs).Error
+}
+
+// ListDocumentsByRequestID recupera las fotos de documentos de la solicitud,
+// ordenadas de la más reciente a la más antigua.
+func (r *inscriptionRepo) ListDocumentsByRequestID(ctx context.Context, requestID uuid.UUID) ([]domain.PsiInscriptionDocument, error) {
+	var docs []domain.PsiInscriptionDocument
+	err := r.db.WithContext(ctx).
+		Where("inscription_request_id = ?", requestID).
+		Order("created_at DESC").
+		Find(&docs).Error
+	return docs, err
+}
+
+// GetInscriptionDocumentByID busca una foto de documento por su UUID.
+func (r *inscriptionRepo) GetInscriptionDocumentByID(ctx context.Context, id uuid.UUID) (*domain.PsiInscriptionDocument, error) {
+	var doc domain.PsiInscriptionDocument
+	err := r.db.WithContext(ctx).First(&doc, "id = ?", id).Error
+	return &doc, err
+}
+
+// UpdateInscriptionDocument actualiza una foto de documento de la ficha.
+func (r *inscriptionRepo) UpdateInscriptionDocument(ctx context.Context, doc *domain.PsiInscriptionDocument) error {
+	return r.db.WithContext(ctx).Model(doc).Select("s3_key", "title", "notes", "original_filename").Updates(doc).Error
+}
+
+// DeleteInscriptionDocument elimina físicamente la foto de un documento.
+func (r *inscriptionRepo) DeleteInscriptionDocument(ctx context.Context, id uuid.UUID) error {
+	return r.db.WithContext(ctx).Delete(&domain.PsiInscriptionDocument{}, "id = ?", id).Error
+}
+
+// DeleteInscriptionDocumentsByRequestID elimina las fotos de documentos de una solicitud.
+func (r *inscriptionRepo) DeleteInscriptionDocumentsByRequestID(ctx context.Context, requestID uuid.UUID) error {
+	return r.db.WithContext(ctx).
+		Delete(&domain.PsiInscriptionDocument{}, "inscription_request_id = ?", requestID).Error
 }

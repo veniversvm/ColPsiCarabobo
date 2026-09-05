@@ -56,9 +56,32 @@ type PsiInscriptionRequest struct {
 	TituloRegistroFolio   string     `gorm:"size:100" json:"titulo_registro_folio"`
 	RIF                   string     `gorm:"size:50" json:"rif"`
 
+	// ── Ubicación (espejo de la ficha interna) ────────────────────────────
+	// Según la ubicación declarada por el solicitante: Carabobo, otro estado
+	// venezolano o el exterior. Al aprobar se traspasan a psi_users.
+	ServiceAddress              string `gorm:"size:255" json:"service_address"`
+	MunicipalityCarabobo        string `gorm:"size:255" json:"municipality_carabobo"`
+	StateOutside                string `gorm:"size:255" json:"state_outside"`
+	MunicipalityOutSideCarabobo string `gorm:"size:255" json:"municipality_outside_carabobo"`
+	Country                     string `gorm:"size:255" json:"country"`
+
+	// ── Modalidad de servicio (espejo de la ficha interna) ───────────────
+	ServiceModalityPresencial bool `gorm:"default:false" json:"service_modality_presencial"`
+	ServiceModalityDistance   bool `gorm:"default:false" json:"service_modality_distance"`
+	ServiceModalityTelephone  bool `gorm:"default:false" json:"service_modality_telephone"`
+
+	// ── Áreas de trabajo (FKs al catálogo de especialidades) ──────────────
+	PrimarySpecialtyID   *uint32 `gorm:"column:primary_specialty_id" json:"primary_specialty_id,omitempty"`
+	SecondarySpecialtyID *uint32 `gorm:"column:secondary_specialty_id" json:"secondary_specialty_id,omitempty"`
+
 	// ── Archivos (S3 keys) ────────────────────────────────────────────────
 	FotoS3Key        string `gorm:"size:512" json:"foto_s3_key"`
 	ComprobanteS3Key string `gorm:"size:512" json:"comprobante_s3_key"`
+
+	// ── Fotos de documentos requeridos (cedula, titulo, rif, otro) ─────────
+	// Un documento por categoría (uniqueIndex compuesto). Al aprobar migran a
+	// psi_user_documents. La foto y el comprobante son columnas propias arriba.
+	Documents []PsiInscriptionDocument `gorm:"foreignKey:InscriptionRequestID" json:"-"`
 
 	// ── Estado administrativo ─────────────────────────────────────────────
 	Status        InscriptionStatus `gorm:"size:20;default:pending" json:"status"`

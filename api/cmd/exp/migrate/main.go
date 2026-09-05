@@ -20,6 +20,8 @@ func main() {
 		&domain.PsiUserPostGrade{},
 		&domain.PsiUserDocument{},
 		&domain.PsiUserSolvency{},
+		&domain.PsiInscriptionRequest{},
+		&domain.PsiInscriptionDocument{},
 		&domain.Post{},
 		&domain.PsiSpecialtyModel{},
 		&domain.PsiUserSocialNetwork{},

@@ -175,6 +175,25 @@ const docTemplate = `{
                 ],
                 "summary": "Rechazar inscripción (admin)",
                 "responses": {}
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Actualiza los campos escalares de la ficha (ubicación, modalidades, áreas, datos personales). Solo admins con permiso de edición de psicólogos.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Inscripciones"
+                ],
+                "summary": "Editar ficha de inscripción (admin)",
+                "responses": {}
             }
         },
         "/admin/inscripciones/{id}/approve": {
@@ -192,6 +211,58 @@ const docTemplate = `{
                     "Administración - Inscripciones"
                 ],
                 "summary": "Aprobar inscripción (admin)",
+                "responses": {}
+            }
+        },
+        "/admin/inscripciones/{id}/documents": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Agrega o reemplaza la foto de un documento de la ficha (cedula, titulo, rif, otro).",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Inscripciones"
+                ],
+                "summary": "Agregar o reemplazar foto de documento (admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "cedula | titulo | rif | otro",
+                        "name": "document_type",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Archivo de imagen o PDF",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/admin/inscripciones/{id}/documents/{docId}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Elimina la foto de un documento de la ficha y su archivo en el bucket.",
+                "tags": [
+                    "Administración - Inscripciones"
+                ],
+                "summary": "Eliminar foto de documento (admin)",
                 "responses": {}
             }
         },
@@ -234,6 +305,43 @@ const docTemplate = `{
                     "Administración - Inscripciones"
                 ],
                 "summary": "Guardar notas administrativas (admin)",
+                "responses": {}
+            }
+        },
+        "/admin/inscripciones/{id}/photo": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Reemplaza la foto tipo carnet o el comprobante de pago de la ficha.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Inscripciones"
+                ],
+                "summary": "Reemplazar foto de la ficha (admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "foto | comprobante",
+                        "name": "kind",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Archivo de imagen o PDF",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
                 "responses": {}
             }
         },
@@ -2265,6 +2373,44 @@ const docTemplate = `{
                 }
             }
         },
+        "/inscripcion/check-email": {
+            "get": {
+                "description": "Verifica si un correo ya está registrado en el sistema o tiene una solicitud activa.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Inscripcion"
+                ],
+                "summary": "Validar unicidad de correo (público)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Correo electrónico",
+                        "name": "correo",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.UniquenessCheckResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "error: parámetro inválido",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/inscripcion/check-fpv": {
             "get": {
                 "description": "Verifica si un número FPV ya está registrado en el sistema o tiene una solicitud activa.",
@@ -2407,6 +2553,66 @@ const docTemplate = `{
                         "in": "formData"
                     },
                     {
+                        "type": "string",
+                        "description": "Dirección del consultorio",
+                        "name": "service_address",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Municipio (Carabobo)",
+                        "name": "municipality_carabobo",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Estado (fuera de Carabobo)",
+                        "name": "state_outside",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Municipio (fuera de Carabobo)",
+                        "name": "municipality_outside_carabobo",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "País (fuera de Venezuela)",
+                        "name": "country",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Modalidad presencial",
+                        "name": "service_modality_presencial",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Modalidad a distancia",
+                        "name": "service_modality_distance",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Modalidad telefónica",
+                        "name": "service_modality_telephone",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Área de trabajo principal (id del catálogo)",
+                        "name": "primary_specialty_id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Área de trabajo secundaria (id del catálogo)",
+                        "name": "secondary_specialty_id",
+                        "in": "formData"
+                    },
+                    {
                         "type": "file",
                         "description": "Foto tipo carnet",
                         "name": "foto",
@@ -2416,6 +2622,30 @@ const docTemplate = `{
                         "type": "file",
                         "description": "Comprobante de pago",
                         "name": "comprobante",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Foto de la cédula",
+                        "name": "doc_cedula",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Foto del título",
+                        "name": "doc_titulo",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Foto del RIF",
+                        "name": "doc_rif",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Foto de otro documento",
+                        "name": "doc_otro",
                         "in": "formData"
                     }
                 ],

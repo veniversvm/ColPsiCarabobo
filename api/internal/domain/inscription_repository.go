@@ -29,6 +29,18 @@ type InscriptionRepository interface {
 	// ExistsPendingEmail retorna true si existe una solicitud pendiente con ese correo.
 	ExistsPendingEmail(ctx context.Context, email string) (bool, error)
 
+	// ExistsPendingCIExcluding es como ExistsPendingCI pero ignora la solicitud
+	// indicada (usado al editar la ficha por admin).
+	ExistsPendingCIExcluding(ctx context.Context, ci int, excludeID uuid.UUID) (bool, error)
+
+	// ExistsPendingFPVExcluding es como ExistsPendingFPV pero ignora la solicitud
+	// indicada (usado al editar la ficha por admin).
+	ExistsPendingFPVExcluding(ctx context.Context, fpv int, excludeID uuid.UUID) (bool, error)
+
+	// ExistsPendingEmailExcluding es como ExistsPendingEmail pero ignora la
+	// solicitud indicada (usado al editar la ficha por admin).
+	ExistsPendingEmailExcluding(ctx context.Context, email string, excludeID uuid.UUID) (bool, error)
+
 	// CIExistsDevuelve si la cédula ya está registrada en psi_users.
 	CIInPsiUsers(ctx context.Context, ci int) (bool, error)
 
@@ -51,4 +63,25 @@ type InscriptionRepository interface {
 
 	// Delete elimina físicamente una solicitud.
 	Delete(ctx context.Context, id uuid.UUID) error
+
+	// ── Documentos de la ficha ─────────────────────────────────────────────
+
+	// CreateDocuments persiste las fotos de documentos de la solicitud.
+	CreateDocuments(ctx context.Context, docs []PsiInscriptionDocument) error
+
+	// ListDocumentsByRequestID recupera las fotos de documentos de la solicitud.
+	ListDocumentsByRequestID(ctx context.Context, requestID uuid.UUID) ([]PsiInscriptionDocument, error)
+
+	// GetInscriptionDocumentByID busca una foto de documento por su UUID.
+	GetInscriptionDocumentByID(ctx context.Context, id uuid.UUID) (*PsiInscriptionDocument, error)
+
+	// UpdateInscriptionDocument actualiza una foto de documento de la ficha.
+	UpdateInscriptionDocument(ctx context.Context, doc *PsiInscriptionDocument) error
+
+	// DeleteInscriptionDocument elimina físicamente la foto de un documento.
+	DeleteInscriptionDocument(ctx context.Context, id uuid.UUID) error
+
+	// DeleteInscriptionDocumentsByRequestID elimina las fotos de documentos
+	// de una solicitud (al aprobar migran a psi_user_documents o se rechaza).
+	DeleteInscriptionDocumentsByRequestID(ctx context.Context, requestID uuid.UUID) error
 }

@@ -24,6 +24,7 @@ func SetupInscriptionRoutes(router fiber.Router, inscriptionRepo domain.Inscript
 
 	publicGroup.Get("/check-ci", h.CheckCI)
 	publicGroup.Get("/check-fpv", h.CheckFPV)
+	publicGroup.Get("/check-email", h.CheckEmail)
 	publicGroup.Post("/submit", h.Submit)
 
 	// =========================================================================
@@ -33,8 +34,12 @@ func SetupInscriptionRoutes(router fiber.Router, inscriptionRepo domain.Inscript
 
 	adminGroup.Get("/list", h.List)
 	adminGroup.Get("/:id<uuid>", h.Detail)
+	adminGroup.Patch("/:id<uuid>", h.UpdateFicha)
 	adminGroup.Post("/:id<uuid>/approve", h.Approve)
 	adminGroup.Delete("/:id<uuid>", h.Reject)
 	adminGroup.Patch("/:id<uuid>/notes", h.UpdateNotes)
 	adminGroup.Post("/:id<uuid>/email", h.SendEmailToApplicant)
+	adminGroup.Post("/:id<uuid>/photo", h.UpdateFichaPhoto)
+	adminGroup.Post("/:id<uuid>/documents", h.AddInscriptionDocument)
+	adminGroup.Delete("/:id<uuid>/documents/:docId<uuid>", h.DeleteInscriptionDocument)
 }
