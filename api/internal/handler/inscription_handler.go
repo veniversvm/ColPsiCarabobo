@@ -30,7 +30,7 @@ func NewInscriptionHandler(svc *service.InscriptionService) *InscriptionHandler 
 
 // Límites de archivos
 const (
-	maxFileSize     = 5 << 20 // 5MB
+	maxFileSize      = 5 << 20 // 5MB
 	allowedImageMIME = "image/"
 	allowedPdfMIME   = "application/pdf"
 )
@@ -168,21 +168,21 @@ func (h *InscriptionHandler) parseSubmitForm(c *fiber.Ctx) (*service.SubmitInscr
 	}
 
 	req := &service.SubmitInscriptionRequest{
-		Nacionalidad:   strings.ToUpper(strings.TrimSpace(first(form, "nacionalidad"))),
-		Nombres:        strings.TrimSpace(first(form, "nombres")),
-		Apellidos:      strings.TrimSpace(first(form, "apellidos")),
-		SegundoNombre:  strings.TrimSpace(first(form, "segundo_nombre")),
-		SegundoApellido: strings.TrimSpace(first(form, "segundo_apellido")),
-		Genero:         strings.ToUpper(strings.TrimSpace(first(form, "genero"))),
-		Telefono:       strings.TrimSpace(first(form, "telefono")),
-		Correo:         strings.ToLower(strings.TrimSpace(first(form, "correo"))),
-		TituloUniversidad:    strings.TrimSpace(first(form, "titulo_universidad")),
-		TituloMencion:        strings.TrimSpace(first(form, "titulo_mencion")),
-		TituloRegistroNumero: strings.TrimSpace(first(form, "titulo_registro_numero")),
-		TituloRegistroEstado: strings.TrimSpace(first(form, "titulo_registro_estado")),
-		TituloRegistroTomo:   strings.TrimSpace(first(form, "titulo_registro_tomo")),
-		TituloRegistroFolio:  strings.TrimSpace(first(form, "titulo_registro_folio")),
-		RIF:                  strings.TrimSpace(first(form, "rif")),
+		Nacionalidad:                strings.ToUpper(strings.TrimSpace(first(form, "nacionalidad"))),
+		Nombres:                     strings.TrimSpace(first(form, "nombres")),
+		Apellidos:                   strings.TrimSpace(first(form, "apellidos")),
+		SegundoNombre:               strings.TrimSpace(first(form, "segundo_nombre")),
+		SegundoApellido:             strings.TrimSpace(first(form, "segundo_apellido")),
+		Genero:                      strings.ToUpper(strings.TrimSpace(first(form, "genero"))),
+		Telefono:                    strings.TrimSpace(first(form, "telefono")),
+		Correo:                      strings.ToLower(strings.TrimSpace(first(form, "correo"))),
+		TituloUniversidad:           strings.TrimSpace(first(form, "titulo_universidad")),
+		TituloMencion:               strings.TrimSpace(first(form, "titulo_mencion")),
+		TituloRegistroNumero:        strings.TrimSpace(first(form, "titulo_registro_numero")),
+		TituloRegistroEstado:        strings.TrimSpace(first(form, "titulo_registro_estado")),
+		TituloRegistroTomo:          strings.TrimSpace(first(form, "titulo_registro_tomo")),
+		TituloRegistroFolio:         strings.TrimSpace(first(form, "titulo_registro_folio")),
+		RIF:                         strings.TrimSpace(first(form, "rif")),
 		ServiceAddress:              strings.TrimSpace(first(form, "service_address")),
 		MunicipalityCarabobo:        strings.TrimSpace(first(form, "municipality_carabobo")),
 		StateOutside:                strings.TrimSpace(first(form, "state_outside")),
@@ -232,6 +232,24 @@ func (h *InscriptionHandler) parseSubmitForm(c *fiber.Ctx) (*service.SubmitInscr
 			return nil, errors.New("fecha de graduación inválida")
 		}
 		req.TituloFechaGraduacion = &t
+	}
+
+	// Campos obligatorios de la ficha (personales, académicos y ubicación).
+	if err := service.ValidateFichaObligatoria(service.FichaObligatoria{
+		SegundoApellido:         req.SegundoApellido,
+		Genero:                  req.Genero,
+		Telefono:                req.Telefono,
+		FechaNacimientoPresente: req.FechaNacimiento != nil,
+		TituloUniversidad:       req.TituloUniversidad,
+		FechaGraduacionPresente: req.TituloFechaGraduacion != nil,
+		TituloRegistroEstado:    req.TituloRegistroEstado,
+		ServiceAddress:          req.ServiceAddress,
+		MunicipalityCarabobo:    req.MunicipalityCarabobo,
+		StateOutside:            req.StateOutside,
+		MunicipalityOutside:     req.MunicipalityOutSideCarabobo,
+		Country:                 req.Country,
+	}); err != nil {
+		return nil, err
 	}
 
 	// Áreas de trabajo (ids del catálogo de especialidades)
@@ -535,6 +553,8 @@ func (h *InscriptionHandler) DeleteInscriptionDocument(c *fiber.Ctx) error {
 // mapInscriptionErr traduce errores del service a códigos HTTP.
 func mapInscriptionErr(c *fiber.Ctx, err error, fallback string) error {
 	switch {
+	case errors.As(err, new(*service.ValidationError)):
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	case errors.Is(err, service.ErrInscriptionNotFound):
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": err.Error()})
 	case errors.Is(err, service.ErrInscriptionNotPending):

@@ -13,6 +13,7 @@ interface Props {
   endpoint: string;   // p.ej. "/inscripcion/check-ci"
   param: string;      // p.ej. "ci"
   placeholder?: string;
+  type?: string;
   initialValue?: string;
   onValid: (value: string) => void;
   onInvalid: (message: string) => void;
@@ -85,8 +86,8 @@ export function CheckField(props: Props) {
       </span>
       <div class="relative">
         <input
-          type="text"
-          inputmode="numeric"
+          type={props.type || "text"}
+          inputmode={props.type === "email" ? "email" : "numeric"}
           value={value()}
           placeholder={props.placeholder}
           onInput={(e) => check((e.target as HTMLInputElement).value)}

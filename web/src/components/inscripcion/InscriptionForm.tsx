@@ -1,10 +1,12 @@
 // web/src/components/inscripcion/InscriptionForm.tsx
-import { createSignal, createEffect, Show } from "solid-js";
+import { createSignal, createEffect, createResource, For, Show } from "solid-js";
 import { isServer } from "solid-js/web";
-import { apiPost, ApiError } from "~/lib/api";
+import { apiGet, apiPost, ApiError } from "~/lib/api";
 import { CheckField } from "~/components/inscripcion/CheckField";
 import { FileUpload } from "~/components/inscripcion/FileUpload";
 import { SuccessMessage } from "~/components/inscripcion/SuccessMessage";
+import { MUNICIPIOS_CARABOBO, ESTADOS_VENEZUELA } from "~/lib/geo";
+import type { WorkArea } from "~/types/inscription";
 
 const STORAGE_KEY = "inscripcion_draft";
 
@@ -91,6 +93,7 @@ export function InscriptionForm() {
   const [error, setError] = createSignal("");
   const [ciInvalid, setCiInvalid] = createSignal("");
   const [fpvInvalid, setFpvInvalid] = createSignal("");
+  const [emailInvalid, setEmailInvalid] = createSignal("");
 
   // Datos del formulario (persistidos en sessionStorage)
   const [cedula, setCedula] = createSessionField("cedula", "");
@@ -113,26 +116,70 @@ export function InscriptionForm() {
   const [regFolio, setRegFolio] = createSessionField("reg_folio", "");
   const [rif, setRif] = createSessionField("rif", "");
 
+  // ── Ubicación y áreas de la ficha ──────────────────────────────────────
+  const [serviceAddress, setServiceAddress] = createSessionField("service_address", "");
+  const [municipalityCarabobo, setMunicipalityCarabobo] = createSessionField("municipality_carabobo", "");
+  const [stateOutside, setStateOutside] = createSessionField("state_outside", "");
+  const [municipalityOutside, setMunicipalityOutside] = createSessionField("municipality_outside_carabobo", "");
+  const [country, setCountry] = createSessionField("country", "");
+  // Modalidades (no se persisten; se mantienen en señal local)
+  const [modPresencial, setModPresencial] = createSignal(false);
+  const [modDistance, setModDistance] = createSignal(false);
+  const [modTelephone, setModTelephone] = createSignal(false);
+  // Áreas de trabajo (ids del catálogo)
+  const [primarySpecialtyId, setPrimarySpecialtyId] = createSignal("");
+  const [secondarySpecialtyId, setSecondarySpecialtyId] = createSignal("");
+  const [workAreas] = createResource<WorkArea[]>(() => apiGet("/specialties"));
+
   // Archivos: conservamos el File en memoria y su metadato en sessionStorage
   const [foto, setFotoState] = createSignal<File | null>(null);
   const [comprobante, setComprobanteState] = createSignal<File | null>(null);
+  const [docCedula, setDocCedulaState] = createSignal<File | null>(null);
+  const [docTitulo, setDocTituloState] = createSignal<File | null>(null);
+  const [docRif, setDocRifState] = createSignal<File | null>(null);
+  const [docOtro, setDocOtroState] = createSignal<File | null>(null);
   // metadato restaurado que simula el estado "archivo seleccionado" tras recargar
   const fotoMeta = loadFileMeta("foto");
   const comprobanteMeta = loadFileMeta("comprobante");
+  const docCedulaMeta = loadFileMeta("doc_cedula");
+  const docTituloMeta = loadFileMeta("doc_titulo");
+  const docRifMeta = loadFileMeta("doc_rif");
+  const docOtroMeta = loadFileMeta("doc_otro");
 
   const setFoto = (f: File | null) => { setFotoState(f); saveFileMeta("foto", f); };
   const setComprobante = (f: File | null) => { setComprobanteState(f); saveFileMeta("comprobante", f); };
+  const setDocCedula = (f: File | null) => { setDocCedulaState(f); saveFileMeta("doc_cedula", f); };
+  const setDocTitulo = (f: File | null) => { setDocTituloState(f); saveFileMeta("doc_titulo", f); };
+  const setDocRif = (f: File | null) => { setDocRifState(f); saveFileMeta("doc_rif", f); };
+  const setDocOtro = (f: File | null) => { setDocOtroState(f); saveFileMeta("doc_otro", f); };
 
   const validate = (): string => {
     if (ciInvalid()) return "La cédula ingresada no está disponible";
     if (fpvInvalid()) return "El número de FPV ingresado no está disponible";
+    if (emailInvalid()) return "El correo ingresado no está disponible";
     if (!cedula().trim()) return "La cédula es obligatoria";
     if (!nombres().trim()) return "Los nombres son obligatorios";
     if (!apellidos().trim()) return "Los apellidos son obligatorios";
+    if (!segundoApellido().trim()) return "El segundo apellido es obligatorio";
+    if (!genero().trim()) return "El género es obligatorio";
+    if (!telefono().trim()) return "El teléfono de contacto es obligatorio";
+    if (!fechaNacimiento().trim()) return "La fecha de nacimiento es obligatoria";
+    if (!universidad().trim()) return "La universidad es obligatoria";
+    if (!fechaGraduacion().trim()) return "La fecha de graduación es obligatoria";
+    if (!regEstado().trim()) return "El estado del registro es obligatorio";
+    const carabobo = municipalityCarabobo().trim() !== "" && serviceAddress().trim() !== "";
+    const otroEstado = stateOutside().trim() !== "" && municipalityOutside().trim() !== "";
+    const exterior = country().trim() !== "";
+    if (!carabobo && !otroEstado && !exterior) {
+      return "Debes completar al menos una ubicación completa (Carabobo, otro estado o exterior)";
+    }
     if (!correo().trim()) return "El correo es obligatorio";
     if (!/(.+)@(.+)\.(.+)/.test(correo().trim())) return "Ingresa un correo válido";
     if (!foto() && !fotoMeta) return "Debes adjuntar la foto tipo carnet";
     if (!comprobante() && !comprobanteMeta) return "Debes adjuntar el comprobante de pago";
+    if (!docCedula() && !docCedulaMeta) return "Debes adjuntar la copia de la cédula";
+    if (!docTitulo() && !docTituloMeta) return "Debes adjuntar la copia del título";
+    if (!docRif() && !docRifMeta) return "Debes adjuntar la copia del RIF";
     return "";
   };
 
@@ -164,8 +211,22 @@ export function InscriptionForm() {
       if (regTomo()) fd.set("titulo_registro_tomo", regTomo());
       if (regFolio()) fd.set("titulo_registro_folio", regFolio());
       if (rif()) fd.set("rif", rif());
+      if (serviceAddress()) fd.set("service_address", serviceAddress());
+      if (municipalityCarabobo()) fd.set("municipality_carabobo", municipalityCarabobo());
+      if (stateOutside()) fd.set("state_outside", stateOutside());
+      if (municipalityOutside()) fd.set("municipality_outside_carabobo", municipalityOutside());
+      if (country()) fd.set("country", country());
+      if (modPresencial()) fd.set("service_modality_presencial", "1");
+      if (modDistance()) fd.set("service_modality_distance", "1");
+      if (modTelephone()) fd.set("service_modality_telephone", "1");
+      if (primarySpecialtyId()) fd.set("primary_specialty_id", primarySpecialtyId());
+      if (secondarySpecialtyId()) fd.set("secondary_specialty_id", secondarySpecialtyId());
       if (foto()) fd.set("foto", foto()!);
       if (comprobante()) fd.set("comprobante", comprobante()!);
+      if (docCedula()) fd.set("doc_cedula", docCedula()!);
+      if (docTitulo()) fd.set("doc_titulo", docTitulo()!);
+      if (docRif()) fd.set("doc_rif", docRif()!);
+      if (docOtro()) fd.set("doc_otro", docOtro()!);
 
       await apiPost("/inscripcion/submit", fd);
       clearDraft();
@@ -253,9 +314,9 @@ export function InscriptionForm() {
               <Field label="Nombres" required value={nombres} onChange={setNombres} />
               <Field label="Apellidos" required value={apellidos} onChange={setApellidos} />
               <Field label="Segundo nombre" value={segundoNombre} onChange={setSegundoNombre} />
-              <Field label="Segundo apellido" value={segundoApellido} onChange={setSegundoApellido} />
+              <Field label="Segundo apellido" required value={segundoApellido} onChange={setSegundoApellido} />
               <div>
-                <span class="block text-sm font-bold text-gray-700 mb-1.5">Género</span>
+                <span class="block text-sm font-bold text-gray-700 mb-1.5">Género <span class="text-red-500">*</span></span>
                 <select
                   value={genero()}
                   onInput={(e) => setGenero((e.target as HTMLSelectElement).value)}
@@ -275,26 +336,118 @@ export function InscriptionForm() {
                 onValid={(v) => { setFpv(v); setFpvInvalid(""); }}
                 onInvalid={(m) => { if (m) setFpvInvalid(m); }}
               />
-              <Field label="Teléfono de contacto" value={telefono} onChange={setTelefono} />
-              <Field label="Correo electrónico" required type="email" value={correo} onChange={setCorreo} />
-              <Field label="Fecha de nacimiento" type="date" value={fechaNacimiento} onChange={setFechaNacimiento} />
+              <Field label="Teléfono de contacto" required value={telefono} onChange={setTelefono} />
+              <CheckField
+                label="Correo electrónico"
+                required
+                type="email"
+                endpoint="/inscripcion/check-email"
+                param="correo"
+                initialValue={correo()}
+                onChange={(v) => { setCorreo(v); setEmailInvalid(""); }}
+                onValid={(v) => { setCorreo(v); setEmailInvalid(""); }}
+                onInvalid={(m) => { if (m) setEmailInvalid(m); }}
+              />
+              <Field label="Fecha de nacimiento" required type="date" value={fechaNacimiento} onChange={setFechaNacimiento} />
             </div>
           </Section>
 
           <Section n={2} title="Datos Académicos y Registro del Título">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <Field label="Universidad" value={universidad} onChange={setUniversidad} />
-              <Field label="Fecha de graduación" type="date" value={fechaGraduacion} onChange={setFechaGraduacion} />
+              <Field label="Universidad" required value={universidad} onChange={setUniversidad} />
+              <Field label="Fecha de graduación" required type="date" value={fechaGraduacion} onChange={setFechaGraduacion} />
               <Field label="Mención" value={mencion} onChange={setMencion} />
               <Field label="N° Registro del título" value={regNumero} onChange={setRegNumero} />
-              <Field label="Estado del registro" value={regEstado} onChange={setRegEstado} />
+              <Field label="Estado del registro" required value={regEstado} onChange={setRegEstado} />
               <Field label="Tomo del registro" value={regTomo} onChange={setRegTomo} />
               <Field label="Folio del registro" value={regFolio} onChange={setRegFolio} />
               <Field label="RIF" value={rif} onChange={setRif} />
             </div>
           </Section>
 
-          <Section n={3} title="Documentos Requeridos">
+          <Section n={3} title="Ubicación y Modalidad de Servicio">
+            <div class="space-y-8">
+              <p class="text-xs text-gray-500">Se requiere al menos un bloque de ubicación completo: Carabobo (municipio + dirección), otro estado (estado + municipio/ciudad) o país (exterior).</p>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
+                  <span class="block text-sm font-bold text-gray-700 mb-1.5">Municipio (Carabobo)</span>
+                  <select
+                    value={municipalityCarabobo()}
+                    onChange={(e) => setMunicipalityCarabobo(e.currentTarget.value)}
+                    class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                  >
+                    <option value="">Seleccionar municipio…</option>
+                    <For each={MUNICIPIOS_CARABOBO}>{(m) => <option value={m}>{m}</option>}</For>
+                  </select>
+                </div>
+                <Field label="Dirección del consultorio" value={serviceAddress} onChange={setServiceAddress} />
+                <div>
+                  <span class="block text-sm font-bold text-gray-700 mb-1.5">Otro estado (fuera de Carabobo)</span>
+                  <select
+                    value={stateOutside()}
+                    onChange={(e) => setStateOutside(e.currentTarget.value)}
+                    class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                  >
+                    <option value="">Seleccionar estado…</option>
+                    <For each={ESTADOS_VENEZUELA}>{(e) => <option value={e}>{e}</option>}</For>
+                  </select>
+                </div>
+                <Field label="Municipio / ciudad (fuera de Carabobo)" value={municipalityOutside} onChange={setMunicipalityOutside} />
+                <Field label="País (fuera de Venezuela)" value={country} onChange={setCountry} placeholder="Ej: España" />
+              </div>
+
+              <div class="bg-gray-50 p-5 rounded-2xl border border-gray-100">
+                <span class="block text-sm font-bold text-gray-700 mb-3">Modalidad de servicio</span>
+                <div class="flex flex-wrap gap-4">
+                  <label class="inline-flex items-center gap-2 text-sm font-semibold text-gray-700">
+                    <input type="checkbox" checked={modPresencial()} onChange={(e) => setModPresencial(e.currentTarget.checked)} class="accent-colpsi-blue" />
+                    Presencial
+                  </label>
+                  <label class="inline-flex items-center gap-2 text-sm font-semibold text-gray-700">
+                    <input type="checkbox" checked={modDistance()} onChange={(e) => setModDistance(e.currentTarget.checked)} class="accent-colpsi-blue" />
+                    A distancia
+                  </label>
+                  <label class="inline-flex items-center gap-2 text-sm font-semibold text-gray-700">
+                    <input type="checkbox" checked={modTelephone()} onChange={(e) => setModTelephone(e.currentTarget.checked)} class="accent-colpsi-blue" />
+                    Telefónica
+                  </label>
+                </div>
+              </div>
+            </div>
+          </Section>
+
+          <Section n={4} title="Áreas de Trabajo">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div>
+                <span class="block text-sm font-bold text-gray-700 mb-1.5">Área principal</span>
+                <select
+                  value={primarySpecialtyId()}
+                  onChange={(e) => setPrimarySpecialtyId(e.currentTarget.value)}
+                  class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                >
+                  <option value="">— Sin área —</option>
+                  <For each={workAreas() ?? []}>
+                    {(wa) => <option value={String(wa.id)}>{wa.name}</option>}
+                  </For>
+                </select>
+              </div>
+              <div>
+                <span class="block text-sm font-bold text-gray-700 mb-1.5">Área secundaria</span>
+                <select
+                  value={secondarySpecialtyId()}
+                  onChange={(e) => setSecondarySpecialtyId(e.currentTarget.value)}
+                  class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                >
+                  <option value="">— Sin área —</option>
+                  <For each={workAreas() ?? []}>
+                    {(wa) => <option value={String(wa.id)} disabled={String(wa.id) === primarySpecialtyId()}>{wa.name}</option>}
+                  </For>
+                </select>
+              </div>
+            </div>
+          </Section>
+
+          <Section n={5} title="Documentos Requeridos">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <FileUpload
                 label="Foto de perfil (tipo carnet)"
@@ -311,6 +464,38 @@ export function InscriptionForm() {
                 file={comprobante()}
                 savedName={comprobanteMeta ? comprobanteMeta.name : undefined}
                 onFile={setComprobante}
+              />
+              <FileUpload
+                label="Copia de la cédula de identidad"
+                accept="image/*,application/pdf"
+                description="Obligatorio · imagen o PDF (máx. 5MB)"
+                file={docCedula()}
+                savedName={docCedulaMeta ? docCedulaMeta.name : undefined}
+                onFile={setDocCedula}
+              />
+              <FileUpload
+                label="Copia del título de psicólogo"
+                accept="image/*,application/pdf"
+                description="Obligatorio · imagen o PDF (máx. 5MB)"
+                file={docTitulo()}
+                savedName={docTituloMeta ? docTituloMeta.name : undefined}
+                onFile={setDocTitulo}
+              />
+              <FileUpload
+                label="Copia del RIF vigente"
+                accept="image/*,application/pdf"
+                description="Obligatorio · imagen o PDF (máx. 5MB)"
+                file={docRif()}
+                savedName={docRifMeta ? docRifMeta.name : undefined}
+                onFile={setDocRif}
+              />
+              <FileUpload
+                label="Otro documento (opcional)"
+                accept="image/*,application/pdf"
+                description="Opcional · imagen o PDF (máx. 5MB)"
+                file={docOtro()}
+                savedName={docOtroMeta ? docOtroMeta.name : undefined}
+                onFile={setDocOtro}
               />
             </div>
           </Section>

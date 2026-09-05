@@ -14,21 +14,21 @@ import (
 // ficha (unicidad excluyente + CRUD de documentos). Usa el patrón "Func Override".
 type mockInscriptionRepo struct {
 	domain.InscriptionRepository
-	CIInPsiUsersFunc              func(ctx context.Context, ci int) (bool, error)
-	FPVInPsiUsersFunc             func(ctx context.Context, fpv int) (bool, error)
-	EmailInPsiUsersFunc           func(ctx context.Context, email string) (bool, error)
-	ExistsPendingCIFunc           func(ctx context.Context, ci int) (bool, error)
-	ExistsPendingCIExcludingFunc  func(ctx context.Context, ci int, exclude uuid.UUID) (bool, error)
-	ExistsPendingFPVExcludingFunc func(ctx context.Context, fpv int, exclude uuid.UUID) (bool, error)
+	CIInPsiUsersFunc                func(ctx context.Context, ci int) (bool, error)
+	FPVInPsiUsersFunc               func(ctx context.Context, fpv int) (bool, error)
+	EmailInPsiUsersFunc             func(ctx context.Context, email string) (bool, error)
+	ExistsPendingCIFunc             func(ctx context.Context, ci int) (bool, error)
+	ExistsPendingCIExcludingFunc    func(ctx context.Context, ci int, exclude uuid.UUID) (bool, error)
+	ExistsPendingFPVExcludingFunc   func(ctx context.Context, fpv int, exclude uuid.UUID) (bool, error)
 	ExistsPendingEmailExcludingFunc func(ctx context.Context, email string, exclude uuid.UUID) (bool, error)
-	ExistsPendingEmailFunc        func(ctx context.Context, email string) (bool, error)
-	GetByIDFunc                   func(ctx context.Context, id uuid.UUID) (*domain.PsiInscriptionRequest, error)
-	UpdateFunc                    func(ctx context.Context, req *domain.PsiInscriptionRequest) error
-	NextControlNumberFunc         func(ctx context.Context) (int, error)
-	ListDocumentsFunc             func(ctx context.Context, reqID uuid.UUID) ([]domain.PsiInscriptionDocument, error)
-	DeleteDocsByRequestFunc       func(ctx context.Context, reqID uuid.UUID) error
-	DeleteFunc                    func(ctx context.Context, id uuid.UUID) error
-	SearchFunc                    func(ctx context.Context, filter request_structs.InscriptionListFilter) ([]domain.PsiInscriptionRequest, int64, error)
+	ExistsPendingEmailFunc          func(ctx context.Context, email string) (bool, error)
+	GetByIDFunc                     func(ctx context.Context, id uuid.UUID) (*domain.PsiInscriptionRequest, error)
+	UpdateFunc                      func(ctx context.Context, req *domain.PsiInscriptionRequest) error
+	NextControlNumberFunc           func(ctx context.Context) (int, error)
+	ListDocumentsFunc               func(ctx context.Context, reqID uuid.UUID) ([]domain.PsiInscriptionDocument, error)
+	DeleteDocsByRequestFunc         func(ctx context.Context, reqID uuid.UUID) error
+	DeleteFunc                      func(ctx context.Context, id uuid.UUID) error
+	SearchFunc                      func(ctx context.Context, filter request_structs.InscriptionListFilter) ([]domain.PsiInscriptionRequest, int64, error)
 }
 
 func (m *mockInscriptionRepo) CIInPsiUsers(ctx context.Context, ci int) (bool, error) {
@@ -279,9 +279,18 @@ func TestInscriptionService_Permisos(t *testing.T) {
 		}
 		body := &request_structs.UpdateInscriptionRequest{
 			Cedula: 20, Nacionalidad: "V", Nombres: "Ana", Apellidos: "Lopez",
+			SegundoApellido: "Perez", Genero: "F", Telefono: "04141234567",
 			Correo: "ana@test.com", ServiceAddress: "Av. Bolívar 1",
+			MunicipalityCarabobo: "Valencia",
+			TituloUniversidad:    "UC", TituloMencion: "Clínica",
+			TituloRegistroNumero: "123", TituloRegistroEstado: "Carabobo",
+			TituloRegistroTomo: "1", TituloRegistroFolio: "1",
 			ServiceModalityPresencial: true,
 		}
+		fn := "2000-01-01"
+		fg := "2010-01-01"
+		body.FechaNacimiento = &fn
+		body.TituloFechaGraduacion = &fg
 		dto, err := svc.UpdateFicha(ctx, adminSudo, id, body)
 		if err != nil {
 			t.Fatalf("error inesperado: %v", err)
@@ -302,14 +311,30 @@ func TestInscriptionService_UpdateFicha_UnicidadExcluyente(t *testing.T) {
 		Apellidos: "Lopez", Correo: "ana@test.com", Status: domain.InscriptionPending,
 	}
 
+	// validUpdateFicha construye un payload completo (pasa la validación de
+	// campos obligatorios) para poder ejercitar la unicidad excluyente.
+	valid := func(correo string) *request_structs.UpdateInscriptionRequest {
+		fn := "2000-01-01"
+		fg := "2010-01-01"
+		return &request_structs.UpdateInscriptionRequest{
+			Cedula: 10, Nacionalidad: "V", Nombres: "Ana", Apellidos: "Lopez",
+			SegundoApellido: "Perez", Genero: "F", Telefono: "04141234567",
+			Correo: correo, FechaNacimiento: &fn,
+			TituloUniversidad: "UC", TituloFechaGraduacion: &fg, TituloMencion: "Clínica",
+			TituloRegistroNumero: "123", TituloRegistroEstado: "Carabobo",
+			TituloRegistroTomo: "1", TituloRegistroFolio: "1",
+			ServiceAddress: "Av. Bolívar 1", MunicipalityCarabobo: "Valencia",
+		}
+	}
+
 	t.Run("cédula duplicada en otra solicitud pendiente → ErrCIExists", func(t *testing.T) {
 		repo := &mockInscriptionRepo{}
 		svc := NewInscriptionService(repo, nil, nil, &mockMailService{})
 		repo.GetByIDFunc = func(ctx context.Context, i uuid.UUID) (*domain.PsiInscriptionRequest, error) { return req, nil }
 		repo.ExistsPendingCIExcludingFunc = func(ctx context.Context, ci int, exclude uuid.UUID) (bool, error) { return true, nil }
-		_, err := svc.UpdateFicha(ctx, admin, id, &request_structs.UpdateInscriptionRequest{
-			Cedula: 99, Correo: "ana@test.com",
-		})
+		body := valid("ana@test.com")
+		body.Cedula = 99
+		_, err := svc.UpdateFicha(ctx, admin, id, body)
 		if !errors.Is(err, ErrCIExists) {
 			t.Fatalf("esperaba ErrCIExists, got %v", err)
 		}
@@ -320,9 +345,7 @@ func TestInscriptionService_UpdateFicha_UnicidadExcluyente(t *testing.T) {
 		svc := NewInscriptionService(repo, nil, nil, &mockMailService{})
 		repo.GetByIDFunc = func(ctx context.Context, i uuid.UUID) (*domain.PsiInscriptionRequest, error) { return req, nil }
 		repo.EmailInPsiUsersFunc = func(ctx context.Context, email string) (bool, error) { return true, nil }
-		_, err := svc.UpdateFicha(ctx, admin, id, &request_structs.UpdateInscriptionRequest{
-			Cedula: 10, Correo: "otro@test.com",
-		})
+		_, err := svc.UpdateFicha(ctx, admin, id, valid("otro@test.com"))
 		if !errors.Is(err, ErrEmailExists) {
 			t.Fatalf("esperaba ErrEmailExists, got %v", err)
 		}
@@ -333,9 +356,7 @@ func TestInscriptionService_UpdateFicha_UnicidadExcluyente(t *testing.T) {
 		svc := NewInscriptionService(repo, nil, nil, &mockMailService{})
 		repo.GetByIDFunc = func(ctx context.Context, i uuid.UUID) (*domain.PsiInscriptionRequest, error) { return req, nil }
 		repo.UpdateFunc = func(ctx context.Context, r *domain.PsiInscriptionRequest) error { return nil }
-		_, err := svc.UpdateFicha(ctx, admin, id, &request_structs.UpdateInscriptionRequest{
-			Cedula: 10, Correo: "ANA@test.com",
-		})
+		_, err := svc.UpdateFicha(ctx, admin, id, valid("ANA@test.com"))
 		if err != nil {
 			t.Fatalf("error inesperado al editar con correo sin cambios: %v", err)
 		}
@@ -364,7 +385,9 @@ func TestInscriptionService_Approve_MapFichaYMigra(t *testing.T) {
 
 	repo := &mockInscriptionRepo{}
 	repo.GetByIDFunc = func(ctx context.Context, i uuid.UUID) (*domain.PsiInscriptionRequest, error) { return req, nil }
-	repo.ListDocumentsFunc = func(ctx context.Context, reqID uuid.UUID) ([]domain.PsiInscriptionDocument, error) { return []domain.PsiInscriptionDocument{doc}, nil }
+	repo.ListDocumentsFunc = func(ctx context.Context, reqID uuid.UUID) ([]domain.PsiInscriptionDocument, error) {
+		return []domain.PsiInscriptionDocument{doc}, nil
+	}
 
 	var savedPSI *domain.PsiUserModel
 	psiRepo := &mockPsiRepoInscripcion{}
@@ -411,5 +434,143 @@ func TestInscriptionService_Approve_MapFichaYMigra(t *testing.T) {
 	}
 	if !deleted {
 		t.Fatal("las filas de la ficha no se limpiaron tras migrar")
+	}
+}
+
+// TestValidateFichaObligatoria cubre la regla única de campos obligatorios de
+// la ficha (personales, académicos y bloques de ubicación).
+func TestValidateFichaObligatoria(t *testing.T) {
+	valid := FichaObligatoria{
+		SegundoApellido:         "Perez",
+		Genero:                  "F",
+		Telefono:                "04141234567",
+		FechaNacimientoPresente: true,
+		TituloUniversidad:       "UC",
+		FechaGraduacionPresente: true,
+		TituloRegistroEstado:    "Carabobo",
+		MunicipalityCarabobo:    "Valencia",
+		ServiceAddress:          "Av. Bolívar 1",
+	}
+
+	t.Run("ficha completa → nil", func(t *testing.T) {
+		if err := ValidateFichaObligatoria(valid); err != nil {
+			t.Fatalf("error inesperado: %v", err)
+		}
+	})
+
+	missing := []struct {
+		name string
+		mut  func(*FichaObligatoria)
+		want string
+	}{
+		{"segundo apellido", func(f *FichaObligatoria) { f.SegundoApellido = "" }, "el segundo apellido es obligatorio"},
+		{"género", func(f *FichaObligatoria) { f.Genero = " " }, "el género es obligatorio"},
+		{"teléfono", func(f *FichaObligatoria) { f.Telefono = "" }, "el teléfono de contacto es obligatorio"},
+		{"fecha nacimiento", func(f *FichaObligatoria) { f.FechaNacimientoPresente = false }, "la fecha de nacimiento es obligatoria"},
+		{"universidad", func(f *FichaObligatoria) { f.TituloUniversidad = "" }, "la universidad es obligatoria"},
+		{"fecha graduación", func(f *FichaObligatoria) { f.FechaGraduacionPresente = false }, "la fecha de graduación es obligatoria"},
+		{"estado registro", func(f *FichaObligatoria) { f.TituloRegistroEstado = "" }, "el estado del registro es obligatorio"},
+	}
+	for _, tc := range missing {
+		t.Run("falta "+tc.name, func(t *testing.T) {
+			f := valid
+			tc.mut(&f)
+			err := ValidateFichaObligatoria(f)
+			if err == nil {
+				t.Fatal("esperaba error de validación")
+			}
+			if err.Error() != tc.want {
+				t.Fatalf("esperaba %q, got %q", tc.want, err.Error())
+			}
+		})
+	}
+}
+
+func TestValidateFichaObligatoria_Ubicacion(t *testing.T) {
+	base := FichaObligatoria{
+		SegundoApellido:         "Perez",
+		Genero:                  "F",
+		Telefono:                "04141234567",
+		FechaNacimientoPresente: true,
+		TituloUniversidad:       "UC",
+		FechaGraduacionPresente: true,
+		TituloRegistroEstado:    "Carabobo",
+	}
+
+	t.Run("sin ubicación → error", func(t *testing.T) {
+		err := ValidateFichaObligatoria(base)
+		if err == nil {
+			t.Fatal("esperaba error de ubicación")
+		}
+		if err.Error() != "debes completar al menos una ubicación completa (Carabobo, otro estado o exterior)" {
+			t.Fatalf("mensaje inesperado: %v", err)
+		}
+	})
+
+	t.Run("Carabobo incompleto (solo municipio) → error", func(t *testing.T) {
+		f := base
+		f.MunicipalityCarabobo = "Valencia"
+		if err := ValidateFichaObligatoria(f); err == nil {
+			t.Fatal("esperaba error de ubicación")
+		}
+	})
+
+	t.Run("Otro estado incompleto (solo estado) → error", func(t *testing.T) {
+		f := base
+		f.StateOutside = "Lara"
+		if err := ValidateFichaObligatoria(f); err == nil {
+			t.Fatal("esperaba error de ubicación")
+		}
+	})
+
+	t.Run("Carabobo completo → ok", func(t *testing.T) {
+		f := base
+		f.MunicipalityCarabobo = "Valencia"
+		f.ServiceAddress = "Av. Bolívar 1"
+		if err := ValidateFichaObligatoria(f); err != nil {
+			t.Fatalf("error inesperado: %v", err)
+		}
+	})
+
+	t.Run("Otro estado completo → ok", func(t *testing.T) {
+		f := base
+		f.StateOutside = "Lara"
+		f.MunicipalityOutside = "Barquisimeto"
+		if err := ValidateFichaObligatoria(f); err != nil {
+			t.Fatalf("error inesperado: %v", err)
+		}
+	})
+
+	t.Run("Exterior completo → ok", func(t *testing.T) {
+		f := base
+		f.Country = "España"
+		if err := ValidateFichaObligatoria(f); err != nil {
+			t.Fatalf("error inesperado: %v", err)
+		}
+	})
+}
+
+// TestInscriptionService_UpdateFicha_CamposObligatorios verifica que el PATCH
+// admin rechaza una ficha incompleta con ValidationError (HTTP 400).
+func TestInscriptionService_UpdateFicha_CamposObligatorios(t *testing.T) {
+	ctx := context.Background()
+	admin := &domain.UserAdmin{ID: uuid.Must(uuid.NewV7()), Credentials: domain.Credentials{Username: "editor"}, CanUpdatePsi: true}
+	id := uuid.Must(uuid.NewV7())
+
+	repo := &mockInscriptionRepo{}
+	svc := NewInscriptionService(repo, nil, nil, &mockMailService{})
+	repo.GetByIDFunc = func(ctx context.Context, i uuid.UUID) (*domain.PsiInscriptionRequest, error) {
+		return &domain.PsiInscriptionRequest{ID: id, Cedula: 10, Correo: "ana@test.com"}, nil
+	}
+
+	var ve *ValidationError
+	_, err := svc.UpdateFicha(ctx, admin, id, &request_structs.UpdateInscriptionRequest{
+		Cedula: 10, Nacionalidad: "V", Nombres: "Ana", Apellidos: "Lopez", Correo: "ana@test.com",
+	})
+	if !errors.As(err, &ve) {
+		t.Fatalf("esperaba ValidationError, got %v", err)
+	}
+	if ve.Msg != "el segundo apellido es obligatorio" {
+		t.Fatalf("mensaje inesperado: %s", ve.Msg)
 	}
 }

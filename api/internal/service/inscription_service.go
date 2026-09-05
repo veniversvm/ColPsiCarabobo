@@ -168,14 +168,14 @@ type SubmitInscriptionRequest struct {
 	Correo          string
 	FechaNacimiento *time.Time
 
-	TituloUniversidad      string
-	TituloFechaGraduacion  *time.Time
-	TituloMencion          string
-	TituloRegistroNumero   string
-	TituloRegistroEstado   string
-	TituloRegistroTomo     string
-	TituloRegistroFolio    string
-	RIF                    string
+	TituloUniversidad     string
+	TituloFechaGraduacion *time.Time
+	TituloMencion         string
+	TituloRegistroNumero  string
+	TituloRegistroEstado  string
+	TituloRegistroTomo    string
+	TituloRegistroFolio   string
+	RIF                   string
 
 	// Ficha cercana a la interna
 	ServiceAddress              string
@@ -318,28 +318,28 @@ func (s *InscriptionService) Submit(ctx context.Context, req *SubmitInscriptionR
 
 	// 4. Construir la entidad
 	inscription := &domain.PsiInscriptionRequest{
-		Cedula:                req.Cedula,
-		Nacionalidad:          req.Nacionalidad,
-		Nombres:               s.sanitizer.Sanitize(req.Nombres),
-		Apellidos:             s.sanitizer.Sanitize(req.Apellidos),
-		SegundoNombre:         s.sanitizer.Sanitize(req.SegundoNombre),
-		SegundoApellido:       s.sanitizer.Sanitize(req.SegundoApellido),
-		Genero:                s.sanitizer.Sanitize(strings.ToUpper(req.Genero)),
-		FPV:                   req.FPV,
-		Telefono:              s.sanitizer.Sanitize(req.Telefono),
-		Correo:                s.sanitizer.Sanitize(req.Correo),
-		FechaNacimiento:       req.FechaNacimiento,
-		TituloUniversidad:     s.sanitizer.Sanitize(req.TituloUniversidad),
-		TituloFechaGraduacion: req.TituloFechaGraduacion,
-		TituloMencion:         s.sanitizer.Sanitize(req.TituloMencion),
-		TituloRegistroNumero:  s.sanitizer.Sanitize(req.TituloRegistroNumero),
-		TituloRegistroEstado:  s.sanitizer.Sanitize(req.TituloRegistroEstado),
-		TituloRegistroTomo:    s.sanitizer.Sanitize(req.TituloRegistroTomo),
-		TituloRegistroFolio:   s.sanitizer.Sanitize(req.TituloRegistroFolio),
-		RIF:                   s.sanitizer.Sanitize(req.RIF),
-		ServiceAddress:        s.sanitizer.Sanitize(req.ServiceAddress),
-		MunicipalityCarabobo:  s.sanitizer.Sanitize(req.MunicipalityCarabobo),
-		StateOutside:          s.sanitizer.Sanitize(req.StateOutside),
+		Cedula:                      req.Cedula,
+		Nacionalidad:                req.Nacionalidad,
+		Nombres:                     s.sanitizer.Sanitize(req.Nombres),
+		Apellidos:                   s.sanitizer.Sanitize(req.Apellidos),
+		SegundoNombre:               s.sanitizer.Sanitize(req.SegundoNombre),
+		SegundoApellido:             s.sanitizer.Sanitize(req.SegundoApellido),
+		Genero:                      s.sanitizer.Sanitize(strings.ToUpper(req.Genero)),
+		FPV:                         req.FPV,
+		Telefono:                    s.sanitizer.Sanitize(req.Telefono),
+		Correo:                      s.sanitizer.Sanitize(req.Correo),
+		FechaNacimiento:             req.FechaNacimiento,
+		TituloUniversidad:           s.sanitizer.Sanitize(req.TituloUniversidad),
+		TituloFechaGraduacion:       req.TituloFechaGraduacion,
+		TituloMencion:               s.sanitizer.Sanitize(req.TituloMencion),
+		TituloRegistroNumero:        s.sanitizer.Sanitize(req.TituloRegistroNumero),
+		TituloRegistroEstado:        s.sanitizer.Sanitize(req.TituloRegistroEstado),
+		TituloRegistroTomo:          s.sanitizer.Sanitize(req.TituloRegistroTomo),
+		TituloRegistroFolio:         s.sanitizer.Sanitize(req.TituloRegistroFolio),
+		RIF:                         s.sanitizer.Sanitize(req.RIF),
+		ServiceAddress:              s.sanitizer.Sanitize(req.ServiceAddress),
+		MunicipalityCarabobo:        s.sanitizer.Sanitize(req.MunicipalityCarabobo),
+		StateOutside:                s.sanitizer.Sanitize(req.StateOutside),
 		MunicipalityOutSideCarabobo: s.sanitizer.Sanitize(req.MunicipalityOutSideCarabobo),
 		Country:                     s.sanitizer.Sanitize(req.Country),
 		ServiceModalityPresencial:   req.ServiceModalityPresencial,
@@ -347,9 +347,9 @@ func (s *InscriptionService) Submit(ctx context.Context, req *SubmitInscriptionR
 		ServiceModalityTelephone:    req.ServiceModalityTelephone,
 		PrimarySpecialtyID:          req.PrimarySpecialtyID,
 		SecondarySpecialtyID:        req.SecondarySpecialtyID,
-		FotoS3Key:             fotoKey,
-		ComprobanteS3Key:      comprobanteKey,
-		Status:                domain.InscriptionPending,
+		FotoS3Key:                   fotoKey,
+		ComprobanteS3Key:            comprobanteKey,
+		Status:                      domain.InscriptionPending,
 	}
 
 	// 5. Persistir
@@ -450,29 +450,29 @@ func (s *InscriptionService) Detail(ctx context.Context, admin *domain.UserAdmin
 	}
 
 	dto := &request_structs.InscriptionDetailDTO{
-		ID:                    req.ID,
-		Cedula:                req.Cedula,
-		Nacionalidad:          req.Nacionalidad,
-		Nombres:               req.Nombres,
-		Apellidos:             req.Apellidos,
-		SegundoNombre:         req.SegundoNombre,
-		SegundoApellido:       req.SegundoApellido,
-		Genero:                req.Genero,
-		FPV:                   req.FPV,
-		Telefono:              req.Telefono,
-		Correo:                req.Correo,
-		FechaNacimiento:       req.FechaNacimiento,
-		TituloUniversidad:     req.TituloUniversidad,
-		TituloFechaGraduacion: req.TituloFechaGraduacion,
-		TituloMencion:         req.TituloMencion,
-		TituloRegistroNumero:  req.TituloRegistroNumero,
-		TituloRegistroEstado:  req.TituloRegistroEstado,
-		TituloRegistroTomo:    req.TituloRegistroTomo,
-		TituloRegistroFolio:   req.TituloRegistroFolio,
-		RIF:                   req.RIF,
-		ServiceAddress:        req.ServiceAddress,
-		MunicipalityCarabobo:  req.MunicipalityCarabobo,
-		StateOutside:          req.StateOutside,
+		ID:                          req.ID,
+		Cedula:                      req.Cedula,
+		Nacionalidad:                req.Nacionalidad,
+		Nombres:                     req.Nombres,
+		Apellidos:                   req.Apellidos,
+		SegundoNombre:               req.SegundoNombre,
+		SegundoApellido:             req.SegundoApellido,
+		Genero:                      req.Genero,
+		FPV:                         req.FPV,
+		Telefono:                    req.Telefono,
+		Correo:                      req.Correo,
+		FechaNacimiento:             req.FechaNacimiento,
+		TituloUniversidad:           req.TituloUniversidad,
+		TituloFechaGraduacion:       req.TituloFechaGraduacion,
+		TituloMencion:               req.TituloMencion,
+		TituloRegistroNumero:        req.TituloRegistroNumero,
+		TituloRegistroEstado:        req.TituloRegistroEstado,
+		TituloRegistroTomo:          req.TituloRegistroTomo,
+		TituloRegistroFolio:         req.TituloRegistroFolio,
+		RIF:                         req.RIF,
+		ServiceAddress:              req.ServiceAddress,
+		MunicipalityCarabobo:        req.MunicipalityCarabobo,
+		StateOutside:                req.StateOutside,
 		MunicipalityOutSideCarabobo: req.MunicipalityOutSideCarabobo,
 		Country:                     req.Country,
 		ServiceModalityPresencial:   req.ServiceModalityPresencial,
@@ -481,12 +481,12 @@ func (s *InscriptionService) Detail(ctx context.Context, admin *domain.UserAdmin
 		PrimarySpecialtyID:          req.PrimarySpecialtyID,
 		SecondarySpecialtyID:        req.SecondarySpecialtyID,
 		Documents:                   buildInscriptionDocumentDTOs(docs, s.s3Client),
-		Status:                string(req.Status),
-		ControlNumber:         req.ControlNumber,
-		Notes:                 req.Notes,
-		PsiUserID:             req.PsiUserID,
-		CreatedAt:             req.CreatedAt,
-		UpdatedAt:             req.UpdatedAt,
+		Status:                      string(req.Status),
+		ControlNumber:               req.ControlNumber,
+		Notes:                       req.Notes,
+		PsiUserID:                   req.PsiUserID,
+		CreatedAt:                   req.CreatedAt,
+		UpdatedAt:                   req.UpdatedAt,
 	}
 
 	if req.PsiUserID != nil {
@@ -597,46 +597,46 @@ func (s *InscriptionService) Approve(ctx context.Context, admin *domain.UserAdmi
 			IsActive:           true, // Parametrizable: al aprobar la inscripción la cuenta nace activa
 			MustChangePassword: true,
 		},
-		FirstName:           req.Nombres,
-		SecondName:          req.SegundoNombre,
-		LastName:            req.Apellidos,
-		SecondLastName:      req.SegundoApellido,
-		CI:                  req.Cedula,
-		FPV:                 req.FPV,
-		Nationality:         req.Nacionalidad,
-		Genre:               req.Genero, // M / F (se adopta vacío si no se indicó)
-		BornDate:            bornDate,
-		AudioBookShellId:    psiID.String(), // Único por psi (constraint uni) — igual que en el import
-		Solvent:             true, // Inscripción aprobada ⇒ psicólogo solvente
-		ControlNumber:       fmt.Sprintf("%d", controlNumber),
-		ProfilePictureS3Key: req.FotoS3Key, // La foto tipo carnet pasa a ser la foto de perfil
-		ContactEmail:        req.Correo,
-		ContactPhone:        req.Telefono,
-		ContactCellPhone:    req.Telefono,
-		ServiceAddress:      req.ServiceAddress,
-		MunicipalityCarabobo: req.MunicipalityCarabobo,
-		StateOutside:        req.StateOutside,
+		FirstName:                   req.Nombres,
+		SecondName:                  req.SegundoNombre,
+		LastName:                    req.Apellidos,
+		SecondLastName:              req.SegundoApellido,
+		CI:                          req.Cedula,
+		FPV:                         req.FPV,
+		Nationality:                 req.Nacionalidad,
+		Genre:                       req.Genero, // M / F (se adopta vacío si no se indicó)
+		BornDate:                    bornDate,
+		AudioBookShellId:            psiID.String(), // Único por psi (constraint uni) — igual que en el import
+		Solvent:                     true,           // Inscripción aprobada ⇒ psicólogo solvente
+		ControlNumber:               fmt.Sprintf("%d", controlNumber),
+		ProfilePictureS3Key:         req.FotoS3Key, // La foto tipo carnet pasa a ser la foto de perfil
+		ContactEmail:                req.Correo,
+		ContactPhone:                req.Telefono,
+		ContactCellPhone:            req.Telefono,
+		ServiceAddress:              req.ServiceAddress,
+		MunicipalityCarabobo:        req.MunicipalityCarabobo,
+		StateOutside:                req.StateOutside,
 		MunicipalityOutSideCarabobo: req.MunicipalityOutSideCarabobo,
-		Country:             req.Country,
-		ServiceModalityPresencial: req.ServiceModalityPresencial,
-		ServiceModalityDistance:   req.ServiceModalityDistance,
-		ServiceModalityTelephone:  req.ServiceModalityTelephone,
-		PrimarySpecialtyID:        req.PrimarySpecialtyID,
-		SecondarySpecialtyID:      req.SecondarySpecialtyID,
+		Country:                     req.Country,
+		ServiceModalityPresencial:   req.ServiceModalityPresencial,
+		ServiceModalityDistance:     req.ServiceModalityDistance,
+		ServiceModalityTelephone:    req.ServiceModalityTelephone,
+		PrimarySpecialtyID:          req.PrimarySpecialtyID,
+		SecondarySpecialtyID:        req.SecondarySpecialtyID,
 	}
 
 	colData := &domain.PsiUserColData{
-		ID:                     colDataID,
-		PsiUserModelID:         psiID,
-		AuditModel:             audit,
-		GuildInscriptionDate:   now,
+		ID:                      colDataID,
+		PsiUserModelID:          psiID,
+		AuditModel:              audit,
+		GuildInscriptionDate:    now,
 		UniversityUndergraduate: req.TituloUniversidad,
-		GraduateDate:           gradDate,
-		MentionUndergraduate:   req.TituloMencion,
-		RegisterNumber:         parseRegisterNumber(req.TituloRegistroNumero),
-		RegisterTitleState:     req.TituloRegistroEstado,
-		RegisterTome:           req.TituloRegistroTomo,
-		RegisterFolio:          req.TituloRegistroFolio,
+		GraduateDate:            gradDate,
+		MentionUndergraduate:    req.TituloMencion,
+		RegisterNumber:          parseRegisterNumber(req.TituloRegistroNumero),
+		RegisterTitleState:      req.TituloRegistroEstado,
+		RegisterTome:            req.TituloRegistroTomo,
+		RegisterFolio:           req.TituloRegistroFolio,
 	}
 
 	// Solvencia del año de ingreso, consistente con la regla existente de
@@ -769,6 +769,24 @@ func (s *InscriptionService) UpdateFicha(ctx context.Context, admin *domain.User
 		return nil, err
 	}
 
+	// Campos obligatorios de la ficha (personales, académicos y ubicación).
+	if err := ValidateFichaObligatoria(FichaObligatoria{
+		SegundoApellido:         req.SegundoApellido,
+		Genero:                  req.Genero,
+		Telefono:                req.Telefono,
+		FechaNacimientoPresente: dateStrPresent(req.FechaNacimiento),
+		TituloUniversidad:       req.TituloUniversidad,
+		FechaGraduacionPresente: dateStrPresent(req.TituloFechaGraduacion),
+		TituloRegistroEstado:    req.TituloRegistroEstado,
+		ServiceAddress:          req.ServiceAddress,
+		MunicipalityCarabobo:    req.MunicipalityCarabobo,
+		StateOutside:            req.StateOutside,
+		MunicipalityOutside:     req.MunicipalityOutSideCarabobo,
+		Country:                 req.Country,
+	}); err != nil {
+		return nil, err
+	}
+
 	cur, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return nil, ErrInscriptionNotFound
@@ -876,6 +894,11 @@ func parseOptionalDate(v *string) *time.Time {
 	return &t
 }
 
+// dateStrPresent indica si un *string de fecha trae contenido no vacío.
+func dateStrPresent(v *string) bool {
+	return v != nil && strings.TrimSpace(*v) != ""
+}
+
 // UpdateFichaPhoto reemplaza la foto tipo carnet o el comprobante de pago de la
 // ficha, eliminando el archivo anterior del bucket.
 func (s *InscriptionService) UpdateFichaPhoto(ctx context.Context, admin *domain.UserAdmin, id uuid.UUID, kind string, file *multipart.FileHeader) (*request_structs.InscriptionDetailDTO, error) {
@@ -976,11 +999,11 @@ func (s *InscriptionService) AddInscriptionDocument(ctx context.Context, admin *
 		}
 	} else {
 		doc := &domain.PsiInscriptionDocument{
-			ID:                 uuid.Must(uuid.NewV7()),
+			ID:                   uuid.Must(uuid.NewV7()),
 			InscriptionRequestID: id,
-			DocumentType:       dt,
-			S3Key:              key,
-			OriginalFilename:   file.Filename,
+			DocumentType:         dt,
+			S3Key:                key,
+			OriginalFilename:     file.Filename,
 		}
 		if err := s.repo.CreateDocuments(ctx, []domain.PsiInscriptionDocument{*doc}); err != nil {
 			if s.s3Client != nil {
@@ -1032,14 +1055,14 @@ func (s *InscriptionService) migrateDocumentsToPsi(ctx context.Context, requestI
 			UpdateById: &admin.ID,
 		}
 		psiDoc := &domain.PsiUserDocument{
-			ID:               uuid.Must(uuid.NewV7()),
-			AuditModel:       audit,
-			PsiUserID:        psiID,
-			DocumentType:     docs[i].DocumentType,
-			S3Key:            docs[i].S3Key,
-			Title:            docs[i].Title,
-			Notes:            docs[i].Notes,
-			Filename:         docs[i].OriginalFilename,
+			ID:           uuid.Must(uuid.NewV7()),
+			AuditModel:   audit,
+			PsiUserID:    psiID,
+			DocumentType: docs[i].DocumentType,
+			S3Key:        docs[i].S3Key,
+			Title:        docs[i].Title,
+			Notes:        docs[i].Notes,
+			Filename:     docs[i].OriginalFilename,
 		}
 		if err := s.psiRepo.CreateDocument(ctx, psiDoc); err != nil {
 			ok = false
@@ -1055,7 +1078,7 @@ func (s *InscriptionService) migrateDocumentsToPsi(ctx context.Context, requestI
 
 // transliterateUsername genera un username en snake_case desde nombres y apellidos.
 func transliterateUsername(nombres, apellidos string) string {
-	base := strings.ToLower(normString(nombres+"."+apellidos))
+	base := strings.ToLower(normString(nombres + "." + apellidos))
 	// Remover caracteres no alfanuméricos
 	var sb strings.Builder
 	for _, r := range base {
