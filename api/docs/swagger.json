@@ -3452,6 +3452,57 @@
                 }
             }
         },
+        "/admin/transfer-sudo": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Permite al Sudo actual ceder su rol a un administrador de confianza. Requiere confirmar la contraseña del Sudo. La conmutación es atómica y queda registrada en la auditoría de permisos.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Gestión"
+                ],
+                "summary": "Transferir el rol de Super Usuario",
+                "parameters": [
+                    {
+                        "description": "Destinatario del Sudo y confirmación de la contraseña",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.TransferSudoRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "message: rol transferido",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "error: permiso denegado o contraseña incorrecta",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/admin/update": {
             "patch": {
                 "security": [
@@ -8345,6 +8396,23 @@
                     "description": "URL contiene el enlace validado y listo para ser inyectado en un atributo href=\"...\".",
                     "type": "string",
                     "example": "https://instagram.com/psicologo"
+                }
+            }
+        },
+        "request_structs.TransferSudoRequest": {
+            "type": "object",
+            "required": [
+                "password",
+                "target_id"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string",
+                    "example": "••••••••"
+                },
+                "target_id": {
+                    "type": "string",
+                    "example": "00000000-0000-0000-0000-000000000000"
                 }
             }
         },

@@ -2154,6 +2154,18 @@ definitions:
         example: https://instagram.com/psicologo
         type: string
     type: object
+  request_structs.TransferSudoRequest:
+    properties:
+      password:
+        example: ••••••••
+        type: string
+      target_id:
+        example: 00000000-0000-0000-0000-000000000000
+        type: string
+    required:
+    - password
+    - target_id
+    type: object
   request_structs.UndergraduateDTO:
     properties:
       date:
@@ -4841,6 +4853,40 @@ paths:
       summary: Contar tickets abiertos
       tags:
       - Tickets - Administración
+  /admin/transfer-sudo:
+    post:
+      consumes:
+      - application/json
+      description: Permite al Sudo actual ceder su rol a un administrador de confianza.
+        Requiere confirmar la contraseña del Sudo. La conmutación es atómica y queda
+        registrada en la auditoría de permisos.
+      parameters:
+      - description: Destinatario del Sudo y confirmación de la contraseña
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.TransferSudoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'message: rol transferido'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: 'error: permiso denegado o contraseña incorrecta'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Transferir el rol de Super Usuario
+      tags:
+      - Administración - Gestión
   /admin/update:
     patch:
       consumes:
