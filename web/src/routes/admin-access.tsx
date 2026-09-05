@@ -5,6 +5,7 @@ import { useAuth } from "~/lib/auth";
 import { apiPost, ApiError } from "~/lib/api";
 import { getUserFacingError } from "~/lib/errors";
 import { PasswordInputComponent } from "~/components/ui/PasswordInput";
+import { Animate } from "~/components/ui/Motion";
 
 const syncJwtCookie = action(async (token: string) => {
   "use server";
@@ -102,10 +103,10 @@ export default function AdminLoginPage() {
             <form class="space-y-6" onSubmit={handleSubmit}>
               
               <Show when={error()}>
-                <div class="bg-red-50 border-l-4 border-red-500 p-4 animate-in shake duration-300">
+                <Animate variant="shake" class="bg-red-50 border-l-4 border-red-500 p-4">
                   <p class="text-xs text-red-800 font-bold uppercase tracking-wide">Fallo de Seguridad</p>
                   <p class="text-sm text-red-600 mt-1">{error()}</p>
-                </div>
+                </Animate>
               </Show>
 
               <div class="space-y-5">

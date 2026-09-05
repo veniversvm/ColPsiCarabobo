@@ -103,7 +103,7 @@ export default function AdminCrearStaffPage() {
   };
 
   return (
-    <main class="pb-28 animate-in fade-in duration-500 max-w-3xl mx-auto">
+    <main class="pb-28 max-w-3xl mx-auto">
 
       <div class="flex items-center gap-4 mb-8 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
         <button onClick={() => navigate(-1)} class="w-10 h-10 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-full font-bold flex items-center justify-center transition-colors flex-shrink-0">←</button>

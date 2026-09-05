@@ -2,6 +2,7 @@
 import { createResource, createSignal, For, Show, Suspense } from "solid-js";
 import { A } from "@solidjs/router";
 import { apiGet, apiDelete, apiPatch } from "~/lib/api";
+import { Animate, Presence } from "~/components/ui/Motion";
 
 // ─── INTERFAZ ACTUALIZADA ─────────────────────────────────────────────────────
 interface WorkArea {
@@ -76,7 +77,7 @@ export default function AdminAreasEjercicioPage() {
   };
 
   return (
-    <main class="pb-20 animate-in fade-in duration-500 font-sans">
+    <main class="pb-20 font-sans">
 
       {/* ── HEADER ────────────────────────────────────────────────────────── */}
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 bg-white p-8 rounded-[2.5rem] shadow-premium border border-gray-100">
@@ -253,37 +254,41 @@ export default function AdminAreasEjercicioPage() {
       </Suspense>
 
       {/* ── MODAL CONFIRMACIÓN BORRADO ─────────────────────────────────── */}
-      <Show when={confirmDelete()}>
-        <div
-          class="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-blue-900/40 backdrop-blur-md"
-          onClick={(e) => { if (e.target === e.currentTarget) setConfirmDelete(null); }}
-        >
-          <div class="bg-white rounded-[2.5rem] shadow-2xl p-10 w-full max-w-md border border-gray-100 text-center animate-in zoom-in-95 duration-200">
-            <div class="w-20 h-20 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center mx-auto mb-6 text-4xl">
-              ⚠️
-            </div>
-            <h2 class="text-xl font-black text-gray-900 mb-2 uppercase tracking-tight">¿Eliminar área de ejercicio?</h2>
-            <p class="text-gray-500 text-sm mb-8 leading-relaxed">
-              Esta acción marcará el área como inactiva. Los psicólogos que la tengan asignada dejarán de mostrarla en el directorio público.
-            </p>
-            <div class="flex gap-4">
-              <button
-                onClick={() => setConfirmDelete(null)}
-                class="flex-1 px-6 py-4 rounded-2xl border-2 border-gray-100 font-black text-gray-400 hover:bg-gray-50 transition-all text-xs uppercase tracking-widest"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={() => handleDelete(confirmDelete()!)}
-                disabled={busy() === confirmDelete()}
-                class="flex-1 px-6 py-4 rounded-2xl bg-red-600 text-white font-black hover:bg-red-700 active:scale-95 transition-all text-xs uppercase tracking-widest shadow-lg shadow-red-200 disabled:opacity-60"
-              >
-                {busy() === confirmDelete() ? "Procesando..." : "Confirmar"}
-              </button>
-            </div>
-          </div>
-        </div>
-      </Show>
+      <Presence>
+        <Show when={confirmDelete()}>
+          <Animate
+            variant="fade"
+            class="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-blue-900/40 backdrop-blur-md"
+            exit={{ opacity: 0 }}
+            onClick={(e) => { if (e.target === e.currentTarget) setConfirmDelete(null); }}
+          >
+            <Animate variant="zoom" class="bg-white rounded-[2.5rem] shadow-2xl p-10 w-full max-w-md border border-gray-100 text-center" exit={{ opacity: 0, scale: 0.95 }}>
+              <div class="w-20 h-20 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center mx-auto mb-6 text-4xl">
+                ⚠️
+              </div>
+              <h2 class="text-xl font-black text-gray-900 mb-2 uppercase tracking-tight">¿Eliminar área de ejercicio?</h2>
+              <p class="text-gray-500 text-sm mb-8 leading-relaxed">
+                Esta acción marcará el área como inactiva. Los psicólogos que la tengan asignada dejarán de mostrarla en el directorio público.
+              </p>
+              <div class="flex gap-4">
+                <button
+                  onClick={() => setConfirmDelete(null)}
+                  class="flex-1 px-6 py-4 rounded-2xl border-2 border-gray-100 font-black text-gray-400 hover:bg-gray-50 transition-all text-xs uppercase tracking-widest"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => handleDelete(confirmDelete()!)}
+                  disabled={busy() === confirmDelete()}
+                  class="flex-1 px-6 py-4 rounded-2xl bg-red-600 text-white font-black hover:bg-red-700 active:scale-95 transition-all text-xs uppercase tracking-widest shadow-lg shadow-red-200 disabled:opacity-60"
+                >
+                  {busy() === confirmDelete() ? "Procesando..." : "Confirmar"}
+                </button>
+              </div>
+            </Animate>
+          </Animate>
+        </Show>
+      </Presence>
 
     </main>
   );

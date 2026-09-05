@@ -2,6 +2,7 @@
 
 import { A } from "@solidjs/router";
 import { HttpStatusCode } from "@solidjs/start";
+import { Animate } from "~/components/ui/Motion";
 
 export default function NotFound() {
   return (
@@ -10,13 +11,13 @@ export default function NotFound() {
       <HttpStatusCode code={404} />
 
       {/* IMAGEN TEMÁTICA */}
-      <div class="max-w-7xl w-full mb-8 animate-in fade-in zoom-in duration-700">
+      <Animate variant="zoom" class="max-w-7xl w-full mb-8">
         <img 
           src="/psi404.png" 
           alt="404 - Página no encontrada" 
           class="w-full h-auto object-contain"
         />
-      </div>
+      </Animate>
 
       {/* TEXTO INFORMATIVO */}
       <div class="space-y-4 max-w-lg">

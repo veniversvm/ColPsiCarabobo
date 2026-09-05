@@ -134,7 +134,7 @@ register_number: parseInt(String(form.register_number), 10) || 0,
   };
 
   return (
-    <div class="space-y-6 animate-in fade-in duration-500 pb-24 max-w-5xl mx-auto">
+    <div class="space-y-6 pb-24 max-w-5xl mx-auto">
       <FormHeader />
       <FormMessage type={message()?.type} text={message()?.text || ""} details={message()?.details} />
       

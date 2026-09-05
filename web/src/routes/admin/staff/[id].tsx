@@ -205,7 +205,7 @@ export default function AdminEditarStaffPage() {
   };
 
   return (
-    <main class="pb-28 animate-in fade-in duration-500 max-w-3xl mx-auto">
+    <main class="pb-28 max-w-3xl mx-auto">
 
       {/* ── HEADER ────────────────────────────────────────────────────────── */}
       <div class="flex items-center gap-4 mb-8 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">

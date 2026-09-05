@@ -1,6 +1,7 @@
 // web/src/components/admin/ImportXlsxModal.tsx
 import { createSignal, Show, For } from "solid-js";
 import { apiPost } from "~/lib/api";
+import { Animate } from "~/components/ui/Motion";
 import { getUserFacingError } from "~/lib/errors";
 
 interface FailedRecord {
@@ -106,11 +107,12 @@ export function ImportXlsxModal(props: ImportXlsxModalProps) {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div
+    <Animate
+      variant="fade"
       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-blue-900/40 backdrop-blur-md"
       onClick={(e) => { if (e.target === e.currentTarget) props.onClose(); }}
     >
-      <div class="bg-white rounded-[2.5rem] shadow-premium w-full max-w-2xl border border-gray-100 overflow-hidden animate-in zoom-in-95 duration-200">
+      <Animate variant="zoom" class="bg-white rounded-[2.5rem] shadow-premium w-full max-w-2xl border border-gray-100 overflow-hidden">
 
         {/* ── HEADER ────────────────────────────────────────────────────── */}
         <div class="flex items-center justify-between px-10 py-8 border-b border-gray-50">
@@ -137,9 +139,9 @@ export function ImportXlsxModal(props: ImportXlsxModalProps) {
         <div class="px-10 py-8 max-h-[60vh] overflow-y-auto">
 
           <Show when={error()}>
-            <div class="mb-6 p-5 rounded-2xl bg-red-50 text-red-800 font-bold text-sm border-2 border-red-100 animate-in slide-in-from-top-2 duration-300">
+            <Animate variant="slide-top" class="mb-6 p-5 rounded-2xl bg-red-50 text-red-800 font-bold text-sm border-2 border-red-100">
               ⚠️ {error()}
-            </div>
+            </Animate>
           </Show>
 
           {/* ── STEP: SELECT ──────────────────────────────────────────── */}
@@ -293,7 +295,7 @@ export function ImportXlsxModal(props: ImportXlsxModalProps) {
           </div>
         </div>
 
-      </div>
-    </div>
+      </Animate>
+    </Animate>
   );
 }

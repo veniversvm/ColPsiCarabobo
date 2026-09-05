@@ -85,7 +85,7 @@ export default function AdminCrearNoticiaPage() {
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
-    <main class="pb-28 animate-in fade-in duration-500 max-w-4xl mx-auto">
+    <main class="pb-28 max-w-4xl mx-auto">
 
       {/* ── HEADER ────────────────────────────────────────────────────────── */}
       <div class="flex items-center gap-4 mb-8 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">

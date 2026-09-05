@@ -1,6 +1,7 @@
 // web/src/components/psi/profile/AccountSection.tsx
 import { createMemo, Show } from "solid-js";
 import { InputField, PasswordField } from "./InputField";
+import { Animate } from "~/components/ui/Motion";
 
 interface AccountSectionProps {
   username: string;
@@ -115,17 +116,17 @@ export function AccountSection(props: AccountSectionProps) {
           />
           
           <Show when={hasPasswordError()}>
-            <div class="flex items-center gap-1 text-xs text-red-500 mt-1 animate-in fade-in slide-in-from-top-1">
+            <Animate variant="slide-top" class="flex items-center gap-1 text-xs text-red-500 mt-1">
               <span class="text-red-500">⚠️</span>
               <span>Las contraseñas no coinciden</span>
-            </div>
+            </Animate>
           </Show>
 
           <Show when={passwordsMatch() && props.newPassword1 && props.newPassword2}>
-            <div class="flex items-center gap-1 text-xs text-green-500 mt-1 animate-in fade-in slide-in-from-top-1">
+            <Animate variant="slide-top" class="flex items-center gap-1 text-xs text-green-500 mt-1">
               <span class="text-green-500">✅</span>
               <span>Las contraseñas coinciden</span>
-            </div>
+            </Animate>
           </Show>
         </div>
       </div>

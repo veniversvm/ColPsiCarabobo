@@ -3,6 +3,7 @@ import { Show, createSignal } from "solid-js";
 import { Portal } from "solid-js/web"; // Importante para renderizar el modal sobre todo el DOM
 import QRCodeGenerator from "./QrCode";
 import { bucketUrl } from "~/lib/bucket";
+import { Animate, Presence } from "~/components/ui/Motion";
 
 interface AvatarUploaderProps {
   url: string;
@@ -168,7 +169,7 @@ export function AvatarUploader(props: AvatarUploaderProps) {
               </div>
 
               <Show when={props.avatarFile}>
-                <div class="mt-2 text-xs text-green-600 bg-green-50 px-3 py-2 rounded-lg inline-flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
+                <Animate variant="slide-top" class="mt-2 text-xs text-green-600 bg-green-50 px-3 py-2 rounded-lg inline-flex items-center gap-2">
                   <span class="text-lg">✅</span>
                   <div>
                     <p class="font-bold">Nueva foto lista para guardar</p>
@@ -183,7 +184,7 @@ export function AvatarUploader(props: AvatarUploaderProps) {
                   >
                     ✕
                   </button>
-                </div>
+                </Animate>
               </Show>
             </div>
           </div>
@@ -196,34 +197,40 @@ export function AvatarUploader(props: AvatarUploaderProps) {
       </section>
 
       {/* ── MODAL DE IMAGEN AMPLIADA ── */}
-      <Show when={isModalOpen() && previewUrl()}>
-        <Portal>
-          <div
-            class="fixed inset-0 z-[9999] flex items-center justify-center bg-blue-900/90 backdrop-blur-sm p-4 animate-in fade-in duration-200 cursor-zoom-out"
-            onClick={() => setIsModalOpen(false)}
-          >
-            <div class="relative w-full max-w-2xl flex justify-center items-center">
-              {/* Botón de cerrar */}
-              <button
-                onClick={() => setIsModalOpen(false)}
-                class="absolute -top-12 right-0 md:-right-12 w-10 h-10 bg-white/20 text-white hover:bg-colpsi-yellow hover:text-colpsi-blue rounded-full flex items-center justify-center font-black text-xl backdrop-blur-md transition-all z-10 border border-white/30"
-                title="Cerrar imagen"
-              >
-                ✕
-              </button>
+      <Presence>
+        <Show when={isModalOpen() && previewUrl()}>
+          <Portal>
+            <Animate
+              variant="fade"
+              class="fixed inset-0 z-[9999] flex items-center justify-center bg-blue-900/90 backdrop-blur-sm p-4 cursor-zoom-out"
+              exit={{ opacity: 0 }}
+              onClick={() => setIsModalOpen(false)}
+            >
+              <div class="relative w-full max-w-2xl flex justify-center items-center">
+                {/* Botón de cerrar */}
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  class="absolute -top-12 right-0 md:-right-12 w-10 h-10 bg-white/20 text-white hover:bg-colpsi-yellow hover:text-colpsi-blue rounded-full flex items-center justify-center font-black text-xl backdrop-blur-md transition-all z-10 border border-white/30"
+                  title="Cerrar imagen"
+                >
+                  ✕
+                </button>
 
-              {/* Imagen en detalle (Forzada a ser grande) */}
-              <img
-                src={previewUrl()!}
-                alt={`Foto de perfil ampliada`}
-                // Clases CLAVE: w-full fuerza a la imagen a ocupar el ancho del max-w-2xl
-                class="w-full max-h-[85vh] min-h-[300px] object-contain rounded-2xl shadow-2xl bg-gray-50 cursor-default"
-                onClick={(e) => e.stopPropagation()}
-              />
-            </div>
-          </div>
-        </Portal>
-      </Show>
+                {/* Imagen en detalle (Forzada a ser grande) */}
+                <Animate variant="zoom" class="w-full">
+                  <img
+                    src={previewUrl()!}
+                    alt={`Foto de perfil ampliada`}
+                    // Clases CLAVE: w-full fuerza a la imagen a ocupar el ancho del max-w-2xl
+                    class="w-full max-h-[85vh] min-h-[300px] object-contain rounded-2xl shadow-2xl bg-gray-50 cursor-default"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </Animate>
+              </div>
+            </Animate>
+          </Portal>
+        </Show>
+      </Presence>
     </>
   );
 }

@@ -74,7 +74,7 @@ export default function AdminNoticiasPage() {
   };
 
   return (
-    <main class="pb-20 animate-in fade-in duration-500">
+    <main class="pb-20">
 
       <NoticiasHeader />
 

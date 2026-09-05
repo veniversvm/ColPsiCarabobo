@@ -3,6 +3,7 @@ import { createResource, createSignal, For, Show, Suspense } from "solid-js";
 import { A, useNavigate } from "@solidjs/router";
 import { apiGet, apiDelete } from "~/lib/api";
 import { getUserFacingError } from "~/lib/errors";
+import { Animate, Presence } from "~/components/ui/Motion";
 
 interface Admin {
   id: string;
@@ -99,7 +100,7 @@ export default function AdminStaffPage() {
   };
 
   return (
-    <main class="pb-20 animate-in fade-in duration-500">
+    <main class="pb-20">
 
       {/* ── HEADER ────────────────────────────────────────────────────────── */}
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
@@ -242,41 +243,45 @@ export default function AdminStaffPage() {
       </Suspense>
 
       {/* ── MODAL CONFIRMACIÓN BORRADO ─────────────────────────────────── */}
-      <Show when={confirmDelete()}>
-        {(admin) => (
-          <div
-            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
-            onClick={(e) => { if (e.target === e.currentTarget) setConfirmDelete(null); }}
-          >
-            <div class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm border border-gray-100 text-center animate-in zoom-in-95 duration-200">
-              <p class="text-4xl mb-4">🗑️</p>
-              <h2 class="text-lg font-black text-gray-900 mb-1">¿Eliminar administrador?</h2>
-              <p class="text-blue-700 font-black text-sm mb-1">{admin().username}</p>
-              <p class="text-gray-500 text-sm mb-4">Esta acción es irreversible.</p>
-              <Show when={deleteError()}>
-                <div class="mb-4 p-3 rounded-xl bg-red-50 text-red-700 text-xs font-bold border border-red-200">
-                  {deleteError()}
-                </div>
-              </Show>
-              <div class="flex gap-3">
-                <button
-                  onClick={() => setConfirmDelete(null)}
-                  class="flex-1 px-4 py-3 rounded-2xl border-2 border-gray-200 font-black text-gray-600 hover:bg-gray-50 transition-all text-sm"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={() => handleDelete(admin())}
+      <Presence>
+        <Show when={confirmDelete()}>
+          {(admin) => (
+            <Animate
+              variant="fade"
+              class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+              exit={{ opacity: 0 }}
+              onClick={(e) => { if (e.target === e.currentTarget) setConfirmDelete(null); }}
+            >
+              <Animate variant="zoom" class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm border border-gray-100 text-center" exit={{ opacity: 0, scale: 0.95 }}>
+                <p class="text-4xl mb-4">🗑️</p>
+                <h2 class="text-lg font-black text-gray-900 mb-1">¿Eliminar administrador?</h2>
+                <p class="text-blue-700 font-black text-sm mb-1">{admin().username}</p>
+                <p class="text-gray-500 text-sm mb-4">Esta acción es irreversible.</p>
+                <Show when={deleteError()}>
+                  <div class="mb-4 p-3 rounded-xl bg-red-50 text-red-700 text-xs font-bold border border-red-200">
+                    {deleteError()}
+                  </div>
+                </Show>
+                <div class="flex gap-3">
+                  <button
+                    onClick={() => setConfirmDelete(null)}
+                    class="flex-1 px-4 py-3 rounded-2xl border-2 border-gray-200 font-black text-gray-600 hover:bg-gray-50 transition-all text-sm"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={() => handleDelete(admin())}
                   disabled={busy() === admin().id}
                   class="flex-1 px-4 py-3 rounded-2xl bg-red-600 text-white font-black hover:bg-red-700 active:scale-95 transition-all text-sm disabled:opacity-60"
                 >
                   {busy() === admin().id ? "Eliminando..." : "Sí, eliminar"}
                 </button>
               </div>
-            </div>
-          </div>
+            </Animate>
+          </Animate>
         )}
       </Show>
+      </Presence>
 
     </main>
   );

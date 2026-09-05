@@ -67,7 +67,7 @@ export default function AdminDashboard() {
   const initialLoading = () => stats.loading && !cachedStats();
 
   return (
-    <div class="space-y-8 animate-in fade-in duration-500 pb-24">
+    <div class="space-y-8 pb-24">
 
       {/* ── HEADER ──────────────────────────────────────────────────────── */}
       <div class="flex items-start justify-between">

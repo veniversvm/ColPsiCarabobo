@@ -18,6 +18,7 @@ import { canEditProject, canManageProject } from "~/types/projects";
 import CardModal from "~/components/admin/proyectos/CardModal";
 import MembersModal from "~/components/admin/proyectos/MembersModal";
 import ConfirmModal from "~/components/admin/proyectos/ConfirmModal";
+import { Presence } from "~/components/ui/Motion";
 
 interface BoardChunk {
   columns: BoardColumn[];
@@ -449,17 +450,19 @@ export default function ProjectBoardPage() {
         </div>
       </Show>
 
-      <Show when={deleteColumn()}>
-        <ConfirmModal
-          title="Eliminar columna"
-          message={`¿Eliminar la columna «${deleteColumn()!.title}» y todas sus tarjetas?`}
-          confirmLabel="Eliminar"
-          danger
-          busy={busy()}
-          onConfirm={confirmDeleteColumn}
-          onClose={() => !busy() && setDeleteColumn(null)}
-        />
-      </Show>
+      <Presence>
+        <Show when={deleteColumn()}>
+          <ConfirmModal
+            title="Eliminar columna"
+            message={`¿Eliminar la columna «${deleteColumn()!.title}» y todas sus tarjetas?`}
+            confirmLabel="Eliminar"
+            danger
+            busy={busy()}
+            onConfirm={confirmDeleteColumn}
+            onClose={() => !busy() && setDeleteColumn(null)}
+          />
+        </Show>
+      </Presence>
     </ErrorBoundary>
   );
 }

@@ -1,6 +1,7 @@
 // web/src/components/psi/profile/SocialNetworksSection.tsx
 import { Show, For, createSignal } from "solid-js";
 import { SocialNetwork } from "~/types/psi";
+import { Animate, Presence } from "~/components/ui/Motion";
 
 interface SocialNetworksSectionProps {
   networks?: SocialNetwork[];
@@ -28,31 +29,33 @@ export function SocialNetworksSection(props: SocialNetworksSectionProps) {
     <section>
 
       {/* ── Modal de confirmación ────────────────────────────────────────── */}
-      <Show when={pendingId()}>
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div class="bg-white rounded-3xl p-8 shadow-2xl max-w-sm w-full mx-4 border border-gray-100">
-            <div class="text-center mb-6">
-              <span class="text-4xl">🔗</span>
-              <h3 class="text-lg font-black text-gray-800 mt-3">¿Eliminar esta red social?</h3>
-              <p class="text-sm text-gray-500 mt-1">Se quitará de tu perfil público.</p>
-            </div>
-            <div class="flex gap-3">
-              <button
-                onClick={() => setPendingId(null)}
-                class="flex-1 bg-gray-100 text-gray-700 py-3 rounded-2xl font-black hover:bg-gray-200 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleConfirmDelete}
-                class="flex-1 bg-red-500 text-white py-3 rounded-2xl font-black hover:bg-red-600 active:scale-95 transition-all"
-              >
-                Eliminar
-              </button>
-            </div>
-          </div>
-        </div>
-      </Show>
+      <Presence>
+        <Show when={pendingId()}>
+          <Animate variant="fade" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" exit={{ opacity: 0 }}>
+            <Animate variant="zoom" class="bg-white rounded-3xl p-8 shadow-2xl max-w-sm w-full mx-4 border border-gray-100" exit={{ opacity: 0, scale: 0.95 }}>
+              <div class="text-center mb-6">
+                <span class="text-4xl">🔗</span>
+                <h3 class="text-lg font-black text-gray-800 mt-3">¿Eliminar esta red social?</h3>
+                <p class="text-sm text-gray-500 mt-1">Se quitará de tu perfil público.</p>
+              </div>
+              <div class="flex gap-3">
+                <button
+                  onClick={() => setPendingId(null)}
+                  class="flex-1 bg-gray-100 text-gray-700 py-3 rounded-2xl font-black hover:bg-gray-200 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleConfirmDelete}
+                  class="flex-1 bg-red-500 text-white py-3 rounded-2xl font-black hover:bg-red-600 active:scale-95 transition-all"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </Animate>
+          </Animate>
+        </Show>
+      </Presence>
 
 
 

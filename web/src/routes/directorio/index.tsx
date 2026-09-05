@@ -178,7 +178,7 @@ export default function DirectoryPage() {
 
           {/* ── BARRA DE FILTROS ACTIVOS ───────────────────────────────── */}
           <Show when={hasActiveFilters() && !showLoading()}>
-            <div class="bg-white rounded-2xl shadow-premium border border-gray-100 p-4 mb-8 flex flex-wrap items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4">
+            <div class="bg-white rounded-2xl shadow-premium border border-gray-100 p-4 mb-8 flex flex-wrap items-center justify-between gap-4">
               
               <div class="flex flex-wrap items-center gap-2">
                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mr-2">
