@@ -107,6 +107,9 @@ func (r *adminRepo) Update(ctx context.Context, user *domain.UserAdmin) error {
 		"can_edit_tags":   gorm.Expr("?", user.CanEditTags),
 		"can_delete_tags": gorm.Expr("?", user.CanDeleteTags),
 
+		// ── Permisos: Proyectos (Kanban) ──────────────────────────────
+		"can_manage_projects": gorm.Expr("?", user.CanManageProjects),
+
 		// ── Auditoría ────────────────────────────────────────────────
 		"update_by":    user.UpdateBy,
 		"update_by_id": user.UpdateById,

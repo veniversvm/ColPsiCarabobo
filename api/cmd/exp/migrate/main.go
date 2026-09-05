@@ -36,6 +36,11 @@ func main() {
 		&domain.NotificationTarget{},
 		&domain.NotificationFilter{},
 		&domain.NotificationAttach{},
+		&domain.KanbanProject{},
+		&domain.KanbanMember{},
+		&domain.KanbanColumn{},
+		&domain.KanbanCard{},
+		&domain.KanbanNote{},
 	)
 	if err != nil {
 		log.Fatal().Err(err).Str("component", "migrate").Msg("Failed to load gorm schema")

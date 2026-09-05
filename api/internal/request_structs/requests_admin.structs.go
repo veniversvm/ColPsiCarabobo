@@ -46,6 +46,9 @@ type AdminPermissionsDTO struct {
 	CanCreateTags *bool `json:"can_create_tags" example:"false"`
 	CanEditTags   *bool `json:"can_edit_tags" example:"false"`
 	CanDeleteTags *bool `json:"can_delete_tags" example:"false"`
+
+	// Proyectos (Kanban)
+	CanManageProjects *bool `json:"can_manage_projects" example:"false"`
 }
 
 // CreateAdminRequest define la carga útil (Payload) para el aprovisionamiento

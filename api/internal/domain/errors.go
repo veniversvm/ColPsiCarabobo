@@ -62,3 +62,24 @@ var (
 	// ErrAttachmentNotFound is returned when a notification attachment cannot be found.
 	ErrAttachmentNotFound = errors.New("adjunto no encontrado")
 )
+
+var (
+	// ErrProjectNotFound is returned when a kanban project cannot be found.
+	ErrProjectNotFound = errors.New("proyecto no encontrado")
+	// ErrColumnNotFound is returned when a kanban column cannot be found.
+	ErrColumnNotFound = errors.New("columna no encontrada")
+	// ErrCardNotFound is returned when a kanban card cannot be found.
+	ErrCardNotFound = errors.New("tarjeta no encontrada")
+	// ErrNoteNotFound is returned when a kanban note cannot be found.
+	ErrNoteNotFound = errors.New("nota no encontrada")
+	// ErrNoteLimitReached is returned when a card already has its 10 notes.
+	ErrNoteLimitReached = errors.New("la tarjeta ya tiene el máximo de 10 notas")
+	// ErrNoteTooLong is returned when a note exceeds 500 characters.
+	ErrNoteTooLong = errors.New("la nota no puede superar los 500 caracteres")
+	// ErrNotProjectMember is returned when the admin is not part of the project.
+	ErrNotProjectMember = errors.New("no perteneces a este proyecto")
+	// ErrMemberAlreadyExists is returned when adding a member that is already part of the project.
+	ErrMemberAlreadyExists = errors.New("ese administrador ya es miembro del proyecto")
+	// ErrInvalidMemberRole is returned when a member role is not valid.
+	ErrInvalidMemberRole = errors.New("rol inválido para el proyecto")
+)

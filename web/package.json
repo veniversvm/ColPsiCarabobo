@@ -11,6 +11,7 @@
     "@solidjs/router": "^0.15.0",
     "@solidjs/start": "^1.1.0",
     "@tailwindcss/typography": "^0.5.19",
+    "@thisbeyond/solid-dnd": "^0.7.5",
     "@tiptap/core": "^3.20.0",
     "@tiptap/extension-link": "^3.20.0",
     "@tiptap/extension-text-align": "^3.20.0",
@@ -19,9 +20,11 @@
     "@tiptap/starter-kit": "^3.20.0",
     "@types/js-cookie": "^3.0.6",
     "dompurify": "^3.4.12",
+    "flatpickr": "^4.6.13",
     "js-cookie": "^3.0.5",
     "qrcode": "^1.5.4",
     "solid-js": "^1.9.5",
+    "solid-motionone": "^1.0.4",
     "vinxi": "^0.5.7"
   },
   "devDependencies": {

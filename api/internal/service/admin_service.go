@@ -230,6 +230,7 @@ func buildPermissionMatrix(
 		{"Create Tags", req.CanCreateTags, target.CanCreateTags, updater.CanCreateTags, func(v bool) { target.CanCreateTags = v }},
 		{"Edit Tags", req.CanEditTags, target.CanEditTags, updater.CanEditTags, func(v bool) { target.CanEditTags = v }},
 		{"Delete Tags", req.CanDeleteTags, target.CanDeleteTags, updater.CanDeleteTags, func(v bool) { target.CanDeleteTags = v }},
+		{"Manage Projects", req.CanManageProjects, target.CanManageProjects, updater.CanManageProjects, func(v bool) { target.CanManageProjects = v }},
 	}
 }
 
@@ -284,7 +285,7 @@ func (s *AdminService) CreateAdmin(
 			IsActive: true,
 			Key:      uuid.Must(uuid.NewV7()).String(),
 		},
-		Sudo:     false, // Regla Dura: Sudo no puede heredarse ni crearse por API, requiere intervención directa.
+		Sudo: false, // Regla Dura: Sudo no puede heredarse ni crearse por API, requiere intervención directa.
 	}
 
 	// Hashing Criptográfico seguro utilizando bcrypt.

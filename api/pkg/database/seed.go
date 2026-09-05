@@ -47,7 +47,7 @@ func SeedAdmin(db *gorm.DB) {
 				Password: string(hashedPassword),
 				IsActive: true,
 			},
-			Sudo:     true, // Acceso total
+			Sudo: true, // Acceso total
 
 			// Activamos todos los permisos granulares
 			CanCreatePsi:           true,
@@ -65,6 +65,7 @@ func SeedAdmin(db *gorm.DB) {
 			CanCreateTags:          true,
 			CanEditTags:            true,
 			CanDeleteTags:          true,
+			CanManageProjects:      true,
 		}
 
 		if err := db.Create(admin).Error; err != nil {

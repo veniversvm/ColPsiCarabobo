@@ -29,6 +29,7 @@ interface Admin {
   can_create_tags: boolean;
   can_edit_tags: boolean;
   can_delete_tags: boolean;
+  can_manage_projects: boolean;
 }
 
 interface PermissionsState {
@@ -37,6 +38,7 @@ interface PermissionsState {
   can_publish: boolean; can_update_publish: boolean; can_delete_publish: boolean;
   can_send_notifications: boolean; can_manage_notifications: boolean; can_read_notifications: boolean;
   can_create_tags: boolean; can_edit_tags: boolean; can_delete_tags: boolean;
+  can_manage_projects: boolean;
 }
 
 const PERM_GROUPS = [
@@ -80,6 +82,12 @@ const PERM_GROUPS = [
       { key: "can_delete_tags", label: "Eliminar" },
     ],
   },
+  {
+    label: "Proyectos", icon: "📋", color: "indigo",
+    perms: [
+      { key: "can_manage_projects", label: "Gestionar" },
+    ],
+  },
 ] as const;
 
 const COLOR_MAP: Record<string, string> = {
@@ -88,6 +96,7 @@ const COLOR_MAP: Record<string, string> = {
   emerald: "bg-emerald-50 border-emerald-200 text-emerald-700",
   amber: "bg-amber-50 border-amber-200 text-amber-700",
   rose: "bg-rose-50 border-rose-200 text-rose-700",
+  indigo: "bg-indigo-50 border-indigo-200 text-indigo-700",
 };
 
 const ACTIVE_MAP: Record<string, string> = {
@@ -96,6 +105,7 @@ const ACTIVE_MAP: Record<string, string> = {
   emerald: "bg-emerald-700 border-emerald-700 text-white",
   amber: "bg-amber-700 border-amber-700 text-white",
   rose: "bg-rose-700 border-rose-700 text-white",
+  indigo: "bg-indigo-700 border-indigo-700 text-white",
 };
 
 export default function AdminEditarStaffPage() {
@@ -127,6 +137,7 @@ export default function AdminEditarStaffPage() {
     can_publish: false, can_update_publish: false, can_delete_publish: false,
     can_send_notifications: false, can_manage_notifications: false, can_read_notifications: false,
     can_create_tags: false, can_edit_tags: false, can_delete_tags: false,
+    can_manage_projects: false,
   });
   const [initialized, setInitialized] = createSignal(false);
 
@@ -145,6 +156,7 @@ export default function AdminEditarStaffPage() {
       can_publish: a.can_publish, can_update_publish: a.can_update_publish, can_delete_publish: a.can_delete_publish,
       can_send_notifications: a.can_send_notifications, can_manage_notifications: a.can_manage_notifications, can_read_notifications: a.can_read_notifications,
       can_create_tags: a.can_create_tags, can_edit_tags: a.can_edit_tags, can_delete_tags: a.can_delete_tags,
+      can_manage_projects: a.can_manage_projects,
     });
     setInitialized(true);
   };
@@ -329,7 +341,7 @@ export default function AdminEditarStaffPage() {
               <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
                 <div class="flex items-center justify-between border-b border-gray-100 pb-3 mb-6">
                   <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest">Permisos</h2>
-                  <span class="text-xs font-black text-gray-500">{totalEnabled()}/15 activos</span>
+                  <span class="text-xs font-black text-gray-500">{totalEnabled()}/16 activos</span>
                 </div>
 
                 <div class="space-y-4">

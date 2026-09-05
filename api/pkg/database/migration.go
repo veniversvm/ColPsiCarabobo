@@ -29,6 +29,11 @@ func RunMigrations(db *gorm.DB) error {
 		&domain.PsiUserPostGrade{},  // Postgrados (1:N con PsiUserModel)
 		&domain.Post{},              // Noticias y publicaciones
 		&domain.PsiSpecialtyModel{}, // Especialidades (Nuevo modelo)
+		&domain.KanbanProject{},     // Proyectos (tableros Kanban)
+		&domain.KanbanMember{},      // Miembros de proyectos Kanban
+		&domain.KanbanColumn{},      // Columnas del tablero Kanban
+		&domain.KanbanCard{},        // Tarjetas Kanban
+		&domain.KanbanNote{},        // Notas de tarjetas Kanban (máx 10 × 500 chars)
 	)
 
 	if err != nil {

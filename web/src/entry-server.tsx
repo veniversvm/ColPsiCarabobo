@@ -6,7 +6,10 @@
 // - Permite `img-src` desde el origen del bucket S3/MinIO (BUCKET_ORIGIN),
 //   extraído de `VITE_BUCKET_URL`. Si se cambia el bucket, actualizar la env
 //   y reconstruir, porque la URL se inlinea en el bundle.
-// - Bloquea `frame-ancestors` (clickjacking) y fija `base-uri`/`form-action`.
+// - Fija `base-uri`/`form-action`. `frame-ancestors` NO va aquí: es ignorado en
+//   un `<meta>`; el clickjacking se cubre con los headers de la API (X-Frame-Options).
+// - `connect-src` incluye `ws://localhost:*`/`wss://localhost:*` para el HMR de
+//   Vinxi en desarrollo (el websocket de `/_build`).
 
 // @refresh reload
 import { createHandler, StartServer } from "@solidjs/start/server";
@@ -15,7 +18,7 @@ import { createHandler, StartServer } from "@solidjs/start/server";
 const BUCKET_ORIGIN =
   (import.meta.env.VITE_BUCKET_URL || "").match(/^https?:\/\/[^/]+/i)?.[0] || "";
 
-const CSP = `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:${BUCKET_ORIGIN ? ` ${BUCKET_ORIGIN}` : ""}; connect-src 'self' https: http://localhost:*; font-src 'self' data:; frame-ancestors 'none'; form-action 'self'; base-uri 'self'`;
+const CSP = `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:${BUCKET_ORIGIN ? ` ${BUCKET_ORIGIN}` : ""}; connect-src 'self' https: http://localhost:* ws://localhost:* wss://localhost:*; font-src 'self' data:; form-action 'self'; base-uri 'self'`;
 
 export default createHandler(() => (
   <StartServer

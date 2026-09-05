@@ -44,6 +44,12 @@ type UserAdmin struct {
 	CanCreateTags bool `gorm:"default:false" json:"can_create_tags"`
 	CanEditTags   bool `gorm:"default:false" json:"can_edit_tags"`
 	CanDeleteTags bool `gorm:"default:false" json:"can_delete_tags"`
+
+	// ── Permisos: Proyectos (Kanban) ──────────────────────────────────────
+	// "Master": accede y administra CUALQUIER proyecto del panel, sin importar
+	// quién sea el dueño. Los admins sin este flag solo ven sus proyectos y
+	// los que les compartieron como viewer/editor.
+	CanManageProjects bool `gorm:"default:false" json:"can_manage_projects"`
 }
 
 func (UserAdmin) TableName() string { return "user_admins" }
@@ -294,12 +300,12 @@ type DocumentType string
 
 // Constantes con las categorías soportadas para agrupar y clasificar documentos.
 const (
-	DocumentCedula     DocumentType = "cedula"
-	DocumentTitulo     DocumentType = "titulo"
-	DocumentRif        DocumentType = "rif"
-	DocumentSolvencia  DocumentType = "solvencia"
+	DocumentCedula      DocumentType = "cedula"
+	DocumentTitulo      DocumentType = "titulo"
+	DocumentRif         DocumentType = "rif"
+	DocumentSolvencia   DocumentType = "solvencia"
 	DocumentComprobante DocumentType = "comprobante"
-	DocumentOtro       DocumentType = "otro"
+	DocumentOtro        DocumentType = "otro"
 )
 
 // IsValid valida que el tipo de documento sea uno de los soportados.
