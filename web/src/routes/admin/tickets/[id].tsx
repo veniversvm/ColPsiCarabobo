@@ -1,12 +1,12 @@
 // web/src/routes/admin/tickets/[id].tsx
 // Detalle administrativo de un ticket: conversación, cambio de estado,
 // cierre e historial. El menú de estados proviene de la config del motivo.
-import { createResource, createMemo, createSignal, For, Show, Suspense } from "solid-js";
+import { createResource, createMemo, createSignal, For, Show } from "solid-js";
 import { useParams } from "@solidjs/router";
 import { apiGet, apiPatch, apiPost } from "~/lib/api";
 import { getUserFacingError } from "~/lib/errors";
 import TicketThread from "~/components/tickets/TicketThread";
-import type { Ticket, TicketStatusLog, TicketMotivo } from "~/types/tickets";
+import type { Ticket, TicketMensaje, TicketMotivo, TicketStatusLog } from "~/types/tickets";
 import {
   MAX_ADMIN_MENSAJE_CHARS,
   MAX_CLOSE_REASON_CHARS,
@@ -47,6 +47,10 @@ export default function AdminTicketDetalle() {
   const [sending, setSending] = createSignal(false);
   const [composerError, setComposerError] = createSignal("");
 
+  // Mensajes enviados en la sesión actual: se añaden al hilo sin recargar la
+  // página (la API devuelve el mensaje creado; no se vuelve a consultar el ticket).
+  const [mensajesExtra, setMensajesExtra] = createSignal<TicketMensaje[]>([]);
+
   // ── Cambio de estado ────────────────────────────────────────────────────
   const [estadoId, setEstadoId] = createSignal("");
   const [estadoReason, setEstadoReason] = createSignal("");
@@ -74,10 +78,10 @@ export default function AdminTicketDetalle() {
       const form = new FormData();
       form.set("message", msg);
       for (const f of files()) form.append("files", f);
-      await apiPost(`/admin/tickets/${params.id}/mensaje`, form);
+      const created = await apiPost<TicketMensaje>(`/admin/tickets/${params.id}/mensaje`, form);
       setMessage("");
       setFiles([]);
-      refetch();
+      setMensajesExtra((prev) => [...prev, created]);
     } catch (e: any) {
       setComposerError(getUserFacingError(e));
     } finally {
@@ -130,13 +134,13 @@ export default function AdminTicketDetalle() {
         ← Cola de tickets
       </a>
 
-      <Suspense fallback={
+      <Show when={ticket.loading && !t()}>
         <div class="space-y-4">
           <div class="h-32 bg-white animate-pulse rounded-3xl border border-gray-100" />
           <div class="h-64 bg-white animate-pulse rounded-3xl border border-gray-100" />
         </div>
-      }>
-        <Show when={!ticket.loading && !t()}>
+      </Show>
+      <Show when={!ticket.loading && !t()}>
           <div class="bg-white rounded-3xl p-12 text-center shadow-sm border border-gray-100">
             <p class="text-5xl mb-4">🔍</p>
             <h3 class="font-black text-gray-700">Ticket no encontrado</h3>
@@ -240,7 +244,7 @@ export default function AdminTicketDetalle() {
             <div class="lg:col-span-2 bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
               <h3 class="font-black text-gray-700 text-sm uppercase tracking-widest mb-4">Conversación</h3>
               <TicketThread
-                mensajes={t()?.mensajes ?? []}
+                mensajes={[...(t()?.mensajes ?? []), ...mensajesExtra()]}
                 adminDisplayName="El Colegio"
                 emptyText="Aún no hay mensajes en esta conversación."
               />
@@ -325,7 +329,6 @@ export default function AdminTicketDetalle() {
             </div>
           </div>
         </Show>
-      </Suspense>
     </main>
   );
 }

@@ -1,11 +1,11 @@
 // web/src/routes/psi/tickets/[id].tsx
 // Detalle de una solicitud propia: conversación, historial de estados y cierre.
-import { createResource, createSignal, For, Show, Suspense } from "solid-js";
+import { createResource, createSignal, For, Show } from "solid-js";
 import { useParams } from "@solidjs/router";
 import { apiGet, apiPost } from "~/lib/api";
 import { getUserFacingError } from "~/lib/errors";
 import TicketThread from "~/components/tickets/TicketThread";
-import type { Ticket, TicketStatusLog } from "~/types/tickets";
+import type { Ticket, TicketMensaje, TicketStatusLog } from "~/types/tickets";
 import {
   MAX_PSI_MENSAJE_CHARS,
   MAX_CLOSE_REASON_CHARS,
@@ -38,6 +38,10 @@ export default function PsiTicketDetalle() {
   const [closing, setClosing] = createSignal(false);
   const [closeError, setCloseError] = createSignal("");
 
+  // Mensajes enviados en la sesión actual: se añaden al hilo sin recargar la
+  // página (la API devuelve el mensaje creado; no se vuelve a consultar el ticket).
+  const [mensajesExtra, setMensajesExtra] = createSignal<TicketMensaje[]>([]);
+
   const t = () => ticket();
   const closed = () => !!t()?.is_closed || !!t()?.closed_at;
 
@@ -57,10 +61,10 @@ export default function PsiTicketDetalle() {
       const form = new FormData();
       form.set("message", msg);
       for (const f of files()) form.append("files", f);
-      await apiPost(`/psi/tickets/${params.id}/mensaje`, form);
+      const created = await apiPost<TicketMensaje>(`/psi/tickets/${params.id}/mensaje`, form);
       setMessage("");
       setFiles([]);
-      refetch();
+      setMensajesExtra((prev) => [...prev, created]);
     } catch (e: any) {
       setComposerError(getUserFacingError(e));
     } finally {
@@ -106,12 +110,12 @@ export default function PsiTicketDetalle() {
       </div>
 
       <div class="max-w-4xl mx-auto px-4 -mt-12 space-y-4">
-        <Suspense fallback={
+        <Show when={ticket.loading && !t()}>
           <div class="space-y-3">
             <For each={[1, 2, 3]}>{() => <div class="h-24 bg-white animate-pulse rounded-3xl border border-gray-100" />}</For>
           </div>
-        }>
-          <Show when={!ticket.loading && !t()}>
+        </Show>
+        <Show when={!ticket.loading && !t()}>
             <div class="bg-white rounded-3xl p-12 text-center shadow-sm border border-gray-100">
               <p class="text-5xl mb-4">🔍</p>
               <h3 class="font-black text-gray-700">Solicitud no encontrada</h3>
@@ -142,7 +146,7 @@ export default function PsiTicketDetalle() {
             <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
               <h3 class="font-black text-gray-700 text-sm uppercase tracking-widest mb-4">Conversación</h3>
               <TicketThread
-                mensajes={t()?.mensajes ?? []}
+                mensajes={[...(t()?.mensajes ?? []), ...mensajesExtra()]}
                 adminDisplayName="El Colegio"
                 emptyText="Aún no hay respuestas del colegio. Tu descripción inicial ya fue registrada."
               />
@@ -248,8 +252,7 @@ export default function PsiTicketDetalle() {
               </div>
             </Show>
           </Show>
-        </Suspense>
-      </div>
+        </div>
 
       {/* Modal de cierre */}
       <Show when={closeOpen()}>
