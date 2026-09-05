@@ -6,6 +6,7 @@ import { CheckField } from "~/components/inscripcion/CheckField";
 import { FileUpload } from "~/components/inscripcion/FileUpload";
 import { SuccessMessage } from "~/components/inscripcion/SuccessMessage";
 import { MUNICIPIOS_CARABOBO, ESTADOS_VENEZUELA } from "~/lib/geo";
+import FlatDatePicker from "~/components/ui/FlatDatePicker";
 import type { WorkArea } from "~/types/inscription";
 
 const STORAGE_KEY = "inscripcion_draft";
@@ -253,6 +254,21 @@ export function InscriptionForm() {
   };
 
   const Field = (props: { label: string; required?: boolean; value: () => string; onChange: (v: string) => void; type?: string; placeholder?: string }) => {
+    if (props.type === "date") {
+      return (
+        <label class="block">
+          <span class="block text-sm font-bold text-gray-700 mb-1.5">
+            {props.label} {props.required && <span class="text-red-500">*</span>}
+          </span>
+          <FlatDatePicker
+            value={props.value()}
+            onChange={props.onChange}
+            placeholder={props.placeholder}
+            class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+          />
+        </label>
+      );
+    }
     return (
       <label class="block">
         <span class="block text-sm font-bold text-gray-700 mb-1.5">
