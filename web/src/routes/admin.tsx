@@ -4,6 +4,17 @@ import { A, useNavigate } from "@solidjs/router";
 import { useAuth } from "~/lib/auth";
 import { apiGet } from "~/lib/api";
 import type { PendientesResponse } from "~/types/tickets";
+import type { PermissionState } from "~/lib/staff-permissions";
+
+interface AdminMe {
+  id: string;
+  username: string;
+  email: string;
+  is_active: boolean;
+  sudo: boolean;
+  role?: string | null;
+  permissions: PermissionState;
+}
 
 export default function AdminLayout(props: { children: JSX.Element }) {
   const { role, isAuthenticated, user, logout } = useAuth();
@@ -16,6 +27,19 @@ export default function AdminLayout(props: { children: JSX.Element }) {
       navigate("/admin-access", { replace: true });
     }
   });
+
+  // Estado y permisos del admin autenticado (para filtrar el menú).
+  // El backend sigue validando cada operación: esto es solo cosmético/UX.
+  const [me] = createResource<AdminMe | null>(
+    async () => {
+      try {
+        return await apiGet<AdminMe>("/admin/me");
+      } catch {
+        return null;
+      }
+    },
+    { initialValue: null }
+  );
 
   // Badge de tickets pendientes (polling cada 30s). Silencioso si falla.
   const [pendientes] = createResource(
@@ -31,17 +55,28 @@ export default function AdminLayout(props: { children: JSX.Element }) {
   );
   const ticketsPendientes = () => pendientes()?.pendientes ?? 0;
 
+  const hasAny = (keys: (keyof PermissionState)[]): boolean => {
+    const m = me();
+    if (!m) return false;
+    if (m.sudo) return true;
+    return keys.some((k) => m.permissions[k]);
+  };
+
+  // Visibilidad del menú por permisos (el backend sigue siendo la barrera real).
   const menuItems = [
-    { title: "Dashboard", path: "/admin", icon: "📊" },
-    { title: "Psicólogos", path: "/admin/psicologos", icon: "👥" },
-    { title: "Inscripciones", path: "/admin/inscripciones", icon: "📝" },
-    { title: "Areas de Ejercicio Psi", path: "/admin/areas_de_ejercicio_profesional", icon: "🔖" },
-    { title: "Noticias", path: "/admin/noticias", icon: "📰" },
-    { title: "Notificaciones", path: "/admin/notificaciones", icon: "🔔" },
-    { title: "Tickets", path: "/admin/tickets", icon: "🎫" },
-    { title: "Proyectos", path: "/admin/proyectos", icon: "📋" },
-    { title: "Staff", path: "/admin/staff", icon: "🛡️" },
+    { title: "Dashboard", path: "/admin", icon: "📊", always: true, perms: [] as (keyof PermissionState)[] },
+    { title: "Psicólogos", path: "/admin/psicologos", icon: "👥", always: false, perms: ["can_read_psi", "can_create_psi", "can_update_psi", "can_delete_psi"] },
+    { title: "Inscripciones", path: "/admin/inscripciones", icon: "📝", always: false, perms: ["can_read_psi", "can_create_psi", "can_update_psi", "can_delete_psi"] },
+    { title: "Areas de Ejercicio Psi", path: "/admin/areas_de_ejercicio_profesional", icon: "🔖", always: false, perms: ["can_create_tags", "can_edit_tags", "can_delete_tags"] },
+    { title: "Noticias", path: "/admin/noticias", icon: "📰", always: false, perms: ["can_publish", "can_update_publish", "can_delete_publish"] },
+    { title: "Notificaciones", path: "/admin/notificaciones", icon: "🔔", always: false, perms: ["can_send_notifications", "can_manage_notifications", "can_read_notifications"] },
+    { title: "Tickets", path: "/admin/tickets", icon: "🎫", always: false, perms: ["can_manage_tickets"] },
+    { title: "Proyectos", path: "/admin/proyectos", icon: "📋", always: false, perms: ["can_manage_projects"] },
+    { title: "Staff", path: "/admin/staff", icon: "🛡️", always: false, perms: ["can_create_admin", "can_update_admin", "can_delete_admin"] },
   ];
+
+  const visibleMenu = () =>
+    menuItems.filter((item) => item.always || hasAny(item.perms));
 
   return (
     <Show 
@@ -66,7 +101,7 @@ export default function AdminLayout(props: { children: JSX.Element }) {
           </div>
           
           <nav class="flex-grow p-4 space-y-2 overflow-y-auto">
-            {menuItems.map((item) => (
+            {visibleMenu().map((item) => (
               <A href={item.path} end={item.path === "/admin"} class="flex items-center px-3 py-3.5 rounded-xl text-blue-100 hover:bg-blue-800 transition-all" activeClass="bg-colpsi-yellow !text-colpsi-blue font-black shadow-lg">
                 <span class={`text-xl ${isCollapsed() ? "mx-auto" : "mr-4"}`}>{item.icon}</span>
                 {!isCollapsed() && <span>{item.title}</span>}

@@ -5,6 +5,8 @@
 // La autorización real SIEMPRE evalúa los booleanos individuales, nunca el rol.
 package service
 
+import "github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
+
 // RoleSlug identifica un preset de permisos.
 type RoleSlug string
 
@@ -105,6 +107,31 @@ var AdminRolePresets = []RolePreset{
 			CanReadNotifications: true,
 		},
 	},
+}
+
+// AdminPermissionSet convierte los flags de un UserAdmin (fuente de verdad)
+// en la vista serializable que consume la UI (GET /admin/me).
+func AdminPermissionSet(a *domain.UserAdmin) PermissionSet {
+	return PermissionSet{
+		CanReadPsi:            a.CanReadPsi,
+		CanCreatePsi:          a.CanCreatePsi,
+		CanUpdatePsi:          a.CanUpdatePsi,
+		CanDeletePsi:          a.CanDeletePsi,
+		CanCreateAdmin:        a.CanCreateAdmin,
+		CanUpdateAdmin:        a.CanUpdateAdmin,
+		CanDeleteAdmin:        a.CanDeleteAdmin,
+		CanPublish:            a.CanPublish,
+		CanUpdatePublish:      a.CanUpdatePublish,
+		CanDeletePublish:      a.CanDeletePublish,
+		CanSendNotifications:  a.CanSendNotifications,
+		CanManageNotifications: a.CanManageNotifications,
+		CanReadNotifications:  a.CanReadNotifications,
+		CanCreateTags:         a.CanCreateTags,
+		CanEditTags:           a.CanEditTags,
+		CanDeleteTags:         a.CanDeleteTags,
+		CanManageProjects:     a.CanManageProjects,
+		CanManageTickets:      a.CanManageTickets,
+	}
 }
 
 // isValidRoleSlug valida que el rótulo provenga de un preset conocido (o el

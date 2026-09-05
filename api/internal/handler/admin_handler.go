@@ -102,6 +102,32 @@ func (h *AdminHandler) ValidateSession(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"valid": true})
 }
 
+// GetMe godoc
+// @Summary      Estado y permisos del administrador autenticado
+// @Description  Retorna identidad, rol y matriz de permisos del administrador actual. La UI lo usa para filtrar el menú; es informativo, nunca autoriza: el backend valida cada operación.
+// @Tags         Administración - Sesión
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200 {object} map[string]interface{}
+// @Failure      401 {object} map[string]interface{}
+// @Router       /admin/me [get]
+func (h *AdminHandler) GetMe(c *fiber.Ctx) error {
+	admin, err := middleware.GetAuthenticatedAdmin(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Sesión inválida o expirada."})
+	}
+
+	return c.JSON(fiber.Map{
+		"id":          admin.ID,
+		"username":    admin.Username,
+		"email":       admin.Email,
+		"is_active":   admin.IsActive,
+		"sudo":        admin.Sudo,
+		"role":        admin.Role,
+		"permissions": service.AdminPermissionSet(admin),
+	})
+}
+
 // CreateAdmin godoc
 // @Summary      Crear un nuevo administrador
 // @Description  Registra un nuevo miembro del staff administrativo verificando la jerarquía de permisos.

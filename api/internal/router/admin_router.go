@@ -59,4 +59,5 @@ func SetupAdminRoutes(router fiber.Router, adminRepo domain.UserAdminRepository,
 	// "sesión inválida" (401) de "ruta inexistente" (404).
 	adminValidate := router.Group("/admin", middleware.NoStore(), authMid.ProtectedAdmin())
 	adminValidate.Get("/validate", h.ValidateSession)
+	adminValidate.Get("/me", h.GetMe)
 }
