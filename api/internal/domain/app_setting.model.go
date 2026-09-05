@@ -13,7 +13,7 @@ import (
 
 // Claves de configuración de recepción global (interruptores).
 const (
-	SettingsKeyTicketsReception     = "tickets.reception_enabled"
+	SettingsKeyTicketsReception      = "tickets.reception_enabled"
 	SettingsKeyInscriptionsReception = "inscriptions.reception_enabled"
 )
 

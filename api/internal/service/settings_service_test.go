@@ -8,17 +8,17 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/require"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/request_structs"
-	"github.com/stretchr/testify/require"
 	"gorm.io/datatypes"
 )
 
 // mockAppSettingsRepo es un mock del KV global con patrón "Func Override".
 type mockAppSettingsRepo struct {
 	domain.AppSettingsRepository
-	GetFunc        func(ctx context.Context, key string) (*domain.AppSetting, error)
-	UpsertFunc     func(ctx context.Context, setting *domain.AppSetting) error
+	GetFunc         func(ctx context.Context, key string) (*domain.AppSetting, error)
+	UpsertFunc      func(ctx context.Context, setting *domain.AppSetting) error
 	CreateAuditFunc func(ctx context.Context, log *domain.SettingsAuditLog) error
 }
 
