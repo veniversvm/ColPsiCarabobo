@@ -3,7 +3,6 @@ import { JSX, createSignal, Show, createEffect } from "solid-js";
 import { A, useNavigate } from "@solidjs/router";
 import { useAuth } from "~/lib/auth";
 import { Animate, Presence } from "~/components/ui/Motion";
-
 export default function AdminLayout(props: { children: JSX.Element }) {
   const { role, isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
@@ -53,9 +52,9 @@ export default function AdminLayout(props: { children: JSX.Element }) {
                 <span class="text-colpsi-blue text-2xl font-black">Ψ</span>
               </div>
               <Show when={!isCollapsed()}>
-                <Animate variant="fade" class="text-xl font-black tracking-widest uppercase whitespace-nowrap">
+                <span class="text-xl font-black tracking-widest uppercase whitespace-nowrap">
                   Admin
-                </Animate>
+                </span>
               </Show>
             </A>
           </div>
@@ -74,9 +73,9 @@ export default function AdminLayout(props: { children: JSX.Element }) {
                   {item.icon}
                 </span>
                 <Show when={!isCollapsed()}>
-                  <Animate variant="fade" class="truncate">
+                  <span class="truncate">
                     {item.title}
-                  </Animate>
+                  </span>
                 </Show>
               </A>
             ))}
