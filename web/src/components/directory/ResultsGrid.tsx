@@ -3,7 +3,6 @@ import { For, Show } from "solid-js";
 import { PsychologistCard } from "./PsychologistCard";
 import { DirectoryPsychologist } from "~/types/psi";
 import { SearchingIndicator } from "../ui/SearchingIndicator";
-import { Animate } from "~/components/ui/Motion";
 
 interface ResultsGridProps {
   psychologists: DirectoryPsychologist[];
@@ -30,7 +29,7 @@ export function ResultsGrid(props: ResultsGridProps) {
       </Show>
 
       {/* Grid */}
-      <Animate variant="slide-bottom" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <For
           each={props.psychologists}
           fallback={
@@ -43,7 +42,7 @@ export function ResultsGrid(props: ResultsGridProps) {
         >
           {(psychologist) => <PsychologistCard psychologist={psychologist} />}
         </For>
-      </Animate>
+      </div>
 
       {/* Spinner de carga adicional */}
       <Show when={props.loadingMore}>

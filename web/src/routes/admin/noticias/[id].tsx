@@ -117,7 +117,7 @@ export default function AdminEditarNoticiaPage() {
   };
 
   return (
-    <main class="pb-28 max-w-4xl mx-auto">
+    <main class="pb-28 animate-in fade-in duration-500 max-w-4xl mx-auto">
 
       <EditHeader 
         post={post() ?? null}

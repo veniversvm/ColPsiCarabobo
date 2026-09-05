@@ -22,7 +22,7 @@ export default function AdminNotificacionDetalle() {
   const n = () => detail()?.notification;
 
   return (
-    <main class="pb-20 max-w-3xl">
+    <main class="pb-20 animate-in fade-in duration-500 max-w-3xl">
       <A href="/admin/notificaciones" class="inline-flex items-center gap-1 text-sm font-bold text-blue-600 hover:text-blue-800 mb-4">
         ← Volver a Notificaciones
       </A>

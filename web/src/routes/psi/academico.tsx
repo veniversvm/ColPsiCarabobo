@@ -6,7 +6,6 @@ import { apiGet, apiPost, apiPatch, apiDelete } from "~/lib/api";
 import { bucketUrl } from "~/lib/bucket";
 import { getUserFacingError } from "~/lib/errors";
 import { FileUploader } from "~/components/ui/fileUploader";
-import { Animate, Presence } from "~/components/ui/Motion";
 
 export default function AcademicoPage() {
   // ── Datos ──────────────────────────────────────────────────────────────────
@@ -134,44 +133,42 @@ export default function AcademicoPage() {
       <div class="max-w-4xl mx-auto px-4 md:px-8 -mt-10 space-y-8">
 
         {/* ── MODAL DE CONFIRMACIÓN DE ELIMINACIÓN ──────────────────────────── */}
-        <Presence>
-          <Show when={deleteId()}>
-            <Animate variant="fade" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" exit={{ opacity: 0 }}>
-              <Animate variant="zoom" class="bg-white rounded-3xl p-8 shadow-2xl max-w-sm w-full mx-4 border border-gray-100" exit={{ opacity: 0, scale: 0.95 }}>
-                <div class="text-center mb-6">
-                  <span class="text-4xl">🗑️</span>
-                  <h3 class="text-lg font-black text-gray-800 mt-3">¿Eliminar este título?</h3>
-                  <p class="text-sm text-gray-500 mt-1">Esta acción es permanente y no se puede deshacer.</p>
-                </div>
+        <Show when={deleteId()}>
+          <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+            <div class="bg-white rounded-3xl p-8 shadow-2xl max-w-sm w-full mx-4 border border-gray-100">
+              <div class="text-center mb-6">
+                <span class="text-4xl">🗑️</span>
+                <h3 class="text-lg font-black text-gray-800 mt-3">¿Eliminar este título?</h3>
+                <p class="text-sm text-gray-500 mt-1">Esta acción es permanente y no se puede deshacer.</p>
+              </div>
 
-                <Show when={deleteError()}>
-                  <div class="mb-4 p-3 rounded-xl bg-red-50 text-red-700 text-sm font-bold border border-red-100">
-                    {deleteError()}
-                  </div>
-                </Show>
-
-                <div class="flex gap-3">
-                  <button
-                    onClick={() => { setDeleteId(null); setDeleteError(null); }}
-                    class="flex-1 bg-gray-100 text-gray-700 py-3 rounded-2xl font-black hover:bg-gray-200 transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={confirmDelete}
-                    class="flex-1 bg-red-500 text-white py-3 rounded-2xl font-black hover:bg-red-600 active:scale-95 transition-all"
-                  >
-                    Eliminar
-                  </button>
+              <Show when={deleteError()}>
+                <div class="mb-4 p-3 rounded-xl bg-red-50 text-red-700 text-sm font-bold border border-red-100">
+                  {deleteError()}
                 </div>
-              </Animate>
-            </Animate>
-          </Show>
-        </Presence>
+              </Show>
+
+              <div class="flex gap-3">
+                <button
+                  onClick={() => { setDeleteId(null); setDeleteError(null); }}
+                  class="flex-1 bg-gray-100 text-gray-700 py-3 rounded-2xl font-black hover:bg-gray-200 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  class="flex-1 bg-red-500 text-white py-3 rounded-2xl font-black hover:bg-red-600 active:scale-95 transition-all"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        </Show>
 
         {/* ── FORMULARIO ────────────────────────────────────────────────────── */}
         <Show when={showForm()}>
-          <form onSubmit={handleSubmit} class="bg-white rounded-[2.5rem] p-8 shadow-2xl border-2 border-colpsi-yellow">
+          <form onSubmit={handleSubmit} class="bg-white rounded-[2.5rem] p-8 shadow-2xl border-2 border-colpsi-yellow animate-in slide-in-from-top-4 duration-300">
             <h2 class="text-xl font-black text-colpsi-blue mb-6">
               {isEditing() ? "✏️ Editando Título" : "📜 Registrar Postgrado"}
             </h2>

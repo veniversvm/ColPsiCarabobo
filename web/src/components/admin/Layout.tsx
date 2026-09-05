@@ -2,7 +2,6 @@
 import { JSX, createSignal, Show, createEffect } from "solid-js";
 import { A, useNavigate } from "@solidjs/router";
 import { useAuth } from "~/lib/auth";
-import { Animate, Presence } from "~/components/ui/Motion";
 
 export default function AdminLayout(props: { children: JSX.Element }) {
   const { role, isAuthenticated, user, logout } = useAuth();
@@ -53,9 +52,9 @@ export default function AdminLayout(props: { children: JSX.Element }) {
                 <span class="text-colpsi-blue text-2xl font-black">Ψ</span>
               </div>
               <Show when={!isCollapsed()}>
-                <Animate variant="fade" class="text-xl font-black tracking-widest uppercase whitespace-nowrap">
+                <span class="text-xl font-black tracking-widest uppercase animate-in fade-in duration-300 whitespace-nowrap">
                   Admin
-                </Animate>
+                </span>
               </Show>
             </A>
           </div>
@@ -74,9 +73,9 @@ export default function AdminLayout(props: { children: JSX.Element }) {
                   {item.icon}
                 </span>
                 <Show when={!isCollapsed()}>
-                  <Animate variant="fade" class="truncate">
+                  <span class="truncate animate-in fade-in duration-300">
                     {item.title}
-                  </Animate>
+                  </span>
                 </Show>
               </A>
             ))}
@@ -92,7 +91,8 @@ export default function AdminLayout(props: { children: JSX.Element }) {
                 </button>
               }
             >
-              <div class="flex items-center justify-between bg-blue-800/30 p-3 rounded-2xl mb-3">                <div class="flex items-center gap-3 overflow-hidden">
+              <div class="flex items-center justify-between animate-in fade-in duration-300 bg-blue-800/30 p-3 rounded-2xl mb-3">
+                <div class="flex items-center gap-3 overflow-hidden">
                   <div class="w-10 h-10 rounded-full bg-colpsi-yellow text-colpsi-blue flex items-center justify-center font-black shrink-0">
                     {user()?.username.charAt(0).toUpperCase()}
                   </div>
@@ -124,40 +124,38 @@ export default function AdminLayout(props: { children: JSX.Element }) {
         </div>
 
         {/* MENÚ MÓVIL */}
-        <Presence>
-          <Show when={isMobileOpen()}>
-            <Animate variant="slide-top" class="md:hidden fixed inset-0 z-40 bg-colpsi-blue flex flex-col pt-16" exit={{ opacity: 0, y: -20 }}>
-              <nav class="p-6 space-y-3 flex-grow overflow-y-auto">
-                {menuItems.map((item) => (
-                  <A
-                    href={item.path}
-                    end={item.path === "/admin"}
-                    onClick={() => setIsMobileOpen(false)}
-                    class="flex items-center gap-4 px-5 py-4 rounded-2xl text-blue-100 hover:bg-blue-800 bg-blue-900/20"
-                    activeClass="bg-colpsi-yellow !text-colpsi-blue font-black shadow-lg"
-                  >
-                    <span class="text-2xl">{item.icon}</span>
-                    <span class="text-lg tracking-wide">{item.title}</span>
-                  </A>
-                ))}
-              </nav>
-              <div class="p-6 border-t border-blue-800 bg-blue-900/40">
-                <div class="flex items-center gap-4 mb-6">
-                  <div class="w-12 h-12 rounded-full bg-colpsi-yellow text-colpsi-blue flex items-center justify-center font-black text-xl">
-                    {user()?.username.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <p class="text-lg font-bold text-white">{user()?.username}</p>
-                    <p class="text-sm text-blue-300">{user()?.email}</p>
-                  </div>
+        <Show when={isMobileOpen()}>
+          <div class="md:hidden fixed inset-0 z-40 bg-colpsi-blue flex flex-col pt-16 animate-in slide-in-from-top-10 duration-200">
+            <nav class="p-6 space-y-3 flex-grow overflow-y-auto">
+              {menuItems.map((item) => (
+                <A
+                  href={item.path}
+                  end={item.path === "/admin"}
+                  onClick={() => setIsMobileOpen(false)}
+                  class="flex items-center gap-4 px-5 py-4 rounded-2xl text-blue-100 hover:bg-blue-800 bg-blue-900/20"
+                  activeClass="bg-colpsi-yellow !text-colpsi-blue font-black shadow-lg"
+                >
+                  <span class="text-2xl">{item.icon}</span>
+                  <span class="text-lg tracking-wide">{item.title}</span>
+                </A>
+              ))}
+            </nav>
+            <div class="p-6 border-t border-blue-800 bg-blue-900/40">
+              <div class="flex items-center gap-4 mb-6">
+                <div class="w-12 h-12 rounded-full bg-colpsi-yellow text-colpsi-blue flex items-center justify-center font-black text-xl">
+                  {user()?.username.charAt(0).toUpperCase()}
                 </div>
-                <button onClick={logout} class="w-full flex items-center justify-center gap-2 bg-red-500 text-white py-4 rounded-2xl font-black text-lg active:scale-95 transition-transform shadow-lg">
-                  <span>🚪</span> CERRAR SESIÓN
-                </button>
+                <div>
+                  <p class="text-lg font-bold text-white">{user()?.username}</p>
+                  <p class="text-sm text-blue-300">{user()?.email}</p>
+                </div>
               </div>
-            </Animate>
-          </Show>
-        </Presence>
+              <button onClick={logout} class="w-full flex items-center justify-center gap-2 bg-red-500 text-white py-4 rounded-2xl font-black text-lg active:scale-95 transition-transform shadow-lg">
+                <span>🚪</span> CERRAR SESIÓN
+              </button>
+            </div>
+          </div>
+        </Show>
 
         {/* ÁREA DE CONTENIDO */}
         <div class="flex-grow flex flex-col h-screen pt-16 md:pt-0 overflow-y-auto relative">

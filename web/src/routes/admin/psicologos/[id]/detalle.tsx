@@ -451,7 +451,7 @@ export default function AdminEditPsiPage() {
   };
 
   return (
-    <main class="pb-28 font-sans">
+    <main class="pb-28 animate-in fade-in duration-500 font-sans">
       <EditPageHeader profile={profile()} />
       <Suspense
         fallback={

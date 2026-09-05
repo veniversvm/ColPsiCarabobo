@@ -2,7 +2,6 @@
 import { useAuth } from "~/lib/auth";
 import { Show, createSignal } from "solid-js";
 import { A } from "@solidjs/router";
-import { Animate, Presence } from "~/components/ui/Motion";
 
 export default function Navbar() {
   const { user, isAuthenticated, logout, role } = useAuth();
@@ -105,9 +104,8 @@ export default function Navbar() {
       </div>
 
       {/* MOBILE MENU CONTENT (Dropdown) */}
-      <Presence>
-        <Show when={isOpen()}>
-          <Animate variant="slide-top" class="md:hidden bg-white border-t border-gray-50 shadow-2xl" exit={{ opacity: 0, y: -10 }}>
+      <Show when={isOpen()}>
+        <div class="md:hidden bg-white border-t border-gray-50 shadow-2xl animate-in slide-in-from-top duration-300">
           <div class="px-4 pt-4 pb-6 space-y-1">
             <A href="/directorio" onClick={() => setIsOpen(false)} class={navLinkClass}>Directorio Profesional</A>
             <A href="/noticias" onClick={() => setIsOpen(false)} class={navLinkClass}>Noticias y Avisos</A>
@@ -158,9 +156,8 @@ export default function Navbar() {
               </Show>
             </div>
           </div>
-        </Animate>
+        </div>
       </Show>
-      </Presence>
     </nav>
   );
 }

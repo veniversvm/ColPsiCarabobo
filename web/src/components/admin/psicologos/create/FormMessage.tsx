@@ -1,9 +1,8 @@
 // web/src/components/admin/psicologos/create/FormMessage.tsx
 import { Show } from "solid-js";
-import { Animate } from "~/components/ui/Motion";
 
 interface Props {
-  type?: "success" | "error" | null;
+  type?: "success" | "error" | null;  // Acepta undefined también
   text: string;
   details?: any;
 }
@@ -11,7 +10,7 @@ interface Props {
 export function FormMessage(props: Props) {
   return (
     <Show when={props.type}>
-      <Animate variant="slide-top" class={`p-5 rounded-2xl shadow-md border-l-4 ${
+      <div class={`p-5 rounded-2xl shadow-md border-l-4 animate-in slide-in-from-top-4 ${
         props.type === 'success' ? 'bg-green-50 border-green-500' : 'bg-red-50 border-red-500'
       }`}>
         <div class="flex items-start gap-3">
@@ -34,7 +33,7 @@ export function FormMessage(props: Props) {
             </Show>
           </div>
         </div>
-      </Animate>
+      </div>
     </Show>
   );
 }

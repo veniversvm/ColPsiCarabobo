@@ -1,5 +1,5 @@
 // web/src/components/admin/proyectos/ConfirmModal.tsx
-import { Animate } from "~/components/ui/Motion";
+import { Show } from "solid-js";
 
 export default function ConfirmModal(props: {
   title: string;
@@ -11,13 +11,11 @@ export default function ConfirmModal(props: {
   onClose: () => void;
 }) {
   return (
-    <Animate
-      variant="fade"
+    <div
       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
-      exit={{ opacity: 0 }}
       onClick={(e) => e.target === e.currentTarget && !props.busy && props.onClose()}
     >
-      <Animate variant="zoom" class="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-sm text-center" exit={{ opacity: 0, scale: 0.95 }}>
+      <div class="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-sm text-center animate-in zoom-in-95">
         <div class="w-14 h-14 mx-auto rounded-2xl bg-red-50 flex items-center justify-center text-2xl mb-3">
           ⚠️
         </div>
@@ -39,7 +37,7 @@ export default function ConfirmModal(props: {
             {props.busy ? "..." : (props.confirmLabel ?? "Confirmar")}
           </button>
         </div>
-      </Animate>
-    </Animate>
+      </div>
+    </div>
   );
 }

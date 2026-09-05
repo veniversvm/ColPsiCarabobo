@@ -6,7 +6,6 @@ import { getUserFacingError } from "~/lib/errors";
 import { Project } from "~/types/projects";
 import { canManageProject, ProjectMemberRole } from "~/types/projects";
 import ConfirmModal from "~/components/admin/proyectos/ConfirmModal";
-import { Presence } from "~/components/ui/Motion";
 
 const ROLE_LABELS: Record<string, string> = {
   viewer: "Espectador",
@@ -144,19 +143,17 @@ export default function ProyectosIndex() {
         </Suspense>
       </ErrorBoundary>
 
-      <Presence>
-        <Show when={deleting()}>
-          <ConfirmModal
-            title="Eliminar proyecto"
-            message={`¿Seguro que quieres eliminar «${deleting()!.name}»? Se borrarán todas sus columnas, tarjetas y notas de forma definitiva.`}
-            confirmLabel="Eliminar"
-            danger
-            busy={busy()}
-            onConfirm={doDelete}
-            onClose={() => !busy() && setDeleting(null)}
-          />
-        </Show>
-      </Presence>
+      <Show when={deleting()}>
+        <ConfirmModal
+          title="Eliminar proyecto"
+          message={`¿Seguro que quieres eliminar «${deleting()!.name}»? Se borrarán todas sus columnas, tarjetas y notas de forma definitiva.`}
+          confirmLabel="Eliminar"
+          danger
+          busy={busy()}
+          onConfirm={doDelete}
+          onClose={() => !busy() && setDeleting(null)}
+        />
+      </Show>
     </div>
   );
 }

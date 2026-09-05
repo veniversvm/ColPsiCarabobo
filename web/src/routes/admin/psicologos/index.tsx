@@ -2,9 +2,9 @@ import { createResource, createSignal, onCleanup, Show, createEffect } from "sol
 import { isServer } from "solid-js/web";
 import { apiGet } from "~/lib/api";
 import { PsiAdminListItem, PaginatedResponse } from "~/types/admin";
+// Cambiamos el nombre del componente de Importación (Asumiendo que actualizaste el componente a XLSX)
 import { ImportXlsxModal } from "~/components/admin/ImportXlsxModal";
 import { PaginationBar } from "~/components/ui/PaginationBar";
-import { Presence } from "~/components/ui/Motion";
 import {
   PsychologistHeader,
   PsychologistSearchBar,
@@ -115,7 +115,7 @@ export default function AdminPsychologistsList() {
   const initialLoading = () => data.loading && !cachedData();
 
   return (
-    <div class="space-y-6 font-sans">
+    <div class="space-y-6 animate-in fade-in duration-500 font-sans">
 
       {/* Header - Asegúrate de que este componente reciba la prop onImportClick */}
       <PsychologistHeader 
@@ -180,17 +180,15 @@ export default function AdminPsychologistsList() {
       </div>
 
       {/* Modal de Importación XLSX (Antes CSV) */}
-      <Presence>
-        <Show when={showImportModal()}>
-          <ImportXlsxModal
-            onClose={() => setShowImportModal(false)}
-            onSuccess={() => {
-              refetch();
-              setShowImportModal(false);
-            }}
-          />
-        </Show>
-      </Presence>
+      <Show when={showImportModal()}>
+        <ImportXlsxModal
+          onClose={() => setShowImportModal(false)}
+          onSuccess={() => { 
+            refetch(); 
+            setShowImportModal(false); 
+          }}
+        />
+      </Show>
 
     </div>
   );

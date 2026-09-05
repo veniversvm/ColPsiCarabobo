@@ -3,7 +3,6 @@ import { createSignal, Show } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import { apiPost } from "~/lib/api";
 import { getUserFacingError } from "~/lib/errors";
-import { Animate } from "~/components/ui/Motion";
 
 const IC = "w-full bg-white border-2 border-gray-100 focus:border-blue-500 rounded-2xl px-5 py-3.5 outline-none transition-all text-gray-800 text-sm shadow-sm";
 const labelClass = "block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2 mb-2";
@@ -58,7 +57,7 @@ export default function AdminCrearAreaEjercicioPage() {
   };
 
   return (
-    <main class="pb-28 max-w-3xl mx-auto font-sans">
+    <main class="pb-28 animate-in fade-in duration-500 max-w-3xl mx-auto font-sans">
 
       {/* ── HEADER ────────────────────────────────────────────────────────── */}
       <div class="flex items-center gap-6 mb-10 bg-white p-8 rounded-[2.5rem] shadow-premium border border-gray-100">
@@ -83,9 +82,9 @@ export default function AdminCrearAreaEjercicioPage() {
 
       {/* ── ERROR ALERT ───────────────────────────────────────────────────── */}
       <Show when={error()}>
-        <Animate variant="slide-top" class="mb-8 p-5 rounded-2xl bg-red-50 text-red-800 font-bold text-sm border-2 border-red-100 flex items-center gap-3">
+        <div class="mb-8 p-5 rounded-2xl bg-red-50 text-red-800 font-bold text-sm border-2 border-red-100 flex items-center gap-3 animate-in slide-in-from-top-2 duration-300">
           <span class="text-xl">⚠️</span> {error()}
-        </Animate>
+        </div>
       </Show>
 
       <form onSubmit={handleSubmit} class="space-y-8">

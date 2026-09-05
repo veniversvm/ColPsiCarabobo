@@ -48,7 +48,7 @@ export default function AdminNotificacionesPage() {
   const totalPages = Math.max(1, Math.ceil((list()?.total ?? 0) / 15));
 
   return (
-    <main class="pb-20">
+    <main class="pb-20 animate-in fade-in duration-500">
       <NotificationsHeader />
 
       <div class="mb-4">
