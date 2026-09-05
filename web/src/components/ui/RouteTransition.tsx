@@ -6,12 +6,14 @@
 // Solo navegaciones que cruzan a/desde rutas públicas se envuelven en
 // document.startViewTransition(). Fallbacks seguros:
 //   - Sin startViewTransition o prefers-reduced-motion → navegación normal.
+//   - Rutas sin path (from/to pueden ser undefined) → navegación normal.
 // Componente pasivo; se monta desde app.tsx.
 import { useBeforeLeave } from "@solidjs/router";
 
 const PANEL_PREFIX = ["/admin", "/psi"];
 
-function isPublicPath(path: string) {
+function isPublicPath(path: string | undefined) {
+  if (!path) return true;
   return !PANEL_PREFIX.some((p) => path === p || path.startsWith(p + "/"));
 }
 
@@ -25,7 +27,9 @@ export default function RouteTransition() {
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) return;
 
     // Navegaciones dentro de paneles persistentes → sin transición.
-    if (isPublicPath(e.from.path) === false && isPublicPath(e.to.path) === false) return;
+    const fromPublic = isPublicPath(e.from?.path);
+    const toPublic = isPublicPath(e.to?.path);
+    if (!fromPublic && !toPublic) return;
 
     e.preventDefault();
     inTransition = true;
