@@ -2854,6 +2854,29 @@ paths:
       summary: Listar administradores
       tags:
       - Administración - Gestión
+  /admin/me:
+    get:
+      description: 'Retorna identidad, rol y matriz de permisos del administrador
+        actual. La UI lo usa para filtrar el menú; es informativo, nunca autoriza:
+        el backend valida cada operación.'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Estado y permisos del administrador autenticado
+      tags:
+      - Administración - Sesión
   /admin/posts:
     post:
       consumes:

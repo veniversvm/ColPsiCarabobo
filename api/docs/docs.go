@@ -406,6 +406,39 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/me": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna identidad, rol y matriz de permisos del administrador actual. La UI lo usa para filtrar el menú; es informativo, nunca autoriza: el backend valida cada operación.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Sesión"
+                ],
+                "summary": "Estado y permisos del administrador autenticado",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/admin/posts": {
             "post": {
                 "security": [
