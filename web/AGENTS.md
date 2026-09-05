@@ -97,6 +97,11 @@ deno task build      # igual que npm run build (lo usa el dockerfile)
     - La columna droppable se resalta con `droppable.isActiveDroppable` (ring
       azul); la tarjeta usa `transition-shadow` (NO `transition-all`: anima el
       transform y laggea el arrastre).
+    - **`allCards()` deriva de las columnas, no de `local.cards`** — `local`
+      arranca `null` y solo se llena al mutar (no se siembra desde el board),
+      así que `local()?.cards` era `[]` con las tarjetas iniciales y `findCard`
+      fallaba → el drag no movía ni persistía (return silencioso en `onDragEnd`).
+      Derivar la lista plana de `(local()?.columns ?? board()?.columns ?? []).flatMap(c => c.cards ?? [])`.
 
 ## Estructura
 

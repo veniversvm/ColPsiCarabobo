@@ -195,7 +195,7 @@ export default function ProjectBoardPage() {
   const isManager = () => (project() ? canManageProject(project()!) : false);
 
   const columns = () => local()?.columns ?? board()?.columns ?? [];
-  const allCards = () => local()?.cards ?? [];
+  const allCards = () => (local()?.columns ?? board()?.columns ?? []).flatMap((c) => c.cards ?? []);
 
   const [members, { refetch: refetchMembers }] = createResource<BoardMember[]>(
     () => apiGet<{ data: BoardMember[] }>(`/admin/projects/${projectId}/members`).then((r) => r.data)
