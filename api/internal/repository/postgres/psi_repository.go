@@ -1000,3 +1000,40 @@ func (r *psiRepo) GetAllForABSSync(ctx context.Context) ([]domain.PsiUserModel, 
 		Find(&users).Error
 	return users, err
 }
+
+// =========================================================================
+// REGISTRO DIGITAL DE DOCUMENTOS
+// =========================================================================
+
+// ListDocuments recupera los documentos digitales del expediente de un
+// psicólogo, ordenados del más reciente al más antiguo.
+func (r *psiRepo) ListDocuments(ctx context.Context, psiID uuid.UUID) ([]domain.PsiUserDocument, error) {
+	var docs []domain.PsiUserDocument
+	err := r.db.WithContext(ctx).
+		Where("psi_user_id = ?", psiID).
+		Order("created_at DESC").
+		Find(&docs).Error
+	return docs, err
+}
+
+// GetDocument busca un documento digital específico por su UUID.
+func (r *psiRepo) GetDocument(ctx context.Context, id uuid.UUID) (*domain.PsiUserDocument, error) {
+	var doc domain.PsiUserDocument
+	err := r.db.WithContext(ctx).First(&doc, "id = ?", id).Error
+	return &doc, err
+}
+
+// CreateDocument persiste un nuevo documento digital del expediente.
+func (r *psiRepo) CreateDocument(ctx context.Context, doc *domain.PsiUserDocument) error {
+	return r.db.WithContext(ctx).Create(doc).Error
+}
+
+// UpdateDocument guarda los cambios de metadatos (y auditoría) de un documento.
+func (r *psiRepo) UpdateDocument(ctx context.Context, doc *domain.PsiUserDocument) error {
+	return r.db.WithContext(ctx).Save(doc).Error
+}
+
+// DeleteDocument elimina lógicamente (soft delete) un documento del expediente.
+func (r *psiRepo) DeleteDocument(ctx context.Context, id uuid.UUID) error {
+	return r.db.WithContext(ctx).Delete(&domain.PsiUserDocument{}, "id = ?", id).Error
+}

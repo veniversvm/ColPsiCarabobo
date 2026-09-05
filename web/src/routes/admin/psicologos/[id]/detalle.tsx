@@ -17,6 +17,7 @@ import {
   SocialNetworksBlock,
   DeontologiaBlock,
   ObservationsBlock,
+  DocumentsBlock,
   AuditBlock,
   AccountSection,
   AdminStatusSection,
@@ -27,6 +28,7 @@ import {
   AcademicSection,
 } from "~/components/admin/psicologos/edit";
 import type { EditFormState, DeontologiaEntry, ObservacionesEntry } from "~/components/admin/psicologos/edit";
+import type { PsiUserDocument } from "~/types/psi";
 import { SolvenciesSection } from "~/components/admin/psicologos/edit/SolvenciesSection";
 import { Panel, PanelSection } from "~/components/ui/Panel";
 
@@ -115,6 +117,35 @@ const updateObservacionesServer = action(
   },
 );
 
+const addDocumentServer = action(
+  async (params: { id: string; payload: FormData }) => {
+    "use server";
+    const { apiPost } = await import("~/lib/api");
+    return await apiPost(`/admin/psi/${params.id}/documents`, params.payload);
+  },
+);
+
+const updateDocumentServer = action(
+  async (params: { psiId: string; docId: string; payload: FormData }) => {
+    "use server";
+    const { apiPatch } = await import("~/lib/api");
+    return await apiPatch(
+      `/admin/psi/${params.psiId}/documents/${params.docId}`,
+      params.payload,
+    );
+  },
+);
+
+const deleteDocumentServer = action(
+  async (params: { psiId: string; docId: string }) => {
+    "use server";
+    const { apiDelete } = await import("~/lib/api");
+    return await apiDelete(
+      `/admin/psi/${params.psiId}/documents/${params.docId}`,
+    );
+  },
+);
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const formatDate = (dateStr?: string) => (dateStr ? dateStr.split("T")[0] : "");
@@ -181,6 +212,9 @@ export default function AdminEditPsiPage() {
   );
   const [observaciones, { refetch: refetchObservaciones }] = createResource(
     () => apiGet<ObservacionesEntry[]>(`/admin/psi/${params.id}/observaciones`),
+  );
+  const [documentos, { refetch: refetchDocumentos }] = createResource(
+    () => apiGet<PsiUserDocument[]>(`/admin/psi/${params.id}/documents`),
   );
 
   const [form, setForm] = createStore<EditFormState>({} as EditFormState);
@@ -553,6 +587,30 @@ export default function AdminEditPsiPage() {
                   if (!id) return;
                   await updateObservacionesServer({ psiId: id, entryId, content });
                   refetchObservaciones();
+                }}
+              />
+            </PanelSection>
+
+            <PanelSection title="Registro Digital de Documentos" accent="border-gray-300">
+              <DocumentsBlock
+                entries={documentos()}
+                onAdd={async (payload) => {
+                  const id = params.id ?? "";
+                  if (!id) return;
+                  await addDocumentServer({ id, payload });
+                  refetchDocumentos();
+                }}
+                onUpdate={async (docId, payload) => {
+                  const id = params.id ?? "";
+                  if (!id) return;
+                  await updateDocumentServer({ psiId: id, docId, payload });
+                  refetchDocumentos();
+                }}
+                onDelete={async (docId) => {
+                  const id = params.id ?? "";
+                  if (!id) return;
+                  await deleteDocumentServer({ psiId: id, docId });
+                  refetchDocumentos();
                 }}
               />
             </PanelSection>

@@ -189,4 +189,24 @@ type PsiUserRepository interface {
 	// [from, to] y que han autorizado el aviso de cumpleaños (birthday_notification).
 	// La comparación se hace por mes/día (sin importar el año) para cubrir el cruce de año.
 	GetBirthdays(ctx context.Context, from, to time.Time) ([]PsiUserModel, error)
+
+	// =========================================================================
+	// REGISTRO DIGITAL DE DOCUMENTOS
+	// =========================================================================
+
+	// ListDocuments recupera los documentos digitales del expediente de un
+	// psicólogo, ordenados del más reciente al más antiguo.
+	ListDocuments(ctx context.Context, psiID uuid.UUID) ([]PsiUserDocument, error)
+
+	// GetDocument busca un documento digital específico por su UUID.
+	GetDocument(ctx context.Context, id uuid.UUID) (*PsiUserDocument, error)
+
+	// CreateDocument persiste un nuevo documento digital del expediente.
+	CreateDocument(ctx context.Context, doc *PsiUserDocument) error
+
+	// UpdateDocument guarda los cambios de metadatos (y auditoría) de un documento.
+	UpdateDocument(ctx context.Context, doc *PsiUserDocument) error
+
+	// DeleteDocument elimina lógicamente (soft delete) un documento del expediente.
+	DeleteDocument(ctx context.Context, id uuid.UUID) error
 }

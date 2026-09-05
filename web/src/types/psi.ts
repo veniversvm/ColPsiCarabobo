@@ -191,3 +191,32 @@ export interface PostGradeModalProps {
   postGrade: PostGrade | null;
   onClose: () => void;
 }
+
+// ── Registro Digital de Documentos del expediente ─────────────────────────────
+// La gestión (carga/edición/borrado) es EXCLUSIVA de la administración; el
+// psicólogo solo los consulta en /psi/documentos. El backend resuelve
+// `document_url` a la URL pública del bucket.
+export type PsiUserDocumentType =
+  | "cedula"
+  | "titulo"
+  | "rif"
+  | "solvencia"
+  | "comprobante"
+  | "otro";
+
+export interface PsiUserDocument {
+  id: string;
+  psi_user_id?: string;
+  document_type?: PsiUserDocumentType;
+  title: string;
+  notes?: string;
+  document_date?: string | null;
+  document_url?: string;
+  filename?: string;
+  mime_type?: string;
+  size_bytes?: number;
+  created_at?: string;
+  updated_at?: string;
+  create_by?: string;
+  update_by?: string;
+}
