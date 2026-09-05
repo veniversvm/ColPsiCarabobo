@@ -1,5 +1,21 @@
 basePath: /api/v1
 definitions:
+  domain.DocumentType:
+    enum:
+    - cedula
+    - titulo
+    - rif
+    - solvencia
+    - comprobante
+    - otro
+    type: string
+    x-enum-varnames:
+    - DocumentCedula
+    - DocumentTitulo
+    - DocumentRif
+    - DocumentSolvencia
+    - DocumentComprobante
+    - DocumentOtro
   domain.Notification:
     properties:
       attachments:
@@ -409,6 +425,11 @@ definitions:
         type: string
       mention_undergraduate:
         type: string
+      ministry_registration_confirmed:
+        description: |-
+          ministerio_confirmed: la administración confirma que el psicólogo está inscrito
+          en el Ministerio de Educación (requisito legal, Art. 5 de la Ley de Ejercicio).
+        type: boolean
       psi_user_model_id:
         type: string
       public_employee:
@@ -446,6 +467,70 @@ definitions:
         type: boolean
       university_undergraduate:
         description: ── Pregrado ──────────────────────────────────────────────────────────
+        type: string
+      update_by:
+        description: UpdateBy almacena el nombre o identificador textual de la última
+          persona en modificarlo.
+        type: string
+      update_by_id:
+        description: UpdateById es el UUID del usuario/administrador que realizó la
+          última actualización.
+        type: string
+      updated_at:
+        description: |-
+          UpdatedAt registra la última fecha y hora en que se modificó el registro.
+          GORM actualiza este valor automáticamente en cada operación de guardado.
+        type: string
+    type: object
+  domain.PsiUserDocument:
+    properties:
+      create_by:
+        description: CreateBy almacena el nombre o identificador textual del creador.
+        type: string
+      create_by_id:
+        description: |-
+          CreateById es el UUID del usuario/administrador que creó el registro.
+          Es un puntero para permitir valores nulos si la creación es automática por el sistema.
+        type: string
+      created_at:
+        description: |-
+          CreatedAt registra la fecha y hora exacta en que se creó el registro.
+          GORM gestiona este campo automáticamente durante la inserción.
+        type: string
+      document_date:
+        description: Fecha opcional a la que corresponde el documento (útil para comprobantes
+          por año).
+        type: string
+      document_type:
+        allOf:
+        - $ref: '#/definitions/domain.DocumentType'
+        description: Categoría del documento (cedula, titulo, rif, solvencia, comprobante,
+          otro).
+      document_url:
+        description: |-
+          S3 Key del archivo almacenado. Se serializa como `document_url` una vez
+          resuelta por el service (mismo patrón que los postgrados).
+        type: string
+      filename:
+        description: Nombre original del archivo subido.
+        type: string
+      id:
+        type: string
+      mime_type:
+        description: Tipo MIME del archivo almacenado (image/webp o application/pdf).
+        type: string
+      notes:
+        description: Notas u observaciones internas sobre el documento.
+        type: string
+      psi_user_id:
+        type: string
+      size_bytes:
+        description: Tamaño en bytes del archivo almacenado.
+        type: integer
+      title:
+        description: |-
+          Etiqueta libre descrita por la administración: "Cédula V-123456 anverso",
+          "Comprobante de solvencia 2025", "Título de pregrado", etc.
         type: string
       update_by:
         description: UpdateBy almacena el nombre o identificador textual de la última
@@ -533,7 +618,11 @@ definitions:
       id:
         type: string
       is_active:
-        description: IsActive controla si la cuenta puede iniciar sesión.
+        description: |-
+          IsActive controla si la cuenta puede iniciar sesión.
+          Default false: un psicólogo creado desde una inscripción aprobada nace inactivo
+          y solo puede activarse manualmente cuando la administración confirma los 3
+          requisitos legales (Ministerio, N° FPV y solvencia).
         type: boolean
       last_name:
         type: string
@@ -1379,6 +1468,13 @@ definitions:
       university:
         type: string
     type: object
+  request_structs.UniquenessCheckResponse:
+    properties:
+      exists:
+        type: boolean
+      message:
+        type: string
+    type: object
   request_structs.UpdateAdminRequest:
     properties:
       email:
@@ -1488,6 +1584,11 @@ definitions:
         type: string
       mini_bio:
         type: string
+      ministry_registration_confirmed:
+        description: |-
+          Requisito legal: la administración confirma la inscripción del psicólogo
+          en el Ministerio de Educación (Art. 5 Ley de Ejercicio de la Psicología).
+        type: boolean
       municipality_carabobo:
         description: '── Ubicación: Carabobo ───────────────────────────────────────────────'
         type: string
@@ -1743,6 +1844,145 @@ paths:
       summary: Eliminar administrador (Soft-delete)
       tags:
       - Administración - Gestión
+  /admin/inscripciones/{id}:
+    delete:
+      description: Elimina la solicitud y sus archivos S3.
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Rechazar inscripción (admin)
+      tags:
+      - Administración - Inscripciones
+    get:
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Detalle de solicitud (admin)
+      tags:
+      - Administración - Inscripciones
+    patch:
+      consumes:
+      - application/json
+      description: Actualiza los campos escalares de la ficha (ubicación, modalidades,
+        áreas, datos personales). Solo admins con permiso de edición de psicólogos.
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Editar ficha de inscripción (admin)
+      tags:
+      - Administración - Inscripciones
+  /admin/inscripciones/{id}/approve:
+    post:
+      description: Aprueba la solicitud, crea el psicólogo con is_active=false y envía
+        email con credenciales.
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Aprobar inscripción (admin)
+      tags:
+      - Administración - Inscripciones
+  /admin/inscripciones/{id}/documents:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Agrega o reemplaza la foto de un documento de la ficha (cedula,
+        titulo, rif, otro).
+      parameters:
+      - description: cedula | titulo | rif | otro
+        in: formData
+        name: document_type
+        required: true
+        type: string
+      - description: Archivo de imagen o PDF
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Agregar o reemplazar foto de documento (admin)
+      tags:
+      - Administración - Inscripciones
+  /admin/inscripciones/{id}/documents/{docId}:
+    delete:
+      description: Elimina la foto de un documento de la ficha y su archivo en el
+        bucket.
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Eliminar foto de documento (admin)
+      tags:
+      - Administración - Inscripciones
+  /admin/inscripciones/{id}/email:
+    post:
+      consumes:
+      - application/json
+      description: Envía un correo con asunto y mensaje del administrador al correo
+        del solicitante.
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Enviar correo al solicitante (admin)
+      tags:
+      - Administración - Inscripciones
+  /admin/inscripciones/{id}/notes:
+    patch:
+      consumes:
+      - application/json
+      description: Persiste las notas de texto simple del administrador sobre la solicitud.
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Guardar notas administrativas (admin)
+      tags:
+      - Administración - Inscripciones
+  /admin/inscripciones/{id}/photo:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Reemplaza la foto tipo carnet o el comprobante de pago de la ficha.
+      parameters:
+      - description: foto | comprobante
+        in: formData
+        name: kind
+        required: true
+        type: string
+      - description: Archivo de imagen o PDF
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Reemplazar foto de la ficha (admin)
+      tags:
+      - Administración - Inscripciones
+  /admin/inscripciones/list:
+    get:
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Listar solicitudes de inscripción (admin)
+      tags:
+      - Administración - Inscripciones
   /admin/list:
     get:
       description: Retorna una lista paginada de administradores con soporte para
@@ -2191,6 +2431,229 @@ paths:
       security:
       - BearerAuth: []
       summary: Editar entrada deontológica (Admin)
+  /admin/psi/{id}/documents:
+    get:
+      description: Retorna los documentos digitales del expediente de un psicólogo
+        (CI, título, RIF, comprobantes, etc.). La gestión de estos documentos es exclusiva
+        del personal administrativo autorizado.
+      parameters:
+      - description: UUID del Psicólogo
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.PsiUserDocument'
+            type: array
+        "400":
+          description: ID inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Permisos insuficientes
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Psicólogo no encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Listar documentos digitales (Admin)
+      tags:
+      - Administración - Psicólogos
+    post:
+      consumes:
+      - multipart/form-data
+      description: Registra un nuevo documento digital en el expediente de un psicólogo.
+        Acepta imágenes (convertidas a WebP) y PDF.
+      parameters:
+      - description: UUID del Psicólogo
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Archivo del documento (imagen o PDF)
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: 'Etiqueta descriptiva (ej: Cédula anverso, Solvencia 2025)'
+        in: formData
+        name: title
+        required: true
+        type: string
+      - description: 'Categoría: cedula | titulo | rif | solvencia | comprobante |
+          otro (default: otro)'
+        in: formData
+        name: document_type
+        type: string
+      - description: Observaciones internas
+        in: formData
+        name: notes
+        type: string
+      - description: Fecha del documento (YYYY-MM-DD)
+        in: formData
+        name: document_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.PsiUserDocument'
+        "400":
+          description: Validación fallida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Permisos insuficientes
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Psicólogo no encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Registrar documento digital (Admin)
+      tags:
+      - Administración - Psicólogos
+  /admin/psi/{id}/documents/{docId}:
+    delete:
+      description: Elimina lógicamente un documento del expediente y borra su archivo
+        del bucket.
+      parameters:
+      - description: UUID del Psicólogo
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: UUID del documento
+        in: path
+        name: docId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'message: Documento eliminado'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: ID inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Permisos insuficientes
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Documento no encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Eliminar documento digital (Admin)
+      tags:
+      - Administración - Psicólogos
+    patch:
+      consumes:
+      - multipart/form-data
+      description: Edita los metadatos de un documento del expediente y, opcionalmente,
+        reemplaza su archivo.
+      parameters:
+      - description: UUID del Psicólogo
+        in: path
+        name: id
+        type: string
+      - description: UUID del documento
+        in: path
+        name: docId
+        required: true
+        type: string
+      - description: Nuevo archivo (imagen o PDF)
+        in: formData
+        name: file
+        type: file
+      - description: Nueva etiqueta descriptiva
+        in: formData
+        name: title
+        type: string
+      - description: Nueva categoría
+        in: formData
+        name: document_type
+        type: string
+      - description: Nuevas observaciones
+        in: formData
+        name: notes
+        type: string
+      - description: Nueva fecha del documento (YYYY-MM-DD)
+        in: formData
+        name: document_date
+        type: string
+      - description: 1 para vaciar la fecha del documento
+        in: formData
+        name: clear_document_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.PsiUserDocument'
+        "400":
+          description: Validación fallida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Permisos insuficientes
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Documento no encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Editar documento digital (Admin)
+      tags:
+      - Administración - Psicólogos
   /admin/psi/{id}/observaciones:
     get:
       description: Retorna TODAS las observaciones internas de un psicólogo. Acceso
@@ -2837,6 +3300,246 @@ paths:
       summary: Cerrar sesión administrativo
       tags:
       - Administración - Auth
+  /inscripcion/check-ci:
+    get:
+      description: Verifica si una cédula ya está registrada en el sistema o tiene
+        una solicitud activa.
+      parameters:
+      - description: Cédula de identidad
+        in: query
+        name: ci
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/request_structs.UniquenessCheckResponse'
+        "400":
+          description: 'error: parámetro inválido'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Validar unicidad de cédula (público)
+      tags:
+      - Inscripcion
+  /inscripcion/check-email:
+    get:
+      description: Verifica si un correo ya está registrado en el sistema o tiene
+        una solicitud activa.
+      parameters:
+      - description: Correo electrónico
+        in: query
+        name: correo
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/request_structs.UniquenessCheckResponse'
+        "400":
+          description: 'error: parámetro inválido'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Validar unicidad de correo (público)
+      tags:
+      - Inscripcion
+  /inscripcion/check-fpv:
+    get:
+      description: Verifica si un número FPV ya está registrado en el sistema o tiene
+        una solicitud activa.
+      parameters:
+      - description: Número FPV
+        in: query
+        name: fpv
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/request_structs.UniquenessCheckResponse'
+        "400":
+          description: 'error: parámetro inválido'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Validar unicidad de FPV (público)
+      tags:
+      - Inscripcion
+  /inscripcion/submit:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Crea una solicitud de pre-inscripción en estado "pending" con sus
+        archivos adjuntos.
+      parameters:
+      - description: Cédula
+        in: formData
+        name: cedula
+        required: true
+        type: integer
+      - description: Nacionalidad (V/E)
+        in: formData
+        name: nacionalidad
+        required: true
+        type: string
+      - description: Nombres
+        in: formData
+        name: nombres
+        required: true
+        type: string
+      - description: Apellidos
+        in: formData
+        name: apellidos
+        required: true
+        type: string
+      - description: Número FPV
+        in: formData
+        name: fpv
+        type: integer
+      - description: Teléfono
+        in: formData
+        name: telefono
+        type: string
+      - description: Correo electrónico
+        in: formData
+        name: correo
+        required: true
+        type: string
+      - description: Fecha de nacimiento (YYYY-MM-DD)
+        in: formData
+        name: fecha_nacimiento
+        type: string
+      - description: Universidad
+        in: formData
+        name: titulo_universidad
+        type: string
+      - description: Fecha de graduación (YYYY-MM-DD)
+        in: formData
+        name: titulo_fecha_graduacion
+        type: string
+      - description: Mención
+        in: formData
+        name: titulo_mencion
+        type: string
+      - description: Nº registro del título
+        in: formData
+        name: titulo_registro_numero
+        type: string
+      - description: Estado del registro
+        in: formData
+        name: titulo_registro_estado
+        type: string
+      - description: RIF
+        in: formData
+        name: rif
+        type: string
+      - description: Dirección del consultorio
+        in: formData
+        name: service_address
+        type: string
+      - description: Municipio (Carabobo)
+        in: formData
+        name: municipality_carabobo
+        type: string
+      - description: Estado (fuera de Carabobo)
+        in: formData
+        name: state_outside
+        type: string
+      - description: Municipio (fuera de Carabobo)
+        in: formData
+        name: municipality_outside_carabobo
+        type: string
+      - description: País (fuera de Venezuela)
+        in: formData
+        name: country
+        type: string
+      - description: Modalidad presencial
+        in: formData
+        name: service_modality_presencial
+        type: boolean
+      - description: Modalidad a distancia
+        in: formData
+        name: service_modality_distance
+        type: boolean
+      - description: Modalidad telefónica
+        in: formData
+        name: service_modality_telephone
+        type: boolean
+      - description: Área de trabajo principal (id del catálogo)
+        in: formData
+        name: primary_specialty_id
+        type: integer
+      - description: Área de trabajo secundaria (id del catálogo)
+        in: formData
+        name: secondary_specialty_id
+        type: integer
+      - description: Foto tipo carnet
+        in: formData
+        name: foto
+        type: file
+      - description: Comprobante de pago
+        in: formData
+        name: comprobante
+        type: file
+      - description: Foto de la cédula
+        in: formData
+        name: doc_cedula
+        type: file
+      - description: Foto del título
+        in: formData
+        name: doc_titulo
+        type: file
+      - description: Foto del RIF
+        in: formData
+        name: doc_rif
+        type: file
+      - description: Foto de otro documento
+        in: formData
+        name: doc_otro
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 'message: Solicitud recibida correctamente'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: 'error: validación fallida'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: 'error: cédula o FPV duplicado'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: 'error: fallo interno'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Enviar solicitud de pre-inscripción (público)
+      tags:
+      - Inscripcion
   /notifications/admin:
     get:
       description: Lista las notificaciones creadas por el administrador, paginadas
@@ -3475,6 +4178,31 @@ paths:
       summary: Acceso a la biblioteca digital (Audiobookshelf)
       tags:
       - Psicólogos - Perfil
+  /psi/me/documents:
+    get:
+      description: 'Retorna los documentos digitales del psicólogo autenticado (CI,
+        título, RIF, comprobantes, etc.). Es SOLO LECTURA: el psicólogo nunca puede
+        editar ni eliminar estos documentos; su gestión es exclusiva de la administración.'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.PsiUserDocument'
+            type: array
+        "401":
+          description: No autenticado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Mis documentos digitales (Psi)
+      tags:
+      - Psicólogos - Expediente
   /psi/me/postgrades:
     post:
       consumes:

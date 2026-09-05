@@ -124,6 +124,12 @@ export default function PsiDashboard() {
             </div>
             <span class="text-xs font-bold text-[#1e3a8a]">Postgrados</span>
           </A>
+          <A href="/psi/documentos" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center text-center group active:scale-95 transition-transform">
+            <div class="w-12 h-12 bg-blue-50 text-[#1e3a8a] rounded-2xl flex items-center justify-center mb-2 group-hover:bg-[#facc15] transition-colors">
+              📁
+            </div>
+            <span class="text-xs font-bold text-[#1e3a8a]">Mis Documentos</span>
+          </A>
           <A href="/psi/notificaciones" class="relative bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center text-center group active:scale-95 transition-transform">
             <div class="w-12 h-12 bg-blue-50 text-[#1e3a8a] rounded-2xl flex items-center justify-center mb-2 group-hover:bg-[#facc15] transition-colors">
               🔔

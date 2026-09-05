@@ -48,6 +48,13 @@ const (
 	// Barreras de Resolución Iniciales
 	maxAvatarDimension   = 800  // Píxeles máximos de ancho/alto para fotos de perfil.
 	maxDocumentDimension = 1600 // Píxeles máximos para certificados (permite hacer zoom en los sellos y firmas).
+
+	// Límite para documentos PDF (expediente digital): más holgado que las imágenes
+	// porque un escaneo con varias hojas pesa más, pero acotado para evitar abuso.
+	maxPdfSizeBytes = 4 * 1024 * 1024 // 4 MB
+
+	// Firma binaria (magic number) de un archivo PDF válido: "%PDF-".
+	pdfMagicPrefix = "%PDF-"
 )
 
 // =========================================================================
@@ -64,6 +71,37 @@ func SanitizeImage(file io.Reader) ([]byte, string, string, error) {
 // Posee límites de peso y resolución más holgados para preservar la lectura de textos.
 func SanitizeDocument(file io.Reader) ([]byte, string, string, error) {
 	return processImage(file, maxDocumentDimension, maxDocumentSizeBytes)
+}
+
+// SanitizeDocumentFile procesa un archivo del expediente digital de documentos.
+// Acepta imágenes (se sanean y convierten a WebP igual que SanitizeDocument) y
+// PDFs legítimos. Los PDF se validan por su firma binaria ("%PDF-") y por tamaño
+// máximo; al ser un formato no rasterizable se almacenan tal cual (no pasan por
+// el pipeline de imagen). Si el archivo no es ni una imagen válida ni un PDF
+// reconocido, devuelve error.
+func SanitizeDocumentFile(file io.Reader) ([]byte, string, string, error) {
+	// Leemos una muestra inicial para detectar la firma binaria sin consumir el stream.
+	header, err := io.ReadAll(io.LimitReader(file, int64(len(pdfMagicPrefix))))
+	if err != nil {
+		return nil, "", "", errors.New("no se pudo leer el archivo")
+	}
+
+	if string(header) == pdfMagicPrefix {
+		// PDF legítimo: validamos tamaño máximo. LimitReader corta en el cap y,
+		// para saber si se excedió, leemos 1 byte adicional.
+		data, err := io.ReadAll(io.LimitReader(io.MultiReader(bytes.NewReader(header), file), maxPdfSizeBytes+1))
+		if err != nil {
+			return nil, "", "", errors.New("no se pudo leer el archivo")
+		}
+		if len(data) > maxPdfSizeBytes {
+			return nil, "", "", errors.New("el documento PDF excede el tamaño máximo permitido")
+		}
+		return data, ".pdf", "application/pdf", nil
+	}
+
+	// No es PDF: se reencauza el stream original (recuperamos el header leído)
+	// hacia el pipeline de imágenes.
+	return processImage(io.MultiReader(bytes.NewReader(header), file), maxDocumentDimension, maxDocumentSizeBytes)
 }
 
 // =========================================================================

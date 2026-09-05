@@ -66,6 +66,12 @@ func SetupPsiRoutes(router fiber.Router, psiRepo domain.PsiUserRepository, admin
 	adminGroup.Post("/:id<uuid>/observaciones", h.AddObservacionesByAdmin)
 	adminGroup.Patch("/:id<uuid>/observaciones/:entryId<uuid>", h.UpdateObservacionesByAdmin)
 
+	// Registro digital de documentos (gestión exclusiva admin; el psi solo lee)
+	adminGroup.Get("/:id<uuid>/documents", h.ListDocumentsByAdmin)
+	adminGroup.Post("/:id<uuid>/documents", h.AddDocumentByAdmin)
+	adminGroup.Patch("/:id<uuid>/documents/:docId<uuid>", h.UpdateDocumentByAdmin)
+	adminGroup.Delete("/:id<uuid>/documents/:docId<uuid>", h.DeleteDocumentByAdmin)
+
 	// =========================================================================
 	// ZONA 2: AUTOGESTIÓN
 	// =========================================================================
@@ -81,6 +87,9 @@ func SetupPsiRoutes(router fiber.Router, psiRepo domain.PsiUserRepository, admin
 	meGroup.Delete("/social/:id", h.DeleteSocialNetwork)
 	meGroup.Post("/logout", h.Logout)
 	meGroup.Get("/validate", h.ValidateSession)
+
+	// Mis documentos digitales — SOLO LECTURA (el psicólogo no puede editarlos)
+	meGroup.Get("/documents", h.GetMyDocuments)
 
 	// =========================================================================
 	// ZONA 3: PÚBLICO

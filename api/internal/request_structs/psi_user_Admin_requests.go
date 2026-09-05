@@ -228,6 +228,10 @@ type UpdatePsiAdminRequest struct {
 	UniversityProfessor *bool `json:"university_professor" form:"university_professor"`
 	DoubleGuild         *bool `json:"double_guild" form:"double_guild"`
 	CPSM                *bool `json:"cpsm" form:"cpsm"`
+
+	// Requisito legal: la administración confirma la inscripción del psicólogo
+	// en el Ministerio de Educación (Art. 5 Ley de Ejercicio de la Psicología).
+	MinistryRegistrationConfirmed *bool `json:"ministry_registration_confirmed" form:"ministry_registration_confirmed"`
 }
 
 // ── GETTERS DE VISIBILIDAD (Sanitización Multipart) ────────────────────────

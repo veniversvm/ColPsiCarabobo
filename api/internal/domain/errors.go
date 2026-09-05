@@ -42,6 +42,8 @@ var (
 	ErrDeontologiaNotFound = errors.New("entrada deontológica no encontrada")
 	// ErrObservacionesNotFound is returned when an internal observation cannot be found.
 	ErrObservacionesNotFound = errors.New("observación no encontrada")
+	// ErrDocumentNotFound is returned when a digital document cannot be found.
+	ErrDocumentNotFound = errors.New("documento no encontrado")
 )
 
 var (

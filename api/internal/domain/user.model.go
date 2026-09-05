@@ -156,6 +156,7 @@ type PsiUserModel struct {
 	PostGrades     []PsiUserPostGrade     `gorm:"foreignKey:PsiUserID" json:"post_grades"`
 	SocialNetworks []PsiUserSocialNetwork `gorm:"foreignKey:PsiUserID" json:"social_networks"`
 	Solvencies     []PsiUserSolvency      `gorm:"foreignKey:PsiUserModelID" json:"solvencies"`
+	Documents      []PsiUserDocument      `gorm:"foreignKey:PsiUserID" json:"-"`
 	Observations   []PsiObservations      `gorm:"foreignKey:PsiUserID" json:"-"`
 	Deontologia    []PsiODeontologia      `gorm:"foreignKey:PsiUserID" json:"-"`
 }
@@ -206,6 +207,10 @@ type PsiUserColData struct {
 	// El psicólogo autoriza que el sistema avise a la administración en su cumpleaños.
 	// Solo se usará si el miembro lo activa desde su portal de perfil (opt-in explícito).
 	BirthdayNotification bool `gorm:"default:false" json:"birthday_notification"`
+
+	// ministerio_confirmed: la administración confirma que el psicólogo está inscrito
+	// en el Ministerio de Educación (requisito legal, Art. 5 de la Ley de Ejercicio).
+	MinistryRegistrationConfirmed bool `gorm:"default:false" json:"ministry_registration_confirmed"`
 
 	// ── Solvencia y membresías ────────────────────────────────────────────
 	DateOfLastSolvency  time.Time `gorm:"type:date" json:"date_of_last_solvency"` // Última fecha de pago de cuota
@@ -279,6 +284,67 @@ func (p PostGradeType) IsValid() bool {
 }
 
 func (PsiUserPostGrade) TableName() string { return "psi_user_post_grades" }
+
+// =============================================================================
+// REGISTRO DIGITAL DE DOCUMENTOS
+// =============================================================================
+
+// DocumentType define la categoría de un documento digital del expediente.
+type DocumentType string
+
+// Constantes con las categorías soportadas para agrupar y clasificar documentos.
+const (
+	DocumentCedula     DocumentType = "cedula"
+	DocumentTitulo     DocumentType = "titulo"
+	DocumentRif        DocumentType = "rif"
+	DocumentSolvencia  DocumentType = "solvencia"
+	DocumentComprobante DocumentType = "comprobante"
+	DocumentOtro       DocumentType = "otro"
+)
+
+// IsValid valida que el tipo de documento sea uno de los soportados.
+func (d DocumentType) IsValid() bool {
+	switch d {
+	case DocumentCedula, DocumentTitulo, DocumentRif, DocumentSolvencia, DocumentComprobante, DocumentOtro:
+		return true
+	}
+	return false
+}
+
+// PsiUserDocument registra un documento digital del expediente del psicólogo
+// (CI, título, RIF, comprobantes de solvencia, etc.).
+//
+// IMPORTANTE: La gestión (carga, edición, eliminación) es EXCLUSIVA del personal
+// administrativo autorizado. El psicólogo solo puede CONSULTAR sus propios
+// documentos (nunca editarlos ni borrarlos).
+// Relación N-a-1 con PsiUserModel.
+type PsiUserDocument struct {
+	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:uuidv7()" json:"id"`
+	AuditModel
+	PsiUserID uuid.UUID `gorm:"type:uuid;index" json:"psi_user_id"`
+
+	// Categoría del documento (cedula, titulo, rif, solvencia, comprobante, otro).
+	DocumentType DocumentType `gorm:"type:varchar(50);default:otro;not null" json:"document_type"`
+	// Etiqueta libre descrita por la administración: "Cédula V-123456 anverso",
+	// "Comprobante de solvencia 2025", "Título de pregrado", etc.
+	Title string `gorm:"size:255;not null" json:"title"`
+	// Notas u observaciones internas sobre el documento.
+	Notes string `gorm:"type:text" json:"notes"`
+	// Fecha opcional a la que corresponde el documento (útil para comprobantes por año).
+	DocumentDate *time.Time `gorm:"type:date" json:"document_date"`
+
+	// S3 Key del archivo almacenado. Se serializa como `document_url` una vez
+	// resuelta por el service (mismo patrón que los postgrados).
+	S3Key string `gorm:"size:512;not null" json:"document_url"`
+	// Nombre original del archivo subido.
+	Filename string `gorm:"size:255" json:"filename"`
+	// Tipo MIME del archivo almacenado (image/webp o application/pdf).
+	MimeType string `gorm:"size:100" json:"mime_type"`
+	// Tamaño en bytes del archivo almacenado.
+	SizeBytes int64 `json:"size_bytes"`
+}
+
+func (PsiUserDocument) TableName() string { return "psi_user_documents" }
 
 // =============================================================================
 // OBSERVACIONES INTERNAS

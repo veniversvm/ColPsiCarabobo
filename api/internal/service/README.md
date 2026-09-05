@@ -655,6 +655,45 @@ en el `Select` de `SearchAdmin`.
 
 ---
 
+## 📝 Ficha de Inscripción y Campos Obligatorios (`inscription_validation.go`)
+
+Regla única de validación para la ficha de pre-inscripción de profesionales,
+compartida entre el **submit público** (`POST /inscriptions`, vía
+`parseSubmitForm`) y la **edición admin** (`PATCH /admin/inscripciones/:id`,
+vía `UpdateFicha`).
+
+### Funcionamiento
+
+- `FichaObligatoria` estructura los campos que se evalúan.
+- `ValidateFichaObligatoria` devuelve un `*ValidationError` con el mensaje en
+  español del primer campo faltante; la capa HTTP lo traduce a **HTTP 400**
+  (`mapInscriptionErr` usa `errors.As`). No se puede enviar ni guardar una ficha
+  incompleta.
+
+### Obligatorios
+
+| Campo | Nota |
+|---|---|
+| `segundo_apellido` | |
+| `genero` | |
+| `telefono` (contacto) | |
+| `fecha_nacimiento` | únicamente si la fecha está presente |
+| `titulo_universidad` | |
+| `titulo_fecha_graduacion` | únicamente si la fecha está presente |
+| `titulo_registro_estado` | |
+| Ubicación | **al menos un bloque completo**: Carabobo (`municipality_carabobo` + `service_address`), otro estado (`state_outside` + `municipality_outside_carabobo`) o exterior (`country`) |
+
+### Opcionales (pueden no estar indicados)
+
+`mencion`, `titulo_registro_numero`, `titulo_registro_tomo`,
+`titulo_registro_folio` y `doc_otro`.
+
+**Verificación:** `TestValidateFichaObligatoria`,
+`TestValidateFichaObligatoria_Ubicacion` y
+`TestInscriptionService_UpdateFicha_CamposObligatorios`.
+
+---
+
 ## 🏗️ Decisiones de Diseño Clave
 
 ### 1. Inyección de Dependencias (DI)

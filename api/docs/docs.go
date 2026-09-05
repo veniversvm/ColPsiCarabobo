@@ -130,6 +130,221 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/inscripciones/list": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Inscripciones"
+                ],
+                "summary": "Listar solicitudes de inscripción (admin)",
+                "responses": {}
+            }
+        },
+        "/admin/inscripciones/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Inscripciones"
+                ],
+                "summary": "Detalle de solicitud (admin)",
+                "responses": {}
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Elimina la solicitud y sus archivos S3.",
+                "tags": [
+                    "Administración - Inscripciones"
+                ],
+                "summary": "Rechazar inscripción (admin)",
+                "responses": {}
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Actualiza los campos escalares de la ficha (ubicación, modalidades, áreas, datos personales). Solo admins con permiso de edición de psicólogos.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Inscripciones"
+                ],
+                "summary": "Editar ficha de inscripción (admin)",
+                "responses": {}
+            }
+        },
+        "/admin/inscripciones/{id}/approve": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Aprueba la solicitud, crea el psicólogo con is_active=false y envía email con credenciales.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Inscripciones"
+                ],
+                "summary": "Aprobar inscripción (admin)",
+                "responses": {}
+            }
+        },
+        "/admin/inscripciones/{id}/documents": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Agrega o reemplaza la foto de un documento de la ficha (cedula, titulo, rif, otro).",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Inscripciones"
+                ],
+                "summary": "Agregar o reemplazar foto de documento (admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "cedula | titulo | rif | otro",
+                        "name": "document_type",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Archivo de imagen o PDF",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/admin/inscripciones/{id}/documents/{docId}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Elimina la foto de un documento de la ficha y su archivo en el bucket.",
+                "tags": [
+                    "Administración - Inscripciones"
+                ],
+                "summary": "Eliminar foto de documento (admin)",
+                "responses": {}
+            }
+        },
+        "/admin/inscripciones/{id}/email": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Envía un correo con asunto y mensaje del administrador al correo del solicitante.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Inscripciones"
+                ],
+                "summary": "Enviar correo al solicitante (admin)",
+                "responses": {}
+            }
+        },
+        "/admin/inscripciones/{id}/notes": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Persiste las notas de texto simple del administrador sobre la solicitud.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Inscripciones"
+                ],
+                "summary": "Guardar notas administrativas (admin)",
+                "responses": {}
+            }
+        },
+        "/admin/inscripciones/{id}/photo": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Reemplaza la foto tipo carnet o el comprobante de pago de la ficha.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Inscripciones"
+                ],
+                "summary": "Reemplazar foto de la ficha (admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "foto | comprobante",
+                        "name": "kind",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Archivo de imagen o PDF",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/admin/list": {
             "get": {
                 "security": [
@@ -1083,6 +1298,339 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/psi/{id}/documents": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna los documentos digitales del expediente de un psicólogo (CI, título, RIF, comprobantes, etc.). La gestión de estos documentos es exclusiva del personal administrativo autorizado.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Psicólogos"
+                ],
+                "summary": "Listar documentos digitales (Admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del Psicólogo",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.PsiUserDocument"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "ID inválido",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Permisos insuficientes",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Psicólogo no encontrado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Registra un nuevo documento digital en el expediente de un psicólogo. Acepta imágenes (convertidas a WebP) y PDF.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Psicólogos"
+                ],
+                "summary": "Registrar documento digital (Admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del Psicólogo",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Archivo del documento (imagen o PDF)",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Etiqueta descriptiva (ej: Cédula anverso, Solvencia 2025)",
+                        "name": "title",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Categoría: cedula | titulo | rif | solvencia | comprobante | otro (default: otro)",
+                        "name": "document_type",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Observaciones internas",
+                        "name": "notes",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Fecha del documento (YYYY-MM-DD)",
+                        "name": "document_date",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/domain.PsiUserDocument"
+                        }
+                    },
+                    "400": {
+                        "description": "Validación fallida",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Permisos insuficientes",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Psicólogo no encontrado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/psi/{id}/documents/{docId}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Elimina lógicamente un documento del expediente y borra su archivo del bucket.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Psicólogos"
+                ],
+                "summary": "Eliminar documento digital (Admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del Psicólogo",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "UUID del documento",
+                        "name": "docId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "message: Documento eliminado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "ID inválido",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Permisos insuficientes",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Documento no encontrado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Edita los metadatos de un documento del expediente y, opcionalmente, reemplaza su archivo.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Psicólogos"
+                ],
+                "summary": "Editar documento digital (Admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del Psicólogo",
+                        "name": "id",
+                        "in": "path"
+                    },
+                    {
+                        "type": "string",
+                        "description": "UUID del documento",
+                        "name": "docId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Nuevo archivo (imagen o PDF)",
+                        "name": "file",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Nueva etiqueta descriptiva",
+                        "name": "title",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Nueva categoría",
+                        "name": "document_type",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Nuevas observaciones",
+                        "name": "notes",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Nueva fecha del documento (YYYY-MM-DD)",
+                        "name": "document_date",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "1 para vaciar la fecha del documento",
+                        "name": "clear_document_date",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.PsiUserDocument"
+                        }
+                    },
+                    "400": {
+                        "description": "Validación fallida",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Permisos insuficientes",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Documento no encontrado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/admin/psi/{id}/observaciones": {
             "get": {
                 "security": [
@@ -1777,6 +2325,360 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "error: no autenticado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/inscripcion/check-ci": {
+            "get": {
+                "description": "Verifica si una cédula ya está registrada en el sistema o tiene una solicitud activa.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Inscripcion"
+                ],
+                "summary": "Validar unicidad de cédula (público)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Cédula de identidad",
+                        "name": "ci",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.UniquenessCheckResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "error: parámetro inválido",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/inscripcion/check-email": {
+            "get": {
+                "description": "Verifica si un correo ya está registrado en el sistema o tiene una solicitud activa.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Inscripcion"
+                ],
+                "summary": "Validar unicidad de correo (público)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Correo electrónico",
+                        "name": "correo",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.UniquenessCheckResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "error: parámetro inválido",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/inscripcion/check-fpv": {
+            "get": {
+                "description": "Verifica si un número FPV ya está registrado en el sistema o tiene una solicitud activa.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Inscripcion"
+                ],
+                "summary": "Validar unicidad de FPV (público)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Número FPV",
+                        "name": "fpv",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.UniquenessCheckResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "error: parámetro inválido",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/inscripcion/submit": {
+            "post": {
+                "description": "Crea una solicitud de pre-inscripción en estado \"pending\" con sus archivos adjuntos.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Inscripcion"
+                ],
+                "summary": "Enviar solicitud de pre-inscripción (público)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Cédula",
+                        "name": "cedula",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Nacionalidad (V/E)",
+                        "name": "nacionalidad",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Nombres",
+                        "name": "nombres",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Apellidos",
+                        "name": "apellidos",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Número FPV",
+                        "name": "fpv",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Teléfono",
+                        "name": "telefono",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Correo electrónico",
+                        "name": "correo",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Fecha de nacimiento (YYYY-MM-DD)",
+                        "name": "fecha_nacimiento",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Universidad",
+                        "name": "titulo_universidad",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Fecha de graduación (YYYY-MM-DD)",
+                        "name": "titulo_fecha_graduacion",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Mención",
+                        "name": "titulo_mencion",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Nº registro del título",
+                        "name": "titulo_registro_numero",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Estado del registro",
+                        "name": "titulo_registro_estado",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "RIF",
+                        "name": "rif",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Dirección del consultorio",
+                        "name": "service_address",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Municipio (Carabobo)",
+                        "name": "municipality_carabobo",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Estado (fuera de Carabobo)",
+                        "name": "state_outside",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Municipio (fuera de Carabobo)",
+                        "name": "municipality_outside_carabobo",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "País (fuera de Venezuela)",
+                        "name": "country",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Modalidad presencial",
+                        "name": "service_modality_presencial",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Modalidad a distancia",
+                        "name": "service_modality_distance",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Modalidad telefónica",
+                        "name": "service_modality_telephone",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Área de trabajo principal (id del catálogo)",
+                        "name": "primary_specialty_id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Área de trabajo secundaria (id del catálogo)",
+                        "name": "secondary_specialty_id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Foto tipo carnet",
+                        "name": "foto",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Comprobante de pago",
+                        "name": "comprobante",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Foto de la cédula",
+                        "name": "doc_cedula",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Foto del título",
+                        "name": "doc_titulo",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Foto del RIF",
+                        "name": "doc_rif",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Foto de otro documento",
+                        "name": "doc_otro",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "message: Solicitud recibida correctamente",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "error: validación fallida",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "error: cédula o FPV duplicado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "error: fallo interno",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -2721,6 +3623,43 @@ const docTemplate = `{
                 }
             }
         },
+        "/psi/me/documents": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna los documentos digitales del psicólogo autenticado (CI, título, RIF, comprobantes, etc.). Es SOLO LECTURA: el psicólogo nunca puede editar ni eliminar estos documentos; su gestión es exclusiva de la administración.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Psicólogos - Expediente"
+                ],
+                "summary": "Mis documentos digitales (Psi)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.PsiUserDocument"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "No autenticado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/psi/me/postgrades": {
             "post": {
                 "security": [
@@ -3201,6 +4140,25 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "domain.DocumentType": {
+            "type": "string",
+            "enum": [
+                "cedula",
+                "titulo",
+                "rif",
+                "solvencia",
+                "comprobante",
+                "otro"
+            ],
+            "x-enum-varnames": [
+                "DocumentCedula",
+                "DocumentTitulo",
+                "DocumentRif",
+                "DocumentSolvencia",
+                "DocumentComprobante",
+                "DocumentOtro"
+            ]
+        },
         "domain.Notification": {
             "type": "object",
             "properties": {
@@ -3683,6 +4641,10 @@ const docTemplate = `{
                 "mention_undergraduate": {
                     "type": "string"
                 },
+                "ministry_registration_confirmed": {
+                    "description": "ministerio_confirmed: la administración confirma que el psicólogo está inscrito\nen el Ministerio de Educación (requisito legal, Art. 5 de la Ley de Ejercicio).",
+                    "type": "boolean"
+                },
                 "psi_user_model_id": {
                     "type": "string"
                 },
@@ -3735,6 +4697,77 @@ const docTemplate = `{
                 },
                 "university_undergraduate": {
                     "description": "── Pregrado ──────────────────────────────────────────────────────────",
+                    "type": "string"
+                },
+                "update_by": {
+                    "description": "UpdateBy almacena el nombre o identificador textual de la última persona en modificarlo.",
+                    "type": "string"
+                },
+                "update_by_id": {
+                    "description": "UpdateById es el UUID del usuario/administrador que realizó la última actualización.",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "UpdatedAt registra la última fecha y hora en que se modificó el registro.\nGORM actualiza este valor automáticamente en cada operación de guardado.",
+                    "type": "string"
+                }
+            }
+        },
+        "domain.PsiUserDocument": {
+            "type": "object",
+            "properties": {
+                "create_by": {
+                    "description": "CreateBy almacena el nombre o identificador textual del creador.",
+                    "type": "string"
+                },
+                "create_by_id": {
+                    "description": "CreateById es el UUID del usuario/administrador que creó el registro.\nEs un puntero para permitir valores nulos si la creación es automática por el sistema.",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "CreatedAt registra la fecha y hora exacta en que se creó el registro.\nGORM gestiona este campo automáticamente durante la inserción.",
+                    "type": "string"
+                },
+                "document_date": {
+                    "description": "Fecha opcional a la que corresponde el documento (útil para comprobantes por año).",
+                    "type": "string"
+                },
+                "document_type": {
+                    "description": "Categoría del documento (cedula, titulo, rif, solvencia, comprobante, otro).",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/domain.DocumentType"
+                        }
+                    ]
+                },
+                "document_url": {
+                    "description": "S3 Key del archivo almacenado. Se serializa como ` + "`" + `document_url` + "`" + ` una vez\nresuelta por el service (mismo patrón que los postgrados).",
+                    "type": "string"
+                },
+                "filename": {
+                    "description": "Nombre original del archivo subido.",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "mime_type": {
+                    "description": "Tipo MIME del archivo almacenado (image/webp o application/pdf).",
+                    "type": "string"
+                },
+                "notes": {
+                    "description": "Notas u observaciones internas sobre el documento.",
+                    "type": "string"
+                },
+                "psi_user_id": {
+                    "type": "string"
+                },
+                "size_bytes": {
+                    "description": "Tamaño en bytes del archivo almacenado.",
+                    "type": "integer"
+                },
+                "title": {
+                    "description": "Etiqueta libre descrita por la administración: \"Cédula V-123456 anverso\",\n\"Comprobante de solvencia 2025\", \"Título de pregrado\", etc.",
                     "type": "string"
                 },
                 "update_by": {
@@ -3840,7 +4873,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "is_active": {
-                    "description": "IsActive controla si la cuenta puede iniciar sesión.",
+                    "description": "IsActive controla si la cuenta puede iniciar sesión.\nDefault false: un psicólogo creado desde una inscripción aprobada nace inactivo\ny solo puede activarse manualmente cuando la administración confirma los 3\nrequisitos legales (Ministerio, N° FPV y solvencia).",
                     "type": "boolean"
                 },
                 "last_name": {
@@ -4945,6 +5978,17 @@ const docTemplate = `{
                 }
             }
         },
+        "request_structs.UniquenessCheckResponse": {
+            "type": "object",
+            "properties": {
+                "exists": {
+                    "type": "boolean"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
         "request_structs.UpdateAdminRequest": {
             "type": "object",
             "required": [
@@ -5097,6 +6141,10 @@ const docTemplate = `{
                 },
                 "mini_bio": {
                     "type": "string"
+                },
+                "ministry_registration_confirmed": {
+                    "description": "Requisito legal: la administración confirma la inscripción del psicólogo\nen el Ministerio de Educación (Art. 5 Ley de Ejercicio de la Psicología).",
+                    "type": "boolean"
                 },
                 "municipality_carabobo": {
                     "description": "── Ubicación: Carabobo ───────────────────────────────────────────────",
