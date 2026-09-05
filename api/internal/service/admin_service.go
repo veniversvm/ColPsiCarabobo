@@ -231,6 +231,7 @@ func buildPermissionMatrix(
 		{"Edit Tags", req.CanEditTags, target.CanEditTags, updater.CanEditTags, func(v bool) { target.CanEditTags = v }},
 		{"Delete Tags", req.CanDeleteTags, target.CanDeleteTags, updater.CanDeleteTags, func(v bool) { target.CanDeleteTags = v }},
 		{"Manage Projects", req.CanManageProjects, target.CanManageProjects, updater.CanManageProjects, func(v bool) { target.CanManageProjects = v }},
+		{"Manage Tickets", req.CanManageTickets, target.CanManageTickets, updater.CanManageTickets, func(v bool) { target.CanManageTickets = v }},
 	}
 }
 

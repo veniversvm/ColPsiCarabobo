@@ -33,7 +33,7 @@ func NewSpecialtyHandler(svc *service.SpecialtyService) *SpecialtyHandler {
 // @Router       /specialties [get]
 func (h *SpecialtyHandler) GetSpecialties(c *fiber.Ctx) error {
 	admin, isLogged := c.Locals("admin").(*domain.UserAdmin)
-	isAdminWithPermissions := isLogged && (admin.Sudo || admin.CanReadNotifications)
+	isAdminWithPermissions := isLogged && (admin.Sudo || admin.CanCreateTags || admin.CanEditTags || admin.CanDeleteTags)
 
 	requestedStatus := c.Query("status", "active")
 

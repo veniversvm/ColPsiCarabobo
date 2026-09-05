@@ -148,8 +148,8 @@ func (s *SpecialtyService) GetSpecialties(ctx context.Context, requestedStatus s
 // "ocultas" o "deprecadas" tiene el Colegio, forzando la métrica a devolver únicamente
 // el conteo de entidades públicas.
 func (s *SpecialtyService) Count(ctx context.Context, active *bool, admin *domain.UserAdmin) (int64, error) {
-	// Regla de Protección: Si el admin es nulo o carece de permisos de lectura, forzar 'solo activos'.
-	if admin == nil || (!admin.Sudo && !admin.CanReadNotifications) {
+	// Regla de Protección: Si el admin es nulo o carece de permisos de gestión de tags, forzar 'solo activos'.
+	if admin == nil || (!admin.Sudo && !admin.CanCreateTags && !admin.CanEditTags && !admin.CanDeleteTags) {
 		onlyActive := true
 		return s.repo.Count(ctx, &onlyActive)
 	}

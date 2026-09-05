@@ -27,6 +27,8 @@ interface Admin {
   can_create_tags: boolean;
   can_edit_tags: boolean;
   can_delete_tags: boolean;
+  can_manage_projects: boolean;
+  can_manage_tickets: boolean;
 }
 
 interface AdminListResponse {
@@ -49,6 +51,7 @@ const countPerms = (a: Admin) =>
     a.can_publish, a.can_update_publish, a.can_delete_publish,
     a.can_send_notifications, a.can_manage_notifications, a.can_read_notifications,
     a.can_create_tags, a.can_edit_tags, a.can_delete_tags,
+    a.can_manage_projects, a.can_manage_tickets,
   ].filter(Boolean).length;
 
 export default function AdminStaffPage() {
@@ -196,7 +199,7 @@ export default function AdminStaffPage() {
                           {admin.is_active ? "Activo" : "Inactivo"}
                         </span>
                         <span class="text-[10px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider bg-blue-50 text-blue-600">
-                          {permsCount}/15 permisos
+                          {permsCount}/17 permisos
                         </span>
                       </div>
                       <p class="text-gray-500 text-sm truncate">{admin.email}</p>

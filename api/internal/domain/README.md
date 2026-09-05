@@ -53,6 +53,8 @@ Implementa un sistema RBAC (Role-Based Access Control) con permisos granulares p
 - **Contenido:** `CanPublish`, `CanUpdatePublish`, `CanDeletePublish`
 - **Notificaciones:** `CanSendNotifications`, `CanManageNotifications`, `CanReadNotifications`
 - **Especialidades:** `CanCreateTags`, `CanEditTags`, `CanDeleteTags`
+- **Proyectos (Kanban):** `CanManageProjects`
+- **Tickets de Solicitudes:** `CanManageTickets`
 
 **Tabla:** `user_admins`
 

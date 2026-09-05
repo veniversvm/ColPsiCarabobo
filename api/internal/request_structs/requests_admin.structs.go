@@ -49,6 +49,9 @@ type AdminPermissionsDTO struct {
 
 	// Proyectos (Kanban)
 	CanManageProjects *bool `json:"can_manage_projects" example:"false"`
+
+	// Tickets de Solicitudes (colas, chat y configuración del módulo)
+	CanManageTickets *bool `json:"can_manage_tickets" example:"false"`
 }
 
 // CreateAdminRequest define la carga útil (Payload) para el aprovisionamiento
