@@ -23,6 +23,7 @@ import (
 // lo que resultaría en la revocación accidental de permisos durante una actualización parcial.
 type AdminPermissionsDTO struct {
 	// Gestión de Colegiados (CRUD de Psicólogos)
+	CanReadPsi   *bool `json:"can_read_psi" example:"false"`
 	CanCreatePsi *bool `json:"can_create_psi" example:"false"`
 	CanUpdatePsi *bool `json:"can_update_psi" example:"false"`
 	CanDeletePsi *bool `json:"can_delete_psi" example:"false"`
@@ -62,9 +63,12 @@ type AdminPermissionsDTO struct {
 // Por defecto, cualquier permiso no incluido en el JSON interno 'permissions' será
 // inicializado de forma segura restringiendo el acceso (Principio de Menor Privilegio).
 type CreateAdminRequest struct {
-	Username    string              `json:"username" validate:"required" example:"staff_admin"`
-	Email       string              `json:"email" validate:"required,email" example:"staff@colpsicarabobo.com"`
-	Password    string              `json:"password" validate:"required,min=8" example:"Segura123!"`
+	Username string `json:"username" validate:"required" example:"staff_admin"`
+	Email    string `json:"email" validate:"required,email" example:"staff@colpsicarabobo.com"`
+	Password string `json:"password" validate:"required,min=8" example:"Segura123!"`
+	// Role es la etiqueta del preset aplicado (ver AdminRolePresets). Solo
+	// metadato: los permisos reales viajan en 'permissions'.
+	Role        *string             `json:"role" example:"secretaria"`
 	Permissions AdminPermissionsDTO `json:"permissions"`
 }
 
@@ -88,6 +92,8 @@ type UpdateAdminRequest struct {
 	Email    *string `json:"email" validate:"omitempty,email" example:"nuevo@correo.com"`
 	Password *string `json:"password" validate:"omitempty,min=8"`
 	IsActive *bool   `json:"is_active" example:"true"`
+	// Role cambia la etiqueta del preset aplicado. nil = no tocar.
+	Role *string `json:"role" example:"comunicacion"`
 
 	// Sub-estructura que será evaluada por el Motor de Permisos.
 	Permissions AdminPermissionsDTO `json:"permissions"`

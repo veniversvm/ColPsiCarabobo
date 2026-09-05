@@ -215,6 +215,7 @@ func buildPermissionMatrix(
 ) []permissionUpdate {
 
 	return []permissionUpdate{
+		{"Read Psi", req.CanReadPsi, target.CanReadPsi, updater.CanReadPsi, func(v bool) { target.CanReadPsi = v }},
 		{"Crear Psi", req.CanCreatePsi, target.CanCreatePsi, updater.CanCreatePsi, func(v bool) { target.CanCreatePsi = v }},
 		{"Update Psi", req.CanUpdatePsi, target.CanUpdatePsi, updater.CanUpdatePsi, func(v bool) { target.CanUpdatePsi = v }},
 		{"Delete Psi", req.CanDeletePsi, target.CanDeletePsi, updater.CanDeletePsi, func(v bool) { target.CanDeletePsi = v }},
@@ -233,6 +234,12 @@ func buildPermissionMatrix(
 		{"Manage Projects", req.CanManageProjects, target.CanManageProjects, updater.CanManageProjects, func(v bool) { target.CanManageProjects = v }},
 		{"Manage Tickets", req.CanManageTickets, target.CanManageTickets, updater.CanManageTickets, func(v bool) { target.CanManageTickets = v }},
 	}
+}
+
+// GetRolePresets expone los perfiles de permisos predeterminados que la UI
+// ofrece como atajo al crear/editar staff. Son solo lectura y nunca autorizan.
+func (s *AdminService) GetRolePresets() []RolePreset {
+	return AdminRolePresets
 }
 
 // =========================================================================
@@ -295,6 +302,14 @@ func (s *AdminService) CreateAdmin(
 		return errors.New("error procesando seguridad de la cuenta")
 	}
 	newAdmin.Password = string(hashed)
+
+	// Rótulo del preset aplicado (solo metadato descriptivo, nunca autoriza).
+	if req.Role != nil {
+		if !isValidRoleSlug(*req.Role) {
+			return errors.New("rol inválido")
+		}
+		newAdmin.Role = *req.Role
+	}
 
 	// 4. Procesamiento Dinámico de la Matriz de Permisos
 	matrix := buildPermissionMatrix(req.Permissions, newAdmin, creator)
@@ -420,6 +435,14 @@ func (s *AdminService) UpdateAdmin(
 		if perm.requested != nil {
 			perm.setTarget(*perm.requested)
 		}
+	}
+
+	// Rótulo del preset aplicado (solo metadato descriptivo, nunca autoriza).
+	if req.Role != nil {
+		if !isValidRoleSlug(*req.Role) {
+			return errors.New("rol inválido")
+		}
+		target.Role = *req.Role
 	}
 
 	// 5. Persistencia y Purga

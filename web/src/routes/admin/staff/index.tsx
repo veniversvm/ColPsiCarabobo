@@ -3,6 +3,7 @@ import { createResource, createSignal, For, Show, Suspense } from "solid-js";
 import { A, useNavigate } from "@solidjs/router";
 import { apiGet, apiDelete } from "~/lib/api";
 import { getUserFacingError } from "~/lib/errors";
+import { roleLabel } from "~/lib/staff-permissions";
 
 interface Admin {
   id: string;
@@ -11,7 +12,9 @@ interface Admin {
   is_active: boolean;
   created_at: string;
   create_by: string;
+  role?: string | null;
   // permisos
+  can_read_psi: boolean;
   can_create_psi: boolean;
   can_update_psi: boolean;
   can_delete_psi: boolean;
@@ -46,7 +49,7 @@ const formatDate = (iso: string) => {
 
 const countPerms = (a: Admin) =>
   [
-    a.can_create_psi, a.can_update_psi, a.can_delete_psi,
+    a.can_read_psi, a.can_create_psi, a.can_update_psi, a.can_delete_psi,
     a.can_create_admin, a.can_update_admin, a.can_delete_admin,
     a.can_publish, a.can_update_publish, a.can_delete_publish,
     a.can_send_notifications, a.can_manage_notifications, a.can_read_notifications,
@@ -199,7 +202,12 @@ export default function AdminStaffPage() {
                           {admin.is_active ? "Activo" : "Inactivo"}
                         </span>
                         <span class="text-[10px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider bg-blue-50 text-blue-600">
-                          {permsCount}/17 permisos
+                          {permsCount}/18 permisos
+                        </span>
+                        <span class={`text-[10px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider ${
+                          admin.role ? "bg-indigo-50 text-indigo-600" : "bg-gray-100 text-gray-400"
+                        }`}>
+                          {roleLabel(admin.role)}
                         </span>
                       </div>
                       <p class="text-gray-500 text-sm truncate">{admin.email}</p>

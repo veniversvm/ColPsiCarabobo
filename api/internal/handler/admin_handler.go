@@ -165,6 +165,18 @@ func (h *AdminHandler) GetAdmins(c *fiber.Ctx) error {
 	return c.JSON(result)
 }
 
+// GetRolePresets godoc
+// @Summary      Listar presets de roles del staff
+// @Description  Retorna los perfiles de permisos predeterminados (Secretaría, Comunicación, Soporte, Proyectos, Lector) que la UI aplica como atajo al crear/editar personal. Los roles son solo metadato: la autorización siempre usa los flags booleanos individuales.
+// @Tags         Administración - Gestión
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {array}   service.RolePreset
+// @Router       /admin/roles/presets [get]
+func (h *AdminHandler) GetRolePresets(c *fiber.Ctx) error {
+	return c.JSON(h.service.GetRolePresets())
+}
+
 // UpdateAdmin godoc
 // @Summary      Actualizar administrador
 // @Description  Modifica los datos y permisos de un administrador. Actualiza automáticamente la auditoría.

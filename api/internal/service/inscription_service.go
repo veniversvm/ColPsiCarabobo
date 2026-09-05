@@ -60,7 +60,7 @@ var ErrInscriptionNotPending = errors.New("la solicitud ya fue procesada")
 // canViewFicha indica si el admin puede ver información de la ficha de solicitudes
 // (gestión de la información del psicólogo).
 func canViewFicha(a *domain.UserAdmin) bool {
-	return a.Sudo || a.CanUpdatePsi || a.CanCreatePsi || a.CanDeletePsi
+	return a.Sudo || a.CanUpdatePsi || a.CanCreatePsi || a.CanDeletePsi || a.CanReadPsi
 }
 
 // requireUpdateFicha exige permiso de edición de la información del psicólogo.

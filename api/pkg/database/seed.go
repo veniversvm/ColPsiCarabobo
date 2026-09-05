@@ -50,6 +50,7 @@ func SeedAdmin(db *gorm.DB) {
 			Sudo: true, // Acceso total
 
 			// Activamos todos los permisos granulares
+			CanReadPsi:             true,
 			CanCreatePsi:           true,
 			CanUpdatePsi:           true,
 			CanDeletePsi:           true,
@@ -65,9 +66,9 @@ func SeedAdmin(db *gorm.DB) {
 			CanCreateTags:          true,
 			CanEditTags:            true,
 			CanDeleteTags:          true,
-CanManageProjects:      true,
-		CanManageTickets:       true,
-	}
+			CanManageProjects:      true,
+			CanManageTickets:       true,
+		}
 
 		if err := db.Create(admin).Error; err != nil {
 			log.Error().Err(err).Str("component", "seed").Msg("Error al crear el Super Admin")

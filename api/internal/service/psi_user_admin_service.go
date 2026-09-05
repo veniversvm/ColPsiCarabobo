@@ -37,7 +37,7 @@ import (
 func (s *PsiService) GetPsiByIDAdmin(ctx context.Context, admin *domain.UserAdmin, targetID uuid.UUID) (*domain.PsiUserModel, error) {
 	// Como es una operación de solo lectura para el panel interno,
 	// verificamos que sea Sudo o que al menos tenga un permiso administrativo básico.
-	if !admin.Sudo && !admin.CanUpdatePsi && !admin.CanCreatePsi {
+	if !admin.Sudo && !admin.CanUpdatePsi && !admin.CanCreatePsi && !admin.CanReadPsi {
 		return nil, domain.ErrInsufficientPerms
 	}
 
@@ -895,7 +895,7 @@ func (s *PsiService) ResetPsiPasswordByAdmin(ctx context.Context, admin *domain.
 // la red interna con biografías y metadatos no requeridos para una tabla (DataGrid).
 func (s *PsiService) GetAdminDirectory(ctx context.Context, admin *domain.UserAdmin, filter request_structs.PsiDirectoryFilterDTO) (interface{}, error) {
 	// Seguridad: Validar que sea administrador autorizado
-	if !admin.Sudo && !admin.CanUpdatePsi && !admin.CanCreatePsi {
+	if !admin.Sudo && !admin.CanUpdatePsi && !admin.CanCreatePsi && !admin.CanReadPsi {
 		return nil, errors.New("permisos insuficientes para listar agremiados")
 	}
 

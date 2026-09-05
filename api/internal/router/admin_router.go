@@ -48,6 +48,7 @@ func SetupAdminRoutes(router fiber.Router, adminRepo domain.UserAdminRepository,
 
 	admin.Post("/create", h.CreateAdmin)
 	admin.Get("/list", h.GetAdmins)
+	admin.Get("/roles/presets", h.GetRolePresets)
 	admin.Patch("/update", h.UpdateAdmin)
 	admin.Delete("/delete/:id", h.DeleteAdmin)
 
