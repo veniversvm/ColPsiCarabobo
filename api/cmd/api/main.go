@@ -110,6 +110,7 @@ func main() {
 
 	// SEEDING
 	database.SeedAdmin(db)
+	database.SeedSudoPermissions(db)
 	database.SeedAppSettings(db)
 
 	// 4. S3
