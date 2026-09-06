@@ -620,6 +620,7 @@ func (s *InscriptionService) Approve(ctx context.Context, admin *domain.UserAdmi
 		BornDate:                    bornDate,
 		AudioBookShellId:            psiID.String(), // Único por psi (constraint uni) — igual que en el import
 		Solvent:                     true,           // Inscripción aprobada ⇒ psicólogo solvente
+		ProofOfLife:                 true,           // Inscripción aprobada ⇒ fe de vida activa
 		ControlNumber:               fmt.Sprintf("%d", controlNumber),
 		ProfilePictureS3Key:         req.FotoS3Key, // La foto tipo carnet pasa a ser la foto de perfil
 		ContactEmail:                req.Correo,
@@ -668,8 +669,8 @@ func (s *InscriptionService) Approve(ctx context.Context, admin *domain.UserAdmi
 	// 3.1 Migrar las fotos de documentos al expediente del psicólogo,
 	// reutilizando las claves S3 ya subidas (best-effort: si falla alguna, el
 	// documento permanece en la ficha para re-cargarlo manualmente; la
-	// aprobación no se bloquea).
-	s.migrateDocumentsToPsi(ctx, req.ID, psiID, admin)
+	// aprobación no se bloquea). Se incluye el comprobante de pago.
+	s.migrateDocumentsToPsi(ctx, req.ID, psiID, req.ComprobanteS3Key, controlNumber, admin)
 
 	// 4. Marcar solicitud como aprobada y vincular el expediente creado
 	req.Status = domain.InscriptionApproved
@@ -1049,30 +1050,32 @@ func (s *InscriptionService) DeleteInscriptionDocument(ctx context.Context, admi
 
 // migrateDocumentsToPsi migra las fotos de documentos de una solicitud al
 // expediente del psicólogo creado al aprobar, reutilizando las claves S3.
-// Es best-effort: ante un error loguea y deja la fila original para recarga
-// manual; nunca bloquea la aprobación.
-func (s *InscriptionService) migrateDocumentsToPsi(ctx context.Context, requestID, psiID uuid.UUID, admin *domain.UserAdmin) {
+// Incluye el comprobante de pago de la inscripción como documento del
+// expediente (DocumentComprobante). Es best-effort: ante un error loguea y
+// deja la fila original para recarga manual; nunca bloquea la aprobación.
+func (s *InscriptionService) migrateDocumentsToPsi(ctx context.Context, requestID, psiID uuid.UUID, comprobanteKey string, controlNumber int, admin *domain.UserAdmin) {
 	docs, err := s.repo.ListDocumentsByRequestID(ctx, requestID)
 	if err != nil {
 		// Si no se puede ni listar, no tocar nada.
 		return
 	}
 
+	audit := domain.AuditModel{
+		CreateBy:   admin.Username,
+		CreateById: &admin.ID,
+		UpdateBy:   admin.Username,
+		UpdateById: &admin.ID,
+	}
+
 	ok := true
 	for i := range docs {
-		audit := domain.AuditModel{
-			CreateBy:   admin.Username,
-			CreateById: &admin.ID,
-			UpdateBy:   admin.Username,
-			UpdateById: &admin.ID,
-		}
 		psiDoc := &domain.PsiUserDocument{
 			ID:           uuid.Must(uuid.NewV7()),
 			AuditModel:   audit,
 			PsiUserID:    psiID,
 			DocumentType: docs[i].DocumentType,
 			S3Key:        docs[i].S3Key,
-			Title:        docs[i].Title,
+			Title:        inscriptionDocumentTitle(docs[i].DocumentType),
 			Notes:        docs[i].Notes,
 			Filename:     docs[i].OriginalFilename,
 		}
@@ -1082,9 +1085,41 @@ func (s *InscriptionService) migrateDocumentsToPsi(ctx context.Context, requestI
 		}
 	}
 
+	// Comprobante de pago de la inscripción (no es una fila de la ficha).
+	if comprobanteKey != "" {
+		comprobanteDoc := &domain.PsiUserDocument{
+			ID:           uuid.Must(uuid.NewV7()),
+			AuditModel:   audit,
+			PsiUserID:    psiID,
+			DocumentType: domain.DocumentComprobante,
+			S3Key:        comprobanteKey,
+			Title:        "Comprobante de pago de inscripción",
+			Notes:        fmt.Sprintf("N° de control %d", controlNumber),
+		}
+		if err := s.psiRepo.CreateDocument(ctx, comprobanteDoc); err != nil {
+			ok = false
+		}
+	}
+
 	// Solo eliminar las filas de la ficha si todas migraron correctamente.
 	if ok {
 		_ = s.repo.DeleteInscriptionDocumentsByRequestID(ctx, requestID)
+	}
+}
+
+// inscriptionDocumentTitle genera un título legible automático para los
+// documentos migrados desde la ficha de inscripción. Para categorías sin
+// etiqueta definida retorna vacío (la UI muestra el label del tipo).
+func inscriptionDocumentTitle(dt domain.DocumentType) string {
+	switch dt {
+	case domain.DocumentCedula:
+		return "Cédula de identidad (copia)"
+	case domain.DocumentTitulo:
+		return "Título de psicólogo (copia)"
+	case domain.DocumentRif:
+		return "RIF (copia)"
+	default:
+		return ""
 	}
 }
 

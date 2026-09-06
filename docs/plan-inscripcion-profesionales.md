@@ -574,8 +574,10 @@ Layout de 2 columnas:
 
 **Acciones:**
 - Botón verde "Aprobar inscripción" → abre modal de confirmación:
-  "Se creará la cuenta del psicólogo con is_active=false. Se enviará un correo
-  con las credenciales. ¿Confirmar?"
+  "Se creará la cuenta del psicólogo con is_active=true (activa, solvente y con
+  fe de vida). Los documentos digitales del formulario (cédula, título, RIF y
+  comprobante de pago) se migran a su expediente. Se enviará un correo con las
+  credenciales. ¿Confirmar?"
 - Botón rojo "Rechazar solicitud" → abre modal de confirmación:
   "Se eliminará permanentemente esta solicitud y los archivos adjuntos.
   ¿Está seguro?"

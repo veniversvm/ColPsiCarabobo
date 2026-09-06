@@ -2,6 +2,7 @@
 
 import { ToggleSwitch } from "~/components/ui/ToggleSwitch";
 import { Field, IC } from "../EditPrimitives";
+import FlatDatePicker from "~/components/ui/FlatDatePicker";
 import type { EditFormState } from "../types";
 
 interface Props {
@@ -31,7 +32,7 @@ function ActivationSection(props: { form: EditFormState }) {
     <div class={`pt-3 border-t ${allOk() ? "border-green-200" : "border-amber-200"}`}>
       <div class="flex items-center justify-between mb-2">
         <h3 class="text-xs font-bold text-gray-600 uppercase tracking-widest">
-          Requisitos de Activación
+          Verificaciones de Activación
         </h3>
         <span class={`text-[10px] font-black px-2 py-0.5 rounded-full ${allOk() ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
           {allOk() ? "Completos" : "Pendientes"}
@@ -48,8 +49,10 @@ function ActivationSection(props: { form: EditFormState }) {
         ))}
       </ul>
       <p class="mt-2 text-[10px] text-gray-400 leading-relaxed">
-        Un psicólogo solo puede activarse cuando la administración confirma estos
-        3 requisitos legales (Art. 5 Ley de Ejercicio de la Psicología + Art. 18 Estatutos FPV).
+        Confirmaciones que realiza la administración con el expediente en mano
+        antes de activar la cuenta. La inscripción ministerial y el N° FPV se
+        tramitan a través de la FPV; la solvencia nace al aprobar la inscripción
+        (Art. 5 Ley de Ejercicio de la Psicología · Art. 18 Estatutos FPV).
       </p>
     </div>
   );
@@ -83,10 +86,9 @@ export function AdminStatusSection(props: Props) {
           />
           <div class="pt-3">
             <Field label="Fecha Última Solvencia">
-              <input
-                type="date"
+              <FlatDatePicker
                 value={props.form.date_of_last_solvency}
-                onInput={(e) => props.setForm("date_of_last_solvency", e.currentTarget.value)}
+                onChange={(v) => props.setForm("date_of_last_solvency", v)}
                 class={IC}
               />
             </Field>

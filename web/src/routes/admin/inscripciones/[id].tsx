@@ -639,9 +639,10 @@ export default function AdminInscriptionDetail() {
       <Show when={confirmApprove()}>
         <Modal title="Aprobar inscripción" onClose={() => setConfirmApprove(false)}>
           <p class="text-sm text-gray-600 leading-relaxed">
-            Se creará la cuenta del psicólogo <strong>activa y solvente</strong> (la foto
-            tipo carnet pasará a ser su foto de perfil). Se le asignará un número de
-            control secuencial y se enviará un correo con las credenciales. ¿Confirmar?
+            Se creará la cuenta del psicólogo <strong>activa, solvente y con fe de vida</strong> (la foto
+            tipo carnet pasará a ser su foto de perfil). Los documentos digitales del formulario, incluido
+            el comprobante de pago, se migrarán a su expediente. Se le asignará un número de control
+            secuencial y se enviará un correo con las credenciales. ¿Confirmar?
           </p>
           <ModalActions onCancel={() => setConfirmApprove(false)} onConfirm={doApprove} busy={busy()} confirmLabel="Aprobar" />
         </Modal>

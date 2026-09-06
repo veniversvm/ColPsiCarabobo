@@ -376,6 +376,7 @@ func TestInscriptionService_Approve_MapFichaYMigra(t *testing.T) {
 		MunicipalityCarabobo:    "Naguanagua",
 		ServiceModalityDistance: true,
 		PrimarySpecialtyID:      &specID,
+		ComprobanteS3Key:        "inscripciones/comprobantes/y.png",
 	}
 	doc := domain.PsiInscriptionDocument{
 		ID: uuid.Must(uuid.NewV7()), InscriptionRequestID: id,
@@ -396,14 +397,25 @@ func TestInscriptionService_Approve_MapFichaYMigra(t *testing.T) {
 		return nil
 	}
 	migrated := false
+	comprobanteMigrated := false
 	psiRepo.CreateDocumentFunc = func(ctx context.Context, d *domain.PsiUserDocument) error {
 		if d.PsiUserID != savedPSI.ID {
 			t.Fatalf("documento migrado a otro psi: %v", d.PsiUserID)
 		}
-		if d.DocumentType != domain.DocumentCedula {
-			t.Fatalf("tipo de documento incorrecto: %v", d.DocumentType)
+		switch d.DocumentType {
+		case domain.DocumentCedula:
+			if d.S3Key != "inscripciones/documentos/cedula/x.png" || d.Title != "Cédula de identidad (copia)" {
+				t.Fatalf("documento de cédula mal mapeado: %+v", d)
+			}
+			migrated = true
+		case domain.DocumentComprobante:
+			if d.S3Key != "inscripciones/comprobantes/y.png" || d.Notes != "N° de control 1000" {
+				t.Fatalf("comprobante mal mapeado: %+v", d)
+			}
+			comprobanteMigrated = true
+		default:
+			t.Fatalf("tipo de documento inesperado: %v", d.DocumentType)
 		}
-		migrated = true
 		return nil
 	}
 	deleted := false
@@ -429,8 +441,20 @@ func TestInscriptionService_Approve_MapFichaYMigra(t *testing.T) {
 	if savedPSI.PrimarySpecialtyID == nil || *savedPSI.PrimarySpecialtyID != specID {
 		t.Fatalf("área principal no mapeada: %v", savedPSI.PrimarySpecialtyID)
 	}
+	if !savedPSI.Credentials.IsActive {
+		t.Fatal("la cuenta debería nacer activa al aprobar la inscripción")
+	}
+	if !savedPSI.Solvent {
+		t.Fatal("el psicólogo debería nacer solvente al aprobar la inscripción")
+	}
+	if !savedPSI.ProofOfLife {
+		t.Fatal("el psicólogo debería nacer con fe de vida activa al aprobar la inscripción")
+	}
 	if !migrated {
 		t.Fatal("el documento no se migró al expediente")
+	}
+	if !comprobanteMigrated {
+		t.Fatal("el comprobante de pago no se migró al expediente")
 	}
 	if !deleted {
 		t.Fatal("las filas de la ficha no se limpiaron tras migrar")

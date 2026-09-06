@@ -231,6 +231,33 @@ export default function InscriptionPage() {
                 </div>
               </div>
 
+              {/* ── DISCLOSURE: tras la aprobación ───────────────────────────── */}
+              <div class="bg-teal-50 p-6 md:p-8 rounded-[2rem] border border-teal-200">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
+                  <div class="w-11 h-11 bg-teal-600 text-white rounded-2xl flex items-center justify-center text-xl font-black flex-shrink-0">
+                    ✓
+                  </div>
+                  <h3 class="text-xl font-black text-colpsi-blue tracking-tight leading-tight">
+                    Aprobación y registro del profesional
+                  </h3>
+                </div>
+                <ul class="space-y-3 text-teal-800 text-sm leading-relaxed font-medium">
+                  <li>
+                    Una vez aprobada la solicitud, su cuenta queda creada en el sistema como psicólogo activo,
+                    solvente y con fe de vida vigente; la solvencia y la fe de vida se renuevan periódicamente.
+                  </li>
+                  <li>
+                    La administración confirma la inscripción en el Ministerio del Poder Popular para la Educación
+                    Universitaria, la cual se tramita a través de la Federación de Psicólogos de Venezuela (FPV),
+                    y el N° de FPV lo asigna la propia Federación al procesar su expediente.
+                  </li>
+                  <li>
+                    Los documentos digitales que adjuntó en el formulario pasan a integrar su expediente
+                    profesional (cédula, título, RIF y comprobante de pago).
+                  </li>
+                </ul>
+              </div>
+
               {/* ── PASO 4 ─────────────────────────────────────────────────────── */}
               <div class="bg-white p-8 md:p-12 rounded-[2.5rem] shadow-sm border border-gray-100 group hover:border-colpsi-yellow transition-colors">
                 <div class="flex flex-col sm:flex-row sm:items-center gap-4 mb-8 border-b border-gray-100 pb-6">
