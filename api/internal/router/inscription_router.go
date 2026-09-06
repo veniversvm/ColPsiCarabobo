@@ -12,8 +12,8 @@ import (
 
 // SetupInscriptionRoutes registra las rutas públicas y administrativas del
 // módulo de pre-inscripción de profesionales.
-func SetupInscriptionRoutes(router fiber.Router, inscriptionRepo domain.InscriptionRepository, psiRepo domain.PsiUserRepository, adminRepo domain.UserAdminRepository, s3Client *s3.S3Client, mailService service.IMailService, analyticsSvc *service.AnalyticsService) {
-	svc := service.NewInscriptionService(inscriptionRepo, psiRepo, s3Client, mailService)
+func SetupInscriptionRoutes(router fiber.Router, inscriptionRepo domain.InscriptionRepository, psiRepo domain.PsiUserRepository, adminRepo domain.UserAdminRepository, settingsRepo domain.AppSettingsRepository, s3Client *s3.S3Client, mailService service.IMailService, analyticsSvc *service.AnalyticsService) {
+	svc := service.NewInscriptionService(inscriptionRepo, psiRepo, settingsRepo, s3Client, mailService)
 	h := handler.NewInscriptionHandler(svc)
 	authMid := middleware.NewAuthMiddleware(adminRepo, psiRepo, analyticsSvc)
 
@@ -22,6 +22,7 @@ func SetupInscriptionRoutes(router fiber.Router, inscriptionRepo domain.Inscript
 	// =========================================================================
 	publicGroup := router.Group("/inscripcion", middleware.NoStore())
 
+	publicGroup.Get("/status", h.GetStatus)
 	publicGroup.Get("/check-ci", h.CheckCI)
 	publicGroup.Get("/check-fpv", h.CheckFPV)
 	publicGroup.Get("/check-email", h.CheckEmail)

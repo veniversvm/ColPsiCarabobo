@@ -128,7 +128,7 @@ hashed, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 │  CanPublish, CanUpdatePublish, CanDeletePublish,         │
 │  CanSendNotifications, CanManageNotifications,           │
 │  CanReadNotifications, CanCreateTags, CanEditTags,       │
-│  CanDeleteTags                                           │
+│  CanDeleteTags, CanManageProjects, CanManageTickets      │
 └─────────────────────────────────────────────────────────┘
 ```
 

@@ -400,6 +400,39 @@
                 }
             }
         },
+        "/admin/me": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna identidad, rol y matriz de permisos del administrador actual. La UI lo usa para filtrar el menú; es informativo, nunca autoriza: el backend valida cada operación.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Sesión"
+                ],
+                "summary": "Estado y permisos del administrador autenticado",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/admin/posts": {
             "post": {
                 "security": [
@@ -587,6 +620,674 @@
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/projects": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna los proyectos accesibles para el admin autenticado (dueños, miembro o master).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Proyectos (Kanban)"
+                ],
+                "summary": "Listar proyectos Kanban",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.KanbanProject"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Crea un proyecto (el admin autenticado es el dueño) y siembra las columnas por defecto.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Proyectos (Kanban)"
+                ],
+                "summary": "Crear proyecto Kanban",
+                "parameters": [
+                    {
+                        "description": "Datos del proyecto",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.CreateProjectRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/domain.KanbanProject"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/projects/cards/{cardId}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "Administración - Proyectos (Kanban)"
+                ],
+                "summary": "Eliminar tarjeta Kanban",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID de la tarjeta",
+                        "name": "cardId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Proyectos (Kanban)"
+                ],
+                "summary": "Actualizar o mover tarjeta Kanban",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID de la tarjeta",
+                        "name": "cardId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Campos a modificar",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.UpdateCardRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/projects/cards/{cardId}/notes": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Cada tarjeta admite hasta 10 notas de máximo 500 caracteres.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Proyectos (Kanban)"
+                ],
+                "summary": "Añadir nota a una tarjeta",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID de la tarjeta",
+                        "name": "cardId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Contenido de la nota",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.CreateNoteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/domain.KanbanNote"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/projects/columns/{columnId}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "Administración - Proyectos (Kanban)"
+                ],
+                "summary": "Eliminar columna",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID de la columna",
+                        "name": "columnId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Proyectos (Kanban)"
+                ],
+                "summary": "Actualizar columna",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID de la columna",
+                        "name": "columnId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Campos a modificar",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.UpdateColumnRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/projects/members/{memberId}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "Administración - Proyectos (Kanban)"
+                ],
+                "summary": "Quitar miembro de un proyecto",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del miembro",
+                        "name": "memberId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Proyectos (Kanban)"
+                ],
+                "summary": "Cambiar rol de un miembro",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del miembro",
+                        "name": "memberId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Nuevo rol",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.UpdateMemberRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/projects/notes/{noteId}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Solo el autor de la nota, el dueño del proyecto o un master pueden borrarla.",
+                "tags": [
+                    "Administración - Proyectos (Kanban)"
+                ],
+                "summary": "Eliminar nota de una tarjeta",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID de la nota",
+                        "name": "noteId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/projects/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna el tablero completo: proyecto + columnas con sus tarjetas y notas.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Proyectos (Kanban)"
+                ],
+                "summary": "Tablero Kanban de un proyecto",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del proyecto",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Elimina definitivamente el proyecto, columnas, tarjetas y notas (solo dueño o master).",
+                "tags": [
+                    "Administración - Proyectos (Kanban)"
+                ],
+                "summary": "Eliminar proyecto Kanban",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del proyecto",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Renombra o edita la descripción de un proyecto (solo dueño o master).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Proyectos (Kanban)"
+                ],
+                "summary": "Actualizar proyecto Kanban",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del proyecto",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Campos a modificar",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.UpdateProjectRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/projects/{id}/cards": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Proyectos (Kanban)"
+                ],
+                "summary": "Crear tarjeta Kanban",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del proyecto",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Datos de la tarjeta",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.CreateCardRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/domain.KanbanCard"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/projects/{id}/columns": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Proyectos (Kanban)"
+                ],
+                "summary": "Crear columna en el tablero",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del proyecto",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Título de la columna",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.CreateColumnRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/domain.KanbanColumn"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/projects/{id}/members": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Proyectos (Kanban)"
+                ],
+                "summary": "Listar miembros de un proyecto",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del proyecto",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.KanbanMember"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Proyectos (Kanban)"
+                ],
+                "summary": "Invitar administrador a un proyecto",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del proyecto",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Admin objetivo + rol",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.AddMemberRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1980,6 +2681,123 @@
                 }
             }
         },
+        "/admin/roles/presets": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna los perfiles de permisos predeterminados (Secretaría, Comunicación, Soporte, Proyectos, Lector) que la UI aplica como atajo al crear/editar personal. Los roles son solo metadato: la autorización siempre usa los flags booleanos individuales.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Gestión"
+                ],
+                "summary": "Listar presets de roles del staff",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/service.RolePreset"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/settings/reception": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Devuelve el estado de recepción de tickets y de inscripciones. Los cambios solo los puede hacer el Sudo.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Configuración"
+                ],
+                "summary": "Estado de los interruptores de recepción (admin)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/service.ReceptionSwitchesSnapshot"
+                        }
+                    },
+                    "500": {
+                        "description": "error: fallo interno",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Activa/desactiva la recepción de tickets o inscripciones con un mensaje público opcional. Requiere rol Sudo.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Configuración"
+                ],
+                "summary": "Actualizar interruptor de recepción (solo Sudo)",
+                "parameters": [
+                    {
+                        "description": "Cambio de recepción",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.UpdateReceptionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/service.ReceptionSwitchesSnapshot"
+                        }
+                    },
+                    "400": {
+                        "description": "error: validación",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "error: solo SUDO",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/admin/specialties": {
             "post": {
                 "security": [
@@ -2148,6 +2966,622 @@
                     },
                     "403": {
                         "description": "error: permiso denegado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/tickets": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Por defecto lista solo los abiertos, ordenados por orden de llegada. Filtros opcionales: motivo_id, estado_id, psi_id, q, solo_abiertos.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tickets - Administración"
+                ],
+                "summary": "Listar tickets (cola FIFO)",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "Solo abiertos (default true)",
+                        "name": "solo_abiertos",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Filtrar por motivo",
+                        "name": "motivo_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Filtrar por estado",
+                        "name": "estado_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filtrar por psicólogo",
+                        "name": "psi_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Búsqueda en título/descripción",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Página",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Límite",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/tickets/estados": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tickets - Configuración"
+                ],
+                "summary": "Crear estado de un motivo",
+                "parameters": [
+                    {
+                        "description": "Datos del estado",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.CreateTicketEstadoRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/domain.TicketEstado"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/tickets/estados/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Solo se puede eliminar un estado que ningún ticket esté usando.",
+                "tags": [
+                    "Tickets - Configuración"
+                ],
+                "summary": "Eliminar estado de un motivo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID del estado",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Permite renombrar, reordenar o marcar el estado como cerrado.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tickets - Configuración"
+                ],
+                "summary": "Actualizar estado de un motivo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID del estado",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Campos a modificar",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.UpdateTicketEstadoRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.TicketEstado"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/tickets/motivos": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna los motivos con sus estados (configuración del colegio).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tickets - Configuración"
+                ],
+                "summary": "Listar motivos de tickets",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.TicketMotivo"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Crea un motivo en un área y siembra los estados por defecto.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tickets - Configuración"
+                ],
+                "summary": "Crear motivo de tickets",
+                "parameters": [
+                    {
+                        "description": "Datos del motivo",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.CreateTicketMotivoRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/domain.TicketMotivo"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/tickets/motivos/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Solo se puede eliminar un motivo sin tickets asociados.",
+                "tags": [
+                    "Tickets - Configuración"
+                ],
+                "summary": "Eliminar motivo de tickets",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID del motivo",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tickets - Configuración"
+                ],
+                "summary": "Actualizar motivo de tickets",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID del motivo",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Campos a modificar",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.UpdateTicketMotivoRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.TicketMotivo"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/tickets/motivos/{id}/estados": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tickets - Configuración"
+                ],
+                "summary": "Listar estados de un motivo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID del motivo",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.TicketEstado"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/tickets/pendientes-count": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Número de tickets no cerrados (badge del menú admin).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tickets - Administración"
+                ],
+                "summary": "Contar tickets abiertos",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "integer",
+                                "format": "int64"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/tickets/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna el ticket con el área, motivo, estado, conversación completa e historial de cambios.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tickets - Administración"
+                ],
+                "summary": "Ver detalle de un ticket",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID del ticket",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.Ticket"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/tickets/{id}/cerrar": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "El admin cierra el ticket indicando un motivo de cierre obligatorio. Se notifica al psicólogo.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tickets - Administración"
+                ],
+                "summary": "Cerrar un ticket",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID del ticket",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Motivo de cierre",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.CloseTicketRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.Ticket"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/tickets/{id}/estado": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "El nuevo estado debe pertenecer al motivo del ticket. Si el estado es \"cerrado\" se registra el cierre.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tickets - Administración"
+                ],
+                "summary": "Cambiar estado de un ticket",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID del ticket",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Nuevo estado + motivo",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.UpdateTicketEstado"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.Ticket"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/tickets/{id}/mensaje": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "El admin responde en el ticket (sin límite de mensajes seguidos). Anexos opcionales en multipart (campo \"files\").",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tickets - Administración"
+                ],
+                "summary": "Responder en la conversación de un ticket",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID del ticket",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Mensaje (o multipart)",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.AddMensajeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/domain.TicketMensaje"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/transfer-sudo": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Permite al Sudo actual ceder su rol a un administrador de confianza. Requiere confirmar la contraseña del Sudo. La conmutación es atómica y queda registrada en la auditoría de permisos.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Gestión"
+                ],
+                "summary": "Transferir el rol de Super Usuario",
+                "parameters": [
+                    {
+                        "description": "Destinatario del Sudo y confirmación de la contraseña",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.TransferSudoRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "message: rol transferido",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "error: permiso denegado o contraseña incorrecta",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -2438,6 +3872,26 @@
                             "additionalProperties": {
                                 "type": "string"
                             }
+                        }
+                    }
+                }
+            }
+        },
+        "/inscripcion/status": {
+            "get": {
+                "description": "Indica si la pre-inscripción de profesionales está habilitada. Cuando está desactivada, el campo `message` explica el motivo público.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Inscripcion"
+                ],
+                "summary": "Estado de recepción de inscripciones (público)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ReceptionSetting"
                         }
                     }
                 }
@@ -3975,6 +5429,260 @@
                 }
             }
         },
+        "/psi/tickets": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tickets - Portal Psi"
+                ],
+                "summary": "Listar mis tickets",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Página",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Límite",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "El psicólogo abre un ticket en un área/motivo con un título, descripción y anexos opcionales (multipart, campo \"files\").",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tickets - Portal Psi"
+                ],
+                "summary": "Crear un ticket de solicitud",
+                "parameters": [
+                    {
+                        "description": "Datos del ticket (o multipart)",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.CreateTicketRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/domain.Ticket"
+                        }
+                    }
+                }
+            }
+        },
+        "/psi/tickets/config": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna los motivos con sus estados (y su límite tickets_per_psi) para que el psi pueda crear un ticket.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tickets - Portal Psi"
+                ],
+                "summary": "Configuración de tickets para el psicólogo",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.TicketMotivo"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/psi/tickets/status": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Indica si la recepción de tickets de solicitudes está habilitada. Cuando está desactivada, el campo `message` explica el motivo público.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tickets - Portal Psi"
+                ],
+                "summary": "Estado de recepción de tickets (portal psi)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ReceptionSetting"
+                        }
+                    }
+                }
+            }
+        },
+        "/psi/tickets/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tickets - Portal Psi"
+                ],
+                "summary": "Ver detalle de un ticket propio",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID del ticket",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.Ticket"
+                        }
+                    }
+                }
+            }
+        },
+        "/psi/tickets/{id}/cerrar": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "El psicólogo cierra su propio ticket indicando un motivo de cierre obligatorio.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tickets - Portal Psi"
+                ],
+                "summary": "Cerrar mi ticket",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID del ticket",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Motivo de cierre",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.CloseTicketRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.Ticket"
+                        }
+                    }
+                }
+            }
+        },
+        "/psi/tickets/{id}/mensaje": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Publica un mensaje en la conversación (máx 1000 chars, no más de 3 seguidos). Anexos opcionales en multipart (campo \"files\").",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tickets - Portal Psi"
+                ],
+                "summary": "Comentar en mi ticket",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID del ticket",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Mensaje (o multipart)",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.AddMensajeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/domain.TicketMensaje"
+                        }
+                    }
+                }
+            }
+        },
         "/psi/{id}": {
             "get": {
                 "description": "Retorna la ficha técnica. Oculta datos privados según configuración del usuario.",
@@ -4134,6 +5842,19 @@
         }
     },
     "definitions": {
+        "domain.AutorType": {
+            "type": "string",
+            "enum": [
+                "admin",
+                "psi",
+                "system"
+            ],
+            "x-enum-varnames": [
+                "AutorAdmin",
+                "AutorPsi",
+                "AutorSystem"
+            ]
+        },
         "domain.DocumentType": {
             "type": "string",
             "enum": [
@@ -4151,6 +5872,264 @@
                 "DocumentSolvencia",
                 "DocumentComprobante",
                 "DocumentOtro"
+            ]
+        },
+        "domain.KanbanCard": {
+            "type": "object",
+            "properties": {
+                "column_id": {
+                    "type": "string"
+                },
+                "create_by": {
+                    "description": "CreateBy almacena el nombre o identificador textual del creador.",
+                    "type": "string"
+                },
+                "create_by_id": {
+                    "description": "CreateById es el UUID del usuario/administrador que creó el registro.\nEs un puntero para permitir valores nulos si la creación es automática por el sistema.",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "CreatedAt registra la fecha y hora exacta en que se creó el registro.\nGORM gestiona este campo automáticamente durante la inserción.",
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.KanbanNote"
+                    }
+                },
+                "position": {
+                    "type": "integer"
+                },
+                "project_id": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "update_by": {
+                    "description": "UpdateBy almacena el nombre o identificador textual de la última persona en modificarlo.",
+                    "type": "string"
+                },
+                "update_by_id": {
+                    "description": "UpdateById es el UUID del usuario/administrador que realizó la última actualización.",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "UpdatedAt registra la última fecha y hora en que se modificó el registro.\nGORM actualiza este valor automáticamente en cada operación de guardado.",
+                    "type": "string"
+                }
+            }
+        },
+        "domain.KanbanColumn": {
+            "type": "object",
+            "properties": {
+                "cards": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.KanbanCard"
+                    }
+                },
+                "create_by": {
+                    "description": "CreateBy almacena el nombre o identificador textual del creador.",
+                    "type": "string"
+                },
+                "create_by_id": {
+                    "description": "CreateById es el UUID del usuario/administrador que creó el registro.\nEs un puntero para permitir valores nulos si la creación es automática por el sistema.",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "CreatedAt registra la fecha y hora exacta en que se creó el registro.\nGORM gestiona este campo automáticamente durante la inserción.",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "position": {
+                    "type": "integer"
+                },
+                "project_id": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "update_by": {
+                    "description": "UpdateBy almacena el nombre o identificador textual de la última persona en modificarlo.",
+                    "type": "string"
+                },
+                "update_by_id": {
+                    "description": "UpdateById es el UUID del usuario/administrador que realizó la última actualización.",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "UpdatedAt registra la última fecha y hora en que se modificó el registro.\nGORM actualiza este valor automáticamente en cada operación de guardado.",
+                    "type": "string"
+                }
+            }
+        },
+        "domain.KanbanMember": {
+            "type": "object",
+            "properties": {
+                "create_by": {
+                    "description": "CreateBy almacena el nombre o identificador textual del creador.",
+                    "type": "string"
+                },
+                "create_by_id": {
+                    "description": "CreateById es el UUID del usuario/administrador que creó el registro.\nEs un puntero para permitir valores nulos si la creación es automática por el sistema.",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "CreatedAt registra la fecha y hora exacta en que se creó el registro.\nGORM gestiona este campo automáticamente durante la inserción.",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "project_id": {
+                    "type": "string"
+                },
+                "role": {
+                    "$ref": "#/definitions/domain.MemberRole"
+                },
+                "update_by": {
+                    "description": "UpdateBy almacena el nombre o identificador textual de la última persona en modificarlo.",
+                    "type": "string"
+                },
+                "update_by_id": {
+                    "description": "UpdateById es el UUID del usuario/administrador que realizó la última actualización.",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "UpdatedAt registra la última fecha y hora en que se modificó el registro.\nGORM actualiza este valor automáticamente en cada operación de guardado.",
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/domain.UserAdmin"
+                },
+                "user_admin_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.KanbanNote": {
+            "type": "object",
+            "properties": {
+                "card_id": {
+                    "type": "string"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "create_by": {
+                    "description": "CreateBy almacena el nombre o identificador textual del creador.",
+                    "type": "string"
+                },
+                "create_by_id": {
+                    "description": "CreateById es el UUID del usuario/administrador que creó el registro.\nEs un puntero para permitir valores nulos si la creación es automática por el sistema.",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "CreatedAt registra la fecha y hora exacta en que se creó el registro.\nGORM gestiona este campo automáticamente durante la inserción.",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "update_by": {
+                    "description": "UpdateBy almacena el nombre o identificador textual de la última persona en modificarlo.",
+                    "type": "string"
+                },
+                "update_by_id": {
+                    "description": "UpdateById es el UUID del usuario/administrador que realizó la última actualización.",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "UpdatedAt registra la última fecha y hora en que se modificó el registro.\nGORM actualiza este valor automáticamente en cada operación de guardado.",
+                    "type": "string"
+                }
+            }
+        },
+        "domain.KanbanProject": {
+            "type": "object",
+            "properties": {
+                "card_count": {
+                    "type": "integer"
+                },
+                "create_by": {
+                    "description": "CreateBy almacena el nombre o identificador textual del creador.",
+                    "type": "string"
+                },
+                "create_by_id": {
+                    "description": "CreateById es el UUID del usuario/administrador que creó el registro.\nEs un puntero para permitir valores nulos si la creación es automática por el sistema.",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "CreatedAt registra la fecha y hora exacta en que se creó el registro.\nGORM gestiona este campo automáticamente durante la inserción.",
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_master": {
+                    "type": "boolean"
+                },
+                "is_owner": {
+                    "type": "boolean"
+                },
+                "member_count": {
+                    "description": "Campos calculados (no persistidos)",
+                    "type": "integer"
+                },
+                "my_role": {
+                    "$ref": "#/definitions/domain.MemberRole"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "owner": {
+                    "description": "Relaciones",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/domain.UserAdmin"
+                        }
+                    ]
+                },
+                "owner_id": {
+                    "type": "string"
+                },
+                "update_by": {
+                    "description": "UpdateBy almacena el nombre o identificador textual de la última persona en modificarlo.",
+                    "type": "string"
+                },
+                "update_by_id": {
+                    "description": "UpdateById es el UUID del usuario/administrador que realizó la última actualización.",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "UpdatedAt registra la última fecha y hora en que se modificó el registro.\nGORM actualiza este valor automáticamente en cada operación de guardado.",
+                    "type": "string"
+                }
+            }
+        },
+        "domain.MemberRole": {
+            "type": "string",
+            "enum": [
+                "viewer",
+                "editor"
+            ],
+            "x-enum-varnames": [
+                "MemberRoleViewer",
+                "MemberRoleEditor"
             ]
         },
         "domain.Notification": {
@@ -5180,6 +7159,18 @@
                 }
             }
         },
+        "domain.ReceptionSetting": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "message": {
+                    "description": "Razón pública mostrada al usuario",
+                    "type": "string"
+                }
+            }
+        },
         "domain.TextModel": {
             "type": "object",
             "properties": {
@@ -5216,6 +7207,416 @@
                 }
             }
         },
+        "domain.Ticket": {
+            "type": "object",
+            "properties": {
+                "close_reason": {
+                    "description": "motivo de cierre (obligatorio al cerrar)",
+                    "type": "string"
+                },
+                "closed_at": {
+                    "type": "string"
+                },
+                "closed_by_admin_id": {
+                    "type": "string"
+                },
+                "closed_by_psi_id": {
+                    "type": "string"
+                },
+                "closed_by_type": {
+                    "description": "admin | psi | \"\"",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/domain.AutorType"
+                        }
+                    ]
+                },
+                "create_by": {
+                    "description": "CreateBy almacena el nombre o identificador textual del creador.",
+                    "type": "string"
+                },
+                "create_by_id": {
+                    "description": "CreateById es el UUID del usuario/administrador que creó el registro.\nEs un puntero para permitir valores nulos si la creación es automática por el sistema.",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "CreatedAt registra la fecha y hora exacta en que se creó el registro.\nGORM gestiona este campo automáticamente durante la inserción.",
+                    "type": "string"
+                },
+                "description": {
+                    "description": "descripción inicial del ticket (denormalizada para listados)",
+                    "type": "string"
+                },
+                "estado": {
+                    "$ref": "#/definitions/domain.TicketEstado"
+                },
+                "estado_id": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_closed": {
+                    "type": "boolean"
+                },
+                "mensajes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.TicketMensaje"
+                    }
+                },
+                "motivo": {
+                    "$ref": "#/definitions/domain.TicketMotivo"
+                },
+                "motivo_id": {
+                    "type": "integer"
+                },
+                "psi_first_name": {
+                    "description": "Campos calculados (no persistidos) para el listado admin/psi.",
+                    "type": "string"
+                },
+                "psi_last_name": {
+                    "type": "string"
+                },
+                "psi_user_id": {
+                    "type": "string"
+                },
+                "status_logs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.TicketStatusLog"
+                    }
+                },
+                "title": {
+                    "type": "string"
+                },
+                "update_by": {
+                    "description": "UpdateBy almacena el nombre o identificador textual de la última persona en modificarlo.",
+                    "type": "string"
+                },
+                "update_by_id": {
+                    "description": "UpdateById es el UUID del usuario/administrador que realizó la última actualización.",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "UpdatedAt registra la última fecha y hora en que se modificó el registro.\nGORM actualiza este valor automáticamente en cada operación de guardado.",
+                    "type": "string"
+                }
+            }
+        },
+        "domain.TicketAdjunto": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "mensaje_id": {
+                    "type": "integer"
+                },
+                "mime_type": {
+                    "type": "string"
+                },
+                "original_name": {
+                    "type": "string"
+                },
+                "size_bytes": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "url": {
+                    "description": "URL pública resuelta (no persistida).",
+                    "type": "string"
+                }
+            }
+        },
+        "domain.TicketEstado": {
+            "type": "object",
+            "properties": {
+                "create_by": {
+                    "description": "CreateBy almacena el nombre o identificador textual del creador.",
+                    "type": "string"
+                },
+                "create_by_id": {
+                    "description": "CreateById es el UUID del usuario/administrador que creó el registro.\nEs un puntero para permitir valores nulos si la creación es automática por el sistema.",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "CreatedAt registra la fecha y hora exacta en que se creó el registro.\nGORM gestiona este campo automáticamente durante la inserción.",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_closed": {
+                    "type": "boolean"
+                },
+                "motivo": {
+                    "$ref": "#/definitions/domain.TicketMotivo"
+                },
+                "motivo_id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "order": {
+                    "type": "integer"
+                },
+                "update_by": {
+                    "description": "UpdateBy almacena el nombre o identificador textual de la última persona en modificarlo.",
+                    "type": "string"
+                },
+                "update_by_id": {
+                    "description": "UpdateById es el UUID del usuario/administrador que realizó la última actualización.",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "UpdatedAt registra la última fecha y hora en que se modificó el registro.\nGORM actualiza este valor automáticamente en cada operación de guardado.",
+                    "type": "string"
+                }
+            }
+        },
+        "domain.TicketMensaje": {
+            "type": "object",
+            "properties": {
+                "adjuntos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.TicketAdjunto"
+                    }
+                },
+                "author_admin_id": {
+                    "type": "string"
+                },
+                "author_name": {
+                    "description": "Campos calculados (no persistidos).",
+                    "type": "string"
+                },
+                "author_psi_id": {
+                    "type": "string"
+                },
+                "author_type": {
+                    "$ref": "#/definitions/domain.AutorType"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "ticket_id": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.TicketMotivo": {
+            "type": "object",
+            "properties": {
+                "create_by": {
+                    "description": "CreateBy almacena el nombre o identificador textual del creador.",
+                    "type": "string"
+                },
+                "create_by_id": {
+                    "description": "CreateById es el UUID del usuario/administrador que creó el registro.\nEs un puntero para permitir valores nulos si la creación es automática por el sistema.",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "CreatedAt registra la fecha y hora exacta en que se creó el registro.\nGORM gestiona este campo automáticamente durante la inserción.",
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "estados": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.TicketEstado"
+                    }
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "tickets_per_psi": {
+                    "type": "integer"
+                },
+                "update_by": {
+                    "description": "UpdateBy almacena el nombre o identificador textual de la última persona en modificarlo.",
+                    "type": "string"
+                },
+                "update_by_id": {
+                    "description": "UpdateById es el UUID del usuario/administrador que realizó la última actualización.",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "UpdatedAt registra la última fecha y hora en que se modificó el registro.\nGORM actualiza este valor automáticamente en cada operación de guardado.",
+                    "type": "string"
+                }
+            }
+        },
+        "domain.TicketStatusLog": {
+            "type": "object",
+            "properties": {
+                "changed_by_admin_id": {
+                    "type": "string"
+                },
+                "changed_by_psi_id": {
+                    "type": "string"
+                },
+                "changed_by_type": {
+                    "$ref": "#/definitions/domain.AutorType"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "new_state": {
+                    "$ref": "#/definitions/domain.TicketEstado"
+                },
+                "new_state_id": {
+                    "type": "integer"
+                },
+                "previous_state": {
+                    "$ref": "#/definitions/domain.TicketEstado"
+                },
+                "previous_state_id": {
+                    "type": "integer"
+                },
+                "reason": {
+                    "description": "comentario opcional del cambio (ej. motivo de cierre)",
+                    "type": "string"
+                },
+                "ticket_id": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.UserAdmin": {
+            "type": "object",
+            "properties": {
+                "can_create_admin": {
+                    "description": "── Permisos: Gestión de Personal Administrativo ─────────────────────",
+                    "type": "boolean"
+                },
+                "can_create_psi": {
+                    "type": "boolean"
+                },
+                "can_create_tags": {
+                    "description": "── Permisos: Catálogo de Especialidades (Tags) ───────────────────────",
+                    "type": "boolean"
+                },
+                "can_delete_admin": {
+                    "type": "boolean"
+                },
+                "can_delete_psi": {
+                    "type": "boolean"
+                },
+                "can_delete_publish": {
+                    "type": "boolean"
+                },
+                "can_delete_tags": {
+                    "type": "boolean"
+                },
+                "can_edit_tags": {
+                    "type": "boolean"
+                },
+                "can_manage_notifications": {
+                    "type": "boolean"
+                },
+                "can_manage_projects": {
+                    "description": "── Permisos: Proyectos (Kanban) ──────────────────────────────────────\n\"Master\": accede y administra CUALQUIER proyecto del panel, sin importar\nquién sea el dueño. Los admins sin este flag solo ven sus proyectos y\nlos que les compartieron como viewer/editor.",
+                    "type": "boolean"
+                },
+                "can_manage_tickets": {
+                    "description": "── Permisos: Tickets de Solicitudes ──────────────────────────────────\nOtorga acceso a la cola FIFO de tickets y a la configuración del módulo\n(áreas, motivos y estados). Sin este flag (y sin Sudo) el admin no ve el menú.",
+                    "type": "boolean"
+                },
+                "can_publish": {
+                    "description": "── Permisos: Contenido y Comunicación ───────────────────────────────",
+                    "type": "boolean"
+                },
+                "can_read_notifications": {
+                    "type": "boolean"
+                },
+                "can_read_psi": {
+                    "description": "── Permisos: Gestión de Colegiados ──────────────────────────────────",
+                    "type": "boolean"
+                },
+                "can_send_notifications": {
+                    "type": "boolean"
+                },
+                "can_update_admin": {
+                    "type": "boolean"
+                },
+                "can_update_psi": {
+                    "type": "boolean"
+                },
+                "can_update_publish": {
+                    "type": "boolean"
+                },
+                "create_by": {
+                    "description": "CreateBy almacena el nombre o identificador textual del creador.",
+                    "type": "string"
+                },
+                "create_by_id": {
+                    "description": "CreateById es el UUID del usuario/administrador que creó el registro.\nEs un puntero para permitir valores nulos si la creación es automática por el sistema.",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "CreatedAt registra la fecha y hora exacta en que se creó el registro.\nGORM gestiona este campo automáticamente durante la inserción.",
+                    "type": "string"
+                },
+                "email": {
+                    "description": "Email es la dirección de correo electrónico única del usuario.",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "description": "IsActive controla si la cuenta puede iniciar sesión.\nDefault false: un psicólogo creado desde una inscripción aprobada nace inactivo\ny solo puede activarse manualmente cuando la administración confirma los 3\nrequisitos legales (Ministerio, N° FPV y solvencia).",
+                    "type": "boolean"
+                },
+                "role": {
+                    "description": "Role es una etiqueta del preset de permisos aplicado (secretaria, comunicacion,\nsoporte, proyectos, lector o \"personalizado\"). Es SOLO metadato descriptivo:\nla autorización siempre depende de los flags booleanos, nunca del rol.",
+                    "type": "string"
+                },
+                "update_by": {
+                    "description": "UpdateBy almacena el nombre o identificador textual de la última persona en modificarlo.",
+                    "type": "string"
+                },
+                "update_by_id": {
+                    "description": "UpdateById es el UUID del usuario/administrador que realizó la última actualización.",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "UpdatedAt registra la última fecha y hora en que se modificó el registro.\nGORM actualiza este valor automáticamente en cada operación de guardado.",
+                    "type": "string"
+                },
+                "username": {
+                    "description": "Username es el identificador único de login del usuario.",
+                    "type": "string"
+                }
+            }
+        },
         "handler.LoginRequest": {
             "type": "object",
             "required": [
@@ -5233,6 +7634,33 @@
                 }
             }
         },
+        "request_structs.AddMemberRequest": {
+            "type": "object",
+            "required": [
+                "user_admin_id"
+            ],
+            "properties": {
+                "role": {
+                    "type": "string",
+                    "example": "editor"
+                },
+                "user_admin_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "request_structs.AddMensajeRequest": {
+            "type": "object",
+            "required": [
+                "message"
+            ],
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Adjunto el recibo de pago"
+                }
+            }
+        },
         "request_structs.AdminPermissionsDTO": {
             "type": "object",
             "properties": {
@@ -5242,7 +7670,6 @@
                     "example": false
                 },
                 "can_create_psi": {
-                    "description": "Gestión de Colegiados (CRUD de Psicólogos)",
                     "type": "boolean",
                     "example": false
                 },
@@ -5275,6 +7702,16 @@
                     "type": "boolean",
                     "example": false
                 },
+                "can_manage_projects": {
+                    "description": "Proyectos (Kanban)",
+                    "type": "boolean",
+                    "example": false
+                },
+                "can_manage_tickets": {
+                    "description": "Tickets de Solicitudes (colas, chat y configuración del módulo)",
+                    "type": "boolean",
+                    "example": false
+                },
                 "can_publish": {
                     "description": "Sistema de Gestión de Contenidos (CMS)",
                     "type": "boolean",
@@ -5283,6 +7720,11 @@
                 "can_read_notifications": {
                     "type": "boolean",
                     "example": true
+                },
+                "can_read_psi": {
+                    "description": "Gestión de Colegiados (CRUD de Psicólogos)",
+                    "type": "boolean",
+                    "example": false
                 },
                 "can_send_notifications": {
                     "description": "Motor de Mensajería y Alertas",
@@ -5300,6 +7742,19 @@
                 "can_update_publish": {
                     "type": "boolean",
                     "example": true
+                }
+            }
+        },
+        "request_structs.CloseTicketRequest": {
+            "type": "object",
+            "required": [
+                "close_reason"
+            ],
+            "properties": {
+                "close_reason": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "example": "Respondido y resuelto"
                 }
             }
         },
@@ -5323,9 +7778,49 @@
                 "permissions": {
                     "$ref": "#/definitions/request_structs.AdminPermissionsDTO"
                 },
+                "role": {
+                    "description": "Role es la etiqueta del preset aplicado (ver AdminRolePresets). Solo\nmetadato: los permisos reales viajan en 'permissions'.",
+                    "type": "string",
+                    "example": "secretaria"
+                },
                 "username": {
                     "type": "string",
                     "example": "staff_admin"
+                }
+            }
+        },
+        "request_structs.CreateCardRequest": {
+            "type": "object",
+            "required": [
+                "column_id",
+                "title"
+            ],
+            "properties": {
+                "column_id": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "example": "Incluir logo y QR del formulario"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "example": "Diseñar afiche"
+                }
+            }
+        },
+        "request_structs.CreateColumnRequest": {
+            "type": "object",
+            "required": [
+                "title"
+            ],
+            "properties": {
+                "title": {
+                    "type": "string",
+                    "maxLength": 120,
+                    "example": "Por hacer"
                 }
             }
         },
@@ -5339,6 +7834,19 @@
                     "description": "Content es el texto libre de la entrada (ej: descripción del expediente disciplinario).\nEs texto plano; la capa de servicio lo sanitiza con bluemonday antes de persistir.",
                     "type": "string",
                     "example": "Expediente abierto por el Tribunal Disciplinario."
+                }
+            }
+        },
+        "request_structs.CreateNoteRequest": {
+            "type": "object",
+            "required": [
+                "content"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "example": "Pendiente de aprobación de la junta"
                 }
             }
         },
@@ -5392,6 +7900,26 @@
                     "description": "Content es el texto libre de la observación.\nEs texto plano; la capa de servicio lo sanitiza con bluemonday antes de persistir.",
                     "type": "string",
                     "example": "Nota interna de seguimiento."
+                }
+            }
+        },
+        "request_structs.CreateProjectRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "description": "Description es opcional; contexto breve del proyecto.",
+                    "type": "string",
+                    "maxLength": 500,
+                    "example": "Organización del evento presencial"
+                },
+                "name": {
+                    "description": "Name es el título visible del proyecto.",
+                    "type": "string",
+                    "maxLength": 120,
+                    "example": "Convención Anual 2026"
                 }
             }
         },
@@ -5631,6 +8159,77 @@
                     "description": "Name es el identificador único y formal de la especialidad profesional.\nSe valida como requerido ('validate:\"required\"') para garantizar que\nningún registro huérfano o anónimo ingrese a la base de datos.",
                     "type": "string",
                     "example": "Psicología Clínica"
+                }
+            }
+        },
+        "request_structs.CreateTicketEstadoRequest": {
+            "type": "object",
+            "required": [
+                "motivo_id",
+                "name"
+            ],
+            "properties": {
+                "is_closed": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "motivo_id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 60,
+                    "example": "En revisión"
+                },
+                "order": {
+                    "type": "integer",
+                    "example": 2
+                }
+            }
+        },
+        "request_structs.CreateTicketMotivoRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "tickets_per_psi"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 500
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 120,
+                    "example": "Solicitudes"
+                },
+                "tickets_per_psi": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 3
+                }
+            }
+        },
+        "request_structs.CreateTicketRequest": {
+            "type": "object",
+            "required": [
+                "description",
+                "motivo_id",
+                "title"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "example": "Necesito la constancia para mi empleador"
+                },
+                "motivo_id": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "example": "Solicitud de constancia de solvencia"
                 }
             }
         },
@@ -5946,6 +8545,23 @@
                 }
             }
         },
+        "request_structs.TransferSudoRequest": {
+            "type": "object",
+            "required": [
+                "password",
+                "target_id"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string",
+                    "example": "••••••••"
+                },
+                "target_id": {
+                    "type": "string",
+                    "example": "00000000-0000-0000-0000-000000000000"
+                }
+            }
+        },
         "request_structs.UndergraduateDTO": {
             "type": "object",
             "properties": {
@@ -6013,9 +8629,47 @@
                         }
                     ]
                 },
+                "role": {
+                    "description": "Role cambia la etiqueta del preset aplicado. nil = no tocar.",
+                    "type": "string",
+                    "example": "comunicacion"
+                },
                 "username": {
                     "type": "string",
                     "example": "nuevo_username"
+                }
+            }
+        },
+        "request_structs.UpdateCardRequest": {
+            "type": "object",
+            "properties": {
+                "column_id": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 2000
+                },
+                "position": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 200
+                }
+            }
+        },
+        "request_structs.UpdateColumnRequest": {
+            "type": "object",
+            "properties": {
+                "position": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "title": {
+                    "type": "string",
+                    "example": "En revisión"
                 }
             }
         },
@@ -6029,6 +8683,15 @@
                 }
             }
         },
+        "request_structs.UpdateMemberRequest": {
+            "type": "object",
+            "properties": {
+                "role": {
+                    "type": "string",
+                    "example": "viewer"
+                }
+            }
+        },
         "request_structs.UpdateObservacionesRequest": {
             "type": "object",
             "properties": {
@@ -6036,6 +8699,19 @@
                     "description": "Content es el nuevo texto de la observación (texto plano; se sanitiza en la API).",
                     "type": "string",
                     "example": "Nota interna actualizada."
+                }
+            }
+        },
+        "request_structs.UpdateProjectRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Nueva descripción"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Convención 2026"
                 }
             }
         },
@@ -6298,6 +8974,24 @@
                 }
             }
         },
+        "request_structs.UpdateReceptionRequest": {
+            "type": "object",
+            "required": [
+                "enabled",
+                "key"
+            ],
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
         "request_structs.UpdateSocialNetworkRequest": {
             "type": "object",
             "properties": {
@@ -6338,6 +9032,56 @@
                 }
             }
         },
+        "request_structs.UpdateTicketEstado": {
+            "type": "object",
+            "required": [
+                "estado_id"
+            ],
+            "properties": {
+                "estado_id": {
+                    "type": "integer"
+                },
+                "reason": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "example": "El comprobante fue validado"
+                }
+            }
+        },
+        "request_structs.UpdateTicketEstadoRequest": {
+            "type": "object",
+            "properties": {
+                "is_closed": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "name": {
+                    "type": "string",
+                    "example": "En revisión"
+                },
+                "order": {
+                    "type": "integer",
+                    "example": 2
+                }
+            }
+        },
+        "request_structs.UpdateTicketMotivoRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Nueva descripción"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Solicitudes"
+                },
+                "tickets_per_psi": {
+                    "type": "integer",
+                    "example": 5
+                }
+            }
+        },
         "service.BirthdayInfoProjection": {
             "type": "object",
             "properties": {
@@ -6362,6 +9106,93 @@
                 "month": {
                     "description": "Mes y día del cumpleaños (para mostrarlos como fecha sin exponer el año real).",
                     "type": "integer"
+                }
+            }
+        },
+        "service.PermissionSet": {
+            "type": "object",
+            "properties": {
+                "can_create_admin": {
+                    "type": "boolean"
+                },
+                "can_create_psi": {
+                    "type": "boolean"
+                },
+                "can_create_tags": {
+                    "type": "boolean"
+                },
+                "can_delete_admin": {
+                    "type": "boolean"
+                },
+                "can_delete_psi": {
+                    "type": "boolean"
+                },
+                "can_delete_publish": {
+                    "type": "boolean"
+                },
+                "can_delete_tags": {
+                    "type": "boolean"
+                },
+                "can_edit_tags": {
+                    "type": "boolean"
+                },
+                "can_manage_notifications": {
+                    "type": "boolean"
+                },
+                "can_manage_projects": {
+                    "type": "boolean"
+                },
+                "can_manage_tickets": {
+                    "type": "boolean"
+                },
+                "can_publish": {
+                    "type": "boolean"
+                },
+                "can_read_notifications": {
+                    "type": "boolean"
+                },
+                "can_read_psi": {
+                    "type": "boolean"
+                },
+                "can_send_notifications": {
+                    "type": "boolean"
+                },
+                "can_update_admin": {
+                    "type": "boolean"
+                },
+                "can_update_psi": {
+                    "type": "boolean"
+                },
+                "can_update_publish": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "service.ReceptionSwitchesSnapshot": {
+            "type": "object",
+            "properties": {
+                "inscriptions": {
+                    "$ref": "#/definitions/domain.ReceptionSetting"
+                },
+                "tickets": {
+                    "$ref": "#/definitions/domain.ReceptionSetting"
+                }
+            }
+        },
+        "service.RolePreset": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "permissions": {
+                    "$ref": "#/definitions/service.PermissionSet"
+                },
+                "slug": {
+                    "type": "string"
                 }
             }
         }

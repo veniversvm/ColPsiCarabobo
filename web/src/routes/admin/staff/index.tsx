@@ -1,8 +1,14 @@
 // routes/admin/staff/index.tsx
 import { createResource, createSignal, For, Show, Suspense } from "solid-js";
 import { A, useNavigate } from "@solidjs/router";
-import { apiGet, apiDelete } from "~/lib/api";
+import { apiGet, apiDelete, apiPost } from "~/lib/api";
 import { getUserFacingError } from "~/lib/errors";
+import { roleLabel } from "~/lib/staff-permissions";
+
+interface AdminMe {
+  id: string;
+  sudo: boolean;
+}
 
 interface Admin {
   id: string;
@@ -11,7 +17,9 @@ interface Admin {
   is_active: boolean;
   created_at: string;
   create_by: string;
+  role?: string | null;
   // permisos
+  can_read_psi: boolean;
   can_create_psi: boolean;
   can_update_psi: boolean;
   can_delete_psi: boolean;
@@ -27,6 +35,8 @@ interface Admin {
   can_create_tags: boolean;
   can_edit_tags: boolean;
   can_delete_tags: boolean;
+  can_manage_projects: boolean;
+  can_manage_tickets: boolean;
 }
 
 interface AdminListResponse {
@@ -44,11 +54,12 @@ const formatDate = (iso: string) => {
 
 const countPerms = (a: Admin) =>
   [
-    a.can_create_psi, a.can_update_psi, a.can_delete_psi,
+    a.can_read_psi, a.can_create_psi, a.can_update_psi, a.can_delete_psi,
     a.can_create_admin, a.can_update_admin, a.can_delete_admin,
     a.can_publish, a.can_update_publish, a.can_delete_publish,
     a.can_send_notifications, a.can_manage_notifications, a.can_read_notifications,
     a.can_create_tags, a.can_edit_tags, a.can_delete_tags,
+    a.can_manage_projects, a.can_manage_tickets,
   ].filter(Boolean).length;
 
 export default function AdminStaffPage() {
@@ -58,6 +69,56 @@ export default function AdminStaffPage() {
   const [confirmDelete, setConfirmDelete] = createSignal<Admin | null>(null);
   const [busy, setBusy] = createSignal<string | null>(null);
   const [deleteError, setDeleteError] = createSignal<string | null>(null);
+
+  // Quién es el SUDO actual (para mostrar el botón de sucesión y bloquear el
+  // destinatario a sí mismo).
+  const [me] = createResource<AdminMe | null>(async () => {
+    try {
+      return await apiGet<AdminMe>("/admin/me");
+    } catch {
+      return null;
+    }
+  });
+  const isSudo = () => me()?.sudo ?? false;
+
+  // Estado del modal de sucesión de SUDO.
+  const [showSudo, setShowSudo] = createSignal(false);
+  const [sudoTarget, setSudoTarget] = createSignal<string>("");
+  const [sudoPassword, setSudoPassword] = createSignal("");
+  const [sudoError, setSudoError] = createSignal<string | null>(null);
+  const [sudoBusy, setSudoBusy] = createSignal(false);
+  const [sudoSuccess, setSudoSuccess] = createSignal(false);
+
+  const openSudoModal = () => {
+    setSudoTarget("");
+    setSudoPassword("");
+    setSudoError(null);
+    setSudoSuccess(false);
+    setShowSudo(true);
+  };
+
+  const handleTransferSudo = async (e: Event) => {
+    e.preventDefault();
+    if (!sudoTarget()) { setSudoError("Selecciona el administrador destinatario."); return; }
+    if (!sudoPassword()) { setSudoError("Confirma tu contraseña para continuar."); return; }
+
+    setSudoBusy(true);
+    setSudoError(null);
+    try {
+      await apiPost("/admin/transfer-sudo", {
+        target_id: sudoTarget(),
+        password: sudoPassword(),
+      });
+      setSudoSuccess(true);
+      setSudoPassword("");
+      setSudoTarget("");
+      refetch();
+    } catch (err: any) {
+      setSudoError(getUserFacingError(err));
+    } finally {
+      setSudoBusy(false);
+    }
+  };
 
   const [result, { refetch }] = createResource(
     () => search(),
@@ -114,6 +175,16 @@ export default function AdminStaffPage() {
           <span class="text-lg leading-none">＋</span>
           Nuevo Administrador
         </A>
+        <Show when={isSudo()}>
+          <button
+            onClick={openSudoModal}
+            class="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-black px-6 py-3 rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-all text-sm"
+            title="Ceder el rol de Super Usuario a otro administrador"
+          >
+            <span class="text-lg leading-none">👑</span>
+            Ceder SUDO
+          </button>
+        </Show>
       </div>
 
       {/* ── FILTROS ───────────────────────────────────────────────────────── */}
@@ -196,7 +267,12 @@ export default function AdminStaffPage() {
                           {admin.is_active ? "Activo" : "Inactivo"}
                         </span>
                         <span class="text-[10px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider bg-blue-50 text-blue-600">
-                          {permsCount}/15 permisos
+                          {permsCount}/18 permisos
+                        </span>
+                        <span class={`text-[10px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider ${
+                          admin.role ? "bg-indigo-50 text-indigo-600" : "bg-gray-100 text-gray-400"
+                        }`}>
+                          {roleLabel(admin.role)}
                         </span>
                       </div>
                       <p class="text-gray-500 text-sm truncate">{admin.email}</p>
@@ -276,6 +352,69 @@ export default function AdminStaffPage() {
             </div>
           </div>
         )}
+      </Show>
+
+    {/* ── MODAL SUCESIÓN SUDO ─────────────────────────────────── */}
+      <Show when={showSudo()}>
+        <div
+          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowSudo(false); }}
+        >
+          <form onSubmit={handleTransferSudo} class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md border border-gray-100 animate-in zoom-in-95 duration-200">
+            <p class="text-4xl mb-4">👑</p>
+            <h2 class="text-lg font-black text-gray-900 mb-1">Transferir el rol de Super Usuario</h2>
+            <p class="text-gray-500 text-sm mb-5">
+              El destinatario pasará a ser el único SUDO del sistema y tú quedarás como administrador normal. Esta acción es grave e irrevocable.
+            </p>
+
+            <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1">Destinatario</label>
+            <select
+              value={sudoTarget()}
+              onChange={(e) => setSudoTarget(e.currentTarget.value)}
+              class="w-full mb-4 bg-white border-2 border-gray-200 focus:border-amber-500 rounded-xl px-4 py-2.5 outline-none transition-all text-gray-800 text-sm"
+            >
+              <option value="">— Seleccionar administrador —</option>
+              <For each={filtered().filter((a) => a.id !== me()?.id && a.is_active)}>
+                {(a) => <option value={a.id}>{a.username} ({a.email})</option>}
+              </For>
+            </select>
+
+            <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1">Contraseña del SUDO actual</label>
+            <input
+              type="password"
+              placeholder="Confirma con tu contraseña..."
+              value={sudoPassword()}
+              onInput={(e) => setSudoPassword(e.currentTarget.value)}
+              class="w-full mb-4 bg-white border-2 border-gray-200 focus:border-amber-500 rounded-xl px-4 py-2.5 outline-none transition-all text-gray-800 text-sm"
+            />
+
+            <Show when={sudoError()}>
+              <div class="mb-4 p-3 rounded-xl bg-red-50 text-red-700 text-xs font-bold border border-red-200">{sudoError()}</div>
+            </Show>
+            <Show when={sudoSuccess()}>
+              <div class="mb-4 p-3 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
+                ✓ Rol transferido. El destinatario ya es SUDO. Tu sesión se actualizará al recargar.
+              </div>
+            </Show>
+
+            <div class="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowSudo(false)}
+                class="flex-1 px-4 py-3 rounded-2xl border-2 border-gray-200 font-black text-gray-600 hover:bg-gray-50 transition-all text-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={sudoBusy() || sudoSuccess()}
+                class="flex-1 px-4 py-3 rounded-2xl bg-amber-600 hover:bg-amber-700 disabled:opacity-60 text-white font-black transition-all text-sm"
+              >
+                {sudoBusy() ? "Transfiriendo..." : "Transferir SUDO"}
+              </button>
+            </div>
+          </form>
+        </div>
       </Show>
 
     </main>

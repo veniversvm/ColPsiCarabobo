@@ -22,10 +22,22 @@ export default function PsiCrearTicket() {
   const [sending, setSending] = createSignal(false);
   const [error, setError] = createSignal("");
 
+  // Interruptor global de recepción de tickets: si está desactivado, se bloquea
+  // la creación y se muestra el motivo público.
+  const [reception] = createResource<{ enabled: boolean; message?: string }>(async () => {
+    try {
+      const res = await apiGet<{ enabled: boolean; message?: string }>("/psi/tickets/status");
+      return res ?? { enabled: true };
+    } catch {
+      return { enabled: true };
+    }
+  });
+  const receptionDisabled = () => reception() ? reception()!.enabled === false : false;
+
   const motivos = () => (config()?.data ?? []) as TicketMotivo[];
 
   const canSubmit = createMemo(
-    () => motivoId() !== "" && title().trim().length > 0 && description().trim().length > 0 && !sending()
+    () => !receptionDisabled() && motivoId() !== "" && title().trim().length > 0 && description().trim().length > 0 && !sending()
   );
 
   const handleFiles = (e: Event) => {
@@ -35,6 +47,10 @@ export default function PsiCrearTicket() {
   };
 
   const submit = async () => {
+    if (receptionDisabled()) {
+      setError(reception()?.message || "La recepción de solicitudes se encuentra temporalmente desactivada. Intenta más tarde.");
+      return;
+    }
     if (!canSubmit()) {
       setError("Completa el motivo, título y descripción antes de enviar.");
       return;
@@ -69,6 +85,17 @@ export default function PsiCrearTicket() {
 
       <div class="max-w-2xl mx-auto px-4">
         <div class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 space-y-5">
+          <Show when={receptionDisabled()}>
+            <div class="bg-amber-50 border-2 border-amber-200 text-amber-800 rounded-2xl p-5 flex items-start gap-4">
+              <span class="text-2xl">⏸️</span>
+              <div>
+                <p class="font-black">Recepción de solicitudes temporalmente desactivada</p>
+                <p class="text-sm mt-1">
+                  {reception()?.message || "Por favor intenta nuevamente en los próximos días."}
+                </p>
+              </div>
+            </div>
+          </Show>
           <Suspense fallback={<div class="h-16 bg-gray-50 animate-pulse rounded-2xl" />}>
             <Show when={motivos().length === 0 && !config.loading}>
               <div class="bg-blue-50 border border-blue-200 text-blue-800 text-sm font-semibold px-4 py-3 rounded-2xl">
@@ -166,7 +193,7 @@ export default function PsiCrearTicket() {
             disabled={!canSubmit()}
             class="w-full bg-[#1e3a8a] hover:bg-[#1e40af] text-white font-black py-4 rounded-2xl shadow-lg hover:shadow-xl active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm uppercase tracking-widest"
           >
-            {sending() ? "Enviando solicitud..." : "Enviar Solicitud"}
+            {sending() ? "Enviando solicitud..." : receptionDisabled() ? "Recepción desactivada" : "Enviar Solicitud"}
           </button>
         </div>
       </div>

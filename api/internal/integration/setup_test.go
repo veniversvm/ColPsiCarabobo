@@ -290,7 +290,7 @@ func buildTestApp(db *gorm.DB) *fiber.App {
 
 	api := app.Group("/api/v1")
 
-	router.SetupAdminRoutes(api, adminRepo, psiRepo, analyticsSvc, nil)
+	router.SetupAdminRoutes(api, adminRepo, psiRepo, nil, analyticsSvc, nil)
 	router.SetupPsiRoutes(api, psiRepo, adminRepo, nil, analyticsSvc, nil, nil)
 	router.SetupSpecialtyRoutes(api, psiRepo, adminRepo, specialtyRepo, analyticsSvc)
 	router.SetupPostRoutes(api, adminRepo, psiRepo, postRepo, nil, analyticsSvc)

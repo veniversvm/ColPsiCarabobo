@@ -1,5 +1,15 @@
 basePath: /api/v1
 definitions:
+  domain.AutorType:
+    enum:
+    - admin
+    - psi
+    - system
+    type: string
+    x-enum-varnames:
+    - AutorAdmin
+    - AutorPsi
+    - AutorSystem
   domain.DocumentType:
     enum:
     - cedula
@@ -16,6 +26,226 @@ definitions:
     - DocumentSolvencia
     - DocumentComprobante
     - DocumentOtro
+  domain.KanbanCard:
+    properties:
+      column_id:
+        type: string
+      create_by:
+        description: CreateBy almacena el nombre o identificador textual del creador.
+        type: string
+      create_by_id:
+        description: |-
+          CreateById es el UUID del usuario/administrador que creó el registro.
+          Es un puntero para permitir valores nulos si la creación es automática por el sistema.
+        type: string
+      created_at:
+        description: |-
+          CreatedAt registra la fecha y hora exacta en que se creó el registro.
+          GORM gestiona este campo automáticamente durante la inserción.
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      notes:
+        items:
+          $ref: '#/definitions/domain.KanbanNote'
+        type: array
+      position:
+        type: integer
+      project_id:
+        type: string
+      title:
+        type: string
+      update_by:
+        description: UpdateBy almacena el nombre o identificador textual de la última
+          persona en modificarlo.
+        type: string
+      update_by_id:
+        description: UpdateById es el UUID del usuario/administrador que realizó la
+          última actualización.
+        type: string
+      updated_at:
+        description: |-
+          UpdatedAt registra la última fecha y hora en que se modificó el registro.
+          GORM actualiza este valor automáticamente en cada operación de guardado.
+        type: string
+    type: object
+  domain.KanbanColumn:
+    properties:
+      cards:
+        items:
+          $ref: '#/definitions/domain.KanbanCard'
+        type: array
+      create_by:
+        description: CreateBy almacena el nombre o identificador textual del creador.
+        type: string
+      create_by_id:
+        description: |-
+          CreateById es el UUID del usuario/administrador que creó el registro.
+          Es un puntero para permitir valores nulos si la creación es automática por el sistema.
+        type: string
+      created_at:
+        description: |-
+          CreatedAt registra la fecha y hora exacta en que se creó el registro.
+          GORM gestiona este campo automáticamente durante la inserción.
+        type: string
+      id:
+        type: string
+      position:
+        type: integer
+      project_id:
+        type: string
+      title:
+        type: string
+      update_by:
+        description: UpdateBy almacena el nombre o identificador textual de la última
+          persona en modificarlo.
+        type: string
+      update_by_id:
+        description: UpdateById es el UUID del usuario/administrador que realizó la
+          última actualización.
+        type: string
+      updated_at:
+        description: |-
+          UpdatedAt registra la última fecha y hora en que se modificó el registro.
+          GORM actualiza este valor automáticamente en cada operación de guardado.
+        type: string
+    type: object
+  domain.KanbanMember:
+    properties:
+      create_by:
+        description: CreateBy almacena el nombre o identificador textual del creador.
+        type: string
+      create_by_id:
+        description: |-
+          CreateById es el UUID del usuario/administrador que creó el registro.
+          Es un puntero para permitir valores nulos si la creación es automática por el sistema.
+        type: string
+      created_at:
+        description: |-
+          CreatedAt registra la fecha y hora exacta en que se creó el registro.
+          GORM gestiona este campo automáticamente durante la inserción.
+        type: string
+      id:
+        type: string
+      project_id:
+        type: string
+      role:
+        $ref: '#/definitions/domain.MemberRole'
+      update_by:
+        description: UpdateBy almacena el nombre o identificador textual de la última
+          persona en modificarlo.
+        type: string
+      update_by_id:
+        description: UpdateById es el UUID del usuario/administrador que realizó la
+          última actualización.
+        type: string
+      updated_at:
+        description: |-
+          UpdatedAt registra la última fecha y hora en que se modificó el registro.
+          GORM actualiza este valor automáticamente en cada operación de guardado.
+        type: string
+      user:
+        $ref: '#/definitions/domain.UserAdmin'
+      user_admin_id:
+        type: string
+    type: object
+  domain.KanbanNote:
+    properties:
+      card_id:
+        type: string
+      content:
+        type: string
+      create_by:
+        description: CreateBy almacena el nombre o identificador textual del creador.
+        type: string
+      create_by_id:
+        description: |-
+          CreateById es el UUID del usuario/administrador que creó el registro.
+          Es un puntero para permitir valores nulos si la creación es automática por el sistema.
+        type: string
+      created_at:
+        description: |-
+          CreatedAt registra la fecha y hora exacta en que se creó el registro.
+          GORM gestiona este campo automáticamente durante la inserción.
+        type: string
+      id:
+        type: string
+      update_by:
+        description: UpdateBy almacena el nombre o identificador textual de la última
+          persona en modificarlo.
+        type: string
+      update_by_id:
+        description: UpdateById es el UUID del usuario/administrador que realizó la
+          última actualización.
+        type: string
+      updated_at:
+        description: |-
+          UpdatedAt registra la última fecha y hora en que se modificó el registro.
+          GORM actualiza este valor automáticamente en cada operación de guardado.
+        type: string
+    type: object
+  domain.KanbanProject:
+    properties:
+      card_count:
+        type: integer
+      create_by:
+        description: CreateBy almacena el nombre o identificador textual del creador.
+        type: string
+      create_by_id:
+        description: |-
+          CreateById es el UUID del usuario/administrador que creó el registro.
+          Es un puntero para permitir valores nulos si la creación es automática por el sistema.
+        type: string
+      created_at:
+        description: |-
+          CreatedAt registra la fecha y hora exacta en que se creó el registro.
+          GORM gestiona este campo automáticamente durante la inserción.
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      is_master:
+        type: boolean
+      is_owner:
+        type: boolean
+      member_count:
+        description: Campos calculados (no persistidos)
+        type: integer
+      my_role:
+        $ref: '#/definitions/domain.MemberRole'
+      name:
+        type: string
+      owner:
+        allOf:
+        - $ref: '#/definitions/domain.UserAdmin'
+        description: Relaciones
+      owner_id:
+        type: string
+      update_by:
+        description: UpdateBy almacena el nombre o identificador textual de la última
+          persona en modificarlo.
+        type: string
+      update_by_id:
+        description: UpdateById es el UUID del usuario/administrador que realizó la
+          última actualización.
+        type: string
+      updated_at:
+        description: |-
+          UpdatedAt registra la última fecha y hora en que se modificó el registro.
+          GORM actualiza este valor automáticamente en cada operación de guardado.
+        type: string
+    type: object
+  domain.MemberRole:
+    enum:
+    - viewer
+    - editor
+    type: string
+    x-enum-varnames:
+    - MemberRoleViewer
+    - MemberRoleEditor
   domain.Notification:
     properties:
       attachments:
@@ -887,6 +1117,14 @@ definitions:
           GORM actualiza este valor automáticamente en cada operación de guardado.
         type: string
     type: object
+  domain.ReceptionSetting:
+    properties:
+      enabled:
+        type: boolean
+      message:
+        description: Razón pública mostrada al usuario
+        type: string
+    type: object
   domain.TextModel:
     properties:
       content:
@@ -923,6 +1161,335 @@ definitions:
           GORM actualiza este valor automáticamente en cada operación de guardado.
         type: string
     type: object
+  domain.Ticket:
+    properties:
+      close_reason:
+        description: motivo de cierre (obligatorio al cerrar)
+        type: string
+      closed_at:
+        type: string
+      closed_by_admin_id:
+        type: string
+      closed_by_psi_id:
+        type: string
+      closed_by_type:
+        allOf:
+        - $ref: '#/definitions/domain.AutorType'
+        description: admin | psi | ""
+      create_by:
+        description: CreateBy almacena el nombre o identificador textual del creador.
+        type: string
+      create_by_id:
+        description: |-
+          CreateById es el UUID del usuario/administrador que creó el registro.
+          Es un puntero para permitir valores nulos si la creación es automática por el sistema.
+        type: string
+      created_at:
+        description: |-
+          CreatedAt registra la fecha y hora exacta en que se creó el registro.
+          GORM gestiona este campo automáticamente durante la inserción.
+        type: string
+      description:
+        description: descripción inicial del ticket (denormalizada para listados)
+        type: string
+      estado:
+        $ref: '#/definitions/domain.TicketEstado'
+      estado_id:
+        type: integer
+      id:
+        type: integer
+      is_closed:
+        type: boolean
+      mensajes:
+        items:
+          $ref: '#/definitions/domain.TicketMensaje'
+        type: array
+      motivo:
+        $ref: '#/definitions/domain.TicketMotivo'
+      motivo_id:
+        type: integer
+      psi_first_name:
+        description: Campos calculados (no persistidos) para el listado admin/psi.
+        type: string
+      psi_last_name:
+        type: string
+      psi_user_id:
+        type: string
+      status_logs:
+        items:
+          $ref: '#/definitions/domain.TicketStatusLog'
+        type: array
+      title:
+        type: string
+      update_by:
+        description: UpdateBy almacena el nombre o identificador textual de la última
+          persona en modificarlo.
+        type: string
+      update_by_id:
+        description: UpdateById es el UUID del usuario/administrador que realizó la
+          última actualización.
+        type: string
+      updated_at:
+        description: |-
+          UpdatedAt registra la última fecha y hora en que se modificó el registro.
+          GORM actualiza este valor automáticamente en cada operación de guardado.
+        type: string
+    type: object
+  domain.TicketAdjunto:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      mensaje_id:
+        type: integer
+      mime_type:
+        type: string
+      original_name:
+        type: string
+      size_bytes:
+        type: integer
+      updated_at:
+        type: string
+      url:
+        description: URL pública resuelta (no persistida).
+        type: string
+    type: object
+  domain.TicketEstado:
+    properties:
+      create_by:
+        description: CreateBy almacena el nombre o identificador textual del creador.
+        type: string
+      create_by_id:
+        description: |-
+          CreateById es el UUID del usuario/administrador que creó el registro.
+          Es un puntero para permitir valores nulos si la creación es automática por el sistema.
+        type: string
+      created_at:
+        description: |-
+          CreatedAt registra la fecha y hora exacta en que se creó el registro.
+          GORM gestiona este campo automáticamente durante la inserción.
+        type: string
+      id:
+        type: integer
+      is_closed:
+        type: boolean
+      motivo:
+        $ref: '#/definitions/domain.TicketMotivo'
+      motivo_id:
+        type: integer
+      name:
+        type: string
+      order:
+        type: integer
+      update_by:
+        description: UpdateBy almacena el nombre o identificador textual de la última
+          persona en modificarlo.
+        type: string
+      update_by_id:
+        description: UpdateById es el UUID del usuario/administrador que realizó la
+          última actualización.
+        type: string
+      updated_at:
+        description: |-
+          UpdatedAt registra la última fecha y hora en que se modificó el registro.
+          GORM actualiza este valor automáticamente en cada operación de guardado.
+        type: string
+    type: object
+  domain.TicketMensaje:
+    properties:
+      adjuntos:
+        items:
+          $ref: '#/definitions/domain.TicketAdjunto'
+        type: array
+      author_admin_id:
+        type: string
+      author_name:
+        description: Campos calculados (no persistidos).
+        type: string
+      author_psi_id:
+        type: string
+      author_type:
+        $ref: '#/definitions/domain.AutorType'
+      created_at:
+        type: string
+      id:
+        type: integer
+      message:
+        type: string
+      ticket_id:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  domain.TicketMotivo:
+    properties:
+      create_by:
+        description: CreateBy almacena el nombre o identificador textual del creador.
+        type: string
+      create_by_id:
+        description: |-
+          CreateById es el UUID del usuario/administrador que creó el registro.
+          Es un puntero para permitir valores nulos si la creación es automática por el sistema.
+        type: string
+      created_at:
+        description: |-
+          CreatedAt registra la fecha y hora exacta en que se creó el registro.
+          GORM gestiona este campo automáticamente durante la inserción.
+        type: string
+      description:
+        type: string
+      estados:
+        items:
+          $ref: '#/definitions/domain.TicketEstado'
+        type: array
+      id:
+        type: integer
+      name:
+        type: string
+      tickets_per_psi:
+        type: integer
+      update_by:
+        description: UpdateBy almacena el nombre o identificador textual de la última
+          persona en modificarlo.
+        type: string
+      update_by_id:
+        description: UpdateById es el UUID del usuario/administrador que realizó la
+          última actualización.
+        type: string
+      updated_at:
+        description: |-
+          UpdatedAt registra la última fecha y hora en que se modificó el registro.
+          GORM actualiza este valor automáticamente en cada operación de guardado.
+        type: string
+    type: object
+  domain.TicketStatusLog:
+    properties:
+      changed_by_admin_id:
+        type: string
+      changed_by_psi_id:
+        type: string
+      changed_by_type:
+        $ref: '#/definitions/domain.AutorType'
+      created_at:
+        type: string
+      id:
+        type: integer
+      new_state:
+        $ref: '#/definitions/domain.TicketEstado'
+      new_state_id:
+        type: integer
+      previous_state:
+        $ref: '#/definitions/domain.TicketEstado'
+      previous_state_id:
+        type: integer
+      reason:
+        description: comentario opcional del cambio (ej. motivo de cierre)
+        type: string
+      ticket_id:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  domain.UserAdmin:
+    properties:
+      can_create_admin:
+        description: '── Permisos: Gestión de Personal Administrativo ─────────────────────'
+        type: boolean
+      can_create_psi:
+        type: boolean
+      can_create_tags:
+        description: '── Permisos: Catálogo de Especialidades (Tags) ───────────────────────'
+        type: boolean
+      can_delete_admin:
+        type: boolean
+      can_delete_psi:
+        type: boolean
+      can_delete_publish:
+        type: boolean
+      can_delete_tags:
+        type: boolean
+      can_edit_tags:
+        type: boolean
+      can_manage_notifications:
+        type: boolean
+      can_manage_projects:
+        description: |-
+          ── Permisos: Proyectos (Kanban) ──────────────────────────────────────
+          "Master": accede y administra CUALQUIER proyecto del panel, sin importar
+          quién sea el dueño. Los admins sin este flag solo ven sus proyectos y
+          los que les compartieron como viewer/editor.
+        type: boolean
+      can_manage_tickets:
+        description: |-
+          ── Permisos: Tickets de Solicitudes ──────────────────────────────────
+          Otorga acceso a la cola FIFO de tickets y a la configuración del módulo
+          (áreas, motivos y estados). Sin este flag (y sin Sudo) el admin no ve el menú.
+        type: boolean
+      can_publish:
+        description: '── Permisos: Contenido y Comunicación ───────────────────────────────'
+        type: boolean
+      can_read_notifications:
+        type: boolean
+      can_read_psi:
+        description: '── Permisos: Gestión de Colegiados ──────────────────────────────────'
+        type: boolean
+      can_send_notifications:
+        type: boolean
+      can_update_admin:
+        type: boolean
+      can_update_psi:
+        type: boolean
+      can_update_publish:
+        type: boolean
+      create_by:
+        description: CreateBy almacena el nombre o identificador textual del creador.
+        type: string
+      create_by_id:
+        description: |-
+          CreateById es el UUID del usuario/administrador que creó el registro.
+          Es un puntero para permitir valores nulos si la creación es automática por el sistema.
+        type: string
+      created_at:
+        description: |-
+          CreatedAt registra la fecha y hora exacta en que se creó el registro.
+          GORM gestiona este campo automáticamente durante la inserción.
+        type: string
+      email:
+        description: Email es la dirección de correo electrónico única del usuario.
+        type: string
+      id:
+        type: string
+      is_active:
+        description: |-
+          IsActive controla si la cuenta puede iniciar sesión.
+          Default false: un psicólogo creado desde una inscripción aprobada nace inactivo
+          y solo puede activarse manualmente cuando la administración confirma los 3
+          requisitos legales (Ministerio, N° FPV y solvencia).
+        type: boolean
+      role:
+        description: |-
+          Role es una etiqueta del preset de permisos aplicado (secretaria, comunicacion,
+          soporte, proyectos, lector o "personalizado"). Es SOLO metadato descriptivo:
+          la autorización siempre depende de los flags booleanos, nunca del rol.
+        type: string
+      update_by:
+        description: UpdateBy almacena el nombre o identificador textual de la última
+          persona en modificarlo.
+        type: string
+      update_by_id:
+        description: UpdateById es el UUID del usuario/administrador que realizó la
+          última actualización.
+        type: string
+      updated_at:
+        description: |-
+          UpdatedAt registra la última fecha y hora en que se modificó el registro.
+          GORM actualiza este valor automáticamente en cada operación de guardado.
+        type: string
+      username:
+        description: Username es el identificador único de login del usuario.
+        type: string
+    type: object
   handler.LoginRequest:
     properties:
       identifier:
@@ -935,6 +1502,24 @@ definitions:
     - identifier
     - password
     type: object
+  request_structs.AddMemberRequest:
+    properties:
+      role:
+        example: editor
+        type: string
+      user_admin_id:
+        type: string
+    required:
+    - user_admin_id
+    type: object
+  request_structs.AddMensajeRequest:
+    properties:
+      message:
+        example: Adjunto el recibo de pago
+        type: string
+    required:
+    - message
+    type: object
   request_structs.AdminPermissionsDTO:
     properties:
       can_create_admin:
@@ -942,7 +1527,6 @@ definitions:
         example: false
         type: boolean
       can_create_psi:
-        description: Gestión de Colegiados (CRUD de Psicólogos)
         example: false
         type: boolean
       can_create_tags:
@@ -967,12 +1551,24 @@ definitions:
       can_manage_notifications:
         example: false
         type: boolean
+      can_manage_projects:
+        description: Proyectos (Kanban)
+        example: false
+        type: boolean
+      can_manage_tickets:
+        description: Tickets de Solicitudes (colas, chat y configuración del módulo)
+        example: false
+        type: boolean
       can_publish:
         description: Sistema de Gestión de Contenidos (CMS)
         example: true
         type: boolean
       can_read_notifications:
         example: true
+        type: boolean
+      can_read_psi:
+        description: Gestión de Colegiados (CRUD de Psicólogos)
+        example: false
         type: boolean
       can_send_notifications:
         description: Motor de Mensajería y Alertas
@@ -988,6 +1584,15 @@ definitions:
         example: true
         type: boolean
     type: object
+  request_structs.CloseTicketRequest:
+    properties:
+      close_reason:
+        example: Respondido y resuelto
+        maxLength: 500
+        type: string
+    required:
+    - close_reason
+    type: object
   request_structs.CreateAdminRequest:
     properties:
       email:
@@ -999,6 +1604,12 @@ definitions:
         type: string
       permissions:
         $ref: '#/definitions/request_structs.AdminPermissionsDTO'
+      role:
+        description: |-
+          Role es la etiqueta del preset aplicado (ver AdminRolePresets). Solo
+          metadato: los permisos reales viajan en 'permissions'.
+        example: secretaria
+        type: string
       username:
         example: staff_admin
         type: string
@@ -1007,6 +1618,31 @@ definitions:
     - password
     - username
     type: object
+  request_structs.CreateCardRequest:
+    properties:
+      column_id:
+        type: string
+      description:
+        example: Incluir logo y QR del formulario
+        maxLength: 2000
+        type: string
+      title:
+        example: Diseñar afiche
+        maxLength: 200
+        type: string
+    required:
+    - column_id
+    - title
+    type: object
+  request_structs.CreateColumnRequest:
+    properties:
+      title:
+        example: Por hacer
+        maxLength: 120
+        type: string
+    required:
+    - title
+    type: object
   request_structs.CreateDeontologiaRequest:
     properties:
       content:
@@ -1014,6 +1650,15 @@ definitions:
           Content es el texto libre de la entrada (ej: descripción del expediente disciplinario).
           Es texto plano; la capa de servicio lo sanitiza con bluemonday antes de persistir.
         example: Expediente abierto por el Tribunal Disciplinario.
+        type: string
+    required:
+    - content
+    type: object
+  request_structs.CreateNoteRequest:
+    properties:
+      content:
+        example: Pendiente de aprobación de la junta
+        maxLength: 500
         type: string
     required:
     - content
@@ -1056,6 +1701,21 @@ definitions:
         type: string
     required:
     - content
+    type: object
+  request_structs.CreateProjectRequest:
+    properties:
+      description:
+        description: Description es opcional; contexto breve del proyecto.
+        example: Organización del evento presencial
+        maxLength: 500
+        type: string
+      name:
+        description: Name es el título visible del proyecto.
+        example: Convención Anual 2026
+        maxLength: 120
+        type: string
+    required:
+    - name
     type: object
   request_structs.CreatePsiAdminRequest:
     properties:
@@ -1239,6 +1899,58 @@ definitions:
         type: string
     required:
     - name
+    type: object
+  request_structs.CreateTicketEstadoRequest:
+    properties:
+      is_closed:
+        example: false
+        type: boolean
+      motivo_id:
+        type: integer
+      name:
+        example: En revisión
+        maxLength: 60
+        type: string
+      order:
+        example: 2
+        type: integer
+    required:
+    - motivo_id
+    - name
+    type: object
+  request_structs.CreateTicketMotivoRequest:
+    properties:
+      description:
+        maxLength: 500
+        type: string
+      name:
+        example: Solicitudes
+        maxLength: 120
+        type: string
+      tickets_per_psi:
+        example: 3
+        minimum: 1
+        type: integer
+    required:
+    - name
+    - tickets_per_psi
+    type: object
+  request_structs.CreateTicketRequest:
+    properties:
+      description:
+        example: Necesito la constancia para mi empleador
+        maxLength: 2000
+        type: string
+      motivo_id:
+        type: integer
+      title:
+        example: Solicitud de constancia de solvencia
+        maxLength: 200
+        type: string
+    required:
+    - description
+    - motivo_id
+    - title
     type: object
   request_structs.NotificationFilterDTO:
     properties:
@@ -1450,6 +2162,18 @@ definitions:
         example: https://instagram.com/psicologo
         type: string
     type: object
+  request_structs.TransferSudoRequest:
+    properties:
+      password:
+        example: ••••••••
+        type: string
+      target_id:
+        example: 00000000-0000-0000-0000-000000000000
+        type: string
+    required:
+    - password
+    - target_id
+    type: object
   request_structs.UndergraduateDTO:
     properties:
       date:
@@ -1497,11 +2221,38 @@ definitions:
         allOf:
         - $ref: '#/definitions/request_structs.AdminPermissionsDTO'
         description: Sub-estructura que será evaluada por el Motor de Permisos.
+      role:
+        description: Role cambia la etiqueta del preset aplicado. nil = no tocar.
+        example: comunicacion
+        type: string
       username:
         example: nuevo_username
         type: string
     required:
     - id
+    type: object
+  request_structs.UpdateCardRequest:
+    properties:
+      column_id:
+        type: string
+      description:
+        maxLength: 2000
+        type: string
+      position:
+        example: 0
+        type: integer
+      title:
+        maxLength: 200
+        type: string
+    type: object
+  request_structs.UpdateColumnRequest:
+    properties:
+      position:
+        example: 1
+        type: integer
+      title:
+        example: En revisión
+        type: string
     type: object
   request_structs.UpdateDeontologiaRequest:
     properties:
@@ -1511,12 +2262,27 @@ definitions:
         example: Expediente actualizado por el Tribunal Disciplinario.
         type: string
     type: object
+  request_structs.UpdateMemberRequest:
+    properties:
+      role:
+        example: viewer
+        type: string
+    type: object
   request_structs.UpdateObservacionesRequest:
     properties:
       content:
         description: Content es el nuevo texto de la observación (texto plano; se
           sanitiza en la API).
         example: Nota interna actualizada.
+        type: string
+    type: object
+  request_structs.UpdateProjectRequest:
+    properties:
+      description:
+        example: Nueva descripción
+        type: string
+      name:
+        example: Convención 2026
         type: string
     type: object
   request_structs.UpdatePsiAdminRequest:
@@ -1699,6 +2465,18 @@ definitions:
     required:
     - id
     type: object
+  request_structs.UpdateReceptionRequest:
+    properties:
+      enabled:
+        type: boolean
+      key:
+        type: string
+      message:
+        type: string
+    required:
+    - enabled
+    - key
+    type: object
   request_structs.UpdateSocialNetworkRequest:
     properties:
       is_active:
@@ -1743,6 +2521,41 @@ definitions:
         example: Psicología Organizacional
         type: string
     type: object
+  request_structs.UpdateTicketEstado:
+    properties:
+      estado_id:
+        type: integer
+      reason:
+        example: El comprobante fue validado
+        maxLength: 500
+        type: string
+    required:
+    - estado_id
+    type: object
+  request_structs.UpdateTicketEstadoRequest:
+    properties:
+      is_closed:
+        example: false
+        type: boolean
+      name:
+        example: En revisión
+        type: string
+      order:
+        example: 2
+        type: integer
+    type: object
+  request_structs.UpdateTicketMotivoRequest:
+    properties:
+      description:
+        example: Nueva descripción
+        type: string
+      name:
+        example: Solicitudes
+        type: string
+      tickets_per_psi:
+        example: 5
+        type: integer
+    type: object
   service.BirthdayInfoProjection:
     properties:
       day:
@@ -1761,6 +2574,63 @@ definitions:
         description: Mes y día del cumpleaños (para mostrarlos como fecha sin exponer
           el año real).
         type: integer
+    type: object
+  service.PermissionSet:
+    properties:
+      can_create_admin:
+        type: boolean
+      can_create_psi:
+        type: boolean
+      can_create_tags:
+        type: boolean
+      can_delete_admin:
+        type: boolean
+      can_delete_psi:
+        type: boolean
+      can_delete_publish:
+        type: boolean
+      can_delete_tags:
+        type: boolean
+      can_edit_tags:
+        type: boolean
+      can_manage_notifications:
+        type: boolean
+      can_manage_projects:
+        type: boolean
+      can_manage_tickets:
+        type: boolean
+      can_publish:
+        type: boolean
+      can_read_notifications:
+        type: boolean
+      can_read_psi:
+        type: boolean
+      can_send_notifications:
+        type: boolean
+      can_update_admin:
+        type: boolean
+      can_update_psi:
+        type: boolean
+      can_update_publish:
+        type: boolean
+    type: object
+  service.ReceptionSwitchesSnapshot:
+    properties:
+      inscriptions:
+        $ref: '#/definitions/domain.ReceptionSetting'
+      tickets:
+        $ref: '#/definitions/domain.ReceptionSetting'
+    type: object
+  service.RolePreset:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      permissions:
+        $ref: '#/definitions/service.PermissionSet'
+      slug:
+        type: string
     type: object
 host: localhost:8080
 info:
@@ -2023,6 +2893,29 @@ paths:
       summary: Listar administradores
       tags:
       - Administración - Gestión
+  /admin/me:
+    get:
+      description: 'Retorna identidad, rol y matriz de permisos del administrador
+        actual. La UI lo usa para filtrar el menú; es informativo, nunca autoriza:
+        el backend valida cada operación.'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Estado y permisos del administrador autenticado
+      tags:
+      - Administración - Sesión
   /admin/posts:
     post:
       consumes:
@@ -2154,6 +3047,427 @@ paths:
       summary: Actualizar publicación
       tags:
       - Administración - Publicaciones
+  /admin/projects:
+    get:
+      description: Retorna los proyectos accesibles para el admin autenticado (dueños,
+        miembro o master).
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.KanbanProject'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Listar proyectos Kanban
+      tags:
+      - Administración - Proyectos (Kanban)
+    post:
+      consumes:
+      - application/json
+      description: Crea un proyecto (el admin autenticado es el dueño) y siembra las
+        columnas por defecto.
+      parameters:
+      - description: Datos del proyecto
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.CreateProjectRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.KanbanProject'
+      security:
+      - BearerAuth: []
+      summary: Crear proyecto Kanban
+      tags:
+      - Administración - Proyectos (Kanban)
+  /admin/projects/{id}:
+    delete:
+      description: Elimina definitivamente el proyecto, columnas, tarjetas y notas
+        (solo dueño o master).
+      parameters:
+      - description: UUID del proyecto
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Eliminar proyecto Kanban
+      tags:
+      - Administración - Proyectos (Kanban)
+    get:
+      description: 'Retorna el tablero completo: proyecto + columnas con sus tarjetas
+        y notas.'
+      parameters:
+      - description: UUID del proyecto
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Tablero Kanban de un proyecto
+      tags:
+      - Administración - Proyectos (Kanban)
+    patch:
+      consumes:
+      - application/json
+      description: Renombra o edita la descripción de un proyecto (solo dueño o master).
+      parameters:
+      - description: UUID del proyecto
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Campos a modificar
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.UpdateProjectRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Actualizar proyecto Kanban
+      tags:
+      - Administración - Proyectos (Kanban)
+  /admin/projects/{id}/cards:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: UUID del proyecto
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Datos de la tarjeta
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.CreateCardRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.KanbanCard'
+      security:
+      - BearerAuth: []
+      summary: Crear tarjeta Kanban
+      tags:
+      - Administración - Proyectos (Kanban)
+  /admin/projects/{id}/columns:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: UUID del proyecto
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Título de la columna
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.CreateColumnRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.KanbanColumn'
+      security:
+      - BearerAuth: []
+      summary: Crear columna en el tablero
+      tags:
+      - Administración - Proyectos (Kanban)
+  /admin/projects/{id}/members:
+    get:
+      parameters:
+      - description: UUID del proyecto
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.KanbanMember'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Listar miembros de un proyecto
+      tags:
+      - Administración - Proyectos (Kanban)
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: UUID del proyecto
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Admin objetivo + rol
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.AddMemberRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Invitar administrador a un proyecto
+      tags:
+      - Administración - Proyectos (Kanban)
+  /admin/projects/cards/{cardId}:
+    delete:
+      parameters:
+      - description: UUID de la tarjeta
+        in: path
+        name: cardId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Eliminar tarjeta Kanban
+      tags:
+      - Administración - Proyectos (Kanban)
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: UUID de la tarjeta
+        in: path
+        name: cardId
+        required: true
+        type: string
+      - description: Campos a modificar
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.UpdateCardRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Actualizar o mover tarjeta Kanban
+      tags:
+      - Administración - Proyectos (Kanban)
+  /admin/projects/cards/{cardId}/notes:
+    post:
+      consumes:
+      - application/json
+      description: Cada tarjeta admite hasta 10 notas de máximo 500 caracteres.
+      parameters:
+      - description: UUID de la tarjeta
+        in: path
+        name: cardId
+        required: true
+        type: string
+      - description: Contenido de la nota
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.CreateNoteRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.KanbanNote'
+      security:
+      - BearerAuth: []
+      summary: Añadir nota a una tarjeta
+      tags:
+      - Administración - Proyectos (Kanban)
+  /admin/projects/columns/{columnId}:
+    delete:
+      parameters:
+      - description: UUID de la columna
+        in: path
+        name: columnId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Eliminar columna
+      tags:
+      - Administración - Proyectos (Kanban)
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: UUID de la columna
+        in: path
+        name: columnId
+        required: true
+        type: string
+      - description: Campos a modificar
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.UpdateColumnRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Actualizar columna
+      tags:
+      - Administración - Proyectos (Kanban)
+  /admin/projects/members/{memberId}:
+    delete:
+      parameters:
+      - description: UUID del miembro
+        in: path
+        name: memberId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Quitar miembro de un proyecto
+      tags:
+      - Administración - Proyectos (Kanban)
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: UUID del miembro
+        in: path
+        name: memberId
+        required: true
+        type: string
+      - description: Nuevo rol
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.UpdateMemberRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Cambiar rol de un miembro
+      tags:
+      - Administración - Proyectos (Kanban)
+  /admin/projects/notes/{noteId}:
+    delete:
+      description: Solo el autor de la nota, el dueño del proyecto o un master pueden
+        borrarla.
+      parameters:
+      - description: UUID de la nota
+        in: path
+        name: noteId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Eliminar nota de una tarjeta
+      tags:
+      - Administración - Proyectos (Kanban)
   /admin/psi/{id}:
     delete:
       description: Marca a un psicólogo como eliminado. El registro permanece en la
@@ -3073,6 +4387,84 @@ paths:
       summary: Importar psicólogos masivamente
       tags:
       - Administración - Psicólogos
+  /admin/roles/presets:
+    get:
+      description: 'Retorna los perfiles de permisos predeterminados (Secretaría,
+        Comunicación, Soporte, Proyectos, Lector) que la UI aplica como atajo al crear/editar
+        personal. Los roles son solo metadato: la autorización siempre usa los flags
+        booleanos individuales.'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/service.RolePreset'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Listar presets de roles del staff
+      tags:
+      - Administración - Gestión
+  /admin/settings/reception:
+    get:
+      description: Devuelve el estado de recepción de tickets y de inscripciones.
+        Los cambios solo los puede hacer el Sudo.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/service.ReceptionSwitchesSnapshot'
+        "500":
+          description: 'error: fallo interno'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Estado de los interruptores de recepción (admin)
+      tags:
+      - Admin - Configuración
+    post:
+      consumes:
+      - application/json
+      description: Activa/desactiva la recepción de tickets o inscripciones con un
+        mensaje público opcional. Requiere rol Sudo.
+      parameters:
+      - description: Cambio de recepción
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.UpdateReceptionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/service.ReceptionSwitchesSnapshot'
+        "400":
+          description: 'error: validación'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: 'error: solo SUDO'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Actualizar interruptor de recepción (solo Sudo)
+      tags:
+      - Admin - Configuración
   /admin/specialties:
     post:
       consumes:
@@ -3188,6 +4580,398 @@ paths:
       summary: Listado administrativo total
       tags:
       - Administración - Especialidades
+  /admin/tickets:
+    get:
+      description: 'Por defecto lista solo los abiertos, ordenados por orden de llegada.
+        Filtros opcionales: motivo_id, estado_id, psi_id, q, solo_abiertos.'
+      parameters:
+      - description: Solo abiertos (default true)
+        in: query
+        name: solo_abiertos
+        type: boolean
+      - description: Filtrar por motivo
+        in: query
+        name: motivo_id
+        type: integer
+      - description: Filtrar por estado
+        in: query
+        name: estado_id
+        type: integer
+      - description: Filtrar por psicólogo
+        in: query
+        name: psi_id
+        type: string
+      - description: Búsqueda en título/descripción
+        in: query
+        name: q
+        type: string
+      - description: Página
+        in: query
+        name: page
+        type: integer
+      - description: Límite
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Listar tickets (cola FIFO)
+      tags:
+      - Tickets - Administración
+  /admin/tickets/{id}:
+    get:
+      description: Retorna el ticket con el área, motivo, estado, conversación completa
+        e historial de cambios.
+      parameters:
+      - description: ID del ticket
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Ticket'
+      security:
+      - BearerAuth: []
+      summary: Ver detalle de un ticket
+      tags:
+      - Tickets - Administración
+  /admin/tickets/{id}/cerrar:
+    post:
+      consumes:
+      - application/json
+      description: El admin cierra el ticket indicando un motivo de cierre obligatorio.
+        Se notifica al psicólogo.
+      parameters:
+      - description: ID del ticket
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Motivo de cierre
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.CloseTicketRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Ticket'
+      security:
+      - BearerAuth: []
+      summary: Cerrar un ticket
+      tags:
+      - Tickets - Administración
+  /admin/tickets/{id}/estado:
+    patch:
+      consumes:
+      - application/json
+      description: El nuevo estado debe pertenecer al motivo del ticket. Si el estado
+        es "cerrado" se registra el cierre.
+      parameters:
+      - description: ID del ticket
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Nuevo estado + motivo
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.UpdateTicketEstado'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Ticket'
+      security:
+      - BearerAuth: []
+      summary: Cambiar estado de un ticket
+      tags:
+      - Tickets - Administración
+  /admin/tickets/{id}/mensaje:
+    post:
+      consumes:
+      - application/json
+      description: El admin responde en el ticket (sin límite de mensajes seguidos).
+        Anexos opcionales en multipart (campo "files").
+      parameters:
+      - description: ID del ticket
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Mensaje (o multipart)
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.AddMensajeRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.TicketMensaje'
+      security:
+      - BearerAuth: []
+      summary: Responder en la conversación de un ticket
+      tags:
+      - Tickets - Administración
+  /admin/tickets/estados:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Datos del estado
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.CreateTicketEstadoRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.TicketEstado'
+      security:
+      - BearerAuth: []
+      summary: Crear estado de un motivo
+      tags:
+      - Tickets - Configuración
+  /admin/tickets/estados/{id}:
+    delete:
+      description: Solo se puede eliminar un estado que ningún ticket esté usando.
+      parameters:
+      - description: ID del estado
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Eliminar estado de un motivo
+      tags:
+      - Tickets - Configuración
+    patch:
+      consumes:
+      - application/json
+      description: Permite renombrar, reordenar o marcar el estado como cerrado.
+      parameters:
+      - description: ID del estado
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Campos a modificar
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.UpdateTicketEstadoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.TicketEstado'
+      security:
+      - BearerAuth: []
+      summary: Actualizar estado de un motivo
+      tags:
+      - Tickets - Configuración
+  /admin/tickets/motivos:
+    get:
+      description: Retorna los motivos con sus estados (configuración del colegio).
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.TicketMotivo'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Listar motivos de tickets
+      tags:
+      - Tickets - Configuración
+    post:
+      consumes:
+      - application/json
+      description: Crea un motivo en un área y siembra los estados por defecto.
+      parameters:
+      - description: Datos del motivo
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.CreateTicketMotivoRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.TicketMotivo'
+      security:
+      - BearerAuth: []
+      summary: Crear motivo de tickets
+      tags:
+      - Tickets - Configuración
+  /admin/tickets/motivos/{id}:
+    delete:
+      description: Solo se puede eliminar un motivo sin tickets asociados.
+      parameters:
+      - description: ID del motivo
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Eliminar motivo de tickets
+      tags:
+      - Tickets - Configuración
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID del motivo
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Campos a modificar
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.UpdateTicketMotivoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.TicketMotivo'
+      security:
+      - BearerAuth: []
+      summary: Actualizar motivo de tickets
+      tags:
+      - Tickets - Configuración
+  /admin/tickets/motivos/{id}/estados:
+    get:
+      parameters:
+      - description: ID del motivo
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.TicketEstado'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Listar estados de un motivo
+      tags:
+      - Tickets - Configuración
+  /admin/tickets/pendientes-count:
+    get:
+      description: Número de tickets no cerrados (badge del menú admin).
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              format: int64
+              type: integer
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Contar tickets abiertos
+      tags:
+      - Tickets - Administración
+  /admin/transfer-sudo:
+    post:
+      consumes:
+      - application/json
+      description: Permite al Sudo actual ceder su rol a un administrador de confianza.
+        Requiere confirmar la contraseña del Sudo. La conmutación es atómica y queda
+        registrada en la auditoría de permisos.
+      parameters:
+      - description: Destinatario del Sudo y confirmación de la contraseña
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.TransferSudoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'message: rol transferido'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: 'error: permiso denegado o contraseña incorrecta'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Transferir el rol de Super Usuario
+      tags:
+      - Administración - Gestión
   /admin/update:
     patch:
       consumes:
@@ -3376,6 +5160,20 @@ paths:
               type: string
             type: object
       summary: Validar unicidad de FPV (público)
+      tags:
+      - Inscripcion
+  /inscripcion/status:
+    get:
+      description: Indica si la pre-inscripción de profesionales está habilitada.
+        Cuando está desactivada, el campo `message` explica el motivo público.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.ReceptionSetting'
+      summary: Estado de recepción de inscripciones (público)
       tags:
       - Inscripcion
   /inscripcion/submit:
@@ -4407,6 +6205,168 @@ paths:
       summary: Validar sesión de psicólogo
       tags:
       - Psicólogos - Sesión
+  /psi/tickets:
+    get:
+      parameters:
+      - description: Página
+        in: query
+        name: page
+        type: integer
+      - description: Límite
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Listar mis tickets
+      tags:
+      - Tickets - Portal Psi
+    post:
+      consumes:
+      - application/json
+      description: El psicólogo abre un ticket en un área/motivo con un título, descripción
+        y anexos opcionales (multipart, campo "files").
+      parameters:
+      - description: Datos del ticket (o multipart)
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.CreateTicketRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.Ticket'
+      security:
+      - BearerAuth: []
+      summary: Crear un ticket de solicitud
+      tags:
+      - Tickets - Portal Psi
+  /psi/tickets/{id}:
+    get:
+      parameters:
+      - description: ID del ticket
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Ticket'
+      security:
+      - BearerAuth: []
+      summary: Ver detalle de un ticket propio
+      tags:
+      - Tickets - Portal Psi
+  /psi/tickets/{id}/cerrar:
+    post:
+      consumes:
+      - application/json
+      description: El psicólogo cierra su propio ticket indicando un motivo de cierre
+        obligatorio.
+      parameters:
+      - description: ID del ticket
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Motivo de cierre
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.CloseTicketRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Ticket'
+      security:
+      - BearerAuth: []
+      summary: Cerrar mi ticket
+      tags:
+      - Tickets - Portal Psi
+  /psi/tickets/{id}/mensaje:
+    post:
+      consumes:
+      - application/json
+      description: Publica un mensaje en la conversación (máx 1000 chars, no más de
+        3 seguidos). Anexos opcionales en multipart (campo "files").
+      parameters:
+      - description: ID del ticket
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Mensaje (o multipart)
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.AddMensajeRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.TicketMensaje'
+      security:
+      - BearerAuth: []
+      summary: Comentar en mi ticket
+      tags:
+      - Tickets - Portal Psi
+  /psi/tickets/config:
+    get:
+      description: Retorna los motivos con sus estados (y su límite tickets_per_psi)
+        para que el psi pueda crear un ticket.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.TicketMotivo'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Configuración de tickets para el psicólogo
+      tags:
+      - Tickets - Portal Psi
+  /psi/tickets/status:
+    get:
+      description: Indica si la recepción de tickets de solicitudes está habilitada.
+        Cuando está desactivada, el campo `message` explica el motivo público.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.ReceptionSetting'
+      security:
+      - BearerAuth: []
+      summary: Estado de recepción de tickets (portal psi)
+      tags:
+      - Tickets - Portal Psi
   /specialties:
     get:
       description: Retorna el catálogo. Los usuarios ven solo las activas. Admins

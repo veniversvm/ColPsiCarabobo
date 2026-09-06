@@ -153,7 +153,7 @@ func (m *mockPsiRepoInscripcion) GetSolvencies(ctx context.Context, psiID uuid.U
 func TestInscriptionService_CheckEmail(t *testing.T) {
 	ctx := context.Background()
 	repo := &mockInscriptionRepo{}
-	svc := NewInscriptionService(repo, nil, nil, &mockMailService{})
+	svc := NewInscriptionService(repo, nil, nil, nil, &mockMailService{})
 
 	t.Run("correo sin uso", func(t *testing.T) {
 		res, err := svc.CheckEmail(ctx, "nuevo@test.com")
@@ -198,7 +198,7 @@ func TestInscriptionService_Permisos(t *testing.T) {
 
 	t.Run("List: sin permisos de gestión → ErrPermissionDenied", func(t *testing.T) {
 		repo := &mockInscriptionRepo{}
-		svc := NewInscriptionService(repo, nil, nil, &mockMailService{})
+		svc := NewInscriptionService(repo, nil, nil, nil, &mockMailService{})
 		_, err := svc.List(ctx, adminSinPermisos, request_structs.InscriptionListFilter{})
 		if !errors.Is(err, domain.ErrPermissionDenied) {
 			t.Fatalf("esperaba ErrPermissionDenied, got %v", err)
@@ -207,7 +207,7 @@ func TestInscriptionService_Permisos(t *testing.T) {
 
 	t.Run("Detail: sin permisos de gestión → ErrPermissionDenied", func(t *testing.T) {
 		repo := &mockInscriptionRepo{}
-		svc := NewInscriptionService(repo, nil, nil, &mockMailService{})
+		svc := NewInscriptionService(repo, nil, nil, nil, &mockMailService{})
 		_, err := svc.Detail(ctx, adminSinPermisos, id)
 		if !errors.Is(err, domain.ErrPermissionDenied) {
 			t.Fatalf("esperaba ErrPermissionDenied, got %v", err)
@@ -216,7 +216,7 @@ func TestInscriptionService_Permisos(t *testing.T) {
 
 	t.Run("List: con permiso de edición → OK e incluye ficha", func(t *testing.T) {
 		repo := &mockInscriptionRepo{}
-		svc := NewInscriptionService(repo, nil, nil, &mockMailService{})
+		svc := NewInscriptionService(repo, nil, nil, nil, &mockMailService{})
 		editAdmin := &domain.UserAdmin{ID: uuid.Must(uuid.NewV7()), Credentials: domain.Credentials{Username: "editor"}, CanUpdatePsi: true}
 		repo.SearchFunc = func(ctx context.Context, filter request_structs.InscriptionListFilter) ([]domain.PsiInscriptionRequest, int64, error) {
 			return []domain.PsiInscriptionRequest{{ID: id, Cedula: 1, Nombres: "A", Apellidos: "B", Status: domain.InscriptionPending}}, 1, nil
@@ -232,7 +232,7 @@ func TestInscriptionService_Permisos(t *testing.T) {
 
 	t.Run("UpdateNotes: sin permiso → ErrPermissionDenied", func(t *testing.T) {
 		repo := &mockInscriptionRepo{}
-		svc := NewInscriptionService(repo, nil, nil, &mockMailService{})
+		svc := NewInscriptionService(repo, nil, nil, nil, &mockMailService{})
 		err := svc.UpdateNotes(ctx, adminSinPermisos, id, "nota")
 		if !errors.Is(err, domain.ErrPermissionDenied) {
 			t.Fatalf("esperaba ErrPermissionDenied, got %v", err)
@@ -241,7 +241,7 @@ func TestInscriptionService_Permisos(t *testing.T) {
 
 	t.Run("Approve: requiere CanCreatePsi", func(t *testing.T) {
 		repo := &mockInscriptionRepo{}
-		svc := NewInscriptionService(repo, nil, nil, &mockMailService{})
+		svc := NewInscriptionService(repo, nil, nil, nil, &mockMailService{})
 		_, err := svc.Approve(ctx, adminSinPermisos, id)
 		if !errors.Is(err, domain.ErrPermissionDenied) {
 			t.Fatalf("esperaba ErrPermissionDenied, got %v", err)
@@ -250,7 +250,7 @@ func TestInscriptionService_Permisos(t *testing.T) {
 
 	t.Run("Reject: requiere CanDeletePsi", func(t *testing.T) {
 		repo := &mockInscriptionRepo{}
-		svc := NewInscriptionService(repo, nil, nil, &mockMailService{})
+		svc := NewInscriptionService(repo, nil, nil, nil, &mockMailService{})
 		err := svc.Reject(ctx, adminSinPermisos, id)
 		if !errors.Is(err, domain.ErrPermissionDenied) {
 			t.Fatalf("esperaba ErrPermissionDenied, got %v", err)
@@ -259,7 +259,7 @@ func TestInscriptionService_Permisos(t *testing.T) {
 
 	t.Run("UpdateFicha: admin con permisos aprobado por Sudo", func(t *testing.T) {
 		repo := &mockInscriptionRepo{}
-		svc := NewInscriptionService(repo, nil, nil, &mockMailService{})
+		svc := NewInscriptionService(repo, nil, nil, nil, &mockMailService{})
 		req := &domain.PsiInscriptionRequest{
 			ID: id, Cedula: 10, Nacionalidad: "V", Nombres: "Ana",
 			Apellidos: "Lopez", Correo: "ana@test.com", Status: domain.InscriptionPending,
@@ -329,7 +329,7 @@ func TestInscriptionService_UpdateFicha_UnicidadExcluyente(t *testing.T) {
 
 	t.Run("cédula duplicada en otra solicitud pendiente → ErrCIExists", func(t *testing.T) {
 		repo := &mockInscriptionRepo{}
-		svc := NewInscriptionService(repo, nil, nil, &mockMailService{})
+		svc := NewInscriptionService(repo, nil, nil, nil, &mockMailService{})
 		repo.GetByIDFunc = func(ctx context.Context, i uuid.UUID) (*domain.PsiInscriptionRequest, error) { return req, nil }
 		repo.ExistsPendingCIExcludingFunc = func(ctx context.Context, ci int, exclude uuid.UUID) (bool, error) { return true, nil }
 		body := valid("ana@test.com")
@@ -342,7 +342,7 @@ func TestInscriptionService_UpdateFicha_UnicidadExcluyente(t *testing.T) {
 
 	t.Run("correo duplicado en psi_users → ErrEmailExists", func(t *testing.T) {
 		repo := &mockInscriptionRepo{}
-		svc := NewInscriptionService(repo, nil, nil, &mockMailService{})
+		svc := NewInscriptionService(repo, nil, nil, nil, &mockMailService{})
 		repo.GetByIDFunc = func(ctx context.Context, i uuid.UUID) (*domain.PsiInscriptionRequest, error) { return req, nil }
 		repo.EmailInPsiUsersFunc = func(ctx context.Context, email string) (bool, error) { return true, nil }
 		_, err := svc.UpdateFicha(ctx, admin, id, valid("otro@test.com"))
@@ -353,7 +353,7 @@ func TestInscriptionService_UpdateFicha_UnicidadExcluyente(t *testing.T) {
 
 	t.Run("mismo correo que la propia solicitud → OK sin re-validar", func(t *testing.T) {
 		repo := &mockInscriptionRepo{}
-		svc := NewInscriptionService(repo, nil, nil, &mockMailService{})
+		svc := NewInscriptionService(repo, nil, nil, nil, &mockMailService{})
 		repo.GetByIDFunc = func(ctx context.Context, i uuid.UUID) (*domain.PsiInscriptionRequest, error) { return req, nil }
 		repo.UpdateFunc = func(ctx context.Context, r *domain.PsiInscriptionRequest) error { return nil }
 		_, err := svc.UpdateFicha(ctx, admin, id, valid("ANA@test.com"))
@@ -409,7 +409,7 @@ func TestInscriptionService_Approve_MapFichaYMigra(t *testing.T) {
 	deleted := false
 	repo.DeleteDocsByRequestFunc = func(ctx context.Context, reqID uuid.UUID) error { deleted = true; return nil }
 
-	svc := NewInscriptionService(repo, psiRepo, nil, &mockMailService{})
+	svc := NewInscriptionService(repo, psiRepo, nil, nil, &mockMailService{})
 	if _, err := svc.Approve(ctx, admin, id); err != nil {
 		t.Fatalf("error inesperado: %v", err)
 	}
@@ -558,7 +558,7 @@ func TestInscriptionService_UpdateFicha_CamposObligatorios(t *testing.T) {
 	id := uuid.Must(uuid.NewV7())
 
 	repo := &mockInscriptionRepo{}
-	svc := NewInscriptionService(repo, nil, nil, &mockMailService{})
+	svc := NewInscriptionService(repo, nil, nil, nil, &mockMailService{})
 	repo.GetByIDFunc = func(ctx context.Context, i uuid.UUID) (*domain.PsiInscriptionRequest, error) {
 		return &domain.PsiInscriptionRequest{ID: id, Cedula: 10, Correo: "ana@test.com"}, nil
 	}

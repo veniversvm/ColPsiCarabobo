@@ -47,6 +47,9 @@ func main() {
 		&domain.TicketStatusLog{},
 		&domain.TicketMensaje{},
 		&domain.TicketAdjunto{},
+		&domain.AdminPermissionLog{},
+		&domain.AppSetting{},
+		&domain.SettingsAuditLog{},
 	)
 	if err != nil {
 		log.Fatal().Err(err).Str("component", "migrate").Msg("Failed to load gorm schema")

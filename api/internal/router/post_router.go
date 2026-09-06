@@ -45,6 +45,4 @@ func SetupPostRoutes(router fiber.Router, adminRepo domain.UserAdminRepository, 
 	)
 
 	admin.Patch("/:id", h.UpdatePost)
-
-	// admin.Delete("/:id", h.DeletePost)
 }

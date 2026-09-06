@@ -85,6 +85,7 @@ func (r *adminRepo) Update(ctx context.Context, user *domain.UserAdmin) error {
 		"sudo":                 gorm.Expr("?", user.Sudo),
 
 		// ── Permisos: Colegiados ─────────────────────────────────────
+		"can_read_psi":   gorm.Expr("?", user.CanReadPsi),
 		"can_create_psi": gorm.Expr("?", user.CanCreatePsi),
 		"can_update_psi": gorm.Expr("?", user.CanUpdatePsi),
 		"can_delete_psi": gorm.Expr("?", user.CanDeletePsi),
@@ -109,6 +110,12 @@ func (r *adminRepo) Update(ctx context.Context, user *domain.UserAdmin) error {
 
 		// ── Permisos: Proyectos (Kanban) ──────────────────────────────
 		"can_manage_projects": gorm.Expr("?", user.CanManageProjects),
+
+		// ── Permisos: Tickets de Solicitudes ──────────────────────────
+		"can_manage_tickets": gorm.Expr("?", user.CanManageTickets),
+
+		// ── Rótulo del preset aplicado (solo metadato) ───────────────
+		"role": user.Role,
 
 		// ── Auditoría ────────────────────────────────────────────────
 		"update_by":    user.UpdateBy,
@@ -147,6 +154,27 @@ func (r *adminRepo) CountSudos(ctx context.Context) (int64, error) {
 // =========================================================================
 // MOTORES DE BÚSQUEDA Y LISTADO
 // =========================================================================
+
+// TransferSudo intercambia el estado de Sudo de forma atómica en una
+// transacción: primero se revoca al actual (sudo=false), luego se otorga al
+// sucesor (sudo=true). Respeta el índice parcial único sobre sudo=true.
+func (r *adminRepo) TransferSudo(ctx context.Context, fromID, toID uuid.UUID) error {
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&domain.UserAdmin{}).Where("id = ?", fromID).Update("sudo", false).Error; err != nil {
+			return err
+		}
+		if err := tx.Model(&domain.UserAdmin{}).Where("id = ?", toID).Update("sudo", true).Error; err != nil {
+			return err
+		}
+		return nil
+	})
+	return err
+}
+
+// CreatePermissionLog inserta una entrada de auditoría de cambios de permisos.
+func (r *adminRepo) CreatePermissionLog(ctx context.Context, log *domain.AdminPermissionLog) error {
+	return r.db.WithContext(ctx).Create(log).Error
+}
 
 // List recupera una lista paginada de administradores con filtros opcionales.
 // Soporta búsqueda parcial por texto y filtrado por estado de actividad.

@@ -12,11 +12,12 @@ import (
 )
 
 // SetupAdminRoutes registers admin authentication, management, and dashboard routes.
-func SetupAdminRoutes(router fiber.Router, adminRepo domain.UserAdminRepository, psiRepo domain.PsiUserRepository, analyticsSvc *service.AnalyticsService, mailSvc service.IMailService) {
+func SetupAdminRoutes(router fiber.Router, adminRepo domain.UserAdminRepository, psiRepo domain.PsiUserRepository, settingsRepo domain.AppSettingsRepository, analyticsSvc *service.AnalyticsService, mailSvc service.IMailService) {
 	svc := service.NewAdminService(adminRepo, mailSvc)
 	h := handler.NewAdminHandler(svc)
 	authMid := middleware.NewAuthMiddleware(adminRepo, psiRepo, analyticsSvc)
 	analyticsHandler := handler.NewAnalyticsHandler(analyticsSvc)
+	settingsHandler := handler.NewSettingsHandler(service.NewSettingsService(settingsRepo))
 
 	// =========================================================================
 	// RUTAS DE DESARROLLO
@@ -48,8 +49,14 @@ func SetupAdminRoutes(router fiber.Router, adminRepo domain.UserAdminRepository,
 
 	admin.Post("/create", h.CreateAdmin)
 	admin.Get("/list", h.GetAdmins)
+	admin.Get("/roles/presets", h.GetRolePresets)
 	admin.Patch("/update", h.UpdateAdmin)
+	admin.Post("/transfer-sudo", h.TransferSudo)
 	admin.Delete("/delete/:id", h.DeleteAdmin)
+
+	// Interruptores de recepción global (cambios solo Sudo)
+	admin.Get("/settings/reception", settingsHandler.GetReception)
+	admin.Post("/settings/reception", settingsHandler.UpdateReception)
 
 	// =========================================================================
 	// VALIDACIÓN DE SESIÓN (retorna 401 explícito, no 404 enmascarado)
@@ -58,4 +65,5 @@ func SetupAdminRoutes(router fiber.Router, adminRepo domain.UserAdminRepository,
 	// "sesión inválida" (401) de "ruta inexistente" (404).
 	adminValidate := router.Group("/admin", middleware.NoStore(), authMid.ProtectedAdmin())
 	adminValidate.Get("/validate", h.ValidateSession)
+	adminValidate.Get("/me", h.GetMe)
 }

@@ -3,53 +3,20 @@ import { createSignal } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import { apiPost } from "~/lib/api";
 import { getUserFacingError } from "~/lib/errors";
+import RoleSelector from "~/components/admin/staff/RoleSelector";
+import {
+  COLOR_MAP,
+  ACTIVE_MAP,
+  PERM_GROUPS,
+  defaultPerms,
+  TOTAL_PERMS,
+  applyPresetToPerms,
+  type PermissionState,
+  type RolePreset,
+} from "~/lib/staff-permissions";
 
 const IC = "w-full bg-white border-2 border-gray-200 focus:border-blue-500 rounded-xl px-4 py-2.5 outline-none transition-all text-gray-800 text-sm";
 const labelClass = "block text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1";
-
-interface PermissionsState {
-  can_create_psi: boolean; can_update_psi: boolean; can_delete_psi: boolean;
-  can_create_admin: boolean; can_update_admin: boolean; can_delete_admin: boolean;
-  can_publish: boolean; can_update_publish: boolean; can_delete_publish: boolean;
-  can_send_notifications: boolean; can_manage_notifications: boolean; can_read_notifications: boolean;
-  can_create_tags: boolean; can_edit_tags: boolean; can_delete_tags: boolean;
-  can_manage_projects: boolean;
-}
-
-const defaultPerms = (): PermissionsState => ({
-  can_create_psi: false, can_update_psi: false, can_delete_psi: false,
-  can_create_admin: false, can_update_admin: false, can_delete_admin: false,
-  can_publish: false, can_update_publish: false, can_delete_publish: false,
-  can_send_notifications: false, can_manage_notifications: false, can_read_notifications: false,
-  can_create_tags: false, can_edit_tags: false, can_delete_tags: false,
-  can_manage_projects: false,
-});
-
-const PERM_GROUPS = [
-  { label: "Gestión de Colegiados", icon: "👤", color: "blue",
-    perms: [{ key: "can_create_psi", label: "Crear" }, { key: "can_update_psi", label: "Editar" }, { key: "can_delete_psi", label: "Eliminar" }] },
-  { label: "Gestión de Staff", icon: "🛡️", color: "purple",
-    perms: [{ key: "can_create_admin", label: "Crear" }, { key: "can_update_admin", label: "Editar" }, { key: "can_delete_admin", label: "Eliminar" }] },
-  { label: "Publicaciones", icon: "📰", color: "emerald",
-    perms: [{ key: "can_publish", label: "Publicar" }, { key: "can_update_publish", label: "Editar" }, { key: "can_delete_publish", label: "Eliminar" }] },
-  { label: "Notificaciones", icon: "🔔", color: "amber",
-    perms: [{ key: "can_send_notifications", label: "Enviar" }, { key: "can_manage_notifications", label: "Gestionar" }, { key: "can_read_notifications", label: "Leer" }] },
-  { label: "Especialidades / Tags", icon: "🏷️", color: "rose",
-    perms: [{ key: "can_create_tags", label: "Crear" }, { key: "can_edit_tags", label: "Editar" }, { key: "can_delete_tags", label: "Eliminar" }] },
-  { label: "Proyectos", icon: "📋", color: "indigo",
-    perms: [{ key: "can_manage_projects", label: "Gestionar" }] },
-] as const;
-
-const COLOR_MAP: Record<string, string> = {
-  blue: "bg-blue-50 border-blue-200 text-blue-700", purple: "bg-purple-50 border-purple-200 text-purple-700",
-  emerald: "bg-emerald-50 border-emerald-200 text-emerald-700", amber: "bg-amber-50 border-amber-200 text-amber-700",
-  rose: "bg-rose-50 border-rose-200 text-rose-700", indigo: "bg-indigo-50 border-indigo-200 text-indigo-700",
-};
-const ACTIVE_MAP: Record<string, string> = {
-  blue: "bg-blue-700 border-blue-700 text-white", purple: "bg-purple-700 border-purple-700 text-white",
-  emerald: "bg-emerald-700 border-emerald-700 text-white", amber: "bg-amber-700 border-amber-700 text-white",
-  rose: "bg-rose-700 border-rose-700 text-white", indigo: "bg-indigo-700 border-indigo-700 text-white",
-};
 
 export default function AdminCrearStaffPage() {
   const navigate = useNavigate();
@@ -61,16 +28,30 @@ export default function AdminCrearStaffPage() {
   const [email, setEmail] = createSignal("");
   const [password, setPassword] = createSignal("");
   const [showPassword, setShowPassword] = createSignal(false);
-  const [perms, setPerms] = createSignal<PermissionsState>(defaultPerms());
+  const [perms, setPerms] = createSignal<PermissionState>(defaultPerms());
+  const [role, setRole] = createSignal<string | null>(null);
   const [saving, setSaving] = createSignal(false);
   const [error, setError] = createSignal<string | null>(null);
 
-  const togglePerm = (key: keyof PermissionsState) =>
+  const togglePerm = (key: keyof PermissionState) => {
     setPerms((p) => ({ ...p, [key]: !p[key] }));
+    setRole("personalizado");
+  };
 
   const toggleGroup = (keys: readonly string[]) => {
-    const all = keys.every((k) => perms()[k as keyof PermissionsState]);
+    const all = keys.every((k) => perms()[k as keyof PermissionState]);
     setPerms((p) => { const next = { ...p }; keys.forEach((k) => { (next as any)[k] = !all; }); return next; });
+    setRole("personalizado");
+  };
+
+  // Aplica un preset: rellena todos los permisos y registra la etiqueta del rol.
+  const applyRole = (preset: RolePreset) => {
+    setPerms((p) => applyPresetToPerms(p, preset));
+    setRole(preset.slug);
+  };
+
+  const clearRole = () => {
+    setRole("personalizado");
   };
 
   const totalEnabled = () => Object.values(perms()).filter(Boolean).length;
@@ -89,6 +70,7 @@ export default function AdminCrearStaffPage() {
         username: username().trim(),
         email:    email().trim(),
         password: password(),
+        role:     role() ?? "personalizado",
         permissions: perms(),
       }, {
         headers: { "X-Idempotency-Key": idempotencyKey },
@@ -146,8 +128,16 @@ export default function AdminCrearStaffPage() {
 
         <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
           <div class="flex items-center justify-between border-b border-gray-100 pb-3 mb-6">
+            <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest">Perfil de Rol</h2>
+            <span class="text-xs font-black text-gray-500">Atajo: aplica un conjunto de permisos</span>
+          </div>
+          <RoleSelector perms={perms()} storedRole={role()} onSelect={applyRole} onClear={clearRole} />
+        </section>
+
+        <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
+          <div class="flex items-center justify-between border-b border-gray-100 pb-3 mb-6">
             <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest">Permisos</h2>
-            <span class="text-xs font-black text-gray-500">{totalEnabled()}/16 activos</span>
+            <span class="text-xs font-black text-gray-500">{totalEnabled()}/{TOTAL_PERMS} activos</span>
           </div>
           <div class="space-y-4">
             {PERM_GROUPS.map((group) => {

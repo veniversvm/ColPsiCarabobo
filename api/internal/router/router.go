@@ -37,6 +37,7 @@ func SetupRouter(app *fiber.App, db *gorm.DB, s3Client *s3.S3Client, appCache *c
 	kanbanRepo := postgres.NewKanbanRepository(db)
 	ticketRepo := postgres.NewTicketRepository(db)
 	ticketConfigRepo := postgres.NewTicketConfigRepository(db)
+	settingsRepo := postgres.NewAppSettingsRepository(db)
 
 	// Agrupación principal
 	api := app.Group("/api/v1")
@@ -52,15 +53,14 @@ func SetupRouter(app *fiber.App, db *gorm.DB, s3Client *s3.S3Client, appCache *c
 	// igual especificidad gana la ruta registrada primero; el `/psi/:id` público
 	// (SetupPsiRoutes) se tragaría la raíz estática `/psi/tickets` del portal
 	// psicólogo (ListMyTickets) si se registrara después.
-	SetupAdminRoutes(api, adminRepo, psiRepo, analyticsSvc, mailSvc)
-	SetupTicketRoutes(api, adminRepo, psiRepo, s3Client, ticketRepo, ticketConfigRepo, notificationSvc, analyticsSvc)
+	SetupAdminRoutes(api, adminRepo, psiRepo, settingsRepo, analyticsSvc, mailSvc)
+	SetupTicketRoutes(api, adminRepo, psiRepo, s3Client, ticketRepo, ticketConfigRepo, settingsRepo, notificationSvc, analyticsSvc)
 	SetupPsiRoutes(api, psiRepo, adminRepo, s3Client, analyticsSvc, mailSvc, appCache)
 	SetupSpecialtyRoutes(api, psiRepo, adminRepo, specialtyRepo, analyticsSvc)
 	SetupPostRoutes(api, adminRepo, psiRepo, postRepo, s3Client, analyticsSvc)
 	SetupNotificationRoutes(api, adminRepo, psiRepo, analyticsSvc, notificationSvc)
-	SetupInscriptionRoutes(api, inscriptionRepo, psiRepo, adminRepo, s3Client, mailSvc, analyticsSvc)
+	SetupInscriptionRoutes(api, inscriptionRepo, psiRepo, adminRepo, settingsRepo, s3Client, mailSvc, analyticsSvc)
 	SetupKanbanRoutes(api, adminRepo, psiRepo, kanbanRepo, analyticsSvc)
-	SetupTicketRoutes(api, adminRepo, psiRepo, s3Client, ticketRepo, ticketConfigRepo, notificationSvc, analyticsSvc)
 
 	// =========================================================================
 	// DEFAULT 404 HANDLER (CATCH-ALL)

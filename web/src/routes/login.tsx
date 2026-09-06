@@ -70,8 +70,8 @@ export default function LoginPage() {
       
     } catch (err) {
       if (err instanceof ApiError) {
-        // Mostrar el mensaje real que viene de Go (ej. "credenciales inválidas")
-        setError(getUserFacingError(err));
+        // 429 = rate-limit: avisar el bloqueo real con el tiempo de espera
+        setError(err.status === 429 ? (err.data?.message || err.message) : getUserFacingError(err));
       } else {
         setError("Ocurrió un error inesperado al intentar conectar.");
       }

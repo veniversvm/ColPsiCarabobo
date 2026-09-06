@@ -43,6 +43,11 @@ Sitio web del Colegio de Psicólogos de Carabobo. Incluye:
 | 14 | `aaaa[id].tsx` (eliminado) | Dead code removal |
 | 15 | `api/internal/middleware/security_headers.go`, `api/cmd/api/main.go` | Headers de seguridad de la API: HSTS (via `HSTS_MAX_AGE`/`HSTS_PRELOAD`), Permissions-Policy y `Cache-Control: no-store` en auth/admin/psi-me |
 | 16 | `psi/tickets/[id].tsx`, `admin/tickets/[id].tsx` | Chat sin recarga: eliminado `<Suspense>` global que causaba flash completo al enviar mensaje; respuesta de `apiPost` se añade al hilo al instante sin `refetch()` |
+| 17 | RBAC, `admin_roles.go`, `admin_handler.go`, `user_admin_repo.go` | RBAC-liviano: 18 flags `can_*` en `user_admins`, presets de roles (Secretaría/Comunicación/Soporte/Proyectos/Lector), `GET /admin/me`, menú admin filtrado por permisos (ver `docs/plan-rbac-switches.md`) |
+| 18 | `admin_permission_logs`, `POST /admin/transfer-sudo` | Sucesión de Sudo atómica con confirmación de contraseña y auditoría; botón "Ceder SUDO" en staff |
+| 19 | `app_settings`, `settings_audit_logs`, `settings_service.go`, `settings_handler.go` | Interruptores globales de recepción (tickets/inscripciones), 409 `reception_disabled`, banners de UI, `ReceptionSwitchesCard` |
+| 20 | `pkg/database/seed.go` | `SeedSudoPermissions` idempotente: fuerza la matriz completa `true` para `sudo=true` en cada arranque |
+| 21 | `admin-access.tsx`, `login.tsx` | Aviso de rate-limit (429) con tiempo de espera real en login de admin y psicólogo |
 
 ## Comandos (web)
 

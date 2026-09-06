@@ -215,6 +215,7 @@ func buildPermissionMatrix(
 ) []permissionUpdate {
 
 	return []permissionUpdate{
+		{"Read Psi", req.CanReadPsi, target.CanReadPsi, updater.CanReadPsi, func(v bool) { target.CanReadPsi = v }},
 		{"Crear Psi", req.CanCreatePsi, target.CanCreatePsi, updater.CanCreatePsi, func(v bool) { target.CanCreatePsi = v }},
 		{"Update Psi", req.CanUpdatePsi, target.CanUpdatePsi, updater.CanUpdatePsi, func(v bool) { target.CanUpdatePsi = v }},
 		{"Delete Psi", req.CanDeletePsi, target.CanDeletePsi, updater.CanDeletePsi, func(v bool) { target.CanDeletePsi = v }},
@@ -231,7 +232,14 @@ func buildPermissionMatrix(
 		{"Edit Tags", req.CanEditTags, target.CanEditTags, updater.CanEditTags, func(v bool) { target.CanEditTags = v }},
 		{"Delete Tags", req.CanDeleteTags, target.CanDeleteTags, updater.CanDeleteTags, func(v bool) { target.CanDeleteTags = v }},
 		{"Manage Projects", req.CanManageProjects, target.CanManageProjects, updater.CanManageProjects, func(v bool) { target.CanManageProjects = v }},
+		{"Manage Tickets", req.CanManageTickets, target.CanManageTickets, updater.CanManageTickets, func(v bool) { target.CanManageTickets = v }},
 	}
+}
+
+// GetRolePresets expone los perfiles de permisos predeterminados que la UI
+// ofrece como atajo al crear/editar staff. Son solo lectura y nunca autorizan.
+func (s *AdminService) GetRolePresets() []RolePreset {
+	return AdminRolePresets
 }
 
 // =========================================================================
@@ -295,6 +303,14 @@ func (s *AdminService) CreateAdmin(
 	}
 	newAdmin.Password = string(hashed)
 
+	// Rótulo del preset aplicado (solo metadato descriptivo, nunca autoriza).
+	if req.Role != nil {
+		if !isValidRoleSlug(*req.Role) {
+			return errors.New("rol inválido")
+		}
+		newAdmin.Role = *req.Role
+	}
+
 	// 4. Procesamiento Dinámico de la Matriz de Permisos
 	matrix := buildPermissionMatrix(req.Permissions, newAdmin, creator)
 
@@ -335,6 +351,11 @@ func (s *AdminService) CreateAdmin(
 		if err := s.mailService.SendEmail(newAdmin.Email, "Bienvenido al Colegio de Psicólogos", "welcome_admin", mailData); err != nil {
 			log.Warn().Err(err).Str("component", "admin_service").Msg("Error al preparar el correo (pero el admin se creó)")
 		}
+	}
+
+	// 6b. Auditoría de la creación de personal.
+	if err := s.logPermissionChange(ctx, creator, newAdmin, "create", "", ""); err != nil {
+		log.Warn().Err(err).Str("component", "admin_service").Msg("No se pudo escribir el log de creación de personal")
 	}
 
 	// 7. Mantenimiento del Caché (Purge Completo)
@@ -387,6 +408,10 @@ func (s *AdminService) UpdateAdmin(
 	target.UpdateBy = updater.Username
 	target.UpdateById = &updater.ID
 
+	// Estado previo (para la auditoría forense de cambios de permisos/rol).
+	permsBefore := AdminPermissionSet(target)
+	roleFrom := target.Role
+
 	// 3. Mutación Parcial Segura (Patching)
 	if req.Username != nil {
 		target.Username = *req.Username
@@ -421,9 +446,26 @@ func (s *AdminService) UpdateAdmin(
 		}
 	}
 
+	// Rótulo del preset aplicado (solo metadato descriptivo, nunca autoriza).
+	if req.Role != nil {
+		if !isValidRoleSlug(*req.Role) {
+			return errors.New("rol inválido")
+		}
+		target.Role = *req.Role
+	}
+
 	// 5. Persistencia y Purga
 	if err := s.repo.Update(ctx, target); err != nil {
 		return err
+	}
+
+	// 5b. Auditoría de cambios en la matriz de permisos y/o rótulo de rol.
+	action := "role_change"
+	if diffPermissionSet(permsBefore, AdminPermissionSet(target)) {
+		action = "update_permissions"
+	}
+	if err := s.logPermissionChange(ctx, updater, target, action, roleFrom, target.Role); err != nil {
+		log.Warn().Err(err).Str("component", "admin_service").Msg("No se pudo escribir el log de cambio de permisos")
 	}
 
 	s.cache.Flush() // Limpiar vistas cacheadas del listado de personal
@@ -474,4 +516,99 @@ func (s *AdminService) DeleteAdmin(
 	// Purga obligatoria para eliminarlo de las grillas paginadas del dashboard
 	s.cache.Flush()
 	return nil
+}
+
+// =========================================================================
+// SUCESIÓN DE SUDO Y AUDITORÍA DE PERMISOS
+// =========================================================================
+
+// TransferSudo transfiere el estado de Super Usuario de forma segura: el Sudo
+// actual debe confirmar su contraseña y señalar a una persona de confianza.
+// La conmutación (false→true, true→false) es atómica en una sola transacción,
+// respetando el índice parcial único sobre `sudo`.
+func (s *AdminService) TransferSudo(ctx context.Context, current *domain.UserAdmin, targetID uuid.UUID, password string) error {
+	if !current.Sudo {
+		return errors.New("solo el Super Usuario puede transferir el rol")
+	}
+	if password == "" {
+		return errors.New("es necesario confirmar la contraseña")
+	}
+	if current.ID == targetID {
+		return errors.New("no puedes transferirte el rol a ti mismo")
+	}
+
+	// 1. Confirmación de contraseña del Sudo actual.
+	if err := bcrypt.CompareHashAndPassword([]byte(current.Password), []byte(password)); err != nil {
+		return errors.New("contraseña incorrecta")
+	}
+
+	// 2. El sucesor debe existir y estar activo.
+	successor, err := s.repo.GetByID(ctx, targetID)
+	if err != nil {
+		return errors.New("administrador no encontrado")
+	}
+	if !successor.IsActive {
+		return errors.New("el destinatario está inactivo")
+	}
+	if successor.Sudo {
+		return errors.New("el destinatario ya es el Super Usuario")
+	}
+
+	// 3. Conmutación atómica y auditoría.
+	if err := s.repo.TransferSudo(ctx, current.ID, successor.ID); err != nil {
+		if strings.Contains(err.Error(), "idx_user_admins_unique_sudo") {
+			return domain.ErrSudoExists
+		}
+		return err
+	}
+
+	if err := s.logPermissionChange(ctx, *current, successor, "transfer_sudo", current.Role, successor.Role); err != nil {
+		log.Warn().Err(err).Str("component", "admin_service").Msg("No se pudo escribir el log de transferencia de Sudo")
+	}
+
+	s.cache.Flush()
+	return nil
+}
+
+// logPermissionChange persiste una entrada de auditoría si el repositorio
+// lo permite. Es best-effort: nunca bloquea la operación principal.
+func (s *AdminService) logPermissionChange(
+	ctx context.Context,
+	changedBy domain.UserAdmin,
+	target *domain.UserAdmin,
+	action, roleFrom, roleTo string,
+) error {
+	return s.repo.CreatePermissionLog(ctx, &domain.AdminPermissionLog{
+		ID:                uuid.Must(uuid.NewV7()),
+		TargetAdminID:     target.ID,
+		TargetUsername:    target.Username,
+		Action:            action,
+		ChangedByID:       changedBy.ID,
+		ChangedByUsername: changedBy.Username,
+		RoleFrom:          roleFrom,
+		RoleTo:            roleTo,
+	})
+}
+
+// diffPermissionSet indica si dos matrices de permisos difieren en alguno de
+// los 18 flags.
+func diffPermissionSet(before, after PermissionSet) bool {
+	return before.CanReadPsi != after.CanReadPsi ||
+		before.CanCreatePsi != after.CanCreatePsi ||
+		before.CanUpdatePsi != after.CanUpdatePsi ||
+		before.CanDeletePsi != after.CanDeletePsi ||
+		before.CanCreateAdmin != after.CanCreateAdmin ||
+		before.CanUpdateAdmin != after.CanUpdateAdmin ||
+		before.CanDeleteAdmin != after.CanDeleteAdmin ||
+		before.CanPublish != after.CanPublish ||
+		before.CanUpdatePublish != after.CanUpdatePublish ||
+		before.CanDeletePublish != after.CanDeletePublish ||
+		before.CanSendNotifications != after.CanSendNotifications ||
+		before.CanManageNotifications != after.CanManageNotifications ||
+		before.CanReadNotifications != after.CanReadNotifications ||
+		before.CanCreateTags != after.CanCreateTags ||
+		before.CanEditTags != after.CanEditTags ||
+		before.CanDeleteTags != after.CanDeleteTags ||
+		before.CanManageProjects != after.CanManageProjects ||
+		before.CanManageTickets != after.CanManageTickets
 }

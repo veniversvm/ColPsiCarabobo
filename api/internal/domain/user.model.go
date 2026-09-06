@@ -22,7 +22,13 @@ type UserAdmin struct {
 	// Sudo otorga acceso total e irrevocable. Solo asignable fuera de la API.
 	Sudo bool `gorm:"default:false" json:"-"`
 
+	// Role es una etiqueta del preset de permisos aplicado (secretaria, comunicacion,
+	// soporte, proyectos, lector o "personalizado"). Es SOLO metadato descriptivo:
+	// la autorización siempre depende de los flags booleanos, nunca del rol.
+	Role string `gorm:"size:50" json:"role"`
+
 	// ── Permisos: Gestión de Colegiados ──────────────────────────────────
+	CanReadPsi   bool `gorm:"default:false" json:"can_read_psi"`
 	CanCreatePsi bool `gorm:"default:false" json:"can_create_psi"`
 	CanUpdatePsi bool `gorm:"default:false" json:"can_update_psi"`
 	CanDeletePsi bool `gorm:"default:false" json:"can_delete_psi"`

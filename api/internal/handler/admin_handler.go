@@ -102,6 +102,32 @@ func (h *AdminHandler) ValidateSession(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"valid": true})
 }
 
+// GetMe godoc
+// @Summary      Estado y permisos del administrador autenticado
+// @Description  Retorna identidad, rol y matriz de permisos del administrador actual. La UI lo usa para filtrar el menú; es informativo, nunca autoriza: el backend valida cada operación.
+// @Tags         Administración - Sesión
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200 {object} map[string]interface{}
+// @Failure      401 {object} map[string]interface{}
+// @Router       /admin/me [get]
+func (h *AdminHandler) GetMe(c *fiber.Ctx) error {
+	admin, err := middleware.GetAuthenticatedAdmin(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Sesión inválida o expirada."})
+	}
+
+	return c.JSON(fiber.Map{
+		"id":          admin.ID,
+		"username":    admin.Username,
+		"email":       admin.Email,
+		"is_active":   admin.IsActive,
+		"sudo":        admin.Sudo,
+		"role":        admin.Role,
+		"permissions": service.AdminPermissionSet(admin),
+	})
+}
+
 // CreateAdmin godoc
 // @Summary      Crear un nuevo administrador
 // @Description  Registra un nuevo miembro del staff administrativo verificando la jerarquía de permisos.
@@ -163,6 +189,47 @@ func (h *AdminHandler) GetAdmins(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(result)
+}
+
+// GetRolePresets godoc
+// @Summary      Listar presets de roles del staff
+// @Description  Retorna los perfiles de permisos predeterminados (Secretaría, Comunicación, Soporte, Proyectos, Lector) que la UI aplica como atajo al crear/editar personal. Los roles son solo metadato: la autorización siempre usa los flags booleanos individuales.
+// @Tags         Administración - Gestión
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {array}   service.RolePreset
+// @Router       /admin/roles/presets [get]
+func (h *AdminHandler) GetRolePresets(c *fiber.Ctx) error {
+	return c.JSON(h.service.GetRolePresets())
+}
+
+// TransferSudo godoc
+// @Summary      Transferir el rol de Super Usuario
+// @Description  Permite al Sudo actual ceder su rol a un administrador de confianza. Requiere confirmar la contraseña del Sudo. La conmutación es atómica y queda registrada en la auditoría de permisos.
+// @Tags         Administración - Gestión
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        request  body      request_structs.TransferSudoRequest  true  "Destinatario del Sudo y confirmación de la contraseña"
+// @Success      200      {object}  map[string]string      "message: rol transferido"
+// @Failure      403      {object}  map[string]string      "error: permiso denegado o contraseña incorrecta"
+// @Router       /admin/transfer-sudo [post]
+func (h *AdminHandler) TransferSudo(c *fiber.Ctx) error {
+	current, err := middleware.GetAuthenticatedAdmin(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	var req request_structs.TransferSudoRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "El formato del JSON es inválido"})
+	}
+
+	if err := h.service.TransferSudo(c.UserContext(), current, req.TargetID, req.Password); err != nil {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"message": "Rol de Super Usuario transferido correctamente"})
 }
 
 // UpdateAdmin godoc
