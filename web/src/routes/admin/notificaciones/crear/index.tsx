@@ -2,7 +2,7 @@
 import { createResource, createSignal, For, Show, Suspense } from "solid-js";
 import { A, action, useAction, useNavigate } from "@solidjs/router";
 import { apiGet, apiPost } from "~/lib/api";
-import { PaginatedResponse } from "~/types/admin";
+import { PaginatedResponse, PsiAdminListItem } from "~/types/admin";
 import {
   CreateNotificationResponse,
   CreateNotificationRequest,
@@ -52,24 +52,66 @@ export default function CrearNotificacionPage() {
 
   // Individual
   const [selected, setSelected] = createSignal<Set<string>>(new Set());
+  // Detalles (nombre/email) de los seleccionados para mostrarlos como chips
+  const [selectedDetails, setSelectedDetails] = createSignal<Record<string, { name: string; email: string }>>({});
 
   const [preview, setPreview] = createSignal<PreviewResponse | null>(null);
   const [busy, setBusy] = createSignal(false);
   const [error, setError] = createSignal("");
   const [successId, setSuccessId] = createSignal("");
 
+  // Buscador paginado de psicólogos (búsqueda por nombre, CI o FPV)
+  const PAGE_SIZE = 20;
+  const [search, setSearch] = createSignal("");
+  const [debouncedSearch, setDebouncedSearch] = createSignal("");
+  const [page, setPage] = createSignal(1);
+
+  let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+  const onSearchInput = (e: Event) => {
+    const value = e.currentTarget.value;
+    setSearch(value);
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      setDebouncedSearch(value.trim());
+      setPage(1);
+    }, 350);
+  };
+
   const [psiUsers] = createResource(
-    () => apiGet<PaginatedResponse<any>>("/admin/psi/list?page=1&limit=200")
+    () => ({ q: debouncedSearch(), page: page() }),
+    ({ q, page }) =>
+      apiGet<PaginatedResponse<PsiAdminListItem>>(
+        `/admin/psi/list?q=${encodeURIComponent(q)}&page=${page}&limit=${PAGE_SIZE}`,
+      ),
   );
   const [specialties] = createResource(
     () => apiGet<Specialty[]>("/specialties")
   );
 
-  const toggleUser = (id: string) => {
+  const toggleUser = (u: PsiAdminListItem) => {
     const next = new Set(selected());
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
+    const nextDetails = { ...selectedDetails() };
+    if (next.has(u.id)) {
+      next.delete(u.id);
+      delete nextDetails[u.id];
+    } else {
+      next.add(u.id);
+      nextDetails[u.id] = {
+        name: `${u.first_name} ${u.last_name}`.trim() || u.email,
+        email: u.email,
+      };
+    }
     setSelected(next);
+    setSelectedDetails(nextDetails);
+  };
+
+  const removeSelected = (id: string) => {
+    const next = new Set(selected());
+    next.delete(id);
+    const nextDetails = { ...selectedDetails() };
+    delete nextDetails[id];
+    setSelected(next);
+    setSelectedDetails(nextDetails);
   };
 
   const buildFilters = (): NotificationFilterDTO | undefined => {
@@ -168,10 +210,14 @@ export default function CrearNotificacionPage() {
             <label class={labelCls}>Mensaje *</label>
             <textarea value={message()} onInput={(e) => setMessage(e.currentTarget.value)} rows={4} class={inputCls} placeholder="Redacta el comunicado..." />
           </div>
-          <label class="flex items-center gap-3 cursor-pointer select-none">
+          {/* ⚠️ COMPONENTE DESACTIVADO TEMPORALMENTE (aviso a otras IA: NO ELIMINAR).
+              El envío de correos se pidió desactivar (no usar Resend para notificaciones).
+              Para reactivar, descomenta el <label> de abajo. Todo el flujo backend
+              (send_email, mailSvc.SendEmail) sigue intacto en la API Go. */}
+          {/* <label class="flex items-center gap-3 cursor-pointer select-none">
             <input type="checkbox" checked={sendEmail()} onChange={(e) => setSendEmail(e.currentTarget.checked)} class="w-5 h-5 rounded accent-blue-700" />
             <span class="text-sm font-semibold text-gray-700">Enviar también por correo electrónico</span>
-          </label>
+          </label> */}
         </section>
 
         {/* Destino */}
@@ -198,28 +244,85 @@ export default function CrearNotificacionPage() {
           </div>
 
           <Show when={targetType() === "individual"}>
-            <Suspense fallback={<div class="h-24 bg-gray-50 animate-pulse rounded-2xl" />}>
-              <div class="bg-gray-50 rounded-2xl p-4 max-h-64 overflow-y-auto space-y-1.5">
-                <Show when={(psiUsers()?.data ?? []).length === 0}>
-                  <p class="text-sm text-gray-500 p-3">No hay psicólogos registrados.</p>
+            <div class="space-y-3">
+              <input
+                type="search"
+                value={search()}
+                onInput={onSearchInput}
+                placeholder="🔎 Buscar por nombre, CI o FPV..."
+                class={inputCls}
+              />
+              <Suspense fallback={<div class="h-24 bg-gray-50 animate-pulse rounded-2xl" />}>
+                <div class="bg-gray-50 rounded-2xl p-4 max-h-72 overflow-y-auto space-y-1.5">
+                  <Show when={(psiUsers()?.data ?? []).length === 0}>
+                    <p class="text-sm text-gray-500 p-3">
+                      {debouncedSearch() ? "No hay psicólogos que coincidan con la búsqueda." : "No hay psicólogos registrados."}
+                    </p>
+                  </Show>
+                  <For each={psiUsers()?.data ?? []}>
+                    {(u) => (
+                      <label class="flex items-center gap-3 bg-white rounded-xl px-3 py-2 cursor-pointer border border-gray-100">
+                        <input
+                          type="checkbox"
+                          checked={selected().has(u.id)}
+                          onChange={() => toggleUser(u)}
+                          class="w-4 h-4 accent-blue-700 shrink-0"
+                        />
+                        <span class="text-sm font-semibold text-gray-700 truncate">{u.first_name} {u.last_name}</span>
+                        <span class="text-xs text-gray-400 whitespace-nowrap">CI {u.ci} · FPV {u.fpv}</span>
+                        <span class="ml-auto text-xs text-gray-400 truncate max-w-[160px]">{u.email}</span>
+                      </label>
+                    )}
+                  </For>
+                </div>
+
+                <Show when={(psiUsers()?.total ?? 0) > 0}>
+                  <div class="flex items-center justify-between mt-2">
+                    <button
+                      type="button"
+                      disabled={page() <= 1}
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      class="px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold text-xs disabled:opacity-40 transition-colors"
+                    >
+                      ← Anterior
+                    </button>
+                    <span class="text-xs text-gray-500 font-semibold">
+                      Página {psiUsers()?.page ?? 1} de {psiUsers()?.total_pages ?? 1} · {psiUsers()?.total ?? 0} psicólogos
+                    </span>
+                    <button
+                      type="button"
+                      disabled={page() >= (psiUsers()?.total_pages ?? 1)}
+                      onClick={() => setPage((p) => p + 1)}
+                      class="px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold text-xs disabled:opacity-40 transition-colors"
+                    >
+                      Siguiente →
+                    </button>
+                  </div>
                 </Show>
-                <For each={psiUsers()?.data ?? []}>
-                  {(u) => (
-                    <label class="flex items-center gap-3 bg-white rounded-xl px-3 py-2 cursor-pointer border border-gray-100">
-                      <input
-                        type="checkbox"
-                        checked={selected().has(u.id)}
-                        onChange={() => toggleUser(u.id)}
-                        class="w-4 h-4 accent-blue-700"
-                      />
-                      <span class="text-sm font-semibold text-gray-700">{u.first_name} {u.last_name}</span>
-                      <span class="ml-auto text-xs text-gray-400">{u.email}</span>
-                    </label>
-                  )}
-                </For>
-              </div>
+              </Suspense>
+
               <p class="text-xs text-gray-400 font-semibold">{selected().size} seleccionado(s)</p>
-            </Suspense>
+
+              <Show when={selected().size > 0}>
+                <div class="flex flex-wrap gap-1.5">
+                  <For each={Object.entries(selectedDetails())}>
+                    {([id, d]) => (
+                      <span class="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-100 text-blue-700 text-xs font-bold px-2.5 py-1 rounded-full">
+                        {d.name}
+                        <button
+                          type="button"
+                          onClick={() => removeSelected(id)}
+                          class="text-blue-400 hover:text-blue-700 font-black"
+                          aria-label={`Quitar a ${d.name}`}
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    )}
+                  </For>
+                </div>
+              </Show>
+            </div>
           </Show>
 
           <Show when={targetType() === "group"}>
