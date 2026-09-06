@@ -81,18 +81,18 @@ export default function LoginPage() {
   };
 
   return (
-    <main class="min-h-[calc(100-64px)] flex items-center justify-center bg-colpsi-bg px-4 py-12">
+    <main class="min-h-[calc(100vh-64px)] flex items-center justify-center bg-white px-4 py-12">
       <div class="w-full max-w-md">
         {/* CARD CONTAINER */}
         <div class="bg-white rounded-3xl shadow-xl shadow-blue-900/5 overflow-hidden border border-colpsi-border">
           
           {/* TOP DECORATION (Azul Institucional) */}
           <div class="bg-colpsi-blue p-8 text-center">
-            <div class="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl mb-4 shadow-lg overflow-hidden">
+            <div class="inline-flex items-center justify-center bg-white rounded-2xl px-6 py-3 mb-4 shadow-lg">
               <img
-                src="/emblema.png"
-                alt="Emblema del Colegio de Psicólogos del Estado Carabobo"
-                class="w-full h-full object-cover"
+                src="/logo-horizontal.png"
+                alt="Colegio de Psicólogos del Estado Carabobo"
+                class="h-9 w-auto"
               />
             </div>
             <h1 class="text-white text-xl font-bold tracking-tight">Portal de Agremiados</h1>
@@ -169,6 +169,19 @@ export default function LoginPage() {
         {/* FOOTER LINKS */}
         <div class="mt-8 text-center text-gray-400 text-sm">
           <p>¿No estás registrado? <A href="/directorio" class="text-colpsi-blue font-bold">Consulta el directorio</A></p>
+        </div>
+      </div>
+
+      {/* LA FRANJA DINÁMICA (tira venezolana) */}
+      <div class="fixed bottom-0 left-0 w-full h-3 flex overflow-hidden shadow-[0_-4px_15px_rgba(0,0,0,0.1)]">
+        <div class="relative flex-1 bg-colpsi-red">
+          <div class="absolute inset-0 bg-linear-to-r from-transparent via-white/50 to-transparent animate-flag-flow" />
+        </div>
+        <div class="relative flex-1 bg-green-700">
+          <div class="absolute inset-0 bg-linear-to-r from-transparent via-white/50 to-transparent animate-flag-flow [animation-delay:1s]" />
+        </div>
+        <div class="relative flex-1 bg-colpsi-blue">
+          <div class="absolute inset-0 bg-linear-to-r from-transparent via-white/50 to-transparent animate-flag-flow [animation-delay:2s]" />
         </div>
       </div>
     </main>
