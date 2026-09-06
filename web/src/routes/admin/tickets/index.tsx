@@ -97,7 +97,14 @@ export default function AdminTickets() {
 
           <select
             value={estadoId()}
-            onChange={(e) => setEstadoId(e.currentTarget.value)}
+            onChange={(e) => {
+              const v = e.currentTarget.value;
+              setEstadoId(v);
+              if (v) {
+                const sel = estadosDisponibles().find((x) => String(x.id) === String(v));
+                if (sel?.is_closed) setSoloAbiertos(false);
+              }
+            }}
             class="md:col-span-3 px-4 py-3 rounded-2xl border-2 border-colpsi-border bg-colpsi-surface outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-700 transition-all"
           >
             <option value="">Todos los estados</option>

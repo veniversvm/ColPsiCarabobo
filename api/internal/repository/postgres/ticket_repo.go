@@ -73,8 +73,9 @@ func (r *ticketRepo) ListTickets(ctx context.Context, filter domain.TicketFilter
 
 	q := r.db.WithContext(ctx).Model(&domain.Ticket{})
 
-	// FIFO administrativo: por defecto solo abiertos.
-	if filter.SoloAbiertos {
+	// FIFO administrativo: por defecto solo abiertos, salvo que se filtre por un
+	// estado concreto (el estado elegido manda, p.ej. ver los cerrados).
+	if filter.SoloAbiertos && filter.EstadoID == nil {
 		q = q.Joins("JOIN ticket_estados te ON te.id = tickets.estado_id").
 			Where("te.is_closed = FALSE")
 	}
