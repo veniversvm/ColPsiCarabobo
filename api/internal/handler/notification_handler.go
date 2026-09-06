@@ -155,7 +155,7 @@ func (h *NotificationHandler) GetMyNotifications(c *fiber.Ctx) error {
 	}
 
 	page, limit := parsePagination(c)
-	res, err := h.service.ListMyNotifications(c.UserContext(), admin, page, limit)
+	res, err := h.service.ListMyNotifications(c.UserContext(), admin, parseCursor(c), page, limit)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -286,7 +286,7 @@ func (h *NotificationHandler) GetMyNotificationsPsi(c *fiber.Ctx) error {
 	}
 
 	page, limit := parsePagination(c)
-	res, err := h.service.ListUserNotifications(c.UserContext(), psi, page, limit)
+	res, err := h.service.ListUserNotifications(c.UserContext(), psi, parseCursor(c), page, limit)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -432,4 +432,18 @@ func parsePagination(c *fiber.Ctx) (int, int) {
 		limit = 100
 	}
 	return page, limit
+}
+
+// parseCursor extrae el cursor de keyset pagination. Devuelve nil si no se
+// envió o si no es un UUID válido (en ese caso se usa la paginación clásica).
+func parseCursor(c *fiber.Ctx) *uuid.UUID {
+	s := c.Query("cursor")
+	if s == "" {
+		return nil
+	}
+	id, err := uuid.Parse(s)
+	if err != nil {
+		return nil
+	}
+	return &id
 }

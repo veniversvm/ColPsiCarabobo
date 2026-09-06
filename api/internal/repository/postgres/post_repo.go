@@ -113,9 +113,17 @@ func (r *postRepo) List(ctx context.Context, filter domain.PostFilter, page, lim
 	// Conteo total de resultados para que el frontend pueda construir la paginación.
 	query.Count(&total)
 
+	// Keyset pagination: cuando llega cursor se ordena por id (UUIDv7 == tiempo)
+	// y se piden filas más viejas que el cursor. Evita el barrido OFFSET.
+	if filter.Cursor != uuid.Nil {
+		err := query.Where("id < ?", filter.Cursor).
+			Order("id DESC").Limit(limit).Find(&posts).Error
+		return posts, total, err
+	}
+
 	// Consulta paginada ordenada del más reciente al más antiguo.
 	offset := (page - 1) * limit
-	err := query.Offset(offset).Limit(limit).Order("created_at DESC").Find(&posts).Error
+	err := query.Offset(offset).Limit(limit).Order("id DESC").Find(&posts).Error
 
 	return posts, total, err
 }

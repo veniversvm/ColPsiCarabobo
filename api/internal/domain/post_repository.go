@@ -23,6 +23,10 @@ type PostFilter struct {
 
 	// Search permite realizar búsquedas de texto parcial (fuzzy search) sobre el título.
 	Search string
+
+	// Cursor habilita keyset pagination: lista las filas con id < Cursor (orden DESC).
+	// Si es uuid.Nil, se usa la paginación clásica por Offset/Page (compat).
+	Cursor uuid.UUID
 }
 
 // PostRepository define el contrato de persistencia para el módulo de publicaciones.

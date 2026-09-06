@@ -1,5 +1,5 @@
 // web/src/routes/psi/notificaciones.tsx
-import { createResource, createSignal, For, Show, Suspense } from "solid-js";
+import { createResource, createSignal, For, Show, Suspense, onMount } from "solid-js";
 import { A } from "@solidjs/router";
 import { apiGet, apiPatch } from "~/lib/api";
 import { getUserFacingError } from "~/lib/errors";
@@ -10,10 +10,22 @@ export default function PsiNotificaciones() {
     () => apiGet<UnreadCountResponse>("/notifications/psi-user/unread-count"),
     { initialValue: { unread_count: 0 } }
   );
+
+  // Primera página vía resource (SSR incluye el listado inicial); las páginas
+  // siguientes se cargan con keyset pagination (cursor) sin recargar la ruta.
+  const LIST_LIMIT = 20;
   const [list] = createResource(
-    () => apiGet<{ data: Notification[]; total: number; page: number }>("/notifications/psi-user?page=1&limit=50"),
+    () => apiGet<{ data: Notification[]; total: number; page: number; next_cursor?: string | null }>(
+      `/notifications/psi-user?limit=${LIST_LIMIT}`
+    ),
     { initialValue: { data: [], total: 0, page: 1 } }
   );
+  const [extra, setExtra] = createSignal<Notification[]>([]);
+  const [nextCursor, setNextCursor] = createSignal<string | null>(null);
+  const [listLoading, setListLoading] = createSignal(false);
+  const [listDone, setListDone] = createSignal(false);
+
+  onMount(() => setNextCursor(list()?.next_cursor ?? null));
 
   // Id de la notificación expandida (el mensaje se lee del propio item del listado,
   // así la apertura es inmediata y sin parpadeo: no espera a la red ni re-renderiza la lista).
@@ -52,7 +64,26 @@ export default function PsiNotificaciones() {
     try { await refetchUnread(); } catch (e) { /* eslint-disable-next-line no-console */ console.error(e); }
   };
 
-  const items = () => list()?.data ?? [];
+  const loadMore = async () => {
+    if (listLoading() || nextCursor() === null) return;
+    setListLoading(true);
+    try {
+      const params = new URLSearchParams({ limit: String(LIST_LIMIT), cursor: nextCursor()! });
+      const data = await apiGet<{ data: Notification[]; next_cursor?: string | null }>(
+        `/notifications/psi-user?${params.toString()}`
+      );
+      const result = data?.data ?? [];
+      setExtra((prev) => [...prev, ...result]);
+      setNextCursor(data?.next_cursor ?? null);
+      if (result.length < LIST_LIMIT) setListDone(true);
+    } catch (e) {
+      setOpenError(getUserFacingError(e));
+    } finally {
+      setListLoading(false);
+    }
+  };
+
+  const items = () => [...(list()?.data ?? []), ...extra()];
 
   const isRead = (n: Notification) => readIds().has(n.id) || n.targets?.[0]?.is_read === true;
 
@@ -154,6 +185,19 @@ export default function PsiNotificaciones() {
               );
             }}
           </For>
+
+          <Show when={nextCursor() !== null && !listDone()}>
+            <div class="flex justify-center pt-2">
+              <button
+                type="button"
+                onClick={() => loadMore()}
+                disabled={listLoading()}
+                class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-colpsi-blue text-white text-xs font-black uppercase tracking-widest transition-all hover:bg-colpsi-blue-light active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {listLoading() ? "Cargando..." : "Cargar más"}
+              </button>
+            </div>
+          </Show>
         </Suspense>
       </div>
     </main>

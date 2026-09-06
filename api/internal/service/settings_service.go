@@ -125,7 +125,7 @@ func (s *SettingsService) UpdateReception(ctx context.Context, changedBy domain.
 	}
 
 	if err := s.repo.CreateAudit(ctx, &domain.SettingsAuditLog{
-		ID:                uuid.New(),
+		ID:                uuid.Must(uuid.NewV7()),
 		ChangedByID:       changedBy.ID,
 		ChangedByUsername: changedBy.Username,
 		Key:               key,

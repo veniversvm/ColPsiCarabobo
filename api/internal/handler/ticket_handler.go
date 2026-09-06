@@ -579,6 +579,12 @@ func (h *TicketHandler) ListTicketsAdmin(c *fiber.Ctx) error {
 		Page:         page,
 		Limit:        limit,
 	}
+	if s := c.Query("cursor"); s != "" {
+		if v, err := strconv.ParseUint(s, 10, 64); err == nil {
+			cur := uint(v)
+			filter.Cursor = &cur
+		}
+	}
 	if s := c.Query("motivo_id"); s != "" {
 		if v, err := strconv.ParseUint(s, 10, 64); err == nil {
 			id := uint(v)
@@ -604,7 +610,11 @@ func (h *TicketHandler) ListTicketsAdmin(c *fiber.Ctx) error {
 	if tickets == nil {
 		tickets = []domain.Ticket{}
 	}
-	return c.JSON(fiber.Map{"data": tickets, "total": total, "page": page, "limit": limit})
+	res := fiber.Map{"data": tickets, "total": total, "page": page, "limit": limit}
+	if len(tickets) == limit && len(tickets) > 0 {
+		res["next_cursor"] = tickets[len(tickets)-1].ID
+	}
+	return c.JSON(res)
 }
 
 // CountPendientesAdmin godoc

@@ -71,7 +71,7 @@ func (r *notificationRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.N
 	return &n, nil
 }
 
-func (r *notificationRepo) ListBySender(ctx context.Context, senderID uuid.UUID, page, limit int) ([]domain.Notification, int64, error) {
+func (r *notificationRepo) ListBySender(ctx context.Context, senderID uuid.UUID, cursor *uuid.UUID, page, limit int) ([]domain.Notification, int64, error) {
 	var notifications []domain.Notification
 	var total int64
 
@@ -79,13 +79,21 @@ func (r *notificationRepo) ListBySender(ctx context.Context, senderID uuid.UUID,
 		Where("sender_id = ?", senderID)
 
 	query.Count(&total)
+
+	// Keyset pagination: pide notificaciones más viejas que el cursor (id == time).
+	if cursor != nil {
+		err := query.Where("id < ?", *cursor).
+			Order("id DESC").Limit(limit).Find(&notifications).Error
+		return notifications, total, err
+	}
+
 	offset := (page - 1) * limit
-	err := query.Offset(offset).Limit(limit).Order("created_at DESC").Find(&notifications).Error
+	err := query.Offset(offset).Limit(limit).Order("id DESC").Find(&notifications).Error
 
 	return notifications, total, err
 }
 
-func (r *notificationRepo) ListByUser(ctx context.Context, psiUserID uuid.UUID, page, limit int) ([]domain.Notification, int64, error) {
+func (r *notificationRepo) ListByUser(ctx context.Context, psiUserID uuid.UUID, cursor *uuid.UUID, page, limit int) ([]domain.Notification, int64, error) {
 	var notifications []domain.Notification
 	var total int64
 
@@ -98,12 +106,22 @@ func (r *notificationRepo) ListByUser(ctx context.Context, psiUserID uuid.UUID, 
 		Where("id IN (?) AND status = ?", sub, domain.NotificationStatusSent)
 
 	query.Count(&total)
+
+	// Keyset pagination: pide notificaciones más viejas que el cursor (id == time).
+	// El prefijo UNIQUE(notification_id, psi_user_id) resuelve la subconsulta por índice.
+	if cursor != nil {
+		err := query.Where("id < ?", *cursor).
+			Preload("Targets", "psi_user_id = ?", psiUserID).
+			Order("id DESC").Limit(limit).Find(&notifications).Error
+		return notifications, total, err
+	}
+
 	offset := (page - 1) * limit
 
 	// Preload del target del agremiado actual para exponer is_read/read_at en
 	// el listado (la UI usa targets[0] para distinguir leída de no leída).
 	err := query.Preload("Targets", "psi_user_id = ?", psiUserID).
-		Offset(offset).Limit(limit).Order("created_at DESC").Find(&notifications).Error
+		Offset(offset).Limit(limit).Order("id DESC").Find(&notifications).Error
 
 	return notifications, total, err
 }
@@ -138,13 +156,12 @@ func (r *notificationRepo) GetTargetByUserAndNotification(ctx context.Context, n
 
 func (r *notificationRepo) CountUnread(ctx context.Context, psiUserID uuid.UUID) (int64, error) {
 	var count int64
-	// Unir con notifications para contar solo las enviadas.
+	// Solo targets: el invariante garantiza que los targets se crean únicamente
+	// en send() con status ya en "sent" (nunca hay targets de pendientes/canceladas).
+	// (psi_user_id, is_read) permite un conteo index-only.
 	err := r.db.WithContext(ctx).
 		Model(&domain.NotificationTarget{}).
-		Joins("JOIN notifications ON notifications.id = notification_targets.notification_id").
-		Where("notification_targets.psi_user_id = ?", psiUserID).
-		Where("notification_targets.is_read = ?", false).
-		Where("notifications.status = ?", domain.NotificationStatusSent).
+		Where("psi_user_id = ? AND is_read = ?", psiUserID, false).
 		Count(&count).Error
 	return count, err
 }

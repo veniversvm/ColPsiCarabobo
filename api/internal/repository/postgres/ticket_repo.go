@@ -97,7 +97,21 @@ func (r *ticketRepo) ListTickets(ctx context.Context, filter domain.TicketFilter
 		return nil, 0, err
 	}
 
-	err := q.Order("tickets.created_at ASC").
+	// Keyset pagination (FIFO): pide tickets posteriores al cursor (id autoincremental).
+	if filter.Cursor != nil {
+		err := q.Where("tickets.id > ?", *filter.Cursor).
+			Order("tickets.id ASC").Limit(filter.Limit).
+			Preload("Psi").
+			Preload("Motivo").
+			Preload("Estado").
+			Find(&tickets).Error
+		if err != nil {
+			return nil, 0, err
+		}
+		return tickets, total, nil
+	}
+
+	err := q.Order("tickets.id ASC").
 		Offset((filter.Page - 1) * filter.Limit).Limit(filter.Limit).
 		Preload("Psi").
 		Preload("Motivo").

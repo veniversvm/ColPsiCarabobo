@@ -65,12 +65,12 @@ func (TicketEstado) TableName() string { return "ticket_estados" }
 // Ticket es la entidad principal del módulo. Solo el psicólogo crea tickets;
 // el administrador los administra (respuesta, cambio de estado, cierre).
 type Ticket struct {
-	ID uint `gorm:"primaryKey;autoIncrement" json:"id"`
+	ID uint `gorm:"primaryKey;autoIncrement;index:idx_tickets_psi_user_id,priority:2;index:idx_tickets_estado_id,priority:2;index:idx_tickets_motivo_id,priority:2" json:"id"`
 	AuditModel
 
-	PsiUserID uuid.UUID `gorm:"type:uuid;index:idx_tickets_psi_user;not null" json:"psi_user_id"`
-	MotivoID  uint      `gorm:"index;not null" json:"motivo_id"`
-	EstadoID  uint      `gorm:"index;not null" json:"estado_id"`
+	PsiUserID uuid.UUID `gorm:"type:uuid;index:idx_tickets_psi_user_id,priority:1;not null" json:"psi_user_id"`
+	MotivoID  uint      `gorm:"index:idx_tickets_motivo_id,priority:1;not null" json:"motivo_id"`
+	EstadoID  uint      `gorm:"index:idx_tickets_estado_id,priority:1;not null" json:"estado_id"`
 
 	Title             string    `gorm:"size:200;not null" json:"title"`
 	Description       string    `gorm:"type:text" json:"description"`        // descripción inicial del ticket (denormalizada para listados)
