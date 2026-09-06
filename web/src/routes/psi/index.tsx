@@ -50,7 +50,7 @@ export default function PsiDashboard() {
   return (
     <main class="bg-colpsi-bg min-h-screen pb-20">
       {/* Cabecera de Bienvenida */}
-      <div class="bg-heraldic pt-12 pb-20 px-6">
+      <div class="bg-heraldic pt-12 pb-20 px-6 shadow-inner">
         <div class="max-w-4xl mx-auto">
           <h1 class="text-white text-2xl font-bold">
             Hola, {profile()?.first_name || user()?.username}
@@ -72,7 +72,7 @@ export default function PsiDashboard() {
               >
                 <h2 class="text-green-600 text-xl font-black mt-1">AL DÍA</h2>
               </Show>
-              <p class="text-xs text-gray-500 mt-1">FPV: {profile()?.fpv}</p>
+              <p class="text-xs text-colpsi-muted mt-1">FPV: {profile()?.fpv}</p>
             </div>
             <div class={`w-12 h-12 rounded-full flex items-center justify-center ${profile()?.solvent ? 'bg-green-100 text-green-600' : 'bg-red-100 text-colpsi-red'}`}>
               <Show when={profile()?.solvent} fallback="!">✓</Show>
@@ -95,7 +95,7 @@ export default function PsiDashboard() {
               <span class={`text-xs font-bold ${profile()?.solvent ? 'text-colpsi-blue' : 'text-gray-400'}`}>
                 Biblioteca Virtual
               </span>
-              <p class="text-[11px] text-gray-500 mt-0.5 leading-snug">
+              <p class="text-[11px] text-colpsi-muted mt-0.5 leading-snug">
                 <Show when={profile()?.solvent} fallback="Ponte al día con el gremio para acceder a la biblioteca virtual">
                   Audiolibros y contenidos exclusivos para agremiados
                 </Show>
@@ -166,7 +166,7 @@ export default function PsiDashboard() {
                     </Show>
                     <div class="overflow-hidden">
                       <h4 class="font-bold text-sm text-gray-800 truncate">{post.title}</h4>
-                      <p class="text-xs text-gray-500 line-clamp-2">{post.short_description}</p>
+                      <p class="text-xs text-colpsi-muted line-clamp-2">{post.short_description}</p>
                     </div>
                   </div>
                 )}

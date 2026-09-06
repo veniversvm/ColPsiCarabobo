@@ -94,7 +94,7 @@ export default function PsiTicketDetalle() {
 
   return (
     <main class="bg-colpsi-bg min-h-screen pb-24">
-      <div class="bg-heraldic pt-12 pb-20 px-6">
+      <div class="bg-heraldic pt-12 pb-20 px-6 shadow-inner">
         <div class="max-w-4xl mx-auto">
           <p class="text-blue-200 text-sm font-bold mb-4">
             <a href="/psi/tickets" class="hover:text-white inline-flex items-center gap-1">← Mis Solicitudes</a>
@@ -119,7 +119,7 @@ export default function PsiTicketDetalle() {
             <div class="bg-white rounded-3xl p-12 text-center shadow-sm border border-colpsi-border">
               <p class="text-5xl mb-4">🔍</p>
               <h3 class="font-black text-gray-700">Solicitud no encontrada</h3>
-              <p class="text-sm text-gray-500 mt-1">Puede que no exista o que no te pertenezca.</p>
+              <p class="text-sm text-colpsi-muted mt-1">Puede que no exista o que no te pertenezca.</p>
             </div>
           </Show>
 
@@ -153,7 +153,7 @@ export default function PsiTicketDetalle() {
 
               <Show when={closed()} fallback={
                 <div class="mt-6 pt-5 border-t border-colpsi-border">
-                  <label class="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">
+                  <label class="block text-xs font-black text-colpsi-muted uppercase tracking-widest mb-2">
                     Nuevo comentario
                     <span class="float-right normal-case font-bold text-gray-300">{message().length}/{MAX_PSI_MENSAJE_CHARS}</span>
                   </label>
@@ -166,7 +166,7 @@ export default function PsiTicketDetalle() {
                     class="w-full px-4 py-3.5 rounded-2xl border-2 border-colpsi-border bg-colpsi-surface outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-800 transition-all resize-none"
                   />
                   <div class="flex flex-col sm:flex-row gap-3 mt-3">
-                    <label class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border-2 border-dashed border-gray-200 bg-colpsi-surface/60 cursor-pointer hover:border-colpsi-blue transition-all text-sm font-bold text-gray-500">
+                    <label class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border-2 border-dashed border-gray-200 bg-colpsi-surface/60 cursor-pointer hover:border-colpsi-blue transition-all text-sm font-bold text-colpsi-muted">
                       📎 Adjuntar
                       <input type="file" multiple class="hidden"
                         onChange={(e) => { const l = e.currentTarget.files; if (l) setFiles(Array.from(l)); }} />
@@ -234,7 +234,7 @@ export default function PsiTicketDetalle() {
                           Estado: {log.new_state?.name ?? `#${log.new_state_id}`}
                         </p>
                         <Show when={log.reason}>
-                          <p class="text-xs text-gray-500 mt-0.5">{log.reason}</p>
+                          <p class="text-xs text-colpsi-muted mt-0.5">{log.reason}</p>
                         </Show>
                         <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">
                           {formatTicketDateTime(log.created_at)}
@@ -261,8 +261,8 @@ export default function PsiTicketDetalle() {
           onClick={(e) => { if (e.target === e.currentTarget) setCloseOpen(false); }}
         >
           <div class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md border border-colpsi-border">
-            <h3 class="text-lg font-black text-gray-900 mb-1">Cerrar solicitud</h3>
-            <p class="text-sm text-gray-500 mb-4">Indica el motivo por el que cierras este ticket.</p>
+            <h3 class="text-lg font-black text-colpsi-text mb-1">Cerrar solicitud</h3>
+            <p class="text-sm text-colpsi-muted mb-4">Indica el motivo por el que cierras este ticket.</p>
             <textarea
               value={closeReason()}
               maxLength={MAX_CLOSE_REASON_CHARS}

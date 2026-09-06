@@ -27,7 +27,7 @@ export function ServicePreferencesSection(props: ServicePreferencesSectionProps)
           <h3 class="text-sm font-bold text-teal-900 uppercase tracking-widest border-b border-teal-100 pb-2">
             Modalidad de Servicio
           </h3>
-          <p class="text-xs text-gray-500">
+          <p class="text-xs text-colpsi-muted">
             Indique cómo presta atención a sus pacientes. Puede marcar varias
             opciones. Si ninguna está activa, se mostrará que actualmente no
             presta servicio.
@@ -54,7 +54,7 @@ export function ServicePreferencesSection(props: ServicePreferencesSectionProps)
           <h3 class="text-sm font-bold text-colpsi-blue uppercase tracking-widest border-b border-gray-200 pb-2">
             Preferencias
           </h3>
-          <p class="text-xs text-gray-500">
+          <p class="text-xs text-colpsi-muted">
             Controle qué información se comparte con el Colegio y con la
             comunidad.
           </p>

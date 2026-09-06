@@ -146,7 +146,7 @@ export default function AboutUs() {
               <div class="bg-colpsi-surface rounded-3xl border border-gray-200 p-6 md:p-8 my-8 shadow-inner text-left">
                 <ul class="grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-10 text-sm">
                   <li class="flex flex-col border-b border-gray-200 pb-3 gap-1">
-                    <span class="text-[10px] text-gray-500 uppercase tracking-widest font-black">
+                    <span class="text-[10px] text-colpsi-muted uppercase tracking-widest font-black">
                       Presidente
                     </span>
                     <span class="font-black text-colpsi-blue text-base">
@@ -154,7 +154,7 @@ export default function AboutUs() {
                     </span>
                   </li>
                   <li class="flex flex-col border-b border-gray-200 pb-3 gap-1">
-                    <span class="text-[10px] text-gray-500 uppercase tracking-widest font-black">
+                    <span class="text-[10px] text-colpsi-muted uppercase tracking-widest font-black">
                       Primer Vicepresidente
                     </span>
                     <span class="font-black text-colpsi-blue text-base">
@@ -162,7 +162,7 @@ export default function AboutUs() {
                     </span>
                   </li>
                   <li class="flex flex-col border-b border-gray-200 pb-3 gap-1">
-                    <span class="text-[10px] text-gray-500 uppercase tracking-widest font-black">
+                    <span class="text-[10px] text-colpsi-muted uppercase tracking-widest font-black">
                       Segundo Vicepresidente
                     </span>
                     <span class="font-black text-colpsi-blue text-base">
@@ -170,7 +170,7 @@ export default function AboutUs() {
                     </span>
                   </li>
                   <li class="flex flex-col border-b border-gray-200 pb-3 gap-1">
-                    <span class="text-[10px] text-gray-500 uppercase tracking-widest font-black">
+                    <span class="text-[10px] text-colpsi-muted uppercase tracking-widest font-black">
                       Secretario General
                     </span>
                     <span class="font-black text-colpsi-blue text-base">
@@ -178,7 +178,7 @@ export default function AboutUs() {
                     </span>
                   </li>
                   <li class="flex flex-col border-b border-gray-200 pb-3 gap-1">
-                    <span class="text-[10px] text-gray-500 uppercase tracking-widest font-black">
+                    <span class="text-[10px] text-colpsi-muted uppercase tracking-widest font-black">
                       Secretaria de Actas
                     </span>
                     <span class="font-black text-colpsi-blue text-base">
@@ -186,7 +186,7 @@ export default function AboutUs() {
                     </span>
                   </li>
                   <li class="flex flex-col border-b border-gray-200 pb-3 gap-1">
-                    <span class="text-[10px] text-gray-500 uppercase tracking-widest font-black">
+                    <span class="text-[10px] text-colpsi-muted uppercase tracking-widest font-black">
                       Primer Vocal
                     </span>
                     <span class="font-black text-colpsi-blue text-base">
@@ -194,7 +194,7 @@ export default function AboutUs() {
                     </span>
                   </li>
                   <li class="flex flex-col border-b border-gray-200 pb-3 gap-1">
-                    <span class="text-[10px] text-gray-500 uppercase tracking-widest font-black">
+                    <span class="text-[10px] text-colpsi-muted uppercase tracking-widest font-black">
                       Segundo Vocal
                     </span>
                     <span class="font-black text-colpsi-blue text-base">
@@ -202,7 +202,7 @@ export default function AboutUs() {
                     </span>
                   </li>
                   <li class="flex flex-col border-b border-gray-200 pb-3 gap-1">
-                    <span class="text-[10px] text-gray-500 uppercase tracking-widest font-black">
+                    <span class="text-[10px] text-colpsi-muted uppercase tracking-widest font-black">
                       Tercer Vocal
                     </span>
                     <span class="font-black text-colpsi-blue text-base">
@@ -398,7 +398,7 @@ export default function AboutUs() {
                 </h4>
                 <ul class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs text-justify">
                   <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
-                    <strong class="text-gray-900 block mb-1">
+                    <strong class="text-colpsi-text block mb-1">
                       Integridad y Excelencia:
                     </strong>{" "}
                     Promovemos una práctica profesional intachable, basada en la
@@ -406,7 +406,7 @@ export default function AboutUs() {
                     metodologías científicas avaladas por la disciplina.
                   </li>
                   <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
-                    <strong class="text-gray-900 block mb-1">
+                    <strong class="text-colpsi-text block mb-1">
                       Responsabilidad Deontológica:
                     </strong>{" "}
                     Respeto y acatamiento absoluto a los deberes éticos, el
@@ -415,7 +415,7 @@ export default function AboutUs() {
                     investigativa.
                   </li>
                   <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
-                    <strong class="text-gray-900 block mb-1">
+                    <strong class="text-colpsi-text block mb-1">
                       Rigurosidad y Veracidad:
                     </strong>{" "}
                     Fomento permanente de la actualización en el conocimiento
@@ -433,7 +433,7 @@ export default function AboutUs() {
                 </h4>
                 <ul class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-justify">
                   <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
-                    <strong class="text-gray-900 block mb-1">
+                    <strong class="text-colpsi-text block mb-1">
                       Empatía y Compasión:
                     </strong>{" "}
                     Sensibilidad profunda ante el sufrimiento humano y las
@@ -442,7 +442,7 @@ export default function AboutUs() {
                     individuos.
                   </li>
                   <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
-                    <strong class="text-gray-900 block mb-1">
+                    <strong class="text-colpsi-text block mb-1">
                       Respeto a la Dignidad Humana:
                     </strong>{" "}
                     Reconocimiento del valor intrínseco, la autonomía y los
@@ -451,7 +451,7 @@ export default function AboutUs() {
                     política.
                   </li>
                   <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
-                    <strong class="text-gray-900 block mb-1">
+                    <strong class="text-colpsi-text block mb-1">
                       Inclusión y Justicia Social:
                     </strong>{" "}
                     Compromiso activo con la equidad, llevando la atención y la
@@ -460,7 +460,7 @@ export default function AboutUs() {
                     riesgo humanitario.
                   </li>
                   <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
-                    <strong class="text-gray-900 block mb-1">Altruismo:</strong>{" "}
+                    <strong class="text-colpsi-text block mb-1">Altruismo:</strong>{" "}
                     Vocación inquebrantable de servicio social, donde la ciencia
                     y la profesión se colocan desinteresadamente a la orden del
                     desarrollo comunitario y la reconstrucción del tejido
@@ -478,7 +478,7 @@ export default function AboutUs() {
                 </h4>
                 <ul class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-justify">
                   <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
-                    <strong class="text-gray-900 block mb-1">
+                    <strong class="text-colpsi-text block mb-1">
                       Solidaridad Gremial:
                     </strong>{" "}
                     Fomento del apoyo mutuo, el compañerismo y la fraternidad
@@ -487,7 +487,7 @@ export default function AboutUs() {
                     individual.
                   </li>
                   <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
-                    <strong class="text-gray-900 block mb-1">
+                    <strong class="text-colpsi-text block mb-1">
                       Institucionalidad y Democracia:
                     </strong>{" "}
                     Respeto absoluto a la estructura organizativa, las
@@ -497,7 +497,7 @@ export default function AboutUs() {
                     participación activa.
                   </li>
                   <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
-                    <strong class="text-gray-900 block mb-1">
+                    <strong class="text-colpsi-text block mb-1">
                       Defensa y Dignificación Laboral:
                     </strong>{" "}
                     Compromiso constante con la defensa de los derechos
@@ -506,7 +506,7 @@ export default function AboutUs() {
                     de la profesión y la explotación laboral.
                   </li>
                   <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
-                    <strong class="text-gray-900 block mb-1">
+                    <strong class="text-colpsi-text block mb-1">
                       Sentido de Pertenencia Institucional:
                     </strong>{" "}
                     Orgullo por nuestra historia, respeto a los fundadores y

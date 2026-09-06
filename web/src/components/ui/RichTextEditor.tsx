@@ -154,7 +154,7 @@ export function RichTextEditor(props: RichTextEditorProps) {
   return (
     <div class="space-y-2 font-sans">
       <Show when={props.label}>
-        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider ml-1 mb-1">
+        <label class="block text-xs font-bold text-colpsi-muted uppercase tracking-wider ml-1 mb-1">
           {props.label}
         </label>
       </Show>

@@ -231,7 +231,7 @@ export default function PublicNoticiaDetailPage() {
                       prose-headings:font-black prose-headings:text-blue-900 prose-headings:tracking-tight
                       prose-p:text-gray-700 prose-p:leading-relaxed prose-p:text-[1.05rem]
                       prose-a:text-blue-700 prose-a:font-bold prose-a:no-underline hover:prose-a:underline
-                      prose-strong:text-gray-900 prose-strong:font-black
+                      prose-strong:text-colpsi-text prose-strong:font-black
                       prose-blockquote:border-l-4 prose-blockquote:border-yellow-400 prose-blockquote:bg-yellow-50
                       prose-blockquote:rounded-r-xl prose-blockquote:py-2 prose-blockquote:not-italic
                       prose-blockquote:text-gray-700 prose-li:text-gray-700

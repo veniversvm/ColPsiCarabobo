@@ -13,7 +13,7 @@ interface ContactSectionProps {
 export function ContactSection(props: ContactSectionProps) {
   return (
     <section>
-      <p class="text-[11px] text-gray-500 mb-4 font-medium leading-relaxed">
+      <p class="text-[11px] text-colpsi-muted mb-4 font-medium leading-relaxed">
         Estos datos son de <span class="font-bold">uso exclusivo e interno</span> del Colegio de Psicólogos.
         No serán publicados en el directorio bajo ninguna circunstancia.
       </p>

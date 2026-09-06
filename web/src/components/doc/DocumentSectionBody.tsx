@@ -19,7 +19,7 @@ export default function DocumentSectionBody(props: Props) {
               <Show
                 when={b.tipo === "articulo"}
                 fallback={
-                  <p class="text-sm font-bold text-gray-500 uppercase tracking-widest">
+                  <p class="text-sm font-bold text-colpsi-muted uppercase tracking-widest">
                     {b.texto}
                   </p>
                 }

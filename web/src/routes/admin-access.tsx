@@ -111,7 +111,7 @@ export default function AdminLoginPage() {
 
               <div class="space-y-5">
                 <div class="space-y-2">
-                  <label class="block text-xs font-bold text-gray-500 uppercase ml-1">Usuario Administrativo</label>
+                  <label class="block text-xs font-bold text-colpsi-muted uppercase ml-1">Usuario Administrativo</label>
                   <input
                     type="text"
                     required
@@ -122,7 +122,7 @@ export default function AdminLoginPage() {
                 </div>
 
                 <div class="space-y-2">
-                  <label class="block text-xs font-bold text-gray-500 uppercase ml-1">Clave de Acceso</label>
+                  <label class="block text-xs font-bold text-colpsi-muted uppercase ml-1">Clave de Acceso</label>
                   <PasswordInputComponent
                     required
                     placeholder="••••••••"
@@ -152,7 +152,7 @@ export default function AdminLoginPage() {
         </div>
 
         {/* FOOTER WARNING */}
-        <div class="mt-8 text-center text-gray-500 text-xs font-mono uppercase tracking-widest bg-gray-900/50 p-4 rounded-xl backdrop-blur-sm border border-gray-700/50">
+        <div class="mt-8 text-center text-colpsi-muted text-xs font-mono uppercase tracking-widest bg-gray-900/50 p-4 rounded-xl backdrop-blur-sm border border-gray-700/50">
           <p>⚠️ Intento de acceso registrado</p>
           <p class="mt-1 opacity-50">Toda actividad está sujeta a auditoría legal</p>
         </div>

@@ -34,7 +34,7 @@ export function SocialNetworksSection(props: SocialNetworksSectionProps) {
             <div class="text-center mb-6">
               <span class="text-4xl">🔗</span>
               <h3 class="text-lg font-black text-gray-800 mt-3">¿Eliminar esta red social?</h3>
-              <p class="text-sm text-gray-500 mt-1">Se quitará de tu perfil público.</p>
+              <p class="text-sm text-colpsi-muted mt-1">Se quitará de tu perfil público.</p>
             </div>
             <div class="flex gap-3">
               <button

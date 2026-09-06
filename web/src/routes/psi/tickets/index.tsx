@@ -25,7 +25,7 @@ export default function PsiMisTickets() {
 
   return (
     <main class="bg-colpsi-bg min-h-screen pb-24">
-      <div class="bg-heraldic pt-12 pb-20 px-6">
+      <div class="bg-heraldic pt-12 pb-20 px-6 shadow-inner">
         <div class="max-w-4xl mx-auto flex items-center justify-between">
           <div>
             <A href="/psi" class="inline-flex items-center gap-1 text-blue-200 text-sm font-bold mb-4 hover:text-white">← Volver al Panel</A>
@@ -53,7 +53,7 @@ export default function PsiMisTickets() {
             <div class="bg-white rounded-3xl p-12 text-center shadow-sm border border-colpsi-border">
               <p class="text-5xl mb-4">🗂️</p>
               <h3 class="font-black text-gray-700">No tienes solicitudes</h3>
-              <p class="text-sm text-gray-500 mt-1">Crea tu primera solicitud para iniciar un trámite con el colegio.</p>
+              <p class="text-sm text-colpsi-muted mt-1">Crea tu primera solicitud para iniciar un trámite con el colegio.</p>
               <A
                 href="/psi/tickets/crear"
                 class="mt-6 inline-flex items-center gap-2 bg-colpsi-blue hover:bg-colpsi-blue-light text-white font-black px-6 py-3.5 rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-all text-sm"

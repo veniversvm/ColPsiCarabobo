@@ -162,7 +162,7 @@ Fuentes del sistema como respaldo: `ui-sans-serif`, `system-ui`, `sans-serif`.
   - `rounded-2xl` (16 px): inputs, botones CTAs, cajas de icono.
   - `rounded-xl` (12 px): botones secundarios, inputs de formulario más compactos.
   - `rounded-full`: badges, chips, tags, avatar.
-- **Degradado heráldico (`bg-heraldic`)**: gradiente diagonal `#0a174f → #1e3a8a → #172554`. Se usa en los héroes de páginas públicas y del portal psi (explorar, nosotros, inscripción, documentos, noticias con `bg-colpsi-navy` puro, tickets, perfil). Aporta profundidad derivada del escudo del emblema.
+- **Degradado heráldico (`bg-heraldic`)**: gradiente diagonal `#0a174f → #1e3a8a → #172554`. Se usa en los héroes de páginas públicas y del portal psi (explorar, nosotros, inscripción, documentos, directorio, noticias con `bg-colpsi-navy` puro, tickets, perfil). Aporta profundidad derivada del escudo del emblema. Los héroes del portal psi llevan `shadow-inner` uniforme.
 - **Iconos de acceso:** cajas de icono cuadradas con `rounded-2xl`, fondo `bg-blue-50` e icono azul (patrón del portal psi). Al hacer hover el fondo pasa a amarillo institucional (`bg-colpsi-yellow`).
 - **Alerta de error:** caja `bg-red-50` con borde izquierdo de 4px rojo institucional (`#991b1b`) y etiqueta `uppercase tracking-wide`; animación `animate-shake` (definida en `app.css`).
 - **Scrollbar (web):** 6×6 px, track `#f8fafc`, thumb `rgba(30, 58, 138, 0.2)` y `0.4` al hover, radios 8px.
@@ -252,6 +252,14 @@ Fuente de verdad de los tokens en el código:
 | `--color-colpsi-muted` | `#64748b` |
 | `--color-colpsi-bg` | `#f8fafc` |
 | `--font-sans` | Inter, ui-sans-serif, system-ui, sans-serif |
+
+> **Alineación 2026 (público + portal psi):** texto secundario y metadatos usan
+> `text-colpsi-muted` (antes `text-gray-500`) y encabezados/párrafos usan
+> `text-colpsi-text` (antes `text-gray-900`); los radios `rounded-[2.5rem]`
+> (40 px) se reservan a tarjetas hero (nosotros, inscripción, explorar) y se
+> mantienen también en cards de contenido según decisión del equipo; héroes psi
+> uniformes (`bg-heraldic` + `shadow-inner`, eyebrow `uppercase tracking-widest
+> font-black text-[11px] text-blue-200`).
 
 ---
 

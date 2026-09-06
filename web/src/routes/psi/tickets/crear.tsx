@@ -73,7 +73,7 @@ export default function PsiCrearTicket() {
 
   return (
     <main class="bg-colpsi-bg min-h-screen pb-24">
-      <div class="bg-heraldic pt-12 pb-20 px-6 mb-4">
+      <div class="bg-heraldic pt-12 pb-20 px-6 shadow-inner mb-4">
         <div class="max-w-2xl mx-auto">
           <p class="text-blue-200 text-sm font-bold mb-3">
             <a href="/psi/tickets" class="hover:text-white inline-flex items-center gap-1">← Mis Solicitudes</a>
@@ -105,7 +105,7 @@ export default function PsiCrearTicket() {
 
             {/* Motivo */}
             <div>
-              <label class="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Motivo *</label>
+              <label class="block text-xs font-black text-colpsi-muted uppercase tracking-widest mb-2">Motivo *</label>
               <select
                 value={motivoId()}
                 onChange={(e) => setMotivoId(e.currentTarget.value)}
@@ -124,7 +124,7 @@ export default function PsiCrearTicket() {
 
           {/* Título */}
           <div>
-            <label class="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">
+            <label class="block text-xs font-black text-colpsi-muted uppercase tracking-widest mb-2">
               Título *
               <span class="float-right normal-case font-bold text-gray-300">{title().length}/{MAX_TICKET_TITLE_CHARS}</span>
             </label>
@@ -140,7 +140,7 @@ export default function PsiCrearTicket() {
 
           {/* Descripción */}
           <div>
-            <label class="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">
+            <label class="block text-xs font-black text-colpsi-muted uppercase tracking-widest mb-2">
               Descripción *
               <span class="float-right normal-case font-bold text-gray-300">{description().length}/{MAX_TICKET_DESC_CHARS}</span>
             </label>
@@ -156,7 +156,7 @@ export default function PsiCrearTicket() {
 
           {/* Anexos opcionales */}
           <div>
-            <label class="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">
+            <label class="block text-xs font-black text-colpsi-muted uppercase tracking-widest mb-2">
               Anexos <span class="normal-case font-bold text-gray-300">(opcional)</span>
             </label>
             <label class="flex flex-col items-center justify-center gap-2 px-6 py-8 rounded-2xl border-2 border-dashed border-gray-200 bg-colpsi-surface/60 cursor-pointer hover:border-colpsi-blue hover:bg-blue-50/40 transition-all">

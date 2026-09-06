@@ -34,7 +34,7 @@ export function PostGradeCard(props: { postGrade: PostGrade; onClick: () => void
       {/* Lado Derecho: Año y Acción */}
       <div class="flex flex-col items-end shrink-0 gap-2">
         <Show when={props.postGrade.year}>
-          <span class="bg-colpsi-surface text-gray-500 text-xs font-black px-3 py-1 rounded-xl border border-colpsi-border group-hover:bg-white transition-colors">
+          <span class="bg-colpsi-surface text-colpsi-muted text-xs font-black px-3 py-1 rounded-xl border border-colpsi-border group-hover:bg-white transition-colors">
             {props.postGrade.year}
           </span>
         </Show>

@@ -68,7 +68,7 @@ export function PostGradeModal(props: PostGradeModalProps) {
             <div class="p-4 md:p-6 space-y-6">
               {/* Información principal */}
               <div>
-                <h2 class="text-xl md:text-2xl font-bold text-gray-900">
+                <h2 class="text-xl md:text-2xl font-bold text-colpsi-text">
                   {props.postGrade?.title}
                 </h2>
                 <p class="text-colpsi-blue text-base md:text-lg mt-1">
@@ -118,7 +118,7 @@ export function PostGradeModal(props: PostGradeModalProps) {
                               </span>
                             </div>
                           </div>
-                          <p class="text-[10px] text-center text-gray-500">
+                          <p class="text-[10px] text-center text-colpsi-muted">
                             Certificado {index() + 1}
                           </p>
                         </div>

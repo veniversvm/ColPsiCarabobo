@@ -394,7 +394,7 @@ export function InscriptionForm() {
 
           <Section n={3} title="Ubicación y Modalidad de Servicio">
             <div class="space-y-8">
-              <p class="text-xs text-gray-500">Se requiere al menos un bloque de ubicación completo: Carabobo (municipio + dirección), otro estado (estado + municipio/ciudad) o país (exterior).</p>
+              <p class="text-xs text-colpsi-muted">Se requiere al menos un bloque de ubicación completo: Carabobo (municipio + dirección), otro estado (estado + municipio/ciudad) o país (exterior).</p>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
                   <span class="block text-sm font-bold text-gray-700 mb-1.5">Municipio (Carabobo)</span>

@@ -133,7 +133,7 @@ export function AccountSection(props: AccountSectionProps) {
       {/* Requisitos de seguridad */}
       <Show when={props.newPassword1}>
         <div class="mt-6 p-4 bg-colpsi-surface rounded-xl border border-colpsi-border">
-          <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+          <p class="text-xs font-bold text-colpsi-muted uppercase tracking-wider mb-3">
             Requisitos de seguridad
           </p>
           <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
