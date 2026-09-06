@@ -76,7 +76,7 @@ export function ReceptionSwitchesCard(props: Props) {
   ];
 
   return (
-    <section class={`bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-8 space-y-5 ${props.class ?? ""}`}>
+    <section class={`bg-white rounded-3xl shadow-sm border border-colpsi-border p-6 md:p-8 space-y-5 ${props.class ?? ""}`}>
       <div class="flex items-center gap-3">
         <span class="text-2xl">🎛️</span>
         <div>
@@ -89,8 +89,8 @@ export function ReceptionSwitchesCard(props: Props) {
 
       <Show when={!loaded()}>
         <div class="space-y-3">
-          <div class="h-16 bg-gray-50 animate-pulse rounded-2xl" />
-          <div class="h-16 bg-gray-50 animate-pulse rounded-2xl" />
+          <div class="h-16 bg-colpsi-surface animate-pulse rounded-2xl" />
+          <div class="h-16 bg-colpsi-surface animate-pulse rounded-2xl" />
         </div>
       </Show>
 
@@ -98,7 +98,7 @@ export function ReceptionSwitchesCard(props: Props) {
         <Show when={me()?.sudo}>
           <For each={rows}>
             {(row) => (
-              <div class="border-2 border-gray-100 rounded-2xl p-4 space-y-3">
+              <div class="border-2 border-colpsi-border rounded-2xl p-4 space-y-3">
                 <div class="flex items-start justify-between gap-3">
                   <div>
                     <p class="font-black text-gray-800 text-sm">{row.title}</p>
@@ -164,7 +164,7 @@ export function ReceptionSwitchesCard(props: Props) {
           </For>
         </Show>
         <Show when={!me()?.sudo}>
-          <p class="text-gray-400 text-xs font-semibold bg-gray-50 rounded-2xl p-4">
+          <p class="text-gray-400 text-xs font-semibold bg-colpsi-surface rounded-2xl p-4">
             Solo el Super Usuario puede gestionar los interruptores de recepción.
           </p>
         </Show>

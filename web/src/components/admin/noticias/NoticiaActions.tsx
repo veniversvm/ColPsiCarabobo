@@ -21,7 +21,7 @@ export function NoticiaActions(props: Props) {
         class={`w-9 h-9 rounded-xl flex items-center justify-center border-2 transition-all font-bold text-sm disabled:opacity-40 ${
           props.post.status === "published"
             ? "border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
-            : "border-gray-200 bg-gray-50 text-gray-400 hover:bg-gray-100"
+            : "border-gray-200 bg-colpsi-surface text-gray-400 hover:bg-gray-100"
         }`}
       >
         {props.isBusy ? "…" : props.post.status === "published" ? "✓" : "○"}

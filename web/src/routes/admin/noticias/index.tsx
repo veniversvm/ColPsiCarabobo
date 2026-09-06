@@ -99,7 +99,7 @@ export default function AdminNoticiasPage() {
       )}>
         <Suspense fallback={
           <div class="space-y-4">
-            <For each={[1, 2, 3, 4]}>{() => <div class="h-28 bg-white animate-pulse rounded-2xl border border-gray-100" />}</For>
+            <For each={[1, 2, 3, 4]}>{() => <div class="h-28 bg-white animate-pulse rounded-2xl border border-colpsi-border" />}</For>
           </div>
         }>
           <Show when={!posts.loading && posts.state === "ready" && postList().length === 0}>

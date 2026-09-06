@@ -35,14 +35,14 @@ export function AdminLoadingSkeleton(props: AdminLoadingSkeletonProps) {
       {variant() === "cards" && (
         <div class={`grid gap-4 grid-cols-2 md:grid-cols-${count()}`}>
           {Array.from({ length: count() }).map(() => (
-            <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
+            <div class="bg-white rounded-2xl p-5 border border-colpsi-border shadow-sm space-y-3">
               <div class="flex justify-between">
                 <div class="w-8 h-8 bg-gray-100 rounded-lg" />
                 <div class="w-16 h-4 bg-gray-100 rounded" />
               </div>
               <div class="w-20 h-8 bg-gray-100 rounded" />
               <div class="w-24 h-3 bg-gray-100 rounded" />
-              <div class="border-t border-gray-100 pt-3 flex gap-4">
+              <div class="border-t border-colpsi-border pt-3 flex gap-4">
                 <div class="w-12 h-3 bg-gray-100 rounded" />
                 <div class="w-12 h-3 bg-gray-100 rounded" />
               </div>
@@ -53,7 +53,7 @@ export function AdminLoadingSkeleton(props: AdminLoadingSkeletonProps) {
 
       {/* ── Tarjeta única ─────────────────────────────────────────────── */}
       {variant() === "card" && (
-        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
+        <div class="bg-white rounded-2xl p-5 border border-colpsi-border shadow-sm space-y-3">
           <div class="flex justify-between">
             <div class="w-8 h-8 bg-gray-100 rounded-lg" />
             <div class="w-16 h-4 bg-gray-100 rounded" />
@@ -65,7 +65,7 @@ export function AdminLoadingSkeleton(props: AdminLoadingSkeletonProps) {
 
       {/* ── Gráfica sparkline ─────────────────────────────────────────── */}
       {variant() === "chart" && (
-        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
+        <div class="bg-white rounded-2xl p-5 border border-colpsi-border shadow-sm space-y-3">
           <div class="w-40 h-3 bg-gray-100 rounded" />
           <div class="w-full h-16 bg-gray-100 rounded-xl" />
           <div class="flex justify-between">
@@ -77,7 +77,7 @@ export function AdminLoadingSkeleton(props: AdminLoadingSkeletonProps) {
 
       {/* ── Lista con barras (ranking) ────────────────────────────────── */}
       {variant() === "list" && (
-        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
+        <div class="bg-white rounded-2xl p-5 border border-colpsi-border shadow-sm space-y-3">
           <div class="w-40 h-3 bg-gray-100 rounded mb-4" />
           {Array.from({ length: rows() }).map(() => (
             <div class="flex items-center gap-3">

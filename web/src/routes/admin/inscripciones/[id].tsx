@@ -283,7 +283,7 @@ export default function AdminInscriptionDetail() {
   const DocSlot = (props: { spec: { type: InscriptionDocumentType; label: string; required: boolean } }) => {
     const doc = docByType(props.spec.type);
     return (
-      <div class="bg-gray-50 rounded-2xl border border-gray-100 p-4 space-y-3">
+      <div class="bg-colpsi-surface rounded-2xl border border-colpsi-border p-4 space-y-3">
         <div class="flex items-center justify-between gap-2">
           <span class="text-sm font-bold text-gray-700">
             {props.spec.label} {props.spec.required && <span class="text-red-500">*</span>}
@@ -458,7 +458,7 @@ export default function AdminInscriptionDetail() {
                     </Field>
                   </div>
 
-                  <div class="bg-gray-50 p-5 rounded-2xl border border-gray-100">
+                  <div class="bg-colpsi-surface p-5 rounded-2xl border border-colpsi-border">
                     <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3 ml-1">Modalidad de servicio</p>
                     <div class="flex flex-wrap gap-6">
                       <ModalityChip label="Presencial" on={form.service_modality_presencial} onChange={(v) => set("service_modality_presencial", v)} />
@@ -471,7 +471,7 @@ export default function AdminInscriptionDetail() {
 
               <PanelSection title="Fotografía y Documentos" accent="border-emerald-400">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div class="bg-gray-50 rounded-2xl border border-gray-100 p-4 space-y-3">
+                  <div class="bg-colpsi-surface rounded-2xl border border-colpsi-border p-4 space-y-3">
                     <span class="text-sm font-bold text-gray-700">Foto tipo carnet</span>
                     <Show when={d().foto_url} fallback={<p class="text-sm text-gray-400">Sin foto</p>}>
                       <button
@@ -495,7 +495,7 @@ export default function AdminInscriptionDetail() {
                     </label>
                   </div>
 
-                  <div class="bg-gray-50 rounded-2xl border border-gray-100 p-4 space-y-3">
+                  <div class="bg-colpsi-surface rounded-2xl border border-colpsi-border p-4 space-y-3">
                     <span class="text-sm font-bold text-gray-700">Comprobante de pago</span>
                     <Show when={d().comprobante_url} fallback={<p class="text-sm text-gray-400">Sin comprobante</p>}>
                       <Show
@@ -553,7 +553,7 @@ export default function AdminInscriptionDetail() {
             </div>
 
             {/* Notas administrativas */}
-            <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 space-y-4">
+            <div class="bg-white rounded-3xl shadow-sm border border-colpsi-border p-6 space-y-4">
               <h2 class="text-sm font-black text-gray-400 uppercase tracking-widest">Notas administrativas</h2>
               <textarea
                 value={notesDraft()}
@@ -579,7 +579,7 @@ export default function AdminInscriptionDetail() {
             </div>
 
             {/* Enviar correo al solicitante */}
-            <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 space-y-4">
+            <div class="bg-white rounded-3xl shadow-sm border border-colpsi-border p-6 space-y-4">
               <h2 class="text-sm font-black text-gray-400 uppercase tracking-widest">Enviar correo al solicitante</h2>
               <p class="text-sm text-gray-500">
                 Para: <span class="font-bold text-gray-700">{d().correo}</span>

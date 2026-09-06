@@ -12,7 +12,7 @@ export function PostGradeCard(props: { postGrade: PostGrade; onClick: () => void
   return (
     <button 
       onClick={props.onClick}
-      class="w-full text-left group flex items-center justify-between p-4 bg-white hover:bg-blue-50/50 rounded-2xl border border-gray-100 hover:border-colpsi-blue/30 transition-all cursor-pointer"
+      class="w-full text-left group flex items-center justify-between p-4 bg-white hover:bg-blue-50/50 rounded-2xl border border-colpsi-border hover:border-colpsi-blue/30 transition-all cursor-pointer"
     >
       {/* Lado Izquierdo: Info textual */}
       <div class="flex-grow pr-4">
@@ -34,7 +34,7 @@ export function PostGradeCard(props: { postGrade: PostGrade; onClick: () => void
       {/* Lado Derecho: Año y Acción */}
       <div class="flex flex-col items-end shrink-0 gap-2">
         <Show when={props.postGrade.year}>
-          <span class="bg-gray-50 text-gray-500 text-xs font-black px-3 py-1 rounded-xl border border-gray-100 group-hover:bg-white transition-colors">
+          <span class="bg-colpsi-surface text-gray-500 text-xs font-black px-3 py-1 rounded-xl border border-colpsi-border group-hover:bg-white transition-colors">
             {props.postGrade.year}
           </span>
         </Show>

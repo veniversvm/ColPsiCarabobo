@@ -35,10 +35,10 @@ export function FullBioModal(props: FullBioModalProps) {
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
         onClick={(e) => { if (e.target === e.currentTarget) props.onClose(); }}
       >
-        <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-colpsi-border">
           
           {/* Header del Modal */}
-          <div class="flex items-center justify-between px-6 py-4 md:px-8 md:py-6 border-b border-gray-100 bg-gray-50/50">
+          <div class="flex items-center justify-between px-6 py-4 md:px-8 md:py-6 border-b border-colpsi-border bg-colpsi-surface/50">
             <div>
               <h3 class="font-black text-colpsi-blue uppercase tracking-widest text-sm">Biografía Detallada</h3>
               {/* <p class="text-xs text-colpsi-muted mt-1 font-bold">Dr(a). {props.psychologistName}</p> */}

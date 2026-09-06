@@ -8,8 +8,8 @@ interface Props {
 
 export function EditContentSection(props: Props) {
   return (
-    <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
-      <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest border-b border-gray-100 pb-3 mb-5">
+    <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-colpsi-border">
+      <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest border-b border-colpsi-border pb-3 mb-5">
         Contenido <span class="text-red-400">*</span>
       </h2>
       <RichTextEditor content={props.content} onUpdate={props.onUpdate} />

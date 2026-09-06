@@ -13,15 +13,15 @@ interface Props {
 
 export function EditImageSection(props: Props) {
   return (
-    <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
-      <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest border-b border-gray-100 pb-3 mb-5">
+    <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-colpsi-border">
+      <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest border-b border-colpsi-border pb-3 mb-5">
         Imagen de Portada
       </h2>
 
       <Show
         when={props.currentImageUrl}
         fallback={
-          <label class="flex flex-col items-center justify-center w-full h-44 border-2 border-dashed border-gray-300 rounded-2xl bg-gray-50 hover:bg-blue-50 hover:border-blue-300 transition-all cursor-pointer group">
+          <label class="flex flex-col items-center justify-center w-full h-44 border-2 border-dashed border-gray-300 rounded-2xl bg-colpsi-surface hover:bg-blue-50 hover:border-blue-300 transition-all cursor-pointer group">
             <div class="flex flex-col items-center gap-2 text-gray-400 group-hover:text-blue-500 transition-colors">
               <svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 9.75h.008M3.375 3h17.25A.375.375 0 0121 3.375v17.25A.375.375 0 0120.625 21H3.375A.375.375 0 013 20.625V3.375A.375.375 0 013.375 3z" />
@@ -34,7 +34,7 @@ export function EditImageSection(props: Props) {
         }
       >
         <div class="relative group rounded-2xl overflow-hidden border-2 border-gray-200">
-          <img src={props.currentImageUrl!} alt="Vista previa" class="w-full max-h-64 object-contain bg-gray-50" />
+          <img src={props.currentImageUrl!} alt="Vista previa" class="w-full max-h-64 object-contain bg-colpsi-surface" />
           <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
             <label class="bg-white text-blue-700 font-black px-4 py-2 rounded-xl text-sm hover:bg-blue-50 transition-all shadow cursor-pointer">
               🖼 Cambiar imagen

@@ -50,7 +50,7 @@ export function ServicePreferencesSection(props: ServicePreferencesSectionProps)
         </div>
 
         {/* ── Preferencias ─────────────────────────────────────────────── */}
-        <div class="space-y-4 bg-gray-50 p-6 rounded-3xl border border-gray-100">
+        <div class="space-y-4 bg-colpsi-surface p-6 rounded-3xl border border-colpsi-border">
           <h3 class="text-sm font-bold text-colpsi-blue uppercase tracking-widest border-b border-gray-200 pb-2">
             Preferencias
           </h3>

@@ -17,7 +17,7 @@ export function ResultsGrid(props: ResultsGridProps) {
     <Show
       when={!props.loading}
       fallback={
-        <div class="bg-white rounded-[2.5rem] shadow-premium border border-gray-100">
+        <div class="bg-white rounded-[2.5rem] shadow-premium border border-colpsi-border">
           <SearchingIndicator />
         </div>
       }
@@ -33,7 +33,7 @@ export function ResultsGrid(props: ResultsGridProps) {
         <For
           each={props.psychologists}
           fallback={
-            <div class="col-span-full bg-white rounded-[2.5rem] p-20 text-center border-2 border-dashed border-gray-100">
+            <div class="col-span-full bg-white rounded-[2.5rem] p-20 text-center border-2 border-dashed border-colpsi-border">
               <span class="text-5xl mb-4 block">🧐</span>
               <h4 class="text-colpsi-blue font-black uppercase">No hay coincidencias</h4>
               <p class="text-colpsi-muted text-sm mt-2">Intenta con otro nombre o especialidad.</p>

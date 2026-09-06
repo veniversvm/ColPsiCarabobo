@@ -36,7 +36,7 @@ export function ProfessionalSection(props: ProfessionalSectionProps) {
     props.onFullBioChange(v);
   };
 
-  const selectClass = "w-full bg-gray-50 border-2 border-transparent focus:border-colpsi-yellow rounded-xl px-5 py-3 text-colpsi-text";
+  const selectClass = "w-full bg-colpsi-surface border-2 border-transparent focus:border-colpsi-yellow rounded-xl px-5 py-3 text-colpsi-text";
 
   return (
     <section>
@@ -117,7 +117,7 @@ export function ProfessionalSection(props: ProfessionalSectionProps) {
             value={props.miniBio}
             onInput={(e) => props.onMiniBioChange(e.currentTarget.value)}
             maxlength="250"
-            class="w-full bg-gray-50 border-2 border-transparent focus:border-colpsi-yellow rounded-2xl px-5 py-4 outline-none text-colpsi-text transition-all min-h-[100px] resize-y"
+            class="w-full bg-colpsi-surface border-2 border-transparent focus:border-colpsi-yellow rounded-2xl px-5 py-4 outline-none text-colpsi-text transition-all min-h-[100px] resize-y"
             placeholder="Escribe un breve resumen de tu práctica profesional..."
           />
           <p class="text-[11px] text-gray-400 text-right mr-2">
@@ -126,7 +126,7 @@ export function ProfessionalSection(props: ProfessionalSectionProps) {
         </div>
 
         {/* ── FULL BIO ──────────────────────────────────────────────────── */}
-        <div class="pt-4 border-t border-gray-100">
+        <div class="pt-4 border-t border-colpsi-border">
           <div class="flex justify-between items-center mb-2">
             <label class="text-xs font-bold text-gray-500 uppercase ml-2">
               Biografía Extensa <span class="text-gray-400 font-medium normal-case">(Perfil Detallado)</span>

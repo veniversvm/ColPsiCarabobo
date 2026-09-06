@@ -74,7 +74,7 @@ export function LocationSection(props: Props) {
         </div>
 
         {/* ── 2. OTRO ESTADO DE VENEZUELA ────────────────────────────────── */}
-        <div class="space-y-6 pt-4 border-t border-gray-100">
+        <div class="space-y-6 pt-4 border-t border-colpsi-border">
           <div class="flex items-center gap-2 border-l-4 border-purple-600 pl-3">
             <h3 class="text-sm font-black text-purple-900 uppercase tracking-widest">
               🗺️ Otro Estado de Venezuela
@@ -142,7 +142,7 @@ export function LocationSection(props: Props) {
         </div>
 
         {/* ── 3. EXTERIOR ────────────────────────────────────────────────── */}
-        <div class="space-y-6 pt-4 border-t border-gray-100">
+        <div class="space-y-6 pt-4 border-t border-colpsi-border">
           <div class="flex items-center gap-2 border-l-4 border-emerald-600 pl-3">
             <h3 class="text-sm font-black text-emerald-900 uppercase tracking-widest">
               🌐 Exterior (Fuera de Venezuela)

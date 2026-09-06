@@ -71,7 +71,7 @@ export function PsychologistCard(props: PsychologistCardProps) {
         </div>
       </div>
 
-      <div class="text-colpsi-text text-xs leading-relaxed italic mb-3 bg-gray-50 p-2.5 rounded-xl line-clamp-3">
+      <div class="text-colpsi-text text-xs leading-relaxed italic mb-3 bg-colpsi-surface p-2.5 rounded-xl line-clamp-3">
         <span class="block whitespace-pre-wrap break-words">
           "{psychologist.mini_bio || 'Profesional federado del estado Carabobo.'}"
         </span>

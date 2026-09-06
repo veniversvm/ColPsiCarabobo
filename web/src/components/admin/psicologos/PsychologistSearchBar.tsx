@@ -25,12 +25,12 @@ interface Props {
 }
 
 const selectButtonClass =
-  "w-full bg-gray-50 rounded-xl px-4 py-2.5 text-sm text-colpsi-text font-bold border border-gray-100 hover:bg-gray-100";
+  "w-full bg-colpsi-surface rounded-xl px-4 py-2.5 text-sm text-colpsi-text font-bold border border-colpsi-border hover:bg-gray-100";
 
 export function PsychologistSearchBar(props: Props) {
   return (
     <div class="bg-white p-4 rounded-2xl shadow-premium border-2 border-colpsi-blue/20 space-y-3">
-      <div class="flex items-center gap-2 bg-gray-50 border-2 border-gray-200 rounded-xl px-3 py-2.5 focus-within:border-colpsi-blue focus-within:ring-2 focus-within:ring-colpsi-blue/30 transition-all">
+      <div class="flex items-center gap-2 bg-colpsi-surface border-2 border-gray-200 rounded-xl px-3 py-2.5 focus-within:border-colpsi-blue focus-within:ring-2 focus-within:ring-colpsi-blue/30 transition-all">
         <span class="text-xl">🔍</span>
         <input
           type="text"

@@ -155,10 +155,10 @@ export default function AdminEditarStaffPage() {
     <main class="pb-28 animate-in fade-in duration-500 max-w-3xl mx-auto">
 
       {/* ── HEADER ────────────────────────────────────────────────────────── */}
-      <div class="flex items-center gap-4 mb-8 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+      <div class="flex items-center gap-4 mb-8 bg-white p-6 rounded-3xl shadow-sm border border-colpsi-border">
         <button
           onClick={() => navigate(-1)}
-          class="w-10 h-10 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-full font-bold flex items-center justify-center transition-colors flex-shrink-0"
+          class="w-10 h-10 bg-colpsi-surface hover:bg-gray-100 text-gray-600 rounded-full font-bold flex items-center justify-center transition-colors flex-shrink-0"
         >
           ←
         </button>
@@ -192,14 +192,14 @@ export default function AdminEditarStaffPage() {
       {/* ── SKELETON ──────────────────────────────────────────────────────── */}
       <Show when={admin.loading}>
         <div class="space-y-6 animate-pulse">
-          <div class="bg-white rounded-3xl h-48 border border-gray-100" />
-          <div class="bg-white rounded-3xl h-96 border border-gray-100" />
+          <div class="bg-white rounded-3xl h-48 border border-colpsi-border" />
+          <div class="bg-white rounded-3xl h-96 border border-colpsi-border" />
         </div>
       </Show>
 
       {/* ── NO ENCONTRADO ─────────────────────────────────────────────────── */}
       <Show when={!admin.loading && admin() === null}>
-        <div class="text-center py-24 bg-white rounded-3xl border border-gray-100">
+        <div class="text-center py-24 bg-white rounded-3xl border border-colpsi-border">
           <p class="text-5xl mb-4">😕</p>
           <h2 class="text-lg font-black text-gray-700 mb-2">Administrador no encontrado</h2>
           <button onClick={() => navigate("/admin/staff")} class="mt-4 text-blue-700 font-black text-sm hover:underline">
@@ -216,8 +216,8 @@ export default function AdminEditarStaffPage() {
             <form onSubmit={handleSubmit} class="space-y-6">
 
               {/* ══ DATOS DE ACCESO ════════════════════════════════════════ */}
-              <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 space-y-5">
-                <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest border-b border-gray-100 pb-3">
+              <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-colpsi-border space-y-5">
+                <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest border-b border-colpsi-border pb-3">
                   Datos de Acceso
                 </h2>
 
@@ -285,8 +285,8 @@ export default function AdminEditarStaffPage() {
               </section>
 
               {/* ══ PERFIL DE ROL ══════════════════════════════════════ */}
-              <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
-                <div class="flex items-center justify-between border-b border-gray-100 pb-3 mb-6">
+              <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-colpsi-border">
+                <div class="flex items-center justify-between border-b border-colpsi-border pb-3 mb-6">
                   <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest">Perfil de Rol</h2>
                   <span class="text-xs font-black text-gray-500">Atajo: aplica un conjunto de permisos</span>
                 </div>
@@ -294,8 +294,8 @@ export default function AdminEditarStaffPage() {
               </section>
 
               {/* ══ PERMISOS ══════════════════════════════════════════════ */}
-              <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
-                <div class="flex items-center justify-between border-b border-gray-100 pb-3 mb-6">
+              <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-colpsi-border">
+                <div class="flex items-center justify-between border-b border-colpsi-border pb-3 mb-6">
                   <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest">Permisos</h2>
                   <span class="text-xs font-black text-gray-500">{totalEnabled()}/{TOTAL_PERMS} activos</span>
                 </div>
@@ -330,7 +330,7 @@ export default function AdminEditarStaffPage() {
                                 class={`flex items-center justify-between px-4 py-3 text-sm font-bold transition-all ${
                                   active()
                                     ? `${ACTIVE_MAP[group.color]} opacity-90`
-                                    : "bg-white text-gray-400 hover:bg-gray-50"
+                                    : "bg-white text-gray-400 hover:bg-colpsi-surface"
                                 }`}
                               >
                                 <span>{perm.label}</span>
@@ -350,7 +350,7 @@ export default function AdminEditarStaffPage() {
                 <button
                   type="button"
                   onClick={() => navigate(-1)}
-                  class="bg-white text-gray-600 border-2 border-gray-200 px-6 py-4 rounded-2xl font-black hover:bg-gray-50 transition-all text-sm"
+                  class="bg-white text-gray-600 border-2 border-gray-200 px-6 py-4 rounded-2xl font-black hover:bg-colpsi-surface transition-all text-sm"
                 >
                   Cancelar
                 </button>

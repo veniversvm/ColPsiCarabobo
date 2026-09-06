@@ -41,10 +41,10 @@ export default function InscriptionPage() {
       <Link rel="canonical" href={canonicalUrl} />
 
       {/* ── CONTENIDO DE LA PÁGINA ─────────────────────────────────────────── */}
-      <main class="bg-[#f8fafc] min-h-screen pb-24 font-sans">
+      <main class="bg-colpsi-bg min-h-screen pb-24 font-sans">
 
         {/* ── HERO SUTIL ─────────────────────────────────────────────────── */}
-        <header class="bg-colpsi-blue py-20 px-6 border-b border-blue-900 shadow-inner">
+        <header class="bg-heraldic py-20 px-6 border-b border-blue-900 shadow-inner">
           <div class="max-w-4xl mx-auto text-center">
             <div class="inline-block px-5 py-2 bg-blue-800/50 text-colpsi-yellow rounded-full text-[10px] font-black tracking-[0.2em] uppercase mb-6 border border-colpsi-yellow/30">
               Trámites Legales
@@ -72,13 +72,13 @@ export default function InscriptionPage() {
           </div>
 
           {/* ── SELECTOR DE SECCIÓN: INSTRUCCIONES | FORMULARIO ──────────── */}
-          <div class="bg-white p-3 rounded-3xl shadow-premium border border-gray-100 flex flex-col sm:flex-row gap-2">
+          <div class="bg-white p-3 rounded-3xl shadow-premium border border-colpsi-border flex flex-col sm:flex-row gap-2">
             <button
               onClick={() => setTab("instrucciones")}
               class={`flex-1 py-4 px-6 rounded-2xl font-black text-base flex items-center justify-center gap-3 transition-all ${
                 tab() === "instrucciones"
                   ? "bg-colpsi-blue text-white shadow"
-                  : "bg-gray-50 text-gray-500 hover:bg-gray-100"
+                  : "bg-colpsi-surface text-gray-500 hover:bg-gray-100"
               }`}
             >
               <span>📋</span> Instrucciones
@@ -88,7 +88,7 @@ export default function InscriptionPage() {
               class={`flex-1 py-4 px-6 rounded-2xl font-black text-base flex items-center justify-center gap-3 transition-all ${
                 tab() === "formulario"
                   ? "bg-colpsi-blue text-white shadow"
-                  : "bg-gray-50 text-gray-500 hover:bg-gray-100"
+                  : "bg-colpsi-surface text-gray-500 hover:bg-gray-100"
               }`}
             >
               <span>📝</span> Formulario de Inscripción
@@ -99,8 +99,8 @@ export default function InscriptionPage() {
           <Show when={tab() === "instrucciones"}>
             <div class="space-y-12">
               {/* ── PASO 1 ─────────────────────────────────────────────────────── */}
-              <div class="bg-white p-8 md:p-12 rounded-[2.5rem] shadow-sm border border-gray-100 group hover:border-colpsi-yellow transition-colors">
-                <div class="flex flex-col sm:flex-row sm:items-center gap-4 mb-8 border-b border-gray-100 pb-6">
+              <div class="bg-white p-8 md:p-12 rounded-[2.5rem] shadow-sm border border-colpsi-border group hover:border-colpsi-yellow transition-colors">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-4 mb-8 border-b border-colpsi-border pb-6">
                   <div class="w-14 h-14 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center text-3xl font-black group-hover:scale-110 transition-transform border border-amber-100 flex-shrink-0">
                     1
                   </div>
@@ -114,7 +114,7 @@ export default function InscriptionPage() {
                     El profesional que aspira a la colegiación debe realizar el cálculo de los aranceles correspondientes según las directrices vigentes emanadas de la Asamblea Extraordinaria del 18 de abril de 2026.
                   </p>
 
-                  <div class="bg-gray-50 border-l-4 border-colpsi-blue p-5 rounded-r-2xl">
+                  <div class="bg-colpsi-surface border-l-4 border-colpsi-blue p-5 rounded-r-2xl">
                     <p>
                       <strong class="text-colpsi-blue">Política de Exoneración:</strong> Todos los años de graduación anteriores al 2024 se consideran completamente exentos de cualquier tipo de deuda por anualidad. Los cálculos se inician de forma obligatoria a partir del año 2024.
                     </p>
@@ -123,10 +123,10 @@ export default function InscriptionPage() {
                   <div>
                     <p class="font-bold text-gray-900 mb-3">Aranceles Base (Fijados en Divisas):</p>
                     <ul class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                      <li class="bg-gray-50 p-4 rounded-xl border border-gray-100"><strong class="text-gray-900">Derecho de Inscripción:</strong> $30 (pago único de ingreso).</li>
-                      <li class="bg-gray-50 p-4 rounded-xl border border-gray-100"><strong class="text-gray-900">Anualidad 2024:</strong> $40</li>
-                      <li class="bg-gray-50 p-4 rounded-xl border border-gray-100"><strong class="text-gray-900">Anualidad 2025:</strong> $40</li>
-                      <li class="bg-gray-50 p-4 rounded-xl border border-gray-100"><strong class="text-gray-900">Anualidad 2026:</strong> $40</li>
+                      <li class="bg-colpsi-surface p-4 rounded-xl border border-colpsi-border"><strong class="text-gray-900">Derecho de Inscripción:</strong> $30 (pago único de ingreso).</li>
+                      <li class="bg-colpsi-surface p-4 rounded-xl border border-colpsi-border"><strong class="text-gray-900">Anualidad 2024:</strong> $40</li>
+                      <li class="bg-colpsi-surface p-4 rounded-xl border border-colpsi-border"><strong class="text-gray-900">Anualidad 2025:</strong> $40</li>
+                      <li class="bg-colpsi-surface p-4 rounded-xl border border-colpsi-border"><strong class="text-gray-900">Anualidad 2026:</strong> $40</li>
                     </ul>
                   </div>
 
@@ -137,8 +137,8 @@ export default function InscriptionPage() {
               </div>
 
               {/* ── PASO 2 ─────────────────────────────────────────────────────── */}
-              <div class="bg-white p-8 md:p-12 rounded-[2.5rem] shadow-sm border border-gray-100 group hover:border-colpsi-yellow transition-colors">
-                <div class="flex flex-col sm:flex-row sm:items-center gap-4 mb-8 border-b border-gray-100 pb-6">
+              <div class="bg-white p-8 md:p-12 rounded-[2.5rem] shadow-sm border border-colpsi-border group hover:border-colpsi-yellow transition-colors">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-4 mb-8 border-b border-colpsi-border pb-6">
                   <div class="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-3xl font-black group-hover:scale-110 transition-transform border border-emerald-100 flex-shrink-0">
                     2
                   </div>
@@ -184,8 +184,8 @@ export default function InscriptionPage() {
               </div>
 
               {/* ── PASO 3 ─────────────────────────────────────────────────────── */}
-              <div class="bg-white p-8 md:p-12 rounded-[2.5rem] shadow-sm border border-gray-100 group hover:border-colpsi-yellow transition-colors">
-                <div class="flex flex-col sm:flex-row sm:items-center gap-4 mb-8 border-b border-gray-100 pb-6">
+              <div class="bg-white p-8 md:p-12 rounded-[2.5rem] shadow-sm border border-colpsi-border group hover:border-colpsi-yellow transition-colors">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-4 mb-8 border-b border-colpsi-border pb-6">
                   <div class="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center text-3xl font-black group-hover:scale-110 transition-transform border border-purple-100 flex-shrink-0">
                     3
                   </div>
@@ -207,23 +207,23 @@ export default function InscriptionPage() {
                   <p class="font-bold text-gray-900 mt-6">Los documentos a adjuntar en formato digital son:</p>
 
                   <ul class="space-y-4">
-                    <li class="flex items-start gap-3 bg-gray-50 p-5 rounded-2xl border border-gray-100">
+                    <li class="flex items-start gap-3 bg-colpsi-surface p-5 rounded-2xl border border-colpsi-border">
                       <span class="text-purple-500 font-black text-lg mt-0.5">•</span>
                       <span>Una (1) foto tipo carnet reciente, con fondo blanco.</span>
                     </li>
-                    <li class="flex items-start gap-3 bg-gray-50 p-5 rounded-2xl border border-gray-100">
+                    <li class="flex items-start gap-3 bg-colpsi-surface p-5 rounded-2xl border border-colpsi-border">
                       <span class="text-purple-500 font-black text-lg mt-0.5">•</span>
                       <span>Una (1) copia del título de psicólogo, el cual debe haber sido registrado previamente en el Registro Principal correspondiente a su jurisdicción.</span>
                     </li>
-                    <li class="flex items-start gap-3 bg-gray-50 p-5 rounded-2xl border border-gray-100">
+                    <li class="flex items-start gap-3 bg-colpsi-surface p-5 rounded-2xl border border-colpsi-border">
                       <span class="text-purple-500 font-black text-lg mt-0.5">•</span>
                       <span>Una (1) copia legible de la cédula de identidad o del pasaporte vigente.</span>
                     </li>
-                    <li class="flex items-start gap-3 bg-gray-50 p-5 rounded-2xl border border-gray-100">
+                    <li class="flex items-start gap-3 bg-colpsi-surface p-5 rounded-2xl border border-colpsi-border">
                       <span class="text-purple-500 font-black text-lg mt-0.5">•</span>
                       <span>Una (1) copia del Registro de Información Fiscal (RIF) vigente, el cual debe estar actualizado y reflejar su domicilio fiscal en la región determinada dentro de la circunscripción del Estado Carabobo.</span>
                     </li>
-                    <li class="flex items-start gap-3 bg-gray-50 p-5 rounded-2xl border border-gray-100">
+                    <li class="flex items-start gap-3 bg-colpsi-surface p-5 rounded-2xl border border-colpsi-border">
                       <span class="text-purple-500 font-black text-lg mt-0.5">•</span>
                       <span>El comprobante de transferencia o depósito bancario para la verificación de los fondos y posterior emisión del recibo oficial.</span>
                     </li>
@@ -232,7 +232,7 @@ export default function InscriptionPage() {
               </div>
 
               {/* ── DISCLOSURE: tras la aprobación ───────────────────────────── */}
-              <div class="bg-teal-50 p-6 md:p-8 rounded-[2rem] border border-teal-200">
+              <div class="bg-teal-50 p-6 md:p-8 rounded-3xl border border-teal-200">
                 <div class="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
                   <div class="w-11 h-11 bg-teal-600 text-white rounded-2xl flex items-center justify-center text-xl font-black flex-shrink-0">
                     ✓
@@ -259,8 +259,8 @@ export default function InscriptionPage() {
               </div>
 
               {/* ── PASO 4 ─────────────────────────────────────────────────────── */}
-              <div class="bg-white p-8 md:p-12 rounded-[2.5rem] shadow-sm border border-gray-100 group hover:border-colpsi-yellow transition-colors">
-                <div class="flex flex-col sm:flex-row sm:items-center gap-4 mb-8 border-b border-gray-100 pb-6">
+              <div class="bg-white p-8 md:p-12 rounded-[2.5rem] shadow-sm border border-colpsi-border group hover:border-colpsi-yellow transition-colors">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-4 mb-8 border-b border-colpsi-border pb-6">
                   <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-3xl font-black group-hover:scale-110 transition-transform border border-blue-100 flex-shrink-0">
                     4
                   </div>
@@ -280,8 +280,8 @@ export default function InscriptionPage() {
               </div>
 
               {/* ── PASO 5 ─────────────────────────────────────────────────────── */}
-              <div class="bg-white p-8 md:p-12 rounded-[2.5rem] shadow-sm border border-gray-100 group hover:border-colpsi-yellow transition-colors">
-                <div class="flex flex-col sm:flex-row sm:items-center gap-4 mb-8 border-b border-gray-100 pb-6">
+              <div class="bg-white p-8 md:p-12 rounded-[2.5rem] shadow-sm border border-colpsi-border group hover:border-colpsi-yellow transition-colors">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-4 mb-8 border-b border-colpsi-border pb-6">
                   <div class="w-14 h-14 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center text-3xl font-black group-hover:scale-110 transition-transform border border-red-100 flex-shrink-0">
                     5
                   </div>
@@ -307,22 +307,22 @@ export default function InscriptionPage() {
                       Debe ser una carpeta física tipo manila tamaño carta, dirigida a la FPV. Contiene exactamente los siguientes documentos con sus respectivas especificaciones de rotulación en el reverso:
                     </p>
                     <ul class="space-y-4">
-                      <li class="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                      <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
                         <strong class="text-gray-900 block mb-1">Una (1) fotografía tipo carnet:</strong> Reciente y en fondo blanco. Por la parte posterior (reverso), debe tener escrito de forma legible a bolígrafo: los nombres completos, los apellidos completos, el número de cédula de identidad y la frase "Estado Carabobo" o "Carabobo".
                       </li>
-                      <li class="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                      <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
                         <strong class="text-gray-900 block mb-1">Una (1) planilla de inscripción de la Federación de Psicólogos de Venezuela</strong>
                       </li>
-                      <li class="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                      <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
                         <strong class="text-gray-900 block mb-1">Una (1) copia del Título de Psicólogo:</strong> Por la parte posterior (reverso) de la hoja, se deben transcribir de forma clara todos los datos registrales del título (Número de Tomo, Folio y Número de Registro asignado por el Registro Principal).
                       </li>
-                      <li class="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                      <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
                         <strong class="text-gray-900 block mb-1">Una (1) copia de la Cédula de Identidad o Pasaporte vigente.</strong>
                       </li>
-                      <li class="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                      <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
                         <strong class="text-gray-900 block mb-1">Una (1) copia del RIF actualizado</strong> (con dirección en el Estado Carabobo).
                       </li>
-                      <li class="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                      <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
                         <strong class="text-gray-900 block mb-1">El Comprobante de Pago Bancario:</strong> Por la parte posterior (reverso) del papel, debe estar plenamente identificado con los datos de la persona que se está colegiando (Nombres, Apellidos y Cédula).
                       </li>
                     </ul>
@@ -347,10 +347,10 @@ export default function InscriptionPage() {
                       Para dar por concluido el trámite de manera conforme, se ejecutarán en el sitio los siguientes dos pasos de seguridad:
                     </p>
                     <ul class="space-y-4">
-                      <li class="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                      <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
                         <strong class="text-gray-900 block mb-1">Confrontación del Título Original:</strong> El solicitante debe presentar de forma obligatoria su Título de Psicólogo Original. El personal técnico del colegio lo revisará para verificar su autenticidad y confrontarlo con las copias suministradas.
                       </li>
-                      <li class="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                      <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
                         <strong class="text-gray-900 block mb-1">Registro Fotográfico de Seguridad:</strong> Como medida de máxima seguridad, resguardo de la identidad profesional y validación del proceso de colegiatura, el personal institucional tomará una fotografía presencial de la persona que se está colegiando en ese mismo instante.
                       </li>
                     </ul>

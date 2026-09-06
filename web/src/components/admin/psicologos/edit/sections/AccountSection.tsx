@@ -135,7 +135,7 @@ export function AccountSection(props: Props) {
         </div>
 
         {/* 3. Generador de QR lateral */}
-        <div class="flex flex-col items-center justify-start lg:border-l lg:border-gray-100 lg:pl-8">
+        <div class="flex flex-col items-center justify-start lg:border-l lg:border-colpsi-border lg:pl-8">
           <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">
             Acceso Directo (QR)
           </label>

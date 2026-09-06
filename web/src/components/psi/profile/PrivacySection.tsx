@@ -151,7 +151,7 @@ export function PrivacySection(props: PrivacySectionProps) {
         </div>
 
         {/* ── Datos Académicos ────────────────────────────────────────── */}
-        <div class="space-y-4 bg-gray-50 p-6 rounded-3xl border border-gray-100 md:col-span-2">
+        <div class="space-y-4 bg-colpsi-surface p-6 rounded-3xl border border-colpsi-border md:col-span-2">
           <h3 class="text-sm font-bold text-colpsi-text uppercase tracking-widest border-b border-gray-200 pb-2">
             Formación Académica
           </h3>

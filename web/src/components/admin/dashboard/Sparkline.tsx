@@ -35,7 +35,7 @@ export function Sparkline(props: SparklineProps) {
   };
 
   return (
-    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-colpsi-border">
       <p class="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">
         {props.label} — últimos 14 días
       </p>

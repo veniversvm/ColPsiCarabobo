@@ -163,7 +163,7 @@ export function RichTextEditor(props: RichTextEditorProps) {
       <div class="border-2 border-gray-200 rounded-2xl overflow-hidden bg-white shadow-sm focus-within:border-colpsi-blue focus-within:shadow-md transition-all duration-200">
 
         {/* ── TOOLBAR ─────────────────────────────────────────────────────── */}
-        <div class="flex flex-wrap items-center gap-1 px-3 py-2 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+        <div class="flex flex-wrap items-center gap-1 px-3 py-2 border-b border-colpsi-border bg-gradient-to-r from-gray-50 to-white">
 
           {/* Encabezados */}
           <button type="button" title="Título 1" class={wideBtn(active().h1)}
@@ -335,7 +335,7 @@ export function RichTextEditor(props: RichTextEditorProps) {
           <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col overflow-hidden border border-gray-200">
             
             {/* Header modal */}
-            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-colpsi-border bg-colpsi-surface">
               <div class="flex items-center gap-2">
                 <svg class="w-5 h-5 text-colpsi-blue" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -361,7 +361,7 @@ export function RichTextEditor(props: RichTextEditorProps) {
             </div>
 
             {/* Footer */}
-            <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end">
+            <div class="px-6 py-4 border-t border-colpsi-border bg-colpsi-surface flex justify-end">
               <button
                 type="button"
                 onClick={() => setShowPreview(false)}

@@ -39,8 +39,8 @@ export default function DocumentosIndex() {
 
       <Link rel="canonical" href={canonicalUrl} />
 
-      <main class="min-h-screen bg-[#f8fafc] pb-24 font-sans">
-        <header class="bg-colpsi-blue py-20 px-6 border-b border-blue-900 shadow-inner relative overflow-hidden">
+      <main class="min-h-screen bg-colpsi-bg pb-24 font-sans">
+        <header class="bg-heraldic py-20 px-6 border-b border-blue-900 shadow-inner relative overflow-hidden">
           <div class="absolute left-1/2 top-[-60px] -translate-x-1/2 text-[14rem] opacity-10 font-black select-none pointer-events-none">
             ⚖️
           </div>

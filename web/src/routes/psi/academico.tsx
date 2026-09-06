@@ -106,10 +106,10 @@ export default function AcademicoPage() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <main class="bg-[#f8fafc] min-h-screen pb-24 font-sans">
+    <main class="bg-colpsi-bg min-h-screen pb-24 font-sans">
 
       {/* ── HEADER ──────────────────────────────────────────────────────────── */}
-      <div class="bg-colpsi-blue pt-10 pb-20 px-4 md:px-8 shadow-inner">
+      <div class="bg-heraldic pt-12 pb-20 px-4 md:px-8 shadow-inner">
         <div class="max-w-4xl mx-auto flex items-center justify-between">
           <A
             href="/psi"
@@ -135,7 +135,7 @@ export default function AcademicoPage() {
         {/* ── MODAL DE CONFIRMACIÓN DE ELIMINACIÓN ──────────────────────────── */}
         <Show when={deleteId()}>
           <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-            <div class="bg-white rounded-3xl p-8 shadow-2xl max-w-sm w-full mx-4 border border-gray-100">
+            <div class="bg-white rounded-3xl p-8 shadow-2xl max-w-sm w-full mx-4 border border-colpsi-border">
               <div class="text-center mb-6">
                 <span class="text-4xl">🗑️</span>
                 <h3 class="text-lg font-black text-gray-800 mt-3">¿Eliminar este título?</h3>
@@ -184,25 +184,25 @@ export default function AcademicoPage() {
                 <label class="text-xs font-black text-gray-400 uppercase ml-2">Título Obtenido</label>
                 <input type="text" required value={form.title}
                   onInput={(e) => setForm("title", e.currentTarget.value)}
-                  class="w-full bg-gray-50 border-2 border-transparent focus:border-colpsi-yellow rounded-xl px-5 py-3 outline-none" />
+                  class="w-full bg-colpsi-surface border-2 border-transparent focus:border-colpsi-yellow rounded-xl px-5 py-3 outline-none" />
               </div>
               <div class="space-y-1">
                 <label class="text-xs font-black text-gray-400 uppercase ml-2">Universidad</label>
                 <input type="text" required value={form.university}
                   onInput={(e) => setForm("university", e.currentTarget.value)}
-                  class="w-full bg-gray-50 border-2 border-transparent focus:border-colpsi-yellow rounded-xl px-5 py-3 outline-none" />
+                  class="w-full bg-colpsi-surface border-2 border-transparent focus:border-colpsi-yellow rounded-xl px-5 py-3 outline-none" />
               </div>
               <div class="space-y-1">
                 <label class="text-xs font-black text-gray-400 uppercase ml-2">Año de Egreso</label>
                 <input type="number" required value={form.graduation_year}
                   onInput={(e) => setForm("graduation_year", e.currentTarget.value)}
-                  class="w-full bg-gray-50 border-2 border-transparent focus:border-colpsi-yellow rounded-xl px-5 py-3 outline-none" />
+                  class="w-full bg-colpsi-surface border-2 border-transparent focus:border-colpsi-yellow rounded-xl px-5 py-3 outline-none" />
               </div>
               <div class="md:col-span-2 space-y-1">
                 <label class="text-xs font-black text-gray-400 uppercase ml-2">Breve descripción</label>
                 <textarea value={form.description}
                   onInput={(e) => setForm("description", e.currentTarget.value)}
-                  class="w-full bg-gray-50 border-2 border-transparent focus:border-colpsi-yellow rounded-xl px-5 py-3 outline-none" />
+                  class="w-full bg-colpsi-surface border-2 border-transparent focus:border-colpsi-yellow rounded-xl px-5 py-3 outline-none" />
               </div>
               <div class="md:col-span-2 space-y-4">
                 <label class="text-xs font-black text-gray-400 uppercase ml-2">Soportes Digitales (PDF o Imagen)</label>
@@ -243,7 +243,7 @@ export default function AcademicoPage() {
             </Show>
             <For each={profile()?.post_grades ?? []}>
               {(pg) => (
-                <div class="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-premium border border-gray-100 flex flex-col md:flex-row gap-6 relative group overflow-hidden">
+                <div class="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-premium border border-colpsi-border flex flex-col md:flex-row gap-6 relative group overflow-hidden">
 
                   <div class="absolute top-6 right-6 flex gap-2">
                     <button
@@ -275,7 +275,7 @@ export default function AcademicoPage() {
                             <a
                               href={bucketUrl(url)}
                               target="_blank" rel="noopener noreferrer"
-                              class="w-16 h-20 bg-gray-50 rounded-xl border border-gray-200 overflow-hidden hover:ring-2 hover:ring-colpsi-yellow transition-all"
+                              class="w-16 h-20 bg-colpsi-surface rounded-xl border border-gray-200 overflow-hidden hover:ring-2 hover:ring-colpsi-yellow transition-all"
                             >
                               <img src={bucketUrl(url)} class="w-full h-full object-cover" />
                             </a>

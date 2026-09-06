@@ -200,7 +200,7 @@ export default function CrearNotificacionPage() {
 
       <form onSubmit={handleSubmit} class="space-y-6">
         {/* Contenido */}
-        <section class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-4">
+        <section class="bg-white rounded-3xl border border-colpsi-border shadow-sm p-6 space-y-4">
           <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest">Contenido</h2>
           <div>
             <label class={labelCls}>Título *</label>
@@ -221,7 +221,7 @@ export default function CrearNotificacionPage() {
         </section>
 
         {/* Destino */}
-        <section class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-4">
+        <section class="bg-white rounded-3xl border border-colpsi-border shadow-sm p-6 space-y-4">
           <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest">Destino</h2>
           <div class="grid grid-cols-3 gap-3">
             <For each={TARGET_OPTIONS}>
@@ -252,8 +252,8 @@ export default function CrearNotificacionPage() {
                 placeholder="🔎 Buscar por nombre, CI o FPV..."
                 class={inputCls}
               />
-              <Suspense fallback={<div class="h-24 bg-gray-50 animate-pulse rounded-2xl" />}>
-                <div class="bg-gray-50 rounded-2xl p-4 max-h-72 overflow-y-auto space-y-1.5">
+              <Suspense fallback={<div class="h-24 bg-colpsi-surface animate-pulse rounded-2xl" />}>
+                <div class="bg-colpsi-surface rounded-2xl p-4 max-h-72 overflow-y-auto space-y-1.5">
                   <Show when={(psiUsers()?.data ?? []).length === 0}>
                     <p class="text-sm text-gray-500 p-3">
                       {debouncedSearch() ? "No hay psicólogos que coincidan con la búsqueda." : "No hay psicólogos registrados."}
@@ -261,7 +261,7 @@ export default function CrearNotificacionPage() {
                   </Show>
                   <For each={psiUsers()?.data ?? []}>
                     {(u) => (
-                      <label class="flex items-center gap-3 bg-white rounded-xl px-3 py-2 cursor-pointer border border-gray-100">
+                      <label class="flex items-center gap-3 bg-white rounded-xl px-3 py-2 cursor-pointer border border-colpsi-border">
                         <input
                           type="checkbox"
                           checked={selected().has(u.id)}
@@ -382,7 +382,7 @@ export default function CrearNotificacionPage() {
         </section>
 
         {/* Programación */}
-        <section class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+        <section class="bg-white rounded-3xl border border-colpsi-border shadow-sm p-6">
           <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest mb-4">Programación</h2>
           <div>
             <label class={labelCls}>Enviar en fecha/hora (opcional)</label>

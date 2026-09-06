@@ -24,8 +24,8 @@ export default function PsiMisTickets() {
   const totalPages = () => Math.max(1, Math.ceil((tickets()?.total ?? 0) / 10));
 
   return (
-    <main class="bg-[#f8fafc] min-h-screen pb-24">
-      <div class="bg-[#1e3a8a] pt-12 pb-20 px-6">
+    <main class="bg-colpsi-bg min-h-screen pb-24">
+      <div class="bg-heraldic pt-12 pb-20 px-6">
         <div class="max-w-4xl mx-auto flex items-center justify-between">
           <div>
             <A href="/psi" class="inline-flex items-center gap-1 text-blue-200 text-sm font-bold mb-4 hover:text-white">← Volver al Panel</A>
@@ -36,7 +36,7 @@ export default function PsiMisTickets() {
           </div>
           <A
             href="/psi/tickets/crear"
-            class="inline-flex items-center gap-2 bg-colpsi-yellow text-[#1e3a8a] font-black px-5 py-3.5 rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-all text-sm"
+            class="inline-flex items-center gap-2 bg-colpsi-yellow text-colpsi-blue font-black px-5 py-3.5 rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-all text-sm"
           >
             <span class="text-lg leading-none">＋</span> Nueva Solicitud
           </A>
@@ -46,17 +46,17 @@ export default function PsiMisTickets() {
       <div class="max-w-4xl mx-auto px-4 -mt-12 space-y-3">
         <Suspense fallback={
           <div class="space-y-3">
-            <For each={[1, 2, 3]}>{() => <div class="h-28 bg-white animate-pulse rounded-3xl border border-gray-100" />}</For>
+            <For each={[1, 2, 3]}>{() => <div class="h-28 bg-white animate-pulse rounded-3xl border border-colpsi-border" />}</For>
           </div>
         }>
           <Show when={!tickets.loading && (tickets()?.data ?? []).length === 0}>
-            <div class="bg-white rounded-3xl p-12 text-center shadow-sm border border-gray-100">
+            <div class="bg-white rounded-3xl p-12 text-center shadow-sm border border-colpsi-border">
               <p class="text-5xl mb-4">🗂️</p>
               <h3 class="font-black text-gray-700">No tienes solicitudes</h3>
               <p class="text-sm text-gray-500 mt-1">Crea tu primera solicitud para iniciar un trámite con el colegio.</p>
               <A
                 href="/psi/tickets/crear"
-                class="mt-6 inline-flex items-center gap-2 bg-[#1e3a8a] hover:bg-[#1e40af] text-white font-black px-6 py-3.5 rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-all text-sm"
+                class="mt-6 inline-flex items-center gap-2 bg-colpsi-blue hover:bg-colpsi-blue-light text-white font-black px-6 py-3.5 rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-all text-sm"
               >
                 <span class="text-lg leading-none">＋</span> Nueva Solicitud
               </A>
@@ -66,9 +66,9 @@ export default function PsiMisTickets() {
           <div class="space-y-3">
             <For each={tickets()?.data ?? []}>
               {(t: Ticket) => (
-                <A href={`/psi/tickets/${t.id}`} class="block bg-white rounded-3xl p-5 shadow-sm border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all group">
+                <A href={`/psi/tickets/${t.id}`} class="block bg-white rounded-3xl p-5 shadow-sm border border-colpsi-border hover:border-blue-200 hover:shadow-md transition-all group">
                   <div class="flex items-start gap-4">
-                    <div class={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 font-black text-lg ${t.is_closed ? "bg-gray-100 text-gray-400" : "bg-blue-50 text-[#1e3a8a] group-hover:bg-[#facc15] transition-colors"}`}>
+                    <div class={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 font-black text-lg ${t.is_closed ? "bg-gray-100 text-gray-400" : "bg-blue-50 text-colpsi-blue group-hover:bg-colpsi-yellow transition-colors"}`}>
                       {t.is_closed ? "✓" : "🎫"}
                     </div>
                     <div class="flex-1 min-w-0">
@@ -78,14 +78,14 @@ export default function PsiMisTickets() {
                           {t.estado?.name ?? "Sin estado"}
                         </span>
                       </div>
-                      <h4 class="font-bold text-gray-800 truncate group-hover:text-[#1e3a8a] transition-colors">{t.title}</h4>
+                      <h4 class="font-bold text-gray-800 truncate group-hover:text-colpsi-blue transition-colors">{t.title}</h4>
                       <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-[10px] text-gray-400 font-bold uppercase tracking-wider">
                         <span>🗂️ {t.motivo?.name ?? t.motivo_id}</span>
                         <span class="w-1 h-1 bg-gray-200 rounded-full" />
                         <span>{formatTicketDate(t.created_at)}</span>
                       </div>
                     </div>
-                    <span class="text-[#1e3a8a] opacity-0 group-hover:opacity-100 transition-opacity font-black">→</span>
+                    <span class="text-colpsi-blue opacity-0 group-hover:opacity-100 transition-opacity font-black">→</span>
                   </div>
                 </A>
               )}
@@ -93,7 +93,7 @@ export default function PsiMisTickets() {
           </div>
 
           <Show when={(tickets()?.data ?? []).length > 0}>
-            <div class="flex items-center justify-between bg-white rounded-2xl px-5 py-3 shadow-sm border border-gray-100 mt-4">
+            <div class="flex items-center justify-between bg-white rounded-2xl px-5 py-3 shadow-sm border border-colpsi-border mt-4">
               <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">
                 Página {page()} de {totalPages()} · {tickets()?.total ?? 0} solicitudes
               </span>

@@ -56,7 +56,7 @@ export default function AdminInscripcionesList() {
       </div>
 
       {/* Tabs de estado */}
-      <div class="flex flex-wrap gap-2 bg-white p-2 rounded-2xl border border-gray-100 shadow-sm">
+      <div class="flex flex-wrap gap-2 bg-white p-2 rounded-2xl border border-colpsi-border shadow-sm">
         <For each={STATUS_TABS}>
           {(tab) => (
             <button
@@ -81,7 +81,7 @@ export default function AdminInscripcionesList() {
         />
       </div>
 
-      <div class="bg-white rounded-3xl shadow-premium border border-gray-100 overflow-hidden">
+      <div class="bg-white rounded-3xl shadow-premium border border-colpsi-border overflow-hidden">
         <PaginationBar
           page={page()}
           totalPages={display()?.total_pages ?? 1}
@@ -95,7 +95,7 @@ export default function AdminInscripcionesList() {
 
         <div class="overflow-x-auto">
           <table class="w-full text-left">
-            <thead class="bg-gray-50 border-b border-gray-100">
+            <thead class="bg-colpsi-surface border-b border-colpsi-border">
               <tr>
                 <th class="px-5 py-3 text-xs font-black text-gray-400 uppercase tracking-widest">Cédula</th>
                 <th class="px-5 py-3 text-xs font-black text-gray-400 uppercase tracking-widest">Nombre completo</th>
@@ -121,7 +121,7 @@ export default function AdminInscripcionesList() {
                   }
                 >
                   {(item: InscriptionListItem) => (
-                    <tr class="border-b border-gray-50 hover:bg-gray-50/60 transition-colors">
+                    <tr class="border-b border-gray-50 hover:bg-colpsi-surface/60 transition-colors">
                       <td class="px-5 py-4 font-black text-gray-700">{item.cedula}</td>
                       <td class="px-5 py-4 font-bold text-gray-800">{item.nombres} {item.apellidos}</td>
                       <td class="px-5 py-4 text-gray-500">{item.fpv || "—"}</td>

@@ -128,7 +128,7 @@ export default function CardModal(props: {
       onClick={(e) => e.target === e.currentTarget && !busy() && props.onClose()}
     >
       <div class="bg-white w-full md:max-w-xl md:rounded-3xl rounded-t-3xl max-h-[92vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white/95 backdrop-blur">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-colpsi-border sticky top-0 bg-white/95 backdrop-blur">
           <h3 class="font-black text-colpsi-blue text-lg">{isEditing() ? "Detalles de la tarjeta" : "Nueva tarjeta"}</h3>
           <div class="flex items-center gap-2">
             <Show when={saved()}>
@@ -153,7 +153,7 @@ export default function CardModal(props: {
               maxLength={200}
               onInput={(e) => setTitle(e.currentTarget.value)}
               placeholder="Título de la tarjeta"
-              class="w-full bg-white border-2 border-gray-200 focus:border-blue-500 rounded-xl px-4 py-2.5 outline-none transition-all text-gray-800 text-sm disabled:bg-gray-50"
+              class="w-full bg-white border-2 border-gray-200 focus:border-blue-500 rounded-xl px-4 py-2.5 outline-none transition-all text-gray-800 text-sm disabled:bg-colpsi-surface"
             />
           </div>
 
@@ -166,7 +166,7 @@ export default function CardModal(props: {
               rows={4}
               onInput={(e) => setDescription(e.currentTarget.value)}
               placeholder="Detalles de la tarea…"
-              class="w-full bg-white border-2 border-gray-200 focus:border-blue-500 rounded-xl px-4 py-2.5 outline-none transition-all text-gray-800 text-sm resize-none disabled:bg-gray-50"
+              class="w-full bg-white border-2 border-gray-200 focus:border-blue-500 rounded-xl px-4 py-2.5 outline-none transition-all text-gray-800 text-sm resize-none disabled:bg-colpsi-surface"
             />
           </div>
 
@@ -192,7 +192,7 @@ export default function CardModal(props: {
           </Show>
 
           <Show when={isEditing()}>
-            <div class="border-t border-gray-100 pt-5">
+            <div class="border-t border-colpsi-border pt-5">
               <div class="flex items-center justify-between mb-3">
                 <h4 class="font-black text-sm text-gray-700 uppercase tracking-widest text-[11px]">Notas</h4>
                 <span class={`text-[11px] font-black ${notes().length >= MAX_NOTES_PER_CARD ? "text-red-500" : "text-gray-400"}`}>
@@ -203,7 +203,7 @@ export default function CardModal(props: {
               <div class="space-y-2.5">
                 <For each={notes()}>
                   {(n) => (
-                    <div class="group p-3.5 rounded-2xl bg-gray-50 border border-gray-100">
+                    <div class="group p-3.5 rounded-2xl bg-colpsi-surface border border-colpsi-border">
                       <p class="text-sm text-gray-700 whitespace-pre-wrap break-words">{n.content}</p>
                       <div class="mt-2 flex items-center justify-between">
                         <span class="text-[10px] text-gray-400">

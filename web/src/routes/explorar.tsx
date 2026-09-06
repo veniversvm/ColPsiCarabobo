@@ -37,9 +37,9 @@ export default function PublicPortal() {
       <Link rel="canonical" href={canonicalUrl} />
       {/* ─────────────────────────────────────────────────────────────────── */}
 
-      <main class="min-h-screen bg-[#fcfcfc] pb-20 font-sans">
+      <main class="min-h-screen bg-colpsi-bg pb-20 font-sans">
         {/* Banner de Bienvenida a la Comunidad */}
-        <section class="bg-colpsi-blue pt-16 pb-32 px-6 text-center text-white relative shadow-inner overflow-hidden">
+        <section class="bg-heraldic pt-16 pb-32 px-6 text-center text-white relative shadow-inner overflow-hidden">
           <div class="max-w-4xl mx-auto space-y-5 relative z-10">
             <div class="inline-block px-5 py-1.5 bg-colpsi-yellow text-colpsi-blue rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-2 shadow-sm border border-colpsi-yellow/50">
               Servicio a la comunidad
@@ -127,7 +127,7 @@ function NavCard(props: { title: string, desc: string, href: string, icon: strin
       href={props.href} 
       class={`bg-white border-2 ${props.color} p-8 md:p-10 rounded-[2.5rem] shadow-premium hover:shadow-2xl hover:border-colpsi-blue/30 hover:-translate-y-2 transition-all duration-300 group flex flex-col items-center text-center`}
     >
-      <div class="w-20 h-20 bg-gray-50 border border-gray-100 rounded-3xl flex items-center justify-center text-4xl mb-6 group-hover:bg-colpsi-yellow group-hover:scale-110 transition-all duration-300">
+      <div class="w-20 h-20 bg-colpsi-surface border border-colpsi-border rounded-3xl flex items-center justify-center text-4xl mb-6 group-hover:bg-colpsi-yellow group-hover:scale-110 transition-all duration-300">
         {props.icon}
       </div>
       <h3 class="text-colpsi-blue font-black uppercase text-sm tracking-widest mb-3 leading-tight">

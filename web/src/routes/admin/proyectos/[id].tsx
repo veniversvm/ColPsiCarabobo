@@ -73,7 +73,7 @@ function Column(props: {
       class="flex flex-col w-[290px] shrink-0 max-h-full rounded-2xl bg-[#eef1f6] border border-gray-200/60 overflow-hidden transition-[border-color,box-shadow] duration-150"
       classList={{ "border-blue-400 shadow-lg ring-2 ring-blue-300/60": droppable.isActiveDroppable }}
     >
-      <div class="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100 cursor-grab">
+      <div class="flex items-center justify-between px-4 py-3 bg-white border-b border-colpsi-border cursor-grab">
         <span class="font-black text-sm text-colpsi-blue flex items-center gap-2">
           {props.column.title}
           <span class="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
@@ -349,7 +349,7 @@ export default function ProjectBoardPage() {
               ⋯
             </button>
             <Show when={menu()}>
-              <div class="absolute right-0 mt-2 w-52 bg-white rounded-2xl border border-gray-100 shadow-xl z-20 p-2" onClick={() => setMenu(false)}>
+              <div class="absolute right-0 mt-2 w-52 bg-white rounded-2xl border border-colpsi-border shadow-xl z-20 p-2" onClick={() => setMenu(false)}>
                 <Show when={isManager()}>
                   <button
                     onClick={() => window.confirm("¿Eliminar este proyecto? Esta acción no se puede deshacer.") && deleteProject()}
@@ -442,7 +442,7 @@ export default function ProjectBoardPage() {
               class="mt-4 w-full bg-white border-2 border-gray-200 focus:border-blue-500 rounded-xl px-4 py-2.5 outline-none"
             />
             <div class="mt-5 grid grid-cols-2 gap-3">
-              <button onClick={() => setRenameOpen(false)} class="bg-white text-gray-600 border-2 border-gray-200 rounded-xl font-black py-3 hover:bg-gray-50">Cancelar</button>
+              <button onClick={() => setRenameOpen(false)} class="bg-white text-gray-600 border-2 border-gray-200 rounded-xl font-black py-3 hover:bg-colpsi-surface">Cancelar</button>
               <button onClick={submitRename} class="bg-blue-800 text-white rounded-xl font-black py-3 hover:bg-blue-900 disabled:opacity-60" disabled={busy() || !renameTitle().trim()}>Guardar</button>
             </div>
           </div>

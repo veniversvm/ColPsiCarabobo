@@ -16,7 +16,7 @@ export function ImageGrid(props: ImageGridProps) {
         {(imgUrl, index) => (
           <button
             onClick={() => window.open(`${baseUrl}${imgUrl}`, '_blank')}
-            class="relative aspect-square rounded-xl overflow-hidden border-2 border-gray-100 hover:border-colpsi-yellow transition-all hover:scale-105 hover:shadow-lg group"
+            class="relative aspect-square rounded-xl overflow-hidden border-2 border-colpsi-border hover:border-colpsi-yellow transition-all hover:scale-105 hover:shadow-lg group"
           >
             <img 
               src={`${baseUrl}${imgUrl}`}

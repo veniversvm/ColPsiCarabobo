@@ -92,7 +92,7 @@ export default function MembersModal(props: {
       onClick={(e) => e.target === e.currentTarget && !busy() && props.onClose()}
     >
       <div class="bg-white w-full md:max-w-lg md:rounded-3xl rounded-t-3xl max-h-[88vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-colpsi-border">
           <div>
             <h3 class="font-black text-colpsi-blue text-lg">Miembros del proyecto</h3>
             <p class="text-xs text-gray-400">Los miembros son administradores del colegio.</p>
@@ -107,7 +107,7 @@ export default function MembersModal(props: {
             <div class="p-3 rounded-xl bg-red-50 text-red-700 text-sm font-bold border-l-4 border-red-500">{error()}</div>
           </Show>
 
-          <div class="rounded-2xl border-2 border-gray-100 divide-y divide-gray-100">
+          <div class="rounded-2xl border-2 border-colpsi-border divide-y divide-gray-100">
             <div class="flex items-center justify-between px-4 py-3">
               <div class="flex items-center gap-3">
                 <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-black">Ψ</div>

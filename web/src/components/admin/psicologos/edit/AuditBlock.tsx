@@ -11,7 +11,7 @@ export function AuditBlock(props: Props) {
   return (
     <div>
       {/* Postgrados */}
-      <div class="bg-white p-5 rounded-2xl border border-gray-100 mb-4">
+      <div class="bg-white p-5 rounded-2xl border border-colpsi-border mb-4">
         <h3 class="text-xs font-bold text-blue-800 mb-3">
           Postgrados ({props.profile?.post_grades?.length || 0})
         </h3>
@@ -31,7 +31,7 @@ export function AuditBlock(props: Props) {
       </div>
 
       {/* Metadatos */}
-      <div class="bg-white rounded-2xl border border-gray-100 p-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-[11px] text-gray-500">
+      <div class="bg-white rounded-2xl border border-colpsi-border p-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-[11px] text-gray-500">
         <div>
           <p class="font-black uppercase tracking-widest text-[9px] text-gray-400 mb-0.5">ID Interno</p>
           <p class="font-mono truncate">{props.profile?.id}</p>

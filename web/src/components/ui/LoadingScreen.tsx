@@ -2,7 +2,7 @@
 import { Show } from "solid-js";
 
 interface LoadingScreenProps {
-  /** Imagen opcional — logo, ilustración, etc. Si no se pasa usa el símbolo Ψ */
+  /** Imagen opcional — logo, ilustración, etc. Si no se pasa usa el emblema institucional */
   image?: string;
   /** Alt text para la imagen */
   imageAlt?: string;
@@ -56,13 +56,13 @@ export function LoadingScreen(props: LoadingScreenProps) {
             class="absolute rounded-full border-2 border-transparent"
             style={`
               inset: -8px;
-              border-top-color: #1e3a8a;
-              border-right-color: #facc15;
+              border-top-color: var(--color-colpsi-blue);
+              border-right-color: var(--color-colpsi-yellow);
               animation: colpsi-spin 1.1s linear infinite;
             `}
           />
 
-          {/* Imagen o símbolo Ψ */}
+          {/* Emblema institucional (fallback) o imagen personalizada */}
           <div
             class="relative rounded-full bg-white flex items-center justify-center shadow-lg overflow-hidden"
             style={`width:${props.size ?? 140}px; height:${props.size ?? 140}px`}
@@ -70,9 +70,12 @@ export function LoadingScreen(props: LoadingScreenProps) {
             <Show
               when={props.image}
               fallback={
-                <span class="text-colpsi-blue font-black text-4xl leading-none" style="font-family: serif">
-                  Ψ
-                </span>
+                <img
+                  src="/emblema.png"
+                  alt="Emblema del Colegio de Psicólogos del Estado Carabobo"
+                  style={`width:${scale()}%; height:${scale()}%`}
+                  class="object-cover"
+                />
               }
             >
               <img
@@ -101,7 +104,7 @@ export function LoadingScreen(props: LoadingScreenProps) {
             class="h-full rounded-full"
             style="
               width: 40%;
-              background: linear-gradient(90deg, #1e3a8a, #facc15);
+              background: linear-gradient(90deg, var(--color-colpsi-blue), var(--color-colpsi-yellow));
               animation: colpsi-bar 1.4s ease-in-out infinite;
             "
           />

@@ -142,7 +142,7 @@ export default function AdminPsychologistsList() {
       />
 
       {/* Tabla con paginación */}
-      <div class="bg-white rounded-3xl shadow-premium border border-gray-100 overflow-hidden">
+      <div class="bg-white rounded-3xl shadow-premium border border-colpsi-border overflow-hidden">
 
         {/* Paginación superior */}
         <Show when={displayData() && displayData()!.total_pages >= 1}>

@@ -60,7 +60,7 @@ export default function DocumentLayout(props: { doc: DocModulo }) {
       <Meta name="twitter:description" content={doc.descripcion} />
       <Link rel="canonical" href={canonical} />
 
-      <main class="min-h-screen bg-[#f8fafc] pb-24 font-sans">
+      <main class="min-h-screen bg-colpsi-bg pb-24 font-sans">
         <header class="bg-colpsi-blue py-16 px-6 border-b border-blue-900 shadow-inner relative overflow-hidden">
           <div class="absolute left-1/2 top-[-60px] -translate-x-1/2 text-[12rem] opacity-10 font-black select-none pointer-events-none">
             ⚖️
@@ -79,7 +79,7 @@ export default function DocumentLayout(props: { doc: DocModulo }) {
         </header>
 
         <section class="max-w-4xl mx-auto px-6 py-12 relative z-10 -mt-8">
-          <div class="bg-white rounded-[2rem] shadow-premium border border-gray-100 p-6 md:p-8 mb-10">
+          <div class="bg-white rounded-3xl shadow-premium border border-colpsi-border p-6 md:p-8 mb-10">
             <p class="text-gray-600 leading-relaxed text-justify">{doc.descripcion}</p>
             <div class="mt-6 flex flex-wrap gap-3">
               <a
@@ -99,7 +99,7 @@ export default function DocumentLayout(props: { doc: DocModulo }) {
           </div>
 
           {doc.secciones.length > 1 && (
-            <nav class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-8">
+            <nav class="bg-white rounded-2xl border border-colpsi-border shadow-sm p-5 mb-8">
               <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
                 <h3 class="text-xs font-black uppercase tracking-widest text-colpsi-blue">
                   Contenido

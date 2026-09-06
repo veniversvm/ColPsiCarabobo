@@ -7,7 +7,7 @@ interface ModalHeaderProps {
 
 export function ModalHeader(props: ModalHeaderProps) {
   return (
-    <div class="sticky top-0 bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between">
+    <div class="sticky top-0 bg-white border-b border-colpsi-border px-4 py-3 flex items-center justify-between">
       <h3 class="font-black text-colpsi-blue text-sm md:text-base uppercase tracking-wider">
         {props.title}
       </h3>

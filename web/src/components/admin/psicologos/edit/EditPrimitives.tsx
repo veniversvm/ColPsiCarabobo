@@ -3,7 +3,7 @@
 import { Show, createSignal } from "solid-js";
 
 export const IC  = "w-full bg-white border-2 border-gray-200 focus:border-blue-500 rounded-xl px-4 py-2.5 outline-none transition-all text-gray-800 text-sm";
-export const IC2 = "w-full bg-gray-50 border-2 border-gray-200 focus:border-blue-500 rounded-xl px-4 py-2.5 outline-none transition-all text-gray-800 text-sm";
+export const IC2 = "w-full bg-colpsi-surface border-2 border-gray-200 focus:border-blue-500 rounded-xl px-4 py-2.5 outline-none transition-all text-gray-800 text-sm";
 
 export function Field(props: { label: string; children: any }) {
   return (
@@ -19,7 +19,7 @@ export function Field(props: { label: string; children: any }) {
 export function SectionCard(props: { title: string; accent?: string; children: any }) {
   const accent = props.accent ?? "border-colpsi-yellow";
   return (
-    <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
+    <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-colpsi-border">
       <h2 class={`text-lg font-black text-blue-800 mb-6 border-l-4 ${accent} pl-3`}>
         {props.title}
       </h2>
@@ -37,12 +37,12 @@ export function CollapsibleSection(props: {
   const accent = props.accent ?? "border-colpsi-yellow";
   const [open, setOpen] = createSignal(props.defaultOpen ?? false);
   return (
-    <section class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+    <section class="bg-white rounded-3xl shadow-sm border border-colpsi-border overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen(!open())}
         aria-expanded={open()}
-        class="w-full flex items-center justify-between gap-4 px-6 md:px-8 py-5 text-left hover:bg-gray-50/60 transition-colors group"
+        class="w-full flex items-center justify-between gap-4 px-6 md:px-8 py-5 text-left hover:bg-colpsi-surface/60 transition-colors group"
       >
         <h2 class={`text-lg font-black text-blue-800 border-l-4 ${accent} pl-3`}>
           {props.title}

@@ -116,7 +116,7 @@ export default function AdminLoginPage() {
                     type="text"
                     required
                     placeholder="Username o Correo institucional"
-                    class="w-full bg-gray-50 border-2 border-gray-100 focus:border-colpsi-red focus:bg-white rounded-xl px-5 py-4 outline-none transition-all text-gray-800 font-medium"
+                    class="w-full bg-colpsi-surface border-2 border-colpsi-border focus:border-colpsi-red focus:bg-white rounded-xl px-5 py-4 outline-none transition-all text-gray-800 font-medium"
                     onInput={(e) => setIdentifier(e.currentTarget.value)}
                   />
                 </div>
@@ -126,7 +126,7 @@ export default function AdminLoginPage() {
                   <PasswordInputComponent
                     required
                     placeholder="••••••••"
-                    class="bg-gray-50 border-2 border-gray-100 focus:border-colpsi-red focus:bg-white rounded-xl px-5 py-4 outline-none transition-all text-gray-800"
+                    class="bg-colpsi-surface border-2 border-colpsi-border focus:border-colpsi-red focus:bg-white rounded-xl px-5 py-4 outline-none transition-all text-gray-800"
                     onInput={(e) => setPassword(e.currentTarget.value)}
                   />
                 </div>

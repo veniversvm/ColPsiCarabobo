@@ -57,9 +57,9 @@ export default function CrearProyecto() {
           </div>
         </Show>
 
-        <div class="bg-white rounded-3xl border border-gray-100 shadow-premium p-6 md:p-8 space-y-6">
+        <div class="bg-white rounded-3xl border border-colpsi-border shadow-premium p-6 md:p-8 space-y-6">
           <section>
-            <h2 class="text-sm font-black text-colpsi-blue uppercase tracking-widest border-b border-gray-100 pb-3 mb-5">
+            <h2 class="text-sm font-black text-colpsi-blue uppercase tracking-widest border-b border-colpsi-border pb-3 mb-5">
               Información del proyecto
             </h2>
 
@@ -93,10 +93,10 @@ export default function CrearProyecto() {
             </div>
           </section>
 
-          <div class="flex gap-3 pt-2 border-t border-gray-100">
+          <div class="flex gap-3 pt-2 border-t border-colpsi-border">
             <button
               onClick={() => navigate("/admin/proyectos")}
-              class="bg-white text-gray-600 border-2 border-gray-200 px-8 py-4 rounded-2xl font-black hover:bg-gray-50"
+              class="bg-white text-gray-600 border-2 border-gray-200 px-8 py-4 rounded-2xl font-black hover:bg-colpsi-surface"
             >
               Cancelar
             </button>

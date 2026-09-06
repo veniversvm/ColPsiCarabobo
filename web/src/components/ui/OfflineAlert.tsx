@@ -1,7 +1,7 @@
 export default function OfflineAlert(props: { error: any, reset: () => void }) {
   return (
     <div class="fixed inset-0 z-[100] flex items-center justify-center bg-white/80 backdrop-blur-sm px-6">
-      <div class="w-full max-w-sm bg-white rounded-[2.5rem] p-8 shadow-2xl border border-gray-100 text-center space-y-6 animate-in fade-in zoom-in duration-300">
+      <div class="w-full max-w-sm bg-white rounded-[2.5rem] p-8 shadow-2xl border border-colpsi-border text-center space-y-6 animate-in fade-in zoom-in duration-300">
         <div class="w-20 h-20 bg-colpsi-bg rounded-3xl mx-auto flex items-center justify-center text-4xl shadow-inner border border-blue-50">
           <span class="animate-pulse">📡</span>
         </div>

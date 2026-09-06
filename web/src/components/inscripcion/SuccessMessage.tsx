@@ -3,7 +3,7 @@
 // Mensaje de éxito mostrado tras enviar correctamente la solicitud de inscripción.
 export function SuccessMessage() {
   return (
-    <div class="max-w-2xl mx-auto bg-white p-10 rounded-[2rem] shadow-sm border border-green-100 text-center">
+    <div class="max-w-2xl mx-auto bg-white p-10 rounded-3xl shadow-sm border border-green-100 text-center">
       <div class="w-20 h-20 bg-green-50 text-green-600 rounded-full flex items-center justify-center text-4xl mx-auto mb-6">
         ✓
       </div>

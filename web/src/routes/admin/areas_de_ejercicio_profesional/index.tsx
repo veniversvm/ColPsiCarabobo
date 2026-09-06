@@ -79,7 +79,7 @@ export default function AdminAreasEjercicioPage() {
     <main class="pb-20 animate-in fade-in duration-500 font-sans">
 
       {/* ── HEADER ────────────────────────────────────────────────────────── */}
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 bg-white p-8 rounded-[2.5rem] shadow-premium border border-gray-100">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 bg-white p-8 rounded-[2.5rem] shadow-premium border border-colpsi-border">
         <div>
           <h1 class="text-2xl font-black text-blue-900 uppercase tracking-tight">
             Áreas de Ejercicio Profesional
@@ -134,7 +134,7 @@ export default function AdminAreasEjercicioPage() {
       <Suspense fallback={
         <div class="grid grid-cols-1 gap-4">
           <For each={[1, 2, 3]}>
-            {() => <div class="h-28 bg-white animate-pulse rounded-3xl border border-gray-100" />}
+            {() => <div class="h-28 bg-white animate-pulse rounded-3xl border border-colpsi-border" />}
           </For>
         </div>
       }>
@@ -149,7 +149,7 @@ export default function AdminAreasEjercicioPage() {
         </Show>
 
         <Show when={!workAreas.loading && list().length > 0 && filtered().length === 0}>
-          <div class="text-center py-20 bg-white rounded-[2.5rem] border border-gray-100">
+          <div class="text-center py-20 bg-white rounded-[2.5rem] border border-colpsi-border">
             <p class="text-gray-400 font-bold">No se encontraron áreas con esos criterios</p>
           </div>
         </Show>
@@ -160,7 +160,7 @@ export default function AdminAreasEjercicioPage() {
               const isBusy = () => busy() === area.id;
               return (
                 <article class={`bg-white rounded-3xl border-2 transition-all duration-300 ${
-                  area.active ? "border-gray-50 shadow-sm hover:shadow-xl hover:border-blue-100" : "border-dashed border-gray-200 opacity-60 bg-gray-50/50"
+                  area.active ? "border-gray-50 shadow-sm hover:shadow-xl hover:border-blue-100" : "border-dashed border-gray-200 opacity-60 bg-colpsi-surface/50"
                 }`}>
                   <div class="flex flex-col md:flex-row md:items-center gap-6 p-6 md:p-8">
 
@@ -203,7 +203,7 @@ export default function AdminAreasEjercicioPage() {
                     </div>
 
                     {/* Acciones */}
-                    <div class="flex items-center gap-3 bg-gray-50/80 p-2 rounded-2xl border border-gray-100">
+                    <div class="flex items-center gap-3 bg-colpsi-surface/80 p-2 rounded-2xl border border-colpsi-border">
                       <button
                         onClick={() => handleToggle(area)}
                         disabled={isBusy()}
@@ -244,7 +244,7 @@ export default function AdminAreasEjercicioPage() {
         </div>
 
         <Show when={list().length > 0}>
-          <div class="mt-10 pt-6 border-t border-gray-100 text-center">
+          <div class="mt-10 pt-6 border-t border-colpsi-border text-center">
              <p class="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em]">
                 Mostrando {filtered().length} de {list().length} áreas configuradas
              </p>
@@ -258,7 +258,7 @@ export default function AdminAreasEjercicioPage() {
           class="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-blue-900/40 backdrop-blur-md"
           onClick={(e) => { if (e.target === e.currentTarget) setConfirmDelete(null); }}
         >
-          <div class="bg-white rounded-[2.5rem] shadow-2xl p-10 w-full max-w-md border border-gray-100 text-center animate-in zoom-in-95 duration-200">
+          <div class="bg-white rounded-[2.5rem] shadow-2xl p-10 w-full max-w-md border border-colpsi-border text-center animate-in zoom-in-95 duration-200">
             <div class="w-20 h-20 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center mx-auto mb-6 text-4xl">
               ⚠️
             </div>
@@ -269,7 +269,7 @@ export default function AdminAreasEjercicioPage() {
             <div class="flex gap-4">
               <button
                 onClick={() => setConfirmDelete(null)}
-                class="flex-1 px-6 py-4 rounded-2xl border-2 border-gray-100 font-black text-gray-400 hover:bg-gray-50 transition-all text-xs uppercase tracking-widest"
+                class="flex-1 px-6 py-4 rounded-2xl border-2 border-colpsi-border font-black text-gray-400 hover:bg-colpsi-surface transition-all text-xs uppercase tracking-widest"
               >
                 Cancelar
               </button>

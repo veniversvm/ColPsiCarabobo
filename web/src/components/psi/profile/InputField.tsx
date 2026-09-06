@@ -29,7 +29,7 @@ export function InputField(props: InputFieldProps) {
         value={props.value}
         onInput={(e) => props.onInput(e.currentTarget.value)}
         placeholder={props.placeholder}
-        class={`w-full bg-gray-50 border-2 rounded-xl px-5 py-3 outline-none transition-all ${
+        class={`w-full bg-colpsi-surface border-2 rounded-xl px-5 py-3 outline-none transition-all ${
           props.error
             ? "border-red-300 focus:border-red-500"
             : "border-transparent focus:border-colpsi-yellow"
@@ -110,7 +110,7 @@ export function PasswordField(props: PasswordFieldProps) {
           value={props.value}
           onInput={(e) => props.onInput(e.currentTarget.value)}
           placeholder={props.placeholder}
-          class={`w-full bg-gray-50 border-2 rounded-xl px-5 py-3 outline-none transition-all font-mono pr-12 ${
+          class={`w-full bg-colpsi-surface border-2 rounded-xl px-5 py-3 outline-none transition-all font-mono pr-12 ${
             props.error
               ? "border-red-300 focus:border-red-500"
               : "border-transparent focus:border-colpsi-yellow"

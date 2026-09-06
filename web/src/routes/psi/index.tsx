@@ -48,9 +48,9 @@ export default function PsiDashboard() {
   };
 
   return (
-    <main class="bg-[#f8fafc] min-h-screen pb-20">
+    <main class="bg-colpsi-bg min-h-screen pb-20">
       {/* Cabecera de Bienvenida */}
-      <div class="bg-[#1e3a8a] pt-12 pb-20 px-6">
+      <div class="bg-heraldic pt-12 pb-20 px-6">
         <div class="max-w-4xl mx-auto">
           <h1 class="text-white text-2xl font-bold">
             Hola, {profile()?.first_name || user()?.username}
@@ -64,35 +64,35 @@ export default function PsiDashboard() {
         
         {/* Card de Estatus de Solvencia */}
         <Suspense fallback={<div class="h-32 bg-white animate-pulse rounded-3xl" />}>
-          <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex items-center justify-between">
+          <div class="bg-white rounded-3xl p-6 shadow-sm border border-colpsi-border flex items-center justify-between">
             <div>
               <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Estatus de Solvencia</p>
               <Show when={profile()?.solvent} 
-                fallback={<h2 class="text-[#991b1b] text-xl font-black mt-1">INSOLVENTE</h2>}
+                fallback={<h2 class="text-colpsi-red text-xl font-black mt-1">INSOLVENTE</h2>}
               >
                 <h2 class="text-green-600 text-xl font-black mt-1">AL DÍA</h2>
               </Show>
               <p class="text-xs text-gray-500 mt-1">FPV: {profile()?.fpv}</p>
             </div>
-            <div class={`w-12 h-12 rounded-full flex items-center justify-center ${profile()?.solvent ? 'bg-green-100 text-green-600' : 'bg-red-100 text-[#991b1b]'}`}>
+            <div class={`w-12 h-12 rounded-full flex items-center justify-center ${profile()?.solvent ? 'bg-green-100 text-green-600' : 'bg-red-100 text-colpsi-red'}`}>
               <Show when={profile()?.solvent} fallback="!">✓</Show>
             </div>
           </div>
         </Suspense>
 
         {/* Biblioteca Virtual */}
-        <div class={`col-span-2 bg-white rounded-3xl p-4 border shadow-sm ${profile()?.solvent ? 'border-gray-100' : 'border-dashed border-gray-300'}`}>
+        <div class={`col-span-2 bg-white rounded-3xl p-4 border shadow-sm ${profile()?.solvent ? 'border-colpsi-border' : 'border-dashed border-gray-300'}`}>
           <button
             type="button"
             onClick={openLibrary}
             disabled={!profile()?.solvent || opening()}
             class={`w-full flex items-center gap-3 text-left group ${profile()?.solvent ? 'active:scale-[0.99] transition-transform' : 'cursor-not-allowed'}`}
           >
-            <div class={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${profile()?.solvent ? 'bg-blue-50 text-[#1e3a8a] group-hover:bg-[#facc15] transition-colors' : 'bg-gray-100 text-gray-400'}`}>
+            <div class={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${profile()?.solvent ? 'bg-blue-50 text-colpsi-blue group-hover:bg-colpsi-yellow transition-colors' : 'bg-gray-100 text-gray-400'}`}>
               🎧
             </div>
             <div class="flex-1">
-              <span class={`text-xs font-bold ${profile()?.solvent ? 'text-[#1e3a8a]' : 'text-gray-400'}`}>
+              <span class={`text-xs font-bold ${profile()?.solvent ? 'text-colpsi-blue' : 'text-gray-400'}`}>
                 Biblioteca Virtual
               </span>
               <p class="text-[11px] text-gray-500 mt-0.5 leading-snug">
@@ -102,7 +102,7 @@ export default function PsiDashboard() {
               </p>
             </div>
             <Show when={profile()?.solvent} fallback={<span class="text-lg text-gray-300">🔒</span>}>
-              <span class={`text-lg text-[#1e3a8a] ${opening() ? 'opacity-40' : 'group-hover:translate-x-0.5 transition-transform'}`}>→</span>
+              <span class={`text-lg text-colpsi-blue ${opening() ? 'opacity-40' : 'group-hover:translate-x-0.5 transition-transform'}`}>→</span>
             </Show>
           </button>
           <Show when={libError()}>
@@ -112,47 +112,47 @@ export default function PsiDashboard() {
 
         {/* Acceso Rápido (Grid) */}
         <div class="grid grid-cols-2 gap-4">
-          <A href="/psi/perfil" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center text-center group active:scale-95 transition-transform">
-            <div class="w-12 h-12 bg-blue-50 text-[#1e3a8a] rounded-2xl flex items-center justify-center mb-2 group-hover:bg-[#facc15] transition-colors">
+          <A href="/psi/perfil" class="bg-white p-4 rounded-3xl border border-colpsi-border shadow-sm flex flex-col items-center text-center group active:scale-95 transition-transform">
+            <div class="w-12 h-12 bg-blue-50 text-colpsi-blue rounded-2xl flex items-center justify-center mb-2 group-hover:bg-colpsi-yellow transition-colors">
               👤
             </div>
-            <span class="text-xs font-bold text-[#1e3a8a]">Mi Perfil</span>
+            <span class="text-xs font-bold text-colpsi-blue">Mi Perfil</span>
           </A>
-          <A href="/psi/academico" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center text-center group active:scale-95 transition-transform">
-            <div class="w-12 h-12 bg-blue-50 text-[#1e3a8a] rounded-2xl flex items-center justify-center mb-2 group-hover:bg-[#facc15] transition-colors">
+          <A href="/psi/academico" class="bg-white p-4 rounded-3xl border border-colpsi-border shadow-sm flex flex-col items-center text-center group active:scale-95 transition-transform">
+            <div class="w-12 h-12 bg-blue-50 text-colpsi-blue rounded-2xl flex items-center justify-center mb-2 group-hover:bg-colpsi-yellow transition-colors">
               🎓
             </div>
-            <span class="text-xs font-bold text-[#1e3a8a]">Postgrados</span>
+            <span class="text-xs font-bold text-colpsi-blue">Postgrados</span>
           </A>
-          <A href="/psi/documentos" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center text-center group active:scale-95 transition-transform">
-            <div class="w-12 h-12 bg-blue-50 text-[#1e3a8a] rounded-2xl flex items-center justify-center mb-2 group-hover:bg-[#facc15] transition-colors">
+          <A href="/psi/documentos" class="bg-white p-4 rounded-3xl border border-colpsi-border shadow-sm flex flex-col items-center text-center group active:scale-95 transition-transform">
+            <div class="w-12 h-12 bg-blue-50 text-colpsi-blue rounded-2xl flex items-center justify-center mb-2 group-hover:bg-colpsi-yellow transition-colors">
               📁
             </div>
-            <span class="text-xs font-bold text-[#1e3a8a]">Mis Documentos</span>
+            <span class="text-xs font-bold text-colpsi-blue">Mis Documentos</span>
           </A>
-          <A href="/psi/notificaciones" class="relative bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center text-center group active:scale-95 transition-transform">
-            <div class="w-12 h-12 bg-blue-50 text-[#1e3a8a] rounded-2xl flex items-center justify-center mb-2 group-hover:bg-[#facc15] transition-colors">
+          <A href="/psi/notificaciones" class="relative bg-white p-4 rounded-3xl border border-colpsi-border shadow-sm flex flex-col items-center text-center group active:scale-95 transition-transform">
+            <div class="w-12 h-12 bg-blue-50 text-colpsi-blue rounded-2xl flex items-center justify-center mb-2 group-hover:bg-colpsi-yellow transition-colors">
               🔔
             </div>
-            <span class="text-xs font-bold text-[#1e3a8a]">Notificaciones</span>
+            <span class="text-xs font-bold text-colpsi-blue">Notificaciones</span>
             <Show when={(unread()?.unread_count ?? 0) > 0}>
               <span class="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow">
                 {unread()?.unread_count}
               </span>
             </Show>
           </A>
-          <A href="/psi/tickets" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center text-center group active:scale-95 transition-transform">
-            <div class="w-12 h-12 bg-blue-50 text-[#1e3a8a] rounded-2xl flex items-center justify-center mb-2 group-hover:bg-[#facc15] transition-colors">
+          <A href="/psi/tickets" class="bg-white p-4 rounded-3xl border border-colpsi-border shadow-sm flex flex-col items-center text-center group active:scale-95 transition-transform">
+            <div class="w-12 h-12 bg-blue-50 text-colpsi-blue rounded-2xl flex items-center justify-center mb-2 group-hover:bg-colpsi-yellow transition-colors">
               🎫
             </div>
-            <span class="text-xs font-bold text-[#1e3a8a]">Solicitudes</span>
+            <span class="text-xs font-bold text-colpsi-blue">Solicitudes</span>
           </A>
         </div>
 
         {/* Noticias Recientes */}
         <section class="space-y-4">
           <div class="flex justify-between items-end px-2">
-            <h3 class="text-[#1e3a8a] font-bold">Noticias del Colegio</h3>
+            <h3 class="text-colpsi-blue font-bold">Noticias del Colegio</h3>
             <A href="/noticias" class="text-xs text-blue-500 font-bold">Ver todas</A>
           </div>
 
@@ -160,7 +160,7 @@ export default function PsiDashboard() {
             <div class="space-y-4">
               <For each={news()?.data}>
                 {(post) => (
-                  <div class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex gap-4 items-center">
+                  <div class="bg-white p-4 rounded-3xl border border-colpsi-border shadow-sm flex gap-4 items-center">
                     <Show when={post.image_url} fallback={<div class="w-16 h-16 bg-gray-100 rounded-2xl shrink-0" />}>
                        <img src={bucketUrl(post.image_url)} class="w-16 h-16 object-cover rounded-2xl shrink-0" />
                     </Show>
@@ -178,8 +178,8 @@ export default function PsiDashboard() {
       </div>
 
       {/* Tab Bar Inferior (Diseño Mobile-First) */}
-      <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-6 py-3 flex justify-between items-center z-50">
-        <A href="/psi" class="text-[#1e3a8a] flex flex-col items-center">
+      <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-colpsi-border px-6 py-3 flex justify-between items-center z-50">
+        <A href="/psi" class="text-colpsi-blue flex flex-col items-center">
           <span class="text-xl">🏠</span>
           <span class="text-[10px] font-bold uppercase">Inicio</span>
         </A>

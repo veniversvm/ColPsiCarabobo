@@ -69,7 +69,7 @@ export function UndergraduateCard(props: UndergraduateCardProps) {
       />
 
       <div 
-        class={`${props.onClick ? 'cursor-pointer' : ''} hover:bg-gray-50 p-4 rounded-xl transition-all`}
+        class={`${props.onClick ? 'cursor-pointer' : ''} hover:bg-colpsi-surface p-4 rounded-xl transition-all`}
         onClick={props.onClick}
       >
         {/* Información principal */}
@@ -107,7 +107,7 @@ export function UndergraduateCard(props: UndergraduateCardProps) {
 
         {/* Miniaturas de documentos */}
         <Show when={hasImages()}>
-          <div class="mt-4 pt-3 border-t border-gray-100">
+          <div class="mt-4 pt-3 border-t border-colpsi-border">
             <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">
               Documentos del Título
             </p>

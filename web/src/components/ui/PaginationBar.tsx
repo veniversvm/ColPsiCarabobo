@@ -17,7 +17,7 @@ interface Props {
 
 export function PaginationBar(props: Props) {
   return (
-    <div class="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 bg-gray-50 border-t border-gray-100">
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 bg-colpsi-surface border-t border-colpsi-border">
       {/* Info + selector de entradas */}
       <div class="flex items-center gap-3">
         <span class="text-xs font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">

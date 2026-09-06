@@ -116,10 +116,10 @@ export default function PublicNoticiasPage() {
   const rest = () => posts().slice(1);
 
   return (
-    <main class="min-h-screen bg-[#f7f5f0]">
+    <main class="min-h-screen bg-colpsi-bg">
 
       {/* ── CABECERA ───────────────────────────────────────────────────────── */}
-      <header class="bg-[#0d2b5e] text-white py-16 px-6 relative overflow-hidden">
+      <header class="bg-colpsi-navy text-white py-16 px-6 relative overflow-hidden">
         <div class="absolute inset-0 opacity-5"
           style="background-image: repeating-linear-gradient(45deg, #fff 0, #fff 1px, transparent 0, transparent 50%); background-size: 12px 12px;" />
         <div class="max-w-5xl mx-auto relative">
@@ -128,7 +128,7 @@ export default function PublicNoticiasPage() {
           </p>
           <h1 class="text-4xl md:text-5xl font-black leading-none uppercase tracking-tight mb-4">
             Noticias &<br />
-            <span class="text-yellow-400">Comunicados</span>
+            <span class="text-colpsi-yellow">Comunicados</span>
           </h1>
           <p class="text-blue-200 text-sm max-w-md leading-relaxed">
             Información institucional, convocatorias y novedades para la comunidad psicológica de Venezuela.
@@ -161,7 +161,7 @@ export default function PublicNoticiasPage() {
           <Show when={hero()}>
             {(post) => (
               <A href={`/noticias/${toSlug(post().title, post().id)}`} state={{ id: post().id }} class="group block mb-10">
-                <article class="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 grid md:grid-cols-2">
+                <article class="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-colpsi-border grid md:grid-cols-2">
                   <div class="relative h-56 md:h-auto bg-gradient-to-br from-blue-900 to-blue-700 overflow-hidden">
                     <Show when={post().image_url}>
                       <img
@@ -243,7 +243,7 @@ function PostCard(props: { post: Post }) {
   const { post } = props;
   return (
     <A href={`/noticias/${toSlug(post.title, post.id)}`} state={{ id: post.id }} class="group block">
-      <article class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 h-full flex flex-col">
+      <article class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-colpsi-border h-full flex flex-col">
         <div class="relative h-44 bg-gradient-to-br from-blue-800 to-blue-600 overflow-hidden flex-shrink-0">
           <Show when={post.image_url}>
             <img
@@ -271,7 +271,7 @@ function PostCard(props: { post: Post }) {
           <p class="text-gray-500 text-xs leading-relaxed line-clamp-2 flex-1">
             {post.short_description || <span class="italic text-gray-300">Sin resumen</span>}
           </p>
-          <div class="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+          <div class="mt-4 pt-4 border-t border-colpsi-border flex items-center justify-between">
             <span class="text-[10px] text-gray-400 font-bold">COLPSI Carabobo</span>
             <span class="text-blue-600 font-black text-xs group-hover:translate-x-1 transition-transform inline-block">
               Leer →
@@ -286,7 +286,7 @@ function PostCard(props: { post: Post }) {
 // ── Estado vacío ──────────────────────────────────────────────────────────────
 function EmptyState(props: { hasSearch: boolean }) {
   return (
-    <div class="text-center py-24 bg-white rounded-3xl border border-gray-100">
+    <div class="text-center py-24 bg-white rounded-3xl border border-colpsi-border">
       <p class="text-5xl mb-4">{props.hasSearch ? "🔍" : "📰"}</p>
       <h2 class="text-lg font-black text-gray-700 mb-2">
         {props.hasSearch ? "Sin resultados" : "Sin publicaciones aún"}

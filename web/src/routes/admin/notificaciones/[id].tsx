@@ -35,9 +35,9 @@ export default function AdminNotificacionDetalle() {
           <button onClick={reset} class="bg-red-600 text-white font-black px-6 py-2.5 rounded-xl text-sm">↻ Reintentar</button>
         </div>
       )}>
-        <Suspense fallback={<div class="h-48 bg-white animate-pulse rounded-3xl border border-gray-100" />}>
+        <Suspense fallback={<div class="h-48 bg-white animate-pulse rounded-3xl border border-colpsi-border" />}>
           <Show when={n()}>
-            <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 md:p-8">
+            <div class="bg-white rounded-3xl border border-colpsi-border shadow-sm p-6 md:p-8">
               <div class="flex items-center gap-2 flex-wrap mb-3">
                 <StatusBadge status={n()!.status} />
                 <span class="text-[10px] font-black uppercase tracking-wider text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">
@@ -51,7 +51,7 @@ export default function AdminNotificacionDetalle() {
 
               <div class="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap mb-6">{n()!.message}</div>
 
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 border-t border-gray-100 pt-5 text-center">
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 border-t border-colpsi-border pt-5 text-center">
                 <div>
                   <p class="text-2xl font-black text-gray-800">{detail()?.total_recipients ?? 0}</p>
                   <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Destinatarios</p>
@@ -80,9 +80,9 @@ export default function AdminNotificacionDetalle() {
           Destinatarios <span class="text-gray-400 text-base">({targets()?.length ?? 0})</span>
         </h2>
 
-        <Suspense fallback={<div class="h-24 bg-white animate-pulse rounded-2xl border border-gray-100" />}>
+        <Suspense fallback={<div class="h-24 bg-white animate-pulse rounded-2xl border border-colpsi-border" />}>
           <Show when={(targets()?.length ?? 0) === 0} fallback={undefined}>
-            <div class="bg-white rounded-2xl border border-gray-100 p-8 text-center text-sm text-gray-500">
+            <div class="bg-white rounded-2xl border border-colpsi-border p-8 text-center text-sm text-gray-500">
               Sin destinatarios registrados.
             </div>
           </Show>
@@ -90,7 +90,7 @@ export default function AdminNotificacionDetalle() {
           <div class="space-y-2">
             <For each={targets() ?? []}>
               {(t) => (
-                <div class="bg-white rounded-xl border border-gray-100 px-4 py-3 flex items-center justify-between">
+                <div class="bg-white rounded-xl border border-colpsi-border px-4 py-3 flex items-center justify-between">
                   <div class="min-w-0">
                     <p class="text-sm font-bold text-gray-800 truncate">
                       {t.psi_user?.first_name} {t.psi_user?.last_name || "—"}

@@ -79,7 +79,7 @@ export function AvatarUploader(props: AvatarUploaderProps) {
 
   return (
     <>
-      <section class="bg-white rounded-[2.5rem] p-8 shadow-premium border border-gray-100">
+      <section class="bg-white rounded-[2.5rem] p-8 shadow-premium border border-colpsi-border">
         <div class="flex flex-col md:flex-row items-center gap-8">
           {/* Columna izquierda: Avatar */}
           <div class="flex flex-col items-center">
@@ -133,7 +133,7 @@ export function AvatarUploader(props: AvatarUploaderProps) {
               <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">
                 Foto de Perfil
               </p>
-              <p class="text-[10px] text-gray-400 mt-1 bg-gray-50 px-3 py-1 rounded-full">
+              <p class="text-[10px] text-gray-400 mt-1 bg-colpsi-surface px-3 py-1 rounded-full">
                 JPG, PNG, GIF • Máx 5MB
               </p>
             </div>
@@ -189,7 +189,7 @@ export function AvatarUploader(props: AvatarUploaderProps) {
           </div>
 
           {/* Columna derecha: QR Code */}
-          <div class="w-full md:w-auto flex justify-center border-t md:border-t-0 md:border-l border-gray-100 pt-6 md:pt-0 md:pl-8">
+          <div class="w-full md:w-auto flex justify-center border-t md:border-t-0 md:border-l border-colpsi-border pt-6 md:pt-0 md:pl-8">
             <QRCodeGenerator url={props.url} />
           </div>
         </div>
@@ -217,7 +217,7 @@ export function AvatarUploader(props: AvatarUploaderProps) {
                 src={previewUrl()!}
                 alt={`Foto de perfil ampliada`}
                 // Clases CLAVE: w-full fuerza a la imagen a ocupar el ancho del max-w-2xl
-                class="w-full max-h-[85vh] min-h-[300px] object-contain rounded-2xl shadow-2xl bg-gray-50 cursor-default"
+                class="w-full max-h-[85vh] min-h-[300px] object-contain rounded-2xl shadow-2xl bg-colpsi-surface cursor-default"
                 onClick={(e) => e.stopPropagation()}
               />
             </div>

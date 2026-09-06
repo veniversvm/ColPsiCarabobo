@@ -14,7 +14,7 @@ export function FullBioSection(props: FullBioSectionProps) {
 
   return (
     <Show when={hasContent()}>
-      <div class="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-premium border border-gray-100">
+      <div class="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-premium border border-colpsi-border">
         <h3 class="text-xs md:text-sm font-black text-colpsi-blue uppercase tracking-widest mb-6 border-b-2 border-gray-50 pb-4">
           Biografía y Experiencia Detallada
         </h3>

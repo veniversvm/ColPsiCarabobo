@@ -30,7 +30,7 @@ export default function DocumentSectionBody(props: Props) {
                       Art. {b.numero}
                     </span>
                   </div>
-                  <div class="flex-1 bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+                  <div class="flex-1 bg-white border border-colpsi-border rounded-2xl p-5 shadow-sm">
                     <DocumentText text={b.texto ?? ""} />
                   </div>
                 </article>

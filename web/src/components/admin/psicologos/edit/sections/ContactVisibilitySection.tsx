@@ -22,7 +22,7 @@ export function ContactVisibilitySection(props: Props) {
             <span class="text-[9px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md font-bold uppercase">Uso Privado</span>
           </div>
           
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-5 bg-gray-50/50 p-6 rounded-2xl border border-gray-100">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5 bg-colpsi-surface/50 p-6 rounded-2xl border border-colpsi-border">
             <Field label="Teléfono Local (Gremio)">
               <input type="tel"
                 value={props.form.contact_phone || ""}

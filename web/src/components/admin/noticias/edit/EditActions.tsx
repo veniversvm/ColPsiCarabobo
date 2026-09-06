@@ -20,7 +20,7 @@ export function EditActions(props: Props) {
       <button
         type="button"
         onClick={props.onCancel}
-        class="bg-white text-gray-600 border-2 border-gray-200 px-6 py-4 rounded-2xl font-black hover:bg-gray-50 transition-all text-sm"
+        class="bg-white text-gray-600 border-2 border-gray-200 px-6 py-4 rounded-2xl font-black hover:bg-colpsi-surface transition-all text-sm"
       >Cancelar</button>
       <button
         type="submit"

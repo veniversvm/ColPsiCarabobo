@@ -14,7 +14,7 @@ const fmt = (n?: number) => (n ?? 0).toLocaleString("es-VE");
 export function RankingList(props: RankingListProps) {
   const max = () => Math.max(...(props.items ?? []).map(i => i.count), 1);
   return (
-    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-colpsi-border">
       <p class="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
         <span>{props.icon}</span>
         {props.title}

@@ -25,7 +25,7 @@ export default function ConfirmModal(props: {
           <button
             onClick={props.onClose}
             disabled={props.busy}
-            class="bg-white text-gray-600 border-2 border-gray-200 rounded-xl font-black py-3 hover:bg-gray-50 disabled:opacity-60"
+            class="bg-white text-gray-600 border-2 border-gray-200 rounded-xl font-black py-3 hover:bg-colpsi-surface disabled:opacity-60"
           >
             Cancelar
           </button>

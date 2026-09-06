@@ -7,12 +7,12 @@ interface Props {
 }
 
 export function ContactSection(props: Props) {
-  const inputClass = "w-full bg-gray-50 border-2 border-transparent focus:border-colpsi-blue rounded-xl px-4 py-2.5 outline-none";
+  const inputClass = "w-full bg-colpsi-surface border-2 border-transparent focus:border-colpsi-blue rounded-xl px-4 py-2.5 outline-none";
 
   return (
-    <section class="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100">
+    <section class="bg-white rounded-[2rem] p-6 shadow-sm border border-colpsi-border">
       <h2 class="text-lg font-black text-colpsi-blue mb-4 border-l-4 border-gray-300 pl-3">Datos de Contacto</h2>
-      <p class="text-xs text-gray-500 mb-4 bg-gray-50 p-3 rounded-xl border border-gray-100">
+      <p class="text-xs text-gray-500 mb-4 bg-colpsi-surface p-3 rounded-xl border border-colpsi-border">
         Información requerida para mantener comunicación oficial con el agremiado.
       </p>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

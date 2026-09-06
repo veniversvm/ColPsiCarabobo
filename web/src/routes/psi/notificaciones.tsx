@@ -42,14 +42,14 @@ export default function PsiNotificaciones() {
   const isRead = (n: Notification) => opened() === n.id || n.targets?.[0]?.is_read === true;
 
   return (
-    <main class="bg-[#f8fafc] min-h-screen pb-24">
-      <div class="bg-[#1e3a8a] pt-12 pb-20 px-6">
+    <main class="bg-colpsi-bg min-h-screen pb-24">
+      <div class="bg-heraldic pt-12 pb-20 px-6">
         <div class="max-w-3xl mx-auto">
           <A href="/psi" class="inline-flex items-center gap-1 text-blue-200 text-sm font-bold mb-4 hover:text-white">← Volver al Panel</A>
           <h1 class="text-white text-2xl font-bold flex items-center gap-3">
             🔔 Notificaciones
             <Show when={(unread()?.unread_count ?? 0) > 0}>
-              <span class="bg-colpsi-yellow text-[#1e3a8a] text-xs font-black px-3 py-1 rounded-full">{unread()?.unread_count} nuevas</span>
+              <span class="bg-colpsi-yellow text-colpsi-blue text-xs font-black px-3 py-1 rounded-full">{unread()?.unread_count} nuevas</span>
             </Show>
           </h1>
           <p class="text-blue-200 text-sm mt-1">Comunicados y avisos del colegio</p>
@@ -59,11 +59,11 @@ export default function PsiNotificaciones() {
       <div class="max-w-3xl mx-auto px-4 -mt-12 space-y-3">
         <Suspense fallback={
           <div class="space-y-3">
-            <For each={[1, 2, 3]}>{() => <div class="h-24 bg-white animate-pulse rounded-3xl border border-gray-100" />}</For>
+            <For each={[1, 2, 3]}>{() => <div class="h-24 bg-white animate-pulse rounded-3xl border border-colpsi-border" />}</For>
           </div>
         }>
           <Show when={!list.loading && items().length === 0}>
-            <div class="bg-white rounded-3xl p-12 text-center shadow-sm border border-gray-100">
+            <div class="bg-white rounded-3xl p-12 text-center shadow-sm border border-colpsi-border">
               <p class="text-5xl mb-4">📭</p>
               <h3 class="font-black text-gray-700">Sin notificaciones</h3>
               <p class="text-sm text-gray-500 mt-1">No tienes comunicados pendientes.</p>
@@ -83,7 +83,7 @@ export default function PsiNotificaciones() {
                   <button
                     onClick={() => toggleDetail(n)}
                     class={`w-full text-left bg-white rounded-3xl p-5 shadow-sm border transition-all active:scale-[0.99] ${
-                      read ? "border-gray-100" : "border-blue-300 ring-1 ring-blue-100"
+                      read ? "border-colpsi-border" : "border-blue-300 ring-1 ring-blue-100"
                     } ${expanded ? "rounded-b-none border-b-0" : ""}`}
                   >
                     <div class="flex items-start gap-3">
