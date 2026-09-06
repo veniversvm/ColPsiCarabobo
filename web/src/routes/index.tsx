@@ -8,21 +8,17 @@ export default function Home() {
       
       {/* SECCIÓN DE IDENTIDAD */}
       <div class="mb-10 relative">
-        <div class="bg-colpsi-blue w-20 h-20 rounded-3xl flex items-center justify-center shadow-2xl shadow-blue-900/20">
-          <span class="text-white text-5xl font-bold select-none">Ψ</span>
-        </div>
-        <div class="absolute -top-2 -right-2 w-7 h-7 bg-colpsi-yellow rounded-full border-4 border-white animate-pulse shadow-md" />
+        <img
+          src="/logo-horizontal.png"
+          alt="Colegio de Psicólogos del Estado Carabobo"
+          class="w-full max-w-md md:max-w-lg h-auto drop-shadow-xl"
+        />
+        <div class="absolute -top-3 right-2 md:right-6 w-7 h-7 bg-colpsi-yellow rounded-full border-4 border-white animate-pulse shadow-md" />
       </div>
 
-      <header class="max-w-4xl space-y-4">
-        <h1 class="text-4xl md:text-6xl font-black text-colpsi-text leading-tight tracking-tighter">
-          Colegio de Psicólogos <br />
-          <span class="text-colpsi-blue italic font-black">Estado Carabobo</span>
-        </h1>
-        <p class="text-colpsi-muted text-lg md:text-xl max-w-2xl mx-auto leading-relaxed font-medium">
-          Garantizando la ética, el respaldo profesional y la salud mental de todos los carabobeños.
-        </p>
-      </header>
+      <p class="text-colpsi-muted text-lg md:text-xl max-w-2xl mx-auto leading-relaxed font-medium mt-10">
+        Garantizando la ética, el respaldo profesional y la salud mental de todos los carabobeños.
+      </p>
 
       {/* ACCIONES DE ENTRADA */}
       <div class="mt-12 flex flex-col md:flex-row gap-4 w-full md:w-auto z-10 px-4">

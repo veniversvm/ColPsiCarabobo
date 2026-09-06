@@ -29,9 +29,9 @@ export default function MisDocumentosPage() {
   );
 
   return (
-    <main class="bg-[#f8fafc] min-h-screen pb-24 font-sans">
+    <main class="bg-colpsi-bg min-h-screen pb-24 font-sans">
       {/* ── HEADER ──────────────────────────────────────────────────────────── */}
-      <div class="bg-colpsi-blue pt-10 pb-20 px-4 md:px-8 shadow-inner">
+      <div class="bg-heraldic pt-10 pb-20 px-4 md:px-8 shadow-inner">
         <div class="max-w-4xl mx-auto flex items-center justify-between">
           <A
             href="/psi"
@@ -94,7 +94,7 @@ export default function MisDocumentosPage() {
                       <section class="space-y-4">
                         <div class="flex items-center gap-2 px-2">
                           <span class="text-xl">{DOCUMENT_TYPE_EMOJI[type]}</span>
-                          <h2 class="text-[#1e3a8a] font-black uppercase tracking-wide text-sm">
+                          <h2 class="text-colpsi-blue font-black uppercase tracking-wide text-sm">
                             {DOCUMENT_TYPE_LABELS[type]}
                           </h2>
                           <span class="text-[10px] font-black text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">

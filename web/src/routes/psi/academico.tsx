@@ -106,10 +106,10 @@ export default function AcademicoPage() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <main class="bg-[#f8fafc] min-h-screen pb-24 font-sans">
+    <main class="bg-colpsi-bg min-h-screen pb-24 font-sans">
 
       {/* ── HEADER ──────────────────────────────────────────────────────────── */}
-      <div class="bg-colpsi-blue pt-10 pb-20 px-4 md:px-8 shadow-inner">
+      <div class="bg-heraldic pt-10 pb-20 px-4 md:px-8 shadow-inner">
         <div class="max-w-4xl mx-auto flex items-center justify-between">
           <A
             href="/psi"

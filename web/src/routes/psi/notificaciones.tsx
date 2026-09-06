@@ -42,14 +42,14 @@ export default function PsiNotificaciones() {
   const isRead = (n: Notification) => opened() === n.id || n.targets?.[0]?.is_read === true;
 
   return (
-    <main class="bg-[#f8fafc] min-h-screen pb-24">
-      <div class="bg-[#1e3a8a] pt-12 pb-20 px-6">
+    <main class="bg-colpsi-bg min-h-screen pb-24">
+      <div class="bg-heraldic pt-12 pb-20 px-6">
         <div class="max-w-3xl mx-auto">
           <A href="/psi" class="inline-flex items-center gap-1 text-blue-200 text-sm font-bold mb-4 hover:text-white">← Volver al Panel</A>
           <h1 class="text-white text-2xl font-bold flex items-center gap-3">
             🔔 Notificaciones
             <Show when={(unread()?.unread_count ?? 0) > 0}>
-              <span class="bg-colpsi-yellow text-[#1e3a8a] text-xs font-black px-3 py-1 rounded-full">{unread()?.unread_count} nuevas</span>
+              <span class="bg-colpsi-yellow text-colpsi-blue text-xs font-black px-3 py-1 rounded-full">{unread()?.unread_count} nuevas</span>
             </Show>
           </h1>
           <p class="text-blue-200 text-sm mt-1">Comunicados y avisos del colegio</p>

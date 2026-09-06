@@ -86,7 +86,7 @@ export function SearchHeader(props: SearchHeaderProps) {
             {/* Botón Buscar */}
             <button
               type="submit"
-              class="md:w-48 bg-colpsi-yellow text-colpsi-blue px-8 py-4 rounded-2xl font-black shadow-lg shadow-yellow-500/20 hover:bg-[#f3ca05] hover:scale-105 active:scale-95 transition-all whitespace-nowrap flex items-center justify-center gap-2"
+              class="md:w-48 bg-colpsi-yellow text-colpsi-blue px-8 py-4 rounded-2xl font-black shadow-lg shadow-yellow-500/20 hover:bg-colpsi-yellow-dark hover:scale-105 active:scale-95 transition-all whitespace-nowrap flex items-center justify-center gap-2"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />

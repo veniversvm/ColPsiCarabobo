@@ -53,7 +53,10 @@ export default createHandler((event) => {
             
             {/* Ícono de la pestaña referenciando a la carpeta public */}
             <link rel="icon" href="/psi.png" />
-            
+
+            {/* Preload de la tipografía Inter autoalojada (ver MANUAL_ESTILO §4) */}
+            <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+
             {props.assets}
           </head>
           <body>

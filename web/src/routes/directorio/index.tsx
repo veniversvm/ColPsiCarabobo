@@ -162,7 +162,7 @@ export default function DirectoryPage() {
       <Meta name="description" content="Encuentra psicólogos colegiados en el estado Carabobo. Busca por nombre, área de desempeño o ubicación." />
       <Meta name="robots" content="index, follow" />
 
-      <main class="min-h-screen bg-[#fcfcfc] pb-24 font-sans">
+      <main class="min-h-screen bg-colpsi-bg pb-24 font-sans">
         <SearchHeader
           query={query()}
           workArea={workArea()}         

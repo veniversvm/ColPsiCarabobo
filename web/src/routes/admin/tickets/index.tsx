@@ -65,7 +65,7 @@ export default function AdminTickets() {
         </div>
         <A
           href="/admin/tickets/configuracion"
-          class="inline-flex items-center gap-2 bg-white border border-gray-200 px-5 py-3 rounded-2xl font-black text-gray-600 hover:border-blue-300 hover:text-[#1e3a8a] transition-all text-xs uppercase tracking-widest shadow-sm"
+          class="inline-flex items-center gap-2 bg-white border border-gray-200 px-5 py-3 rounded-2xl font-black text-gray-600 hover:border-blue-300 hover:text-colpsi-blue transition-all text-xs uppercase tracking-widest shadow-sm"
         >
           ⚙️ Configuración
         </A>
@@ -79,7 +79,7 @@ export default function AdminTickets() {
               value={q()}
               onInput={(e) => setQ(e.currentTarget.value)}
               placeholder="Buscar por título o descripción..."
-              class="w-full pl-10 pr-4 py-3 rounded-2xl border-2 border-gray-100 bg-gray-50 outline-none focus:border-[#1e3a8a] text-sm font-semibold text-gray-800 transition-all"
+              class="w-full pl-10 pr-4 py-3 rounded-2xl border-2 border-gray-100 bg-gray-50 outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-800 transition-all"
             />
             <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
           </div>
@@ -87,7 +87,7 @@ export default function AdminTickets() {
           <select
             value={motivoId()}
             onChange={(e) => { setMotivoId(e.currentTarget.value); setEstadoId(""); }}
-            class="md:col-span-3 px-4 py-3 rounded-2xl border-2 border-gray-100 bg-gray-50 outline-none focus:border-[#1e3a8a] text-sm font-semibold text-gray-700 transition-all"
+            class="md:col-span-3 px-4 py-3 rounded-2xl border-2 border-gray-100 bg-gray-50 outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-700 transition-all"
           >
             <option value="">Todos los motivos</option>
             <For each={motivos()}>
@@ -98,7 +98,7 @@ export default function AdminTickets() {
           <select
             value={estadoId()}
             onChange={(e) => setEstadoId(e.currentTarget.value)}
-            class="md:col-span-3 px-4 py-3 rounded-2xl border-2 border-gray-100 bg-gray-50 outline-none focus:border-[#1e3a8a] text-sm font-semibold text-gray-700 transition-all"
+            class="md:col-span-3 px-4 py-3 rounded-2xl border-2 border-gray-100 bg-gray-50 outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-700 transition-all"
           >
             <option value="">Todos los estados</option>
             <For each={estadosDisponibles()}>
@@ -151,7 +151,7 @@ export default function AdminTickets() {
             {(t: Ticket) => (
               <A href={`/admin/tickets/${t.id}`} class="block bg-white rounded-3xl p-5 shadow-sm border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all group">
                 <div class="flex items-start gap-4">
-                  <div class={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 font-black text-lg ${t.is_closed ? "bg-gray-100 text-gray-400" : "bg-blue-50 text-[#1e3a8a] group-hover:bg-[#facc15] transition-colors"}`}>
+                  <div class={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 font-black text-lg ${t.is_closed ? "bg-gray-100 text-gray-400" : "bg-blue-50 text-colpsi-blue group-hover:bg-colpsi-yellow transition-colors"}`}>
                     {t.is_closed ? "✓" : "🎫"}
                   </div>
                   <div class="flex-1 min-w-0">
@@ -164,14 +164,14 @@ export default function AdminTickets() {
                         {t.motivo?.name ?? t.motivo_id}
                       </span>
                     </div>
-                    <h4 class="font-bold text-gray-800 truncate group-hover:text-[#1e3a8a] transition-colors">{t.title}</h4>
+                    <h4 class="font-bold text-gray-800 truncate group-hover:text-colpsi-blue transition-colors">{t.title}</h4>
                     <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-[10px] text-gray-400 font-bold uppercase tracking-wider">
                       <span>👤 {[t.psi_first_name, t.psi_last_name].filter(Boolean).join(" ") || "Psicólogo/a"}</span>
                       <span class="w-1 h-1 bg-gray-200 rounded-full" />
                       <span>Recibida: {formatTicketDate(t.created_at)}</span>
                     </div>
                   </div>
-                  <span class="text-[#1e3a8a] opacity-0 group-hover:opacity-100 transition-opacity font-black">→</span>
+                  <span class="text-colpsi-blue opacity-0 group-hover:opacity-100 transition-opacity font-black">→</span>
                 </div>
               </A>
             )}

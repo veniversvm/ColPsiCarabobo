@@ -352,8 +352,8 @@ export default function ProfilePage() {
   };
 
   return (
-    <main class="bg-[#f8fafc] min-h-screen pb-24 font-sans">
-      <div class="bg-colpsi-blue pt-10 pb-24 px-4 md:px-8 shadow-inner">
+    <main class="bg-colpsi-bg min-h-screen pb-24 font-sans">
+      <div class="bg-heraldic pt-10 pb-24 px-4 md:px-8 shadow-inner">
         <div class="max-w-6xl mx-auto flex items-center justify-between">
           <A
             href="/psi"

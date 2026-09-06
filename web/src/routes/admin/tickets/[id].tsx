@@ -130,7 +130,7 @@ export default function AdminTicketDetalle() {
 
   return (
     <main class="space-y-5">
-      <a href="/admin/tickets" class="inline-flex items-center gap-1 text-xs font-black text-gray-400 uppercase tracking-widest hover:text-[#1e3a8a] transition-all">
+      <a href="/admin/tickets" class="inline-flex items-center gap-1 text-xs font-black text-gray-400 uppercase tracking-widest hover:text-colpsi-blue transition-all">
         ← Cola de tickets
       </a>
 
@@ -177,7 +177,7 @@ export default function AdminTicketDetalle() {
                 <select
                   value={estadoId()}
                   onChange={(e) => setEstadoId(e.currentTarget.value)}
-                  class="w-full px-3 py-2.5 rounded-xl border-2 border-gray-100 bg-white outline-none focus:border-[#1e3a8a] text-sm font-semibold text-gray-700 transition-all"
+                  class="w-full px-3 py-2.5 rounded-xl border-2 border-gray-100 bg-white outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-700 transition-all"
                 >
                   <option value="">Selecciona...</option>
                   <For each={motivoEstados()}>
@@ -188,7 +188,7 @@ export default function AdminTicketDetalle() {
                   value={estadoReason()}
                   onInput={(e) => setEstadoReason(e.currentTarget.value)}
                   placeholder="Comentario (opcional)"
-                  class="w-full px-3 py-2.5 rounded-xl border-2 border-gray-100 bg-white outline-none focus:border-[#1e3a8a] text-sm font-semibold text-gray-700 transition-all"
+                  class="w-full px-3 py-2.5 rounded-xl border-2 border-gray-100 bg-white outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-700 transition-all"
                 />
                 <Show when={estadoError()}>
                   <p class="text-xs font-bold text-red-600">{estadoError()}</p>
@@ -196,7 +196,7 @@ export default function AdminTicketDetalle() {
                 <button
                   onClick={submitEstado}
                   disabled={estadoSaving() || !estadoId()}
-                  class="w-full bg-[#1e3a8a] hover:bg-[#1e40af] text-white font-black py-2.5 rounded-xl text-xs uppercase tracking-widest transition-all active:scale-95 disabled:opacity-40"
+                  class="w-full bg-colpsi-blue hover:bg-colpsi-blue-light text-white font-black py-2.5 rounded-xl text-xs uppercase tracking-widest transition-all active:scale-95 disabled:opacity-40"
                 >
                   {estadoSaving() ? "Guardando..." : "Actualizar estado"}
                 </button>
@@ -261,10 +261,10 @@ export default function AdminTicketDetalle() {
                     rows={3}
                     onInput={(e) => setMessage(e.currentTarget.value)}
                     placeholder="Escribe tu respuesta..."
-                    class="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 bg-gray-50 outline-none focus:border-[#1e3a8a] text-sm font-semibold text-gray-800 transition-all resize-none"
+                    class="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 bg-gray-50 outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-800 transition-all resize-none"
                   />
                   <div class="flex flex-col sm:flex-row gap-3 mt-3">
-                    <label class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50/60 cursor-pointer hover:border-[#1e3a8a] transition-all text-sm font-bold text-gray-500">
+                    <label class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50/60 cursor-pointer hover:border-colpsi-blue transition-all text-sm font-bold text-gray-500">
                       📎 Adjuntar
                       <input type="file" multiple class="hidden"
                         onChange={(e) => { const l = e.currentTarget.files; if (l) setFiles(Array.from(l)); }} />
@@ -272,7 +272,7 @@ export default function AdminTicketDetalle() {
                     <button
                       onClick={submitMensaje}
                       disabled={sending() || !message().trim()}
-                      class="sm:w-52 bg-[#1e3a8a] hover:bg-[#1e40af] text-white font-black py-3 rounded-2xl shadow-lg hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm uppercase tracking-widest"
+                      class="sm:w-52 bg-colpsi-blue hover:bg-colpsi-blue-light text-white font-black py-3 rounded-2xl shadow-lg hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm uppercase tracking-widest"
                     >
                       {sending() ? "Enviando..." : "Responder"}
                     </button>
@@ -308,7 +308,7 @@ export default function AdminTicketDetalle() {
                   <For each={t()?.status_logs ?? []}>
                     {(log: TicketStatusLog) => (
                       <li class="ml-4">
-                        <span class={`absolute -left-[9px] mt-1 w-4 h-4 rounded-full border-4 border-white ${log.new_state?.is_closed ? "bg-red-500" : "bg-[#1e3a8a]"}`} />
+                        <span class={`absolute -left-[9px] mt-1 w-4 h-4 rounded-full border-4 border-white ${log.new_state?.is_closed ? "bg-red-500" : "bg-colpsi-blue"}`} />
                         <p class="text-sm font-black text-gray-700">
                           {log.new_state?.name ?? `#${log.new_state_id}`}
                         </p>

@@ -93,8 +93,8 @@ export default function PsiTicketDetalle() {
   };
 
   return (
-    <main class="bg-[#f8fafc] min-h-screen pb-24">
-      <div class="bg-[#1e3a8a] pt-12 pb-20 px-6">
+    <main class="bg-colpsi-bg min-h-screen pb-24">
+      <div class="bg-heraldic pt-12 pb-20 px-6">
         <div class="max-w-4xl mx-auto">
           <p class="text-blue-200 text-sm font-bold mb-4">
             <a href="/psi/tickets" class="hover:text-white inline-flex items-center gap-1">← Mis Solicitudes</a>
@@ -163,10 +163,10 @@ export default function PsiTicketDetalle() {
                     rows={3}
                     onInput={(e) => setMessage(e.currentTarget.value)}
                     placeholder="Escribe un comentario (máximo 3 seguidos)..."
-                    class="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 bg-gray-50 outline-none focus:border-[#1e3a8a] text-sm font-semibold text-gray-800 transition-all resize-none"
+                    class="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 bg-gray-50 outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-800 transition-all resize-none"
                   />
                   <div class="flex flex-col sm:flex-row gap-3 mt-3">
-                    <label class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50/60 cursor-pointer hover:border-[#1e3a8a] transition-all text-sm font-bold text-gray-500">
+                    <label class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50/60 cursor-pointer hover:border-colpsi-blue transition-all text-sm font-bold text-gray-500">
                       📎 Adjuntar
                       <input type="file" multiple class="hidden"
                         onChange={(e) => { const l = e.currentTarget.files; if (l) setFiles(Array.from(l)); }} />
@@ -174,7 +174,7 @@ export default function PsiTicketDetalle() {
                     <button
                       onClick={submitMensaje}
                       disabled={sending() || !message().trim()}
-                      class="sm:w-48 bg-[#1e3a8a] hover:bg-[#1e40af] text-white font-black py-3 rounded-2xl shadow-lg hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm uppercase tracking-widest"
+                      class="sm:w-48 bg-colpsi-blue hover:bg-colpsi-blue-light text-white font-black py-3 rounded-2xl shadow-lg hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm uppercase tracking-widest"
                     >
                       {sending() ? "Enviando..." : "Enviar"}
                     </button>
@@ -229,7 +229,7 @@ export default function PsiTicketDetalle() {
                   <For each={t()?.status_logs ?? []}>
                     {(log: TicketStatusLog) => (
                       <li class="ml-5">
-                        <span class={`absolute -left-[9px] mt-1 w-4 h-4 rounded-full border-4 border-white ${log.new_state?.is_closed ? "bg-red-500" : "bg-[#1e3a8a]"}`} />
+                        <span class={`absolute -left-[9px] mt-1 w-4 h-4 rounded-full border-4 border-white ${log.new_state?.is_closed ? "bg-red-500" : "bg-colpsi-blue"}`} />
                         <p class="text-sm font-black text-gray-700">
                           Estado: {log.new_state?.name ?? `#${log.new_state_id}`}
                         </p>

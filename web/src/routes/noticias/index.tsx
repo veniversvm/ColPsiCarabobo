@@ -116,10 +116,10 @@ export default function PublicNoticiasPage() {
   const rest = () => posts().slice(1);
 
   return (
-    <main class="min-h-screen bg-[#f7f5f0]">
+    <main class="min-h-screen bg-colpsi-bg">
 
       {/* ── CABECERA ───────────────────────────────────────────────────────── */}
-      <header class="bg-[#0d2b5e] text-white py-16 px-6 relative overflow-hidden">
+      <header class="bg-colpsi-navy text-white py-16 px-6 relative overflow-hidden">
         <div class="absolute inset-0 opacity-5"
           style="background-image: repeating-linear-gradient(45deg, #fff 0, #fff 1px, transparent 0, transparent 50%); background-size: 12px 12px;" />
         <div class="max-w-5xl mx-auto relative">
@@ -128,7 +128,7 @@ export default function PublicNoticiasPage() {
           </p>
           <h1 class="text-4xl md:text-5xl font-black leading-none uppercase tracking-tight mb-4">
             Noticias &<br />
-            <span class="text-yellow-400">Comunicados</span>
+            <span class="text-colpsi-yellow">Comunicados</span>
           </h1>
           <p class="text-blue-200 text-sm max-w-md leading-relaxed">
             Información institucional, convocatorias y novedades para la comunidad psicológica de Venezuela.

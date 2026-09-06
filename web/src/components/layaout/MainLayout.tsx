@@ -15,9 +15,11 @@ export default function MainLayout(props: { children: JSX.Element }) {
           <div class="flex justify-between h-16 items-center">
             {/* Logo e Identidad */}
             <div class="flex items-center space-x-2">
-              <div class="w-8 h-8 bg-colpsi-blue rounded-full flex items-center justify-center text-white font-bold">
-                Ψ
-              </div>
+              <img
+                src="/emblema.png"
+                alt="Emblema del Colegio de Psicólogos del Estado Carabobo"
+                class="w-9 h-9 rounded-full object-cover shadow-sm ring-2 ring-blue-50"
+              />
               <span class="text-colpsi-blue font-bold text-lg leading-tight hidden sm:block">
                 Colegio de Psicólogos
                 <span class="text-gray-400">del Estado Carabobo</span>

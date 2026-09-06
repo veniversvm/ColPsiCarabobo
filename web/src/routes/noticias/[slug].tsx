@@ -130,7 +130,7 @@ export default function PublicNoticiaDetailPage() {
       <Meta name="robots" content="index, follow" />
       <Meta name="googlebot" content="index, follow" />
 
-      <main class="min-h-screen bg-[#f7f5f0]">
+      <main class="min-h-screen bg-colpsi-bg">
 
         <Show when={post.loading}>
           <ArticleSkeleton />
@@ -144,7 +144,7 @@ export default function PublicNoticiaDetailPage() {
           {(data) => (
             <>
               {/* HERO */}
-              <div class="relative bg-[#0d2b5e] overflow-hidden">
+              <div class="relative bg-colpsi-blue-dark overflow-hidden">
                 <Show when={data().image_url}>
                   <img
                     src={imgUrl(data().image_url)}
@@ -166,7 +166,7 @@ export default function PublicNoticiaDetailPage() {
                   </nav>
 
                   <time
-                    class="text-[11px] font-black text-yellow-400 uppercase tracking-[0.25em] mb-4"
+                    class="text-[11px] font-black text-colpsi-yellow uppercase tracking-[0.25em] mb-4"
                     datetime={data().created_at}
                   >
                     {formatDate(data().created_at)}

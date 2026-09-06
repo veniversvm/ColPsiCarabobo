@@ -109,7 +109,7 @@ export default function PsiProfilePage() {
       <Meta name="twitter:image" content={ogImage()} />
 
       {/* ── Página ───────────────────────────────────────────────────────── */}
-      <main class="min-h-screen bg-[#f5f5f5] pb-20 font-sans">
+      <main class="min-h-screen bg-colpsi-bg pb-20 font-sans">
 
         {/* Modales */}
         <PostGradeModal

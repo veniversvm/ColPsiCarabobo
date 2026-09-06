@@ -83,19 +83,16 @@ export default function AdminLayout(props: { children: JSX.Element }) {
       when={isAuthenticated() && role() === "admin"} 
       fallback={<div class="flex items-center justify-center h-screen font-black text-colpsi-blue">Verificando...</div>}
     >
-      <div class="min-h-screen bg-[#f8fafc] flex font-sans overflow-hidden">
+      <div class="min-h-screen bg-colpsi-bg flex font-sans overflow-hidden">
         
         {/* SIDEBAR */}
         <aside class={`hidden md:flex flex-col bg-colpsi-blue text-white shadow-2xl z-20 transition-all duration-300 relative ${isCollapsed() ? "w-20" : "w-72"}`}>
-          <button onClick={() => setIsCollapsed(!isCollapsed())} class="absolute -right-4 top-8 bg-colpsi-yellow text-colpsi-blue w-8 h-8 rounded-full flex items-center justify-center shadow-md z-30 border-4 border-[#f8fafc]">
+          <button onClick={() => setIsCollapsed(!isCollapsed())} class="absolute -right-4 top-8 bg-colpsi-yellow text-colpsi-blue w-8 h-8 rounded-full flex items-center justify-center shadow-md z-30 border-4 border-colpsi-bg">
             {isCollapsed() ? "▶" : "◀"}
           </button>
 
           <div class="h-20 flex items-center justify-center border-b border-blue-800/50">
-            <A href="/admin" class="flex items-center gap-3 px-4">
-              <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shrink-0">
-                <span class="text-colpsi-blue text-2xl font-black">Ψ</span>
-              </div>
+            <A href="/admin" class="flex items-center px-4">
               {!isCollapsed() && <span class="text-xl font-black uppercase tracking-widest">Admin</span>}
             </A>
           </div>
