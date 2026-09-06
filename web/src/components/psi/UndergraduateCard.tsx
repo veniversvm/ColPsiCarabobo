@@ -75,7 +75,7 @@ export function UndergraduateCard(props: UndergraduateCardProps) {
         {/* Información principal */}
         <div class="mb-3">
           <div class="flex items-center justify-between gap-2 mb-1">
-            <h4 class="font-bold text-gray-900 text-base md:text-lg">Psicólogo</h4>
+            <h4 class="font-bold text-colpsi-text text-base md:text-lg">Psicólogo</h4>
             <Show when={hasImages()}>
               <span class="text-[10px] bg-blue-50 text-colpsi-blue px-2 py-1 rounded-full">
                 {images().length} {images().length === 1 ? 'documento' : 'documentos'}
@@ -88,7 +88,7 @@ export function UndergraduateCard(props: UndergraduateCardProps) {
           </p>
           
           <Show when={props.undergraduate.date || props.undergraduate.mention}>
-            <div class="text-xs md:text-sm text-gray-500 mt-2 flex flex-wrap gap-x-4 gap-y-1">
+            <div class="text-xs md:text-sm text-colpsi-muted mt-2 flex flex-wrap gap-x-4 gap-y-1">
               <Show when={props.undergraduate.date}>
                 <span class="inline-flex items-center gap-1">
                   <span class="text-colpsi-yellow">📅</span>

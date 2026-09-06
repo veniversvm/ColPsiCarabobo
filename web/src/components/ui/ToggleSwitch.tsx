@@ -24,7 +24,7 @@ export function ToggleSwitch(props: { label: string, checked: boolean, onChange:
           }}
         ></div>
       </div>
-      <div class="ml-4 text-xs font-bold text-gray-500 group-hover:text-colpsi-blue transition-colors select-none">
+      <div class="ml-4 text-xs font-bold text-colpsi-muted group-hover:text-colpsi-blue transition-colors select-none">
         {props.label}
       </div>
     </label>

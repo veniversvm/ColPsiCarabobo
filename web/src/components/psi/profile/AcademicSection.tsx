@@ -160,7 +160,7 @@ export function AcademicSection(props: AcademicSectionProps) {
               <span class="text-[10px] font-medium text-colpsi-blue text-center px-2 truncate max-w-full">
                 {newFile()?.name}
               </span>
-              <span class="text-[8px] text-gray-500">
+              <span class="text-[8px] text-colpsi-muted">
                 {(newFile()!.size / 1024).toFixed(1)}KB
               </span>
             </div>

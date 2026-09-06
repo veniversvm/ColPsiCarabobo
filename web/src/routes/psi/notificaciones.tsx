@@ -43,7 +43,7 @@ export default function PsiNotificaciones() {
 
   return (
     <main class="bg-colpsi-bg min-h-screen pb-24">
-      <div class="bg-heraldic pt-12 pb-20 px-6">
+      <div class="bg-heraldic pt-12 pb-20 px-6 shadow-inner">
         <div class="max-w-3xl mx-auto">
           <A href="/psi" class="inline-flex items-center gap-1 text-blue-200 text-sm font-bold mb-4 hover:text-white">← Volver al Panel</A>
           <h1 class="text-white text-2xl font-bold flex items-center gap-3">
@@ -66,7 +66,7 @@ export default function PsiNotificaciones() {
             <div class="bg-white rounded-3xl p-12 text-center shadow-sm border border-colpsi-border">
               <p class="text-5xl mb-4">📭</p>
               <h3 class="font-black text-gray-700">Sin notificaciones</h3>
-              <p class="text-sm text-gray-500 mt-1">No tienes comunicados pendientes.</p>
+              <p class="text-sm text-colpsi-muted mt-1">No tienes comunicados pendientes.</p>
             </div>
           </Show>
 
@@ -90,7 +90,7 @@ export default function PsiNotificaciones() {
                       <div class={`w-2.5 h-2.5 rounded-full mt-2 shrink-0 ${read ? "bg-transparent" : "bg-blue-600"}`} />
                       <div class="min-w-0 flex-1">
                         <div class="flex items-center gap-2">
-                          <h4 class={`text-sm font-bold truncate ${read ? "text-gray-600" : "text-gray-900"}`}>{n.title}</h4>
+                          <h4 class={`text-sm font-bold truncate ${read ? "text-gray-600" : "text-colpsi-text"}`}>{n.title}</h4>
                         </div>
                         <p class={`text-xs mt-1 line-clamp-3 ${read ? "text-gray-400" : "text-gray-600"}`}>{n.message}</p>
                         <p class="text-[10px] text-gray-400 font-bold mt-2 uppercase tracking-wider">

@@ -25,7 +25,7 @@ export default function TicketThread(props: Props) {
         fallback={
           <div class="bg-blue-50/60 border border-dashed border-blue-200 rounded-3xl p-10 text-center">
             <p class="text-4xl mb-3">💬</p>
-            <p class="text-sm font-bold text-gray-500">
+            <p class="text-sm font-bold text-colpsi-muted">
               {props.emptyText || "Sin comentarios todavía"}
             </p>
           </div>

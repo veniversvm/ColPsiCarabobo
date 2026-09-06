@@ -181,10 +181,10 @@ export default function PublicNoticiasPage() {
                     <p class="text-[11px] font-black text-blue-400 uppercase tracking-widest mb-3">
                       {formatDate(post().created_at)}
                     </p>
-                    <h2 class="text-2xl font-black text-gray-900 leading-tight mb-3 group-hover:text-blue-800 transition-colors">
+                    <h2 class="text-2xl font-black text-colpsi-text leading-tight mb-3 group-hover:text-blue-800 transition-colors">
                       {post().title}
                     </h2>
-                    <p class="text-gray-500 text-sm leading-relaxed line-clamp-3 mb-6">
+                    <p class="text-colpsi-muted text-sm leading-relaxed line-clamp-3 mb-6">
                       {post().short_description}
                     </p>
                     <span class="inline-flex items-center gap-2 text-blue-700 font-black text-sm group-hover:gap-3 transition-all">
@@ -265,10 +265,10 @@ function PostCard(props: { post: Post }) {
           <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-2">
             {formatDate(post.created_at)}
           </p>
-          <h3 class="font-black text-gray-900 text-base leading-snug mb-2 group-hover:text-blue-800 transition-colors line-clamp-2">
+          <h3 class="font-black text-colpsi-text text-base leading-snug mb-2 group-hover:text-blue-800 transition-colors line-clamp-2">
             {post.title}
           </h3>
-          <p class="text-gray-500 text-xs leading-relaxed line-clamp-2 flex-1">
+          <p class="text-colpsi-muted text-xs leading-relaxed line-clamp-2 flex-1">
             {post.short_description || <span class="italic text-gray-300">Sin resumen</span>}
           </p>
           <div class="mt-4 pt-4 border-t border-colpsi-border flex items-center justify-between">

@@ -68,12 +68,12 @@ export function ProfileHeader(props: ProfileHeaderProps) {
         </h1>
         
         <div class="flex flex-col sm:flex-row justify-center items-center gap-1 sm:gap-4 mb-4">
-          <p class="text-gray-500 font-bold tracking-widest uppercase text-base">
+          <p class="text-colpsi-muted font-bold tracking-widest uppercase text-base">
             FPV: <span class="text-colpsi-blue text-lg">{props.fpv}</span>
           </p>
           <Show when={props.ci}>
             <span class="hidden sm:inline text-gray-300">•</span>
-            <p class="text-gray-500 font-bold tracking-widest uppercase text-base">
+            <p class="text-colpsi-muted font-bold tracking-widest uppercase text-base">
               CI: <span class="text-gray-700 text-lg">{props.ci}</span>
             </p>
           </Show>

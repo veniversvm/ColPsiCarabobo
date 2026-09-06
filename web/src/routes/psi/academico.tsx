@@ -126,7 +126,7 @@ export default function AcademicoPage() {
         </div>
         <div class="max-w-4xl mx-auto mt-8">
           <h1 class="text-white text-3xl font-black">Formación Académica</h1>
-          <p class="text-blue-200 mt-1 italic uppercase text-xs tracking-widest font-bold">Respaldo Profesional</p>
+          <p class="text-blue-200 mt-1 uppercase tracking-widest font-black text-[11px]">Respaldo Profesional</p>
         </div>
       </div>
 
@@ -139,7 +139,7 @@ export default function AcademicoPage() {
               <div class="text-center mb-6">
                 <span class="text-4xl">🗑️</span>
                 <h3 class="text-lg font-black text-gray-800 mt-3">¿Eliminar este título?</h3>
-                <p class="text-sm text-gray-500 mt-1">Esta acción es permanente y no se puede deshacer.</p>
+                <p class="text-sm text-colpsi-muted mt-1">Esta acción es permanente y no se puede deshacer.</p>
               </div>
 
               <Show when={deleteError()}>
@@ -262,7 +262,7 @@ export default function AcademicoPage() {
                       <span class="text-xs font-bold text-gray-400">{pg.post_grade_graduation_year}</span>
                     </div>
                     <h3 class="text-xl font-black text-colpsi-blue uppercase leading-tight">{pg.post_grade_title}</h3>
-                    <p class="text-sm font-bold text-gray-500 italic">{pg.post_grade_university}</p>
+                    <p class="text-sm font-bold text-colpsi-muted italic">{pg.post_grade_university}</p>
 
                     <Show when={pg.post_grade_description}>
                       <p class="text-xs text-gray-400 line-clamp-2">{pg.post_grade_description}</p>

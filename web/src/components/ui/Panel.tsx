@@ -42,7 +42,7 @@ export function PanelSection(props: {
             {props.title}
           </h2>
           <Show when={props.subtitle}>
-            <p class="text-[11px] text-gray-500 mt-1 ml-3 font-medium leading-relaxed">
+            <p class="text-[11px] text-colpsi-muted mt-1 ml-3 font-medium leading-relaxed">
               {props.subtitle}
             </p>
           </Show>

@@ -78,7 +78,7 @@ export default function InscriptionPage() {
               class={`flex-1 py-4 px-6 rounded-2xl font-black text-base flex items-center justify-center gap-3 transition-all ${
                 tab() === "instrucciones"
                   ? "bg-colpsi-blue text-white shadow"
-                  : "bg-colpsi-surface text-gray-500 hover:bg-gray-100"
+                  : "bg-colpsi-surface text-colpsi-muted hover:bg-gray-100"
               }`}
             >
               <span>📋</span> Instrucciones
@@ -88,7 +88,7 @@ export default function InscriptionPage() {
               class={`flex-1 py-4 px-6 rounded-2xl font-black text-base flex items-center justify-center gap-3 transition-all ${
                 tab() === "formulario"
                   ? "bg-colpsi-blue text-white shadow"
-                  : "bg-colpsi-surface text-gray-500 hover:bg-gray-100"
+                  : "bg-colpsi-surface text-colpsi-muted hover:bg-gray-100"
               }`}
             >
               <span>📝</span> Formulario de Inscripción
@@ -121,12 +121,12 @@ export default function InscriptionPage() {
                   </div>
 
                   <div>
-                    <p class="font-bold text-gray-900 mb-3">Aranceles Base (Fijados en Divisas):</p>
+                    <p class="font-bold text-colpsi-text mb-3">Aranceles Base (Fijados en Divisas):</p>
                     <ul class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                      <li class="bg-colpsi-surface p-4 rounded-xl border border-colpsi-border"><strong class="text-gray-900">Derecho de Inscripción:</strong> $30 (pago único de ingreso).</li>
-                      <li class="bg-colpsi-surface p-4 rounded-xl border border-colpsi-border"><strong class="text-gray-900">Anualidad 2024:</strong> $40</li>
-                      <li class="bg-colpsi-surface p-4 rounded-xl border border-colpsi-border"><strong class="text-gray-900">Anualidad 2025:</strong> $40</li>
-                      <li class="bg-colpsi-surface p-4 rounded-xl border border-colpsi-border"><strong class="text-gray-900">Anualidad 2026:</strong> $40</li>
+                      <li class="bg-colpsi-surface p-4 rounded-xl border border-colpsi-border"><strong class="text-colpsi-text">Derecho de Inscripción:</strong> $30 (pago único de ingreso).</li>
+                      <li class="bg-colpsi-surface p-4 rounded-xl border border-colpsi-border"><strong class="text-colpsi-text">Anualidad 2024:</strong> $40</li>
+                      <li class="bg-colpsi-surface p-4 rounded-xl border border-colpsi-border"><strong class="text-colpsi-text">Anualidad 2025:</strong> $40</li>
+                      <li class="bg-colpsi-surface p-4 rounded-xl border border-colpsi-border"><strong class="text-colpsi-text">Anualidad 2026:</strong> $40</li>
                     </ul>
                   </div>
 
@@ -204,7 +204,7 @@ export default function InscriptionPage() {
                     <p class="text-lg font-black text-purple-900">admon.colpsicarabobo@gmail.com</p>
                   </div>
 
-                  <p class="font-bold text-gray-900 mt-6">Los documentos a adjuntar en formato digital son:</p>
+                  <p class="font-bold text-colpsi-text mt-6">Los documentos a adjuntar en formato digital son:</p>
 
                   <ul class="space-y-4">
                     <li class="flex items-start gap-3 bg-colpsi-surface p-5 rounded-2xl border border-colpsi-border">
@@ -308,22 +308,22 @@ export default function InscriptionPage() {
                     </p>
                     <ul class="space-y-4">
                       <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
-                        <strong class="text-gray-900 block mb-1">Una (1) fotografía tipo carnet:</strong> Reciente y en fondo blanco. Por la parte posterior (reverso), debe tener escrito de forma legible a bolígrafo: los nombres completos, los apellidos completos, el número de cédula de identidad y la frase "Estado Carabobo" o "Carabobo".
+                        <strong class="text-colpsi-text block mb-1">Una (1) fotografía tipo carnet:</strong> Reciente y en fondo blanco. Por la parte posterior (reverso), debe tener escrito de forma legible a bolígrafo: los nombres completos, los apellidos completos, el número de cédula de identidad y la frase "Estado Carabobo" o "Carabobo".
                       </li>
                       <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
-                        <strong class="text-gray-900 block mb-1">Una (1) planilla de inscripción de la Federación de Psicólogos de Venezuela</strong>
+                        <strong class="text-colpsi-text block mb-1">Una (1) planilla de inscripción de la Federación de Psicólogos de Venezuela</strong>
                       </li>
                       <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
-                        <strong class="text-gray-900 block mb-1">Una (1) copia del Título de Psicólogo:</strong> Por la parte posterior (reverso) de la hoja, se deben transcribir de forma clara todos los datos registrales del título (Número de Tomo, Folio y Número de Registro asignado por el Registro Principal).
+                        <strong class="text-colpsi-text block mb-1">Una (1) copia del Título de Psicólogo:</strong> Por la parte posterior (reverso) de la hoja, se deben transcribir de forma clara todos los datos registrales del título (Número de Tomo, Folio y Número de Registro asignado por el Registro Principal).
                       </li>
                       <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
-                        <strong class="text-gray-900 block mb-1">Una (1) copia de la Cédula de Identidad o Pasaporte vigente.</strong>
+                        <strong class="text-colpsi-text block mb-1">Una (1) copia de la Cédula de Identidad o Pasaporte vigente.</strong>
                       </li>
                       <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
-                        <strong class="text-gray-900 block mb-1">Una (1) copia del RIF actualizado</strong> (con dirección en el Estado Carabobo).
+                        <strong class="text-colpsi-text block mb-1">Una (1) copia del RIF actualizado</strong> (con dirección en el Estado Carabobo).
                       </li>
                       <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
-                        <strong class="text-gray-900 block mb-1">El Comprobante de Pago Bancario:</strong> Por la parte posterior (reverso) del papel, debe estar plenamente identificado con los datos de la persona que se está colegiando (Nombres, Apellidos y Cédula).
+                        <strong class="text-colpsi-text block mb-1">El Comprobante de Pago Bancario:</strong> Por la parte posterior (reverso) del papel, debe estar plenamente identificado con los datos de la persona que se está colegiando (Nombres, Apellidos y Cédula).
                       </li>
                     </ul>
                   </div>
@@ -348,10 +348,10 @@ export default function InscriptionPage() {
                     </p>
                     <ul class="space-y-4">
                       <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
-                        <strong class="text-gray-900 block mb-1">Confrontación del Título Original:</strong> El solicitante debe presentar de forma obligatoria su Título de Psicólogo Original. El personal técnico del colegio lo revisará para verificar su autenticidad y confrontarlo con las copias suministradas.
+                        <strong class="text-colpsi-text block mb-1">Confrontación del Título Original:</strong> El solicitante debe presentar de forma obligatoria su Título de Psicólogo Original. El personal técnico del colegio lo revisará para verificar su autenticidad y confrontarlo con las copias suministradas.
                       </li>
                       <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
-                        <strong class="text-gray-900 block mb-1">Registro Fotográfico de Seguridad:</strong> Como medida de máxima seguridad, resguardo de la identidad profesional y validación del proceso de colegiatura, el personal institucional tomará una fotografía presencial de la persona que se está colegiando en ese mismo instante.
+                        <strong class="text-colpsi-text block mb-1">Registro Fotográfico de Seguridad:</strong> Como medida de máxima seguridad, resguardo de la identidad profesional y validación del proceso de colegiatura, el personal institucional tomará una fotografía presencial de la persona que se está colegiando en ese mismo instante.
                       </li>
                     </ul>
                   </div>

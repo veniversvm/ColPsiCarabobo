@@ -49,7 +49,7 @@ export function ProfessionalSection(props: ProfessionalSectionProps) {
 
           {/* Área Principal */}
           <div class="space-y-2">
-            <label class="text-xs font-bold text-gray-500 uppercase ml-2">
+            <label class="text-xs font-bold text-colpsi-muted uppercase ml-2">
               Área de Trabajo Principal
             </label>
             <DropdownSelect
@@ -76,7 +76,7 @@ export function ProfessionalSection(props: ProfessionalSectionProps) {
 
           {/* Área Secundaria */}
           <div class="space-y-2">
-            <label class="text-xs font-bold text-gray-500 uppercase ml-2">
+            <label class="text-xs font-bold text-colpsi-muted uppercase ml-2">
               Área de Trabajo Secundaria
             </label>
             <DropdownSelect
@@ -110,7 +110,7 @@ export function ProfessionalSection(props: ProfessionalSectionProps) {
 
         {/* ── MINI BIO ──────────────────────────────────────────────────── */}
         <div class="space-y-2">
-          <label class="text-xs font-bold text-gray-500 uppercase ml-2">
+          <label class="text-xs font-bold text-colpsi-muted uppercase ml-2">
             Mini Biografía <span class="text-gray-400 font-medium normal-case">(máx. 250 caracteres)</span>
           </label>
           <textarea
@@ -128,7 +128,7 @@ export function ProfessionalSection(props: ProfessionalSectionProps) {
         {/* ── FULL BIO ──────────────────────────────────────────────────── */}
         <div class="pt-4 border-t border-colpsi-border">
           <div class="flex justify-between items-center mb-2">
-            <label class="text-xs font-bold text-gray-500 uppercase ml-2">
+            <label class="text-xs font-bold text-colpsi-muted uppercase ml-2">
               Biografía Extensa <span class="text-gray-400 font-medium normal-case">(Perfil Detallado)</span>
             </label>
             <span class={`text-xs font-semibold mr-2 ${isOverLimit() ? "text-red-500" : "text-gray-400"}`}>

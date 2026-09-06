@@ -160,7 +160,7 @@ export function AvatarUploader(props: AvatarUploaderProps) {
                 </div>
 
                 <div class="bg-gradient-to-br from-gray-50 to-gray-100 px-4 py-2 rounded-xl border border-gray-200">
-                  <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                  <p class="text-[10px] font-bold text-colpsi-muted uppercase tracking-wider">
                     Cédula
                   </p>
                   <p class="text-lg font-black text-gray-700">{props.CI}</p>

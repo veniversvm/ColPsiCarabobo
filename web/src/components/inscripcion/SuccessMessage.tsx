@@ -15,7 +15,7 @@ export function SuccessMessage() {
         Nuestro equipo administrativo la revisará y te contactaremos en un plazo de hasta
         <strong> 5 días hábiles</strong>.
       </p>
-      <p class="text-gray-500 text-sm mt-4">
+      <p class="text-colpsi-muted text-sm mt-4">
         Si tu solicitud es aprobada, recibirás un correo con tus credenciales de acceso a la plataforma.
       </p>
     </div>

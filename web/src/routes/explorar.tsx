@@ -133,7 +133,7 @@ function NavCard(props: { title: string, desc: string, href: string, icon: strin
       <h3 class="text-colpsi-blue font-black uppercase text-sm tracking-widest mb-3 leading-tight">
         {props.title}
       </h3>
-      <p class="text-gray-500 text-sm leading-relaxed font-medium">
+      <p class="text-colpsi-muted text-sm leading-relaxed font-medium">
         {props.desc}
       </p>
     </A>

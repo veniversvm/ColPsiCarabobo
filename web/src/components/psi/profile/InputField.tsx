@@ -16,7 +16,7 @@ export function InputField(props: InputFieldProps) {
   return (
     <div class="space-y-1">
       <div class="flex items-center justify-between">
-        <label class="text-xs font-bold text-gray-500 uppercase ml-2">
+        <label class="text-xs font-bold text-colpsi-muted uppercase ml-2">
           {props.label}
           {props.required && <span class="text-red-500 ml-1">*</span>}
         </label>
@@ -99,7 +99,7 @@ export function PasswordField(props: PasswordFieldProps) {
 
   return (
     <div class="space-y-1">
-      <label class="text-xs font-bold text-gray-500 uppercase ml-2">
+      <label class="text-xs font-bold text-colpsi-muted uppercase ml-2">
         {props.label}
         {props.required && <span class="text-red-500 ml-1">*</span>}
       </label>

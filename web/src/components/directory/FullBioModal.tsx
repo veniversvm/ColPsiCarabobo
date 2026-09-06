@@ -45,7 +45,7 @@ export function FullBioModal(props: FullBioModalProps) {
             </div>
             <button 
               onClick={props.onClose} 
-              class="w-10 h-10 bg-white border border-gray-200 rounded-full text-gray-500 hover:text-colpsi-red hover:bg-red-50 hover:border-colpsi-red transition-all text-xl font-bold flex items-center justify-center shadow-sm"
+              class="w-10 h-10 bg-white border border-gray-200 rounded-full text-colpsi-muted hover:text-colpsi-red hover:bg-red-50 hover:border-colpsi-red transition-all text-xl font-bold flex items-center justify-center shadow-sm"
               title="Cerrar"
             >
               ×

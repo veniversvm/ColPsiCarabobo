@@ -42,7 +42,7 @@ export default function MisDocumentosPage() {
         </div>
         <div class="max-w-4xl mx-auto mt-8">
           <h1 class="text-white text-3xl font-black">Mis Documentos</h1>
-          <p class="text-blue-200 mt-1 italic uppercase text-xs tracking-widest font-bold">
+          <p class="text-blue-200 mt-1 uppercase tracking-widest font-black text-[11px]">
             Expediente Digital
           </p>
         </div>
@@ -139,7 +139,7 @@ export default function MisDocumentosPage() {
                                     </span>
                                   </div>
                                   <Show when={doc.notes}>
-                                    <p class="text-xs text-gray-500 mt-1.5">
+                                    <p class="text-xs text-colpsi-muted mt-1.5">
                                       {doc.notes}
                                     </p>
                                   </Show>
