@@ -64,7 +64,8 @@ export default function AdminLoginPage() {
       
     } catch (err: any) {
       if (err instanceof ApiError) {
-        setError(getUserFacingError(err));
+        // 429 = rate-limit: avisar el bloqueo real con el tiempo de espera
+        setError(err.status === 429 ? (err.data?.message || err.message) : getUserFacingError(err));
       } else {
         console.error("Error interno:", err); // <-- Útil para ver errores de JS en la consola
         setError("Error interno al procesar la sesión.");
