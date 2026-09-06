@@ -14,10 +14,6 @@ interface Props {
 function ActivationSection(props: { form: EditFormState }) {
   const reqs = () => [
     {
-      label: "Inscripción en el Ministerio",
-      ok: !!props.form.ministry_registration_confirmed,
-    },
-    {
       label: "N° de FPV asignado",
       ok: !!props.form.fpv,
     },
@@ -50,8 +46,8 @@ function ActivationSection(props: { form: EditFormState }) {
       </ul>
       <p class="mt-2 text-[10px] text-gray-400 leading-relaxed">
         Confirmaciones que realiza la administración con el expediente en mano
-        antes de activar la cuenta. La inscripción ministerial y el N° FPV se
-        tramitan a través de la FPV; la solvencia nace al aprobar la inscripción
+        antes de activar la cuenta. El N° de FPV acredita la inscripción
+        ministerial; la solvencia nace al aprobar la inscripción
         (Art. 5 Ley de Ejercicio de la Psicología · Art. 18 Estatutos FPV).
       </p>
     </div>
@@ -78,11 +74,6 @@ export function AdminStatusSection(props: Props) {
             label="Fe de Vida Activa"
             checked={props.form.proof_of_life}
             onChange={(v) => props.setForm("proof_of_life", v)}
-          />
-          <ToggleSwitch
-            label="Inscripción confirmada en Ministerio"
-            checked={props.form.ministry_registration_confirmed}
-            onChange={(v) => props.setForm("ministry_registration_confirmed", v)}
           />
           <div class="pt-3">
             <Field label="Fecha Última Solvencia">

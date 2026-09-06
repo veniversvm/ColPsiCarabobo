@@ -225,10 +225,6 @@ type PsiUserColData struct {
 	// Solo se usará si el miembro lo activa desde su portal de perfil (opt-in explícito).
 	BirthdayNotification bool `gorm:"default:false" json:"birthday_notification"`
 
-	// ministerio_confirmed: la administración confirma que el psicólogo está inscrito
-	// en el Ministerio de Educación (requisito legal, Art. 5 de la Ley de Ejercicio).
-	MinistryRegistrationConfirmed bool `gorm:"default:false" json:"ministry_registration_confirmed"`
-
 	// ── Solvencia y membresías ────────────────────────────────────────────
 	DateOfLastSolvency  time.Time `gorm:"type:date" json:"date_of_last_solvency"` // Última fecha de pago de cuota
 	DoubleGuild         bool      `gorm:"default:false" json:"double_guild"`      // Colegiado en más de un estado

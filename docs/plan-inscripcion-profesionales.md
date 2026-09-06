@@ -202,8 +202,7 @@ INTERESADO                    API                         ADMIN
     │                          │  (activate)               │
     │                          │<──────────────────────────│
     │                          │  Checklist:               │
-    │                          │  ☑ Ministerio             │
-    │                          │  ☑ FPV                    │
+    │                          │  ☑ FPV (acredita Min.)    │
     │                          │  ☑ Solvente               │
     │                          │  → is_active = true       │
 ```
@@ -242,13 +241,7 @@ Restricciones:
   CHECK (status IN ('pending', 'approved', 'rejected'))
 ```
 
-### 5.3 Campo nuevo en `psi_user_col_data`
-
-```
-ministry_registration_confirmed BOOLEAN DEFAULT false
-```
-
-### 5.4 Cambio en `psi_users`
+### 5.3 Cambio en `psi_users`
 
 ```
 is_active: DEFAULT true → DEFAULT false
@@ -258,6 +251,10 @@ Esto afecta:
 - Creación manual desde admin (`CreatePsiByAdmin`)
 - Creación desde inscripción aprobada
 - **No afecta** la importación Excel (que setea `is_active: true` explícitamente)
+
+> **Nota (2026-09):** el requisito independiente `ministry_registration_confirmed`
+> de `psi_user_col_data` fue **eliminado**: el N° de FPV acredita la inscripción
+> ministerial. Ver §6.5 (gate) y la migración `remove_ministry_confirmed`.
 
 ---
 
@@ -273,7 +270,7 @@ Esto afecta:
 | `api/internal/handler/inscription_handler.go` | Handlers HTTP |
 | `api/internal/router/inscription_router.go` | Registro de rutas |
 | `api/migrations/XXXX_add_inscription_requests.sql` | Migración de tabla |
-| `api/migrations/XXXX_add_ministry_confirmed.sql` | Campo nuevo en `psi_user_col_data` |
+| `api/migrations/XXXX_remove_ministry_confirmed.sql` | Elimina el campo en `psi_user_col_data` (el FPV acredita el Ministerio) |
 
 ### 6.2 Archivos a modificar
 
@@ -282,7 +279,6 @@ Esto afecta:
 | `api/internal/router/router.go` | Registrar `SetupInscriptionRoutes()` |
 | `api/cmd/api/main.go` | Inyectar dependencias del nouveau service |
 | `api/internal/domain/user.model.go` | `is_active` default: `true` → `false` |
-| `api/internal/domain/psi_user_col_data.go` | Agregar `MinistryRegistrationConfirmed` |
 | `api/internal/service/psi_user_admin_service.go` | Validación de activación |
 | `api/internal/service/psi_user_admin_service.go` | Creación desde inscripción |
 
@@ -422,12 +418,9 @@ Lógica:
 En `UpdatePsiByAdmin`, antes de procesar el update:
 
 ```go
-// Si se intenta activar (is_active: false → true), verificar requisitos
+// Si se intenta activar (is_active: false → true), verificar requisitos.
+// El N° de FPV acredita la inscripción ministerial (Art. 5 + Art. 18 FPV).
 if req.IsActive != nil && *req.IsActive && !existingUser.IsActive {
-    colData, _ := repo.GetColData(existingUser.ID)
-    if colData == nil || !colData.MinistryRegistrationConfirmed {
-        return ApiError{Status: 400, Message: "Debe confirmar la inscripción en el Ministerio"}
-    }
     if existingUser.FPV == 0 {
         return ApiError{Status: 400, Message: "Debe tener un N° de FPV asignado"}
     }
@@ -593,10 +586,8 @@ Se agrega una nueva sección en la página de detalle/edición del psicólogo
 │  Activación de cuenta                           │
 │  ─────────────────────────────────────────────  │
 │  Para activar esta cuenta, confirme los         │
-│  siguientes requisitos:                         │
-│                                                 │
-│  ☐ Inscripción en Ministerio confirmada         │
-│    [toggle switch]                              │
+│  siguientes requisitos (el N° de FPV acredita   │
+│  la inscripción ministerial):                   │
 │                                                 │
 │  ☐ N° FPV asignado: #5678                      │
 │    [✅ ya cumplido - readonly]                  │
@@ -605,7 +596,7 @@ Se agrega una nueva sección en la página de detalle/edición del psicólogo
 │    [toggle switch]                              │
 │                                                 │
 │  ─────────────────────────────────────────────  │
-│  [Activar cuenta] ← solo habilitado si los 3   │
+│  [Activar cuenta] ← solo habilitado si los 2   │
 │  están marcados                                 │
 └─────────────────────────────────────────────────┘
 ```
@@ -615,7 +606,7 @@ Cuando `is_active = true`, la sección muestra:
 ┌─────────────────────────────────────────────────┐
 │  Estado de cuenta: ✅ Activa                    │
 │  Activada el: 15/09/2026                        │
-│  Requisitos verificados: Ministerio ✓ FPV ✓     │
+│  Requisitos verificados: FPV ✓ Solvente ✓      │
 │  Solvente ✓                                     │
 └─────────────────────────────────────────────────┘
 ```
@@ -669,12 +660,14 @@ CREATE INDEX "idx_inscription_requests_status"
     ON "psi_inscription_requests" ("status");
 ```
 
-### 8.2 `XXXX_add_ministry_confirmed.sql`
+### 8.2 `XXXX_add_ministry_confirmed.sql` (histórico) y `remove_ministry_confirmed`
+
+El campo `ministry_registration_confirmed` fue **eliminado** en
+`XXXX_remove_ministry_confirmed.sql` (el N° de FPV acredita la inscripción ministerial):
 
 ```sql
--- Agregar campo de confirmación de inscripción en Ministerio
 ALTER TABLE "psi_user_col_data"
-    ADD COLUMN "ministry_registration_confirmed" boolean NULL DEFAULT false;
+    DROP COLUMN IF EXISTS "ministry_registration_confirmed";
 ```
 
 ---
@@ -710,7 +703,7 @@ ALTER TABLE "psi_user_col_data"
 | Paso | Capa | Descripción | Archivos |
 |------|------|-------------|----------|
 | 1 | DB | Migración: tabla `psi_inscription_requests` | `migrations/XXXX_add_inscription_requests.sql` |
-| 2 | DB | Migración: campo `ministry_registration_confirmed` | `migrations/XXXX_add_ministry_confirmed.sql` |
+| 2 | DB | Migración: eliminar `ministry_registration_confirmed` (el FPV acredita el Ministerio) | `migrations/XXXX_remove_ministry_confirmed.sql` |
 | 3 | API | Modelo de dominio + DTOs | `domain/inscription_request_model.go` |
 | 4 | API | Repository (CRUD inscripciones) | `repository/postgres/inscription_repository.go` |
 | 5 | API | Service (lógica de negocio) | `service/inscription_service.go` |

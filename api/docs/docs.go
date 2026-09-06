@@ -6620,10 +6620,6 @@ const docTemplate = `{
                 "mention_undergraduate": {
                     "type": "string"
                 },
-                "ministry_registration_confirmed": {
-                    "description": "ministerio_confirmed: la administración confirma que el psicólogo está inscrito\nen el Ministerio de Educación (requisito legal, Art. 5 de la Ley de Ejercicio).",
-                    "type": "boolean"
-                },
                 "psi_user_model_id": {
                     "type": "string"
                 },
@@ -6852,7 +6848,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "is_active": {
-                    "description": "IsActive controla si la cuenta puede iniciar sesión.\nDefault false: un psicólogo creado desde una inscripción aprobada nace inactivo\ny solo puede activarse manualmente cuando la administración confirma los 3\nrequisitos legales (Ministerio, N° FPV y solvencia).",
+                    "description": "IsActive controla si la cuenta puede iniciar sesión.\nDefault false: un psicólogo creado desde una inscripción aprobada nace inactivo\ny solo puede activarse manualmente cuando la administración confirma los\nrequisitos legales (N° de FPV y solvencia; el FPV acredita la inscripción ministerial).",
                     "type": "boolean"
                 },
                 "last_name": {
@@ -7598,7 +7594,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "is_active": {
-                    "description": "IsActive controla si la cuenta puede iniciar sesión.\nDefault false: un psicólogo creado desde una inscripción aprobada nace inactivo\ny solo puede activarse manualmente cuando la administración confirma los 3\nrequisitos legales (Ministerio, N° FPV y solvencia).",
+                    "description": "IsActive controla si la cuenta puede iniciar sesión.\nDefault false: un psicólogo creado desde una inscripción aprobada nace inactivo\ny solo puede activarse manualmente cuando la administración confirma los\nrequisitos legales (N° de FPV y solvencia; el FPV acredita la inscripción ministerial).",
                     "type": "boolean"
                 },
                 "role": {
@@ -8817,10 +8813,6 @@ const docTemplate = `{
                 },
                 "mini_bio": {
                     "type": "string"
-                },
-                "ministry_registration_confirmed": {
-                    "description": "Requisito legal: la administración confirma la inscripción del psicólogo\nen el Ministerio de Educación (Art. 5 Ley de Ejercicio de la Psicología).",
-                    "type": "boolean"
                 },
                 "municipality_carabobo": {
                     "description": "── Ubicación: Carabobo ───────────────────────────────────────────────",

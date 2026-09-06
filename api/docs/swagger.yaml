@@ -655,11 +655,6 @@ definitions:
         type: string
       mention_undergraduate:
         type: string
-      ministry_registration_confirmed:
-        description: |-
-          ministerio_confirmed: la administración confirma que el psicólogo está inscrito
-          en el Ministerio de Educación (requisito legal, Art. 5 de la Ley de Ejercicio).
-        type: boolean
       psi_user_model_id:
         type: string
       public_employee:
@@ -851,8 +846,8 @@ definitions:
         description: |-
           IsActive controla si la cuenta puede iniciar sesión.
           Default false: un psicólogo creado desde una inscripción aprobada nace inactivo
-          y solo puede activarse manualmente cuando la administración confirma los 3
-          requisitos legales (Ministerio, N° FPV y solvencia).
+          y solo puede activarse manualmente cuando la administración confirma los
+          requisitos legales (N° de FPV y solvencia; el FPV acredita la inscripción ministerial).
         type: boolean
       last_name:
         type: string
@@ -1464,8 +1459,8 @@ definitions:
         description: |-
           IsActive controla si la cuenta puede iniciar sesión.
           Default false: un psicólogo creado desde una inscripción aprobada nace inactivo
-          y solo puede activarse manualmente cuando la administración confirma los 3
-          requisitos legales (Ministerio, N° FPV y solvencia).
+          y solo puede activarse manualmente cuando la administración confirma los
+          requisitos legales (N° de FPV y solvencia; el FPV acredita la inscripción ministerial).
         type: boolean
       role:
         description: |-
@@ -2350,11 +2345,6 @@ definitions:
         type: string
       mini_bio:
         type: string
-      ministry_registration_confirmed:
-        description: |-
-          Requisito legal: la administración confirma la inscripción del psicólogo
-          en el Ministerio de Educación (Art. 5 Ley de Ejercicio de la Psicología).
-        type: boolean
       municipality_carabobo:
         description: '── Ubicación: Carabobo ───────────────────────────────────────────────'
         type: string

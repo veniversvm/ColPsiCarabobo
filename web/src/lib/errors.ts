@@ -49,6 +49,11 @@ const KNOWN_MESSAGES: Record<string, string> = {
     "No tienes permisos para crear administradores.",
   "rol inválido":
     "El perfil de rol seleccionado no es válido.",
+  // Activación de psicólogos (api/internal/service/psi_user_admin_service.go)
+  "debe tener un N° de FPV asignado para activar la cuenta":
+    "Asigne un N° de FPV al psicólogo para poder activar la cuenta.",
+  "el psicólogo debe estar solvente para activarse":
+    "El psicólogo debe estar solvente para poder activar la cuenta.",
 };
 
 // Mensajes dinámicos del staff con prefijo conocido: se muestran tal cual

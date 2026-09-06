@@ -20,8 +20,8 @@ type Credentials struct {
 
 	// IsActive controla si la cuenta puede iniciar sesión.
 	// Default false: un psicólogo creado desde una inscripción aprobada nace inactivo
-	// y solo puede activarse manualmente cuando la administración confirma los 3
-	// requisitos legales (Ministerio, N° FPV y solvencia).
+	// y solo puede activarse manualmente cuando la administración confirma los
+	// requisitos legales (N° de FPV y solvencia; el FPV acredita la inscripción ministerial).
 	IsActive bool `gorm:"column:is_active;default:false" json:"is_active"`
 
 	// MustChangePassword indica que el usuario debe cambiar su contraseña en el próximo login.

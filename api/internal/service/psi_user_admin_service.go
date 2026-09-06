@@ -286,16 +286,10 @@ func (s *PsiService) UpdatePsiByAdmin(
 	}
 	if req.IsActive != nil {
 		// Validación de activación: un psicólogo inactivo solo puede activarse
-		// cuando la administración confirma los 3 requisitos legales
-		// (Art. 5 Ley de Ejercicio + Art. 18 Estatutos FPV).
+		// cuando la administración confirma los requisitos legales. El N° de FPV
+		// acredita la inscripción ministerial (Art. 5 Ley de Ejercicio + Art. 18
+		// Estatutos FPV).
 		if *req.IsActive && !psi.IsActive {
-			colData, err := s.repo.GetPsiUserColData(ctx, psi.ID)
-			if err != nil {
-				return err
-			}
-			if colData == nil || !colData.MinistryRegistrationConfirmed {
-				return errors.New("debe confirmar la inscripción en el Ministerio para activar la cuenta")
-			}
 			if psi.FPV == 0 {
 				return errors.New("debe tener un N° de FPV asignado para activar la cuenta")
 			}
@@ -582,7 +576,6 @@ func (s *PsiService) UpdatePsiByAdmin(
 		req.DoubleGuildLocation != nil ||
 		req.CPSM != nil ||
 		req.DateOfLastSolvency != nil ||
-		req.MinistryRegistrationConfirmed != nil ||
 		titleImgOne != nil || titleImgTwo != nil || titleImgThree != nil
 
 	var colDataToUpdate *domain.PsiUserColData
@@ -666,9 +659,6 @@ func (s *PsiService) UpdatePsiByAdmin(
 		}
 		if req.DateOfLastSolvency != nil {
 			currentColData.DateOfLastSolvency = parseDate(req.DateOfLastSolvency)
-		}
-		if req.MinistryRegistrationConfirmed != nil {
-			currentColData.MinistryRegistrationConfirmed = *req.MinistryRegistrationConfirmed
 		}
 
 		// Imágenes de títulos
