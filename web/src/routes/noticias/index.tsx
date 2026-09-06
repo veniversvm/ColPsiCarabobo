@@ -18,6 +18,7 @@ interface PaginatedPosts {
   data: Post[];
   page: number;
   total: number;
+  next_cursor?: string | null;
 }
 
 const toSlug = (title: string, id: string) => {
@@ -44,7 +45,7 @@ const formatDate = (iso: string) =>
 // ─────────────────────────────────────────────────────────────────────────────
 export default function PublicNoticiasPage() {
   const [posts,         setPosts]         = createSignal<Post[]>([]);
-  const [page,          setPage]          = createSignal(1);
+  const [nextCursor,    setNextCursor]    = createSignal<string | null>(null);
   const [loading,       setLoading]       = createSignal(false);
   const [hasMore,       setHasMore]       = createSignal(true);
   const [initialDone,   setInitialDone]   = createSignal(false);
@@ -54,11 +55,12 @@ export default function PublicNoticiasPage() {
   let sentinelRef!: HTMLDivElement;
   let observer: IntersectionObserver | null = null;
 
-  const loadPage = async (pageNum: number, q: string, replace = false) => {
+  const loadPage = async (cursor: string | null, q: string, replace = false) => {
     if (loading()) return;
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(pageNum), limit: String(LIMIT) });
+      const params = new URLSearchParams({ limit: String(LIMIT) });
+      if (cursor) params.set("cursor", cursor);
       if (q) params.set("search", q);
       const data = await apiGet<PaginatedPosts>(`/posts?${params.toString()}`);
       const result = data?.data ?? [];
@@ -67,7 +69,9 @@ export default function PublicNoticiasPage() {
       } else {
         setPosts((prev) => [...prev, ...result]);
       }
-      setHasMore(result.length === LIMIT);
+      const nc = data?.next_cursor ?? null;
+      setNextCursor(nc);
+      setHasMore(nc !== null);
     } catch (err) {
       console.error("Error cargando posts:", err);
       setHasMore(false);
@@ -78,14 +82,12 @@ export default function PublicNoticiasPage() {
   };
 
   onMount(() => {
-    loadPage(1, "");
+    loadPage(null, "");
 
     observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasMore() && !loading()) {
-          const next = page() + 1;
-          setPage(next);
-          loadPage(next, search());
+          loadPage(nextCursor(), search());
         }
       },
       { rootMargin: "200px" }
@@ -105,9 +107,9 @@ export default function PublicNoticiasPage() {
     const prev = searchTimeout();
     if (prev) clearTimeout(prev);
     const t = setTimeout(() => {
-      setPage(1);
       setHasMore(true);
-      loadPage(1, q, true);
+      setNextCursor(null);
+      loadPage(null, q, true);
     }, 350);
     setSearchTimeout(t);
   };

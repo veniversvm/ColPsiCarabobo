@@ -73,8 +73,9 @@ func (r *ticketRepo) ListTickets(ctx context.Context, filter domain.TicketFilter
 
 	q := r.db.WithContext(ctx).Model(&domain.Ticket{})
 
-	// FIFO administrativo: por defecto solo abiertos.
-	if filter.SoloAbiertos {
+	// FIFO administrativo: por defecto solo abiertos, salvo que se filtre por un
+	// estado concreto (el estado elegido manda, p.ej. ver los cerrados).
+	if filter.SoloAbiertos && filter.EstadoID == nil {
 		q = q.Joins("JOIN ticket_estados te ON te.id = tickets.estado_id").
 			Where("te.is_closed = FALSE")
 	}
@@ -96,7 +97,21 @@ func (r *ticketRepo) ListTickets(ctx context.Context, filter domain.TicketFilter
 		return nil, 0, err
 	}
 
-	err := q.Order("tickets.created_at ASC").
+	// Keyset pagination (FIFO): pide tickets posteriores al cursor (id autoincremental).
+	if filter.Cursor != nil {
+		err := q.Where("tickets.id > ?", *filter.Cursor).
+			Order("tickets.id ASC").Limit(filter.Limit).
+			Preload("Psi").
+			Preload("Motivo").
+			Preload("Estado").
+			Find(&tickets).Error
+		if err != nil {
+			return nil, 0, err
+		}
+		return tickets, total, nil
+	}
+
+	err := q.Order("tickets.id ASC").
 		Offset((filter.Page - 1) * filter.Limit).Limit(filter.Limit).
 		Preload("Psi").
 		Preload("Motivo").

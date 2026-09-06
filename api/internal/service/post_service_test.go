@@ -143,7 +143,7 @@ func TestPostService_Extensive(t *testing.T) {
 			}
 			return []domain.Post{}, 0, nil
 		}
-		_, _ = svc.GetPostsList(ctx, 1, 10, "public")
+		_, _ = svc.GetPostsList(ctx, 1, 10, nil, "public")
 
 		// Escenario Psi: Psicólogos Colegiados (Autenticados).
 		// Forzamiento híbrido: Ven posts "published", pero el filtro de Tipo se vacía
@@ -157,7 +157,7 @@ func TestPostService_Extensive(t *testing.T) {
 			}
 			return []domain.Post{}, 0, nil
 		}
-		_, _ = svc.GetPostsList(ctx, 1, 10, "psi")
+		_, _ = svc.GetPostsList(ctx, 1, 10, nil, "psi")
 
 		// Escenario Admin: Personal de Staff.
 		// Ausencia de filtros: Pueden ver todo el espectro de contenido (incluyendo 'draft' y 'archived').
@@ -167,7 +167,7 @@ func TestPostService_Extensive(t *testing.T) {
 			}
 			return []domain.Post{}, 0, nil
 		}
-		_, _ = svc.GetPostsList(ctx, 1, 10, "admin")
+		_, _ = svc.GetPostsList(ctx, 1, 10, nil, "admin")
 	})
 
 	// --- 4. TEST DE PERMISOS ADMINISTRATIVOS ---

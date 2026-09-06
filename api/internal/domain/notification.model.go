@@ -54,9 +54,9 @@ func (Notification) TableName() string { return "notifications" }
 // NotificationTarget registra cada destinatario individual de una notificación.
 type NotificationTarget struct {
 	ID             uuid.UUID  `gorm:"type:uuid;primaryKey;default:uuidv7()" json:"id"`
-	NotificationID uuid.UUID  `gorm:"type:uuid;not null;index" json:"notification_id"`
-	PsiUserID      uuid.UUID  `gorm:"type:uuid;not null;index" json:"psi_user_id"`
-	IsRead         bool       `gorm:"default:false" json:"is_read"`
+	NotificationID uuid.UUID  `gorm:"type:uuid;not null;uniqueIndex:idx_notification_targets_notification_psi,priority:1" json:"notification_id"`
+	PsiUserID      uuid.UUID  `gorm:"type:uuid;not null;uniqueIndex:idx_notification_targets_notification_psi,priority:2;index:idx_notification_targets_psi_read,priority:1" json:"psi_user_id"`
+	IsRead         bool       `gorm:"default:false;index:idx_notification_targets_psi_read,priority:2" json:"is_read"`
 	ReadAt         *time.Time `gorm:"type:timestamptz" json:"read_at,omitempty"`
 	EmailSent      bool       `gorm:"default:false" json:"email_sent"`
 	EmailSentAt    *time.Time `gorm:"type:timestamptz" json:"email_sent_at,omitempty"`

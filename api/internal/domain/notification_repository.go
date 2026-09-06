@@ -53,11 +53,15 @@ type NotificationRepository interface {
 	// GetByID recupera una notificación completa con sus relaciones.
 	GetByID(ctx context.Context, id uuid.UUID) (*Notification, error)
 
-	// ListBySender lista las notificaciones creadas por un administrador (paginado DESC).
-	ListBySender(ctx context.Context, senderID uuid.UUID, page, limit int) ([]Notification, int64, error)
+	// ListBySender lista las notificaciones creadas por un administrador.
+	// Si cursor != nil usa keyset pagination (id < cursor, orden id DESC);
+	// si es nil usa la paginación clásica por Offset/Page (compat).
+	ListBySender(ctx context.Context, senderID uuid.UUID, cursor *uuid.UUID, page, limit int) ([]Notification, int64, error)
 
-	// ListByUser lista las notificaciones del agremiado (paginado DESC).
-	ListByUser(ctx context.Context, psiUserID uuid.UUID, page, limit int) ([]Notification, int64, error)
+	// ListByUser lista las notificaciones del agremiado (orden id DESC).
+	// Si cursor != nil usa keyset pagination (id < cursor); si es nil usa
+	// Offset/Page (compat).
+	ListByUser(ctx context.Context, psiUserID uuid.UUID, cursor *uuid.UUID, page, limit int) ([]Notification, int64, error)
 
 	// GetTargets recupera los destinatarios de una notificación con su psicólogo.
 	GetTargets(ctx context.Context, notificationID uuid.UUID) ([]NotificationTarget, error)

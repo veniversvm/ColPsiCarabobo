@@ -18,6 +18,9 @@ type TicketFilter struct {
 	Search       string     // búsqueda de texto en título/descripción
 	Page         int
 	Limit        int
+	// Cursor habilita keyset pagination (FIFO): filas con id > Cursor (orden ASC).
+	// Si es nil, se usa la paginación clásica por Offset/Page (compat).
+	Cursor *uint
 }
 
 // TicketConfigRepository define el contrato de persistencia de la configuración

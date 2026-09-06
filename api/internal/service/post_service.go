@@ -126,7 +126,7 @@ func (s *PostService) CreatePost(ctx context.Context, admin *domain.UserAdmin, r
 // GetPostsList implementa filtros dinámicos de listado según la jerarquía del solicitante.
 // En lugar de hacer IFs pesados en el código, muta el objeto `PostFilter` antes de enviarlo
 // a la base de datos, delegando el filtrado al motor SQL para máximo rendimiento.
-func (s *PostService) GetPostsList(ctx context.Context, page, limit int, userRole string) (interface{}, error) {
+func (s *PostService) GetPostsList(ctx context.Context, page, limit int, cursor *uuid.UUID, userRole string) (interface{}, error) {
 	filter := domain.PostFilter{}
 
 	switch userRole {
@@ -141,6 +141,9 @@ func (s *PostService) GetPostsList(ctx context.Context, page, limit int, userRol
 		filter.Status = []domain.PostStatus{domain.PostStatusPublished}
 		filter.Type = "public"
 	}
+	if cursor != nil {
+		filter.Cursor = *cursor
+	}
 
 	posts, total, err := s.repo.List(ctx, filter, page, limit)
 	if err != nil {
@@ -152,11 +155,15 @@ func (s *PostService) GetPostsList(ctx context.Context, page, limit int, userRol
 		s.resolvePostURLs(&posts[i])
 	}
 
-	return map[string]interface{}{
+	res := map[string]interface{}{
 		"data":  posts,
 		"total": total,
 		"page":  page,
-	}, nil
+	}
+	if len(posts) == limit && len(posts) > 0 {
+		res["next_cursor"] = posts[len(posts)-1].ID.String()
+	}
+	return res, nil
 }
 
 // GetPostByID recupera una noticia validando explícitamente el nivel de acceso (IDOR Protection).

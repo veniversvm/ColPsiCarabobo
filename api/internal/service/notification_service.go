@@ -327,17 +327,22 @@ func (s *NotificationService) NotifyPSI(ctx context.Context, senderID uuid.UUID,
 	}})
 }
 
-// ListMyNotifications lista las notificaciones creadas por un admin (paginado).
-func (s *NotificationService) ListMyNotifications(ctx context.Context, admin *domain.UserAdmin, page, limit int) (map[string]interface{}, error) {
-	list, total, err := s.repo.ListBySender(ctx, admin.ID, page, limit)
+// ListMyNotifications lista las notificaciones creadas por un admin.
+// cursor != nil habilita keyset pagination (cargar más).
+func (s *NotificationService) ListMyNotifications(ctx context.Context, admin *domain.UserAdmin, cursor *uuid.UUID, page, limit int) (map[string]interface{}, error) {
+	list, total, err := s.repo.ListBySender(ctx, admin.ID, cursor, page, limit)
 	if err != nil {
 		return nil, err
 	}
-	return map[string]interface{}{
+	res := map[string]interface{}{
 		"data":  list,
 		"total": total,
 		"page":  page,
-	}, nil
+	}
+	if len(list) == limit && len(list) > 0 {
+		res["next_cursor"] = list[len(list)-1].ID.String()
+	}
+	return res, nil
 }
 
 // GetNotificationDetail retorna el detalle + estadísticas de una notificación.
@@ -439,9 +444,10 @@ func (s *NotificationService) AttachFile(ctx context.Context, admin *domain.User
 // AGREMIDO — CONSULTA
 // =========================================================================
 
-// ListUserNotifications lista las notificaciones del agremiado (paginado DESC).
-func (s *NotificationService) ListUserNotifications(ctx context.Context, psi *domain.PsiUserModel, page, limit int) (map[string]interface{}, error) {
-	list, total, err := s.repo.ListByUser(ctx, psi.ID, page, limit)
+// ListUserNotifications lista las notificaciones del agremiado (id DESC).
+// cursor != nil habilita keyset pagination (cargar más).
+func (s *NotificationService) ListUserNotifications(ctx context.Context, psi *domain.PsiUserModel, cursor *uuid.UUID, page, limit int) (map[string]interface{}, error) {
+	list, total, err := s.repo.ListByUser(ctx, psi.ID, cursor, page, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -453,11 +459,15 @@ func (s *NotificationService) ListUserNotifications(ctx context.Context, psi *do
 			}
 		}
 	}
-	return map[string]interface{}{
+	res := map[string]interface{}{
 		"data":  list,
 		"total": total,
 		"page":  page,
-	}, nil
+	}
+	if len(list) == limit && len(list) > 0 {
+		res["next_cursor"] = list[len(list)-1].ID.String()
+	}
+	return res, nil
 }
 
 // GetUnreadCount retorna el contador de notificaciones no leídas del agremiado.
@@ -485,6 +495,18 @@ func (s *NotificationService) GetUserNotificationById(ctx context.Context, psi *
 		}
 	}
 	return n, nil
+}
+
+// MarkAsRead marca como leída una notificación del agremiado (endpoint semántico).
+// Se elimina la auto-marca al abrir: el psicólogo debe pulsar el botón "Marcar como leída".
+func (s *NotificationService) MarkAsRead(ctx context.Context, psi *domain.PsiUserModel, id uuid.UUID) error {
+	if _, err := s.repo.GetTargetByUserAndNotification(ctx, id, psi.ID); err != nil {
+		return domain.ErrNotificationTargetNotOwned
+	}
+	if err := s.repo.MarkAsRead(ctx, id, psi.ID); err != nil {
+		return err
+	}
+	return nil
 }
 
 // GetAttachmentURL retorna la URL pública de un adjunto si el agremiado es destinatario.

@@ -53,7 +53,7 @@ func (h *PostHandler) ListPosts(c *fiber.Ctx) error {
 		limit = 100
 	}
 
-	res, err := h.service.GetPostsList(c.UserContext(), page, limit, role)
+	res, err := h.service.GetPostsList(c.UserContext(), page, limit, parseCursor(c), role)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Error al recuperar publicaciones"})
 	}

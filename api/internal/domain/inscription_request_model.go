@@ -34,7 +34,9 @@ type PsiInscriptionRequest struct {
 	AuditModel
 
 	// ── Identidad ─────────────────────────────────────────────────────────
-	Cedula      int    `gorm:"not null" json:"cedula"`
+	// uniqueIndex parcial: una sola solicitud "pending" por cédula (integridad
+	// de la ficha digital; los aprobados/rechazados no bloquean nuevas fichas).
+	Cedula       int    `gorm:"not null;uniqueIndex:idx_inscription_requests_cedula_pending,where:status = 'pending'" json:"cedula"`
 	Nacionalidad string `gorm:"size:1;not null" json:"nacionalidad"` // V / E
 	Nombres     string `gorm:"size:255;not null" json:"nombres"`
 	Apellidos   string `gorm:"size:255;not null" json:"apellidos"`
@@ -84,13 +86,15 @@ type PsiInscriptionRequest struct {
 	Documents []PsiInscriptionDocument `gorm:"foreignKey:InscriptionRequestID" json:"-"`
 
 	// ── Estado administrativo ─────────────────────────────────────────────
-	Status        InscriptionStatus `gorm:"size:20;default:pending" json:"status"`
-	ControlNumber string            `gorm:"size:50" json:"control_number"`
+	Status        InscriptionStatus `gorm:"size:20;default:pending;index:idx_inscription_requests_status" json:"status"`
+	// uniqueIndex parcial: control_number no vacío y único (los pending aún no
+	// tienen número; el comité lo asigna al aprobar).
+	ControlNumber string            `gorm:"size:50;uniqueIndex:idx_inscription_requests_control_number,where:control_number <> '' AND control_number IS NOT NULL" json:"control_number"`
 	Notes         string            `gorm:"type:text" json:"notes"`
 
 	// ── Vínculo ───────────────────────────────────────────────────────────
 	// PsiUserID se rellena al aprobar: id del expediente creado en psi_users.
-	PsiUserID *uuid.UUID `gorm:"type:uuid;index" json:"psi_user_id,omitempty"`
+	PsiUserID *uuid.UUID `gorm:"type:uuid;index:idx_inscription_requests_psi_user_id" json:"psi_user_id,omitempty"`
 }
 
 // TableName devuelve el nombre de la tabla en la base de datos.
