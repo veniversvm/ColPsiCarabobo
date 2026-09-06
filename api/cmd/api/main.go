@@ -112,6 +112,7 @@ func main() {
 	database.SeedAdmin(db)
 	database.SeedSudoPermissions(db)
 	database.SeedAppSettings(db)
+	database.SeedWorkAreas(db)
 
 	// 4. S3
 	s3Client, err := s3.ConnectS3(context.Background())

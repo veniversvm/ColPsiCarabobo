@@ -127,6 +127,90 @@ func SeedSudoPermissions(db *gorm.DB) {
 	}
 }
 
+// SeedWorkAreas siembra el catálogo inicial de áreas de ejercicio profesional
+// (y el modelo teórico de Psicoanálisis) tanto en desarrollo como en
+// producción. Es idempotente: inserta solo las entradas cuyo nombre no exista,
+// de modo que nunca sobrescribe áreas renombradas o editadas por el staff.
+func SeedWorkAreas(db *gorm.DB) {
+	areas := []domain.PsiSpecialtyModel{
+		{
+			Name: "Clínica",
+			Description: "Se centra en evaluar, diagnosticar y tratar trastornos mentales, " +
+				"emocionales y de conducta. Los profesionales intervienen en patologías como " +
+				"depresión, ansiedad, adicciones o traumas para mejorar el bienestar emocional " +
+				"del paciente mediante diversos enfoques psicoterapéuticos. Trabajan principalmente " +
+				"en hospitales, centros de salud mental, consultorios privados y unidades de " +
+				"rehabilitación física o psicológica.",
+		},
+		{
+			Name: "Industrial y Organizacional",
+			Description: "Aplica los principios psicológicos al ámbito laboral para optimizar el " +
+				"rendimiento y bienestar de los trabajadores. Sus funciones incluyen selección de " +
+				"personal, evaluación del desempeño, prevención de riesgos psicosociales (burnout), " +
+				"capacitación, liderazgo y gestión del clima organizacional. Se desempeñan en " +
+				"departamentos de Recursos Humanos, consultoras de talento y empresas públicas o " +
+				"privadas.",
+		},
+		{
+			Name: "Educativa",
+			Description: "Analiza cómo aprenden los seres humanos en entornos educativos para " +
+				"optimizar el proceso de enseñanza. Evalúa y atiende dificultades de aprendizaje, " +
+				"necesidades educativas especiales, problemas de conducta escolar y orientación " +
+				"vocacional. Colaboran estrechamente con docentes, estudiantes y familias dentro de " +
+				"colegios, universidades, centros de orientación e instituciones de investigación " +
+				"pedagógica.",
+		},
+		{
+			Name: "Social y Comunitaria",
+			Description: "Estudia cómo los contextos sociales, grupales y culturales influyen en el " +
+				"comportamiento, pensamientos y emociones de las personas. Se enfoca en desarrollar " +
+				"programas de intervención para resolver problemáticas colectivas (violencia, " +
+				"marginación, inclusión) y empoderar a comunidades vulnerables. Trabajan en " +
+				"organizaciones no gubernamentales (ONG), entidades gubernamentales y centros " +
+				"comunitarios.",
+		},
+		{
+			Name: "Forense y Jurídica",
+			Description: "Aplica los conocimientos psicológicos en el sistema legal y la " +
+				"administración de justicia. Realiza peritajes psicológicos sobre la imputabilidad " +
+				"de acusados, custodia de menores, evaluación de secuelas en víctimas y veracidad de " +
+				"testimonios. Desempeñan su labor en juzgados, instituciones penitenciarias, " +
+				"fiscalías y despachos de asesoría jurídica.",
+		},
+		{
+			Name: "Neuropsicología",
+			Description: "Examina la relación entre las estructuras del cerebro y las funciones " +
+				"cognitivas, emocionales y conductuales. Se especializa en diagnosticar y rehabilitar " +
+				"secuelas derivadas de daño cerebral adquirido (traumatismos, ictus) o enfermedades " +
+				"neurodegenerativas (Alzheimer, Parkinson). Trabajan en unidades de neurología, " +
+				"centros de neurorrehabilitación y laboratorios de investigación.",
+		},
+		{
+			Name: "Psicoanálisis",
+			Description: "Modelo teórico y método terapéutico fundado por Sigmund Freud que postula " +
+				"que la conducta humana está motivada por conflictos, deseos y traumas reprimidos en " +
+				"el inconsciente. A través de la asociación libre y la interpretación de los sueños, " +
+				"busca hacer consciente lo inconsciente para resolver bloqueos emocionales. Se aplica " +
+				"mayoritariamente en el ámbito de la psicología clínica en consulta privada.",
+		},
+	}
+
+	for _, area := range areas {
+		var count int64
+		db.Model(&domain.PsiSpecialtyModel{}).
+			Where("name = ?", area.Name).
+			Count(&count)
+		if count > 0 {
+			continue
+		}
+		if err := db.Create(&area).Error; err != nil {
+			log.Error().Err(err).Str("component", "seed").Str("area", area.Name).Msg("Error al sembrar área de trabajo")
+		} else {
+			log.Info().Str("component", "seed").Str("area", area.Name).Msg("Área de trabajo sembrada")
+		}
+	}
+}
+
 // SeedAppSettings siembra los defaults de la configuración global (KV) si las
 // claves no existen aún. No sobrescribe valores ya configurados.
 func SeedAppSettings(db *gorm.DB) {
