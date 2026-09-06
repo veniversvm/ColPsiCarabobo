@@ -36,7 +36,27 @@ const KNOWN_MESSAGES: Record<string, string> = {
     "El estado está en uso por alguna solicitud y no se puede eliminar.",
   "el límite de tickets por psicólogo para este motivo debe ser al menos 1":
     "El límite de solicitudes por psicólogo debe ser al menos 1.",
+  // Staff / administración (api/internal/service/admin_service.go)
+  "el formato del email es inválido":
+    "El formato del correo electrónico es inválido.",
+  "email inválido":
+    "El correo electrónico no tiene un formato válido.",
+  "el usuario no puede estar vacío":
+    "El nombre de usuario no puede estar vacío.",
+  "la contraseña no cumple con los estándares de seguridad":
+    "La contraseña no cumple con los requisitos de seguridad (mínimo 8 caracteres, mayúsculas y números).",
+  "permisos insuficientes para crear administradores":
+    "No tienes permisos para crear administradores.",
+  "rol inválido":
+    "El perfil de rol seleccionado no es válido.",
 };
+
+// Mensajes dinámicos del staff con prefijo conocido: se muestran tal cual
+// (ya son frases en español del backend) en lugar del fallback genérico.
+const KNOWN_PREFIXES: string[] = [
+  "no puedes otorgar el permiso:",
+  "no tienes rango para modificar:",
+];
 
 /**
  * Normaliza un mensaje de error a una forma canónica para facilitar el match
@@ -51,6 +71,10 @@ function normalize(msg: string): string {
  * Si el mensaje no está en el mapa, retorna un mensaje genérico.
  */
 export function getUserFacingError(error: unknown): string {
-  const msg = normalize((error as any)?.message || String(error));
-  return KNOWN_MESSAGES[msg] || "Ocurrió un error inesperado. Si persiste, contacte al administrador.";
+  const raw = (error as any)?.message || String(error);
+  const msg = normalize(raw);
+  if (KNOWN_MESSAGES[msg]) return KNOWN_MESSAGES[msg];
+  const knownPrefix = KNOWN_PREFIXES.find((p) => msg.startsWith(p));
+  if (knownPrefix) return raw;
+  return "Ocurrió un error inesperado. Si persiste, contacte al administrador.";
 }

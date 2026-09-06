@@ -11,7 +11,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/rs/zerolog/log"
-	"net/mail"
 	"strings"
 	"time"
 
@@ -264,19 +263,20 @@ func (s *AdminService) CreateAdmin(
 	}
 
 	// 2. Sanitización y Validación Básica de Formatos
-	_, err := mail.ParseAddress(req.Email)
+	// Username y Email son independientes: el correo pasa por el pipeline de
+	// validación y normalización (canónico en minúsculas), como en el resto
+	// del sistema. El Username es un identificador de acceso libre de formato.
+	validate_email, err := utils.ParseAndValidateEmail(req.Email)
 	if err != nil {
 		return errors.New("el formato del email es inválido")
 	}
 
-	if !utils.IsStrongPassword(req.Password) {
-		return errors.New("la contraseña no cumple con los estándares de seguridad")
+	if strings.TrimSpace(req.Username) == "" {
+		return errors.New("el usuario no puede estar vacío")
 	}
 
-	// Este paso normaliza caracteres antes de insertar (ej: elimina espacios en blanco inyectados)
-	validate_email, err := utils.ParseAndValidateEmail(req.Username)
-	if err != nil {
-		return errors.New("email inválido")
+	if !utils.IsStrongPassword(req.Password) {
+		return errors.New("la contraseña no cumple con los estándares de seguridad")
 	}
 
 	// 3. Ensamblaje del Dominio y Trazabilidad (Audit Trail)
