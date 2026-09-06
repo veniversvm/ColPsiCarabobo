@@ -45,5 +45,6 @@ func SetupNotificationRoutes(
 	psiUser.Get("/", h.GetMyNotificationsPsi)
 	psiUser.Get("/unread-count", h.GetUnreadCount)
 	psiUser.Get("/:id", h.GetNotificationById)
+	psiUser.Patch("/:id/read", h.MarkNotificationRead)
 	psiUser.Get("/:id/attach/:attachId", h.GetNotificationImage)
 }

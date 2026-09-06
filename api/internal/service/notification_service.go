@@ -487,6 +487,18 @@ func (s *NotificationService) GetUserNotificationById(ctx context.Context, psi *
 	return n, nil
 }
 
+// MarkAsRead marca como leída una notificación del agremiado (endpoint semántico).
+// Se elimina la auto-marca al abrir: el psicólogo debe pulsar el botón "Marcar como leída".
+func (s *NotificationService) MarkAsRead(ctx context.Context, psi *domain.PsiUserModel, id uuid.UUID) error {
+	if _, err := s.repo.GetTargetByUserAndNotification(ctx, id, psi.ID); err != nil {
+		return domain.ErrNotificationTargetNotOwned
+	}
+	if err := s.repo.MarkAsRead(ctx, id, psi.ID); err != nil {
+		return err
+	}
+	return nil
+}
+
 // GetAttachmentURL retorna la URL pública de un adjunto si el agremiado es destinatario.
 func (s *NotificationService) GetAttachmentURL(ctx context.Context, psi *domain.PsiUserModel, notificationID, attachID uuid.UUID) (string, error) {
 	if _, err := s.repo.GetTargetByUserAndNotification(ctx, notificationID, psi.ID); err != nil {

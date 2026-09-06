@@ -99,7 +99,11 @@ func (r *notificationRepo) ListByUser(ctx context.Context, psiUserID uuid.UUID, 
 
 	query.Count(&total)
 	offset := (page - 1) * limit
-	err := query.Offset(offset).Limit(limit).Order("created_at DESC").Find(&notifications).Error
+
+	// Preload del target del agremiado actual para exponer is_read/read_at en
+	// el listado (la UI usa targets[0] para distinguir leída de no leída).
+	err := query.Preload("Targets", "psi_user_id = ?", psiUserID).
+		Offset(offset).Limit(limit).Order("created_at DESC").Find(&notifications).Error
 
 	return notifications, total, err
 }

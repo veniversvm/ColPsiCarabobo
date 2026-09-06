@@ -348,6 +348,37 @@ func (h *NotificationHandler) GetNotificationById(c *fiber.Ctx) error {
 	return c.JSON(notification)
 }
 
+// MarkNotificationRead godoc
+// @Summary      Marcar notificación como leída (agremiado)
+// @Description  Marca la notificación como leída para el agremiado. Acción explícita:
+//               la UI la muestra solo tras abrir la notificación y pulsar el botón.
+// @Security     BearerAuth
+// @Tags         Agremiado - Notificaciones
+// @Produce      json
+// @Param        id  path  string  true  "UUID de la notificación"
+// @Success      200  {object}  map[string]bool
+// @Failure      403  {object}  map[string]string
+// @Router       /notifications/psi-user/{id}/read [patch]
+func (h *NotificationHandler) MarkNotificationRead(c *fiber.Ctx) error {
+	psi, err := middleware.GetAuthenticatedPsi(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ID inválido"})
+	}
+
+	if err := h.service.MarkAsRead(c.UserContext(), psi, id); err != nil {
+		if errors.Is(err, domain.ErrNotificationTargetNotOwned) {
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": err.Error()})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"is_read": true})
+}
+
 // GetNotificationImage godoc
 // @Summary      Descargar adjunto de notificación
 // @Description  Retorna la URL pública de un adjunto si el agremiado es destinatario.
