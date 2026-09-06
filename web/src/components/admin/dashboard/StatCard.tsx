@@ -15,7 +15,7 @@ const fmt = (n?: number) => (n ?? 0).toLocaleString("es-VE");
 export function StatCard(props: StatCardProps) {
   const accent = () => props.accent ?? "border-colpsi-yellow";
   return (
-    <div class={`bg-white rounded-2xl p-5 shadow-sm border border-gray-100 border-l-4 ${accent()} flex flex-col gap-3`}>
+    <div class={`bg-white rounded-2xl p-5 shadow-sm border border-colpsi-border border-l-4 ${accent()} flex flex-col gap-3`}>
       <div class="flex items-center justify-between">
         <span class="text-2xl">{props.icon}</span>
         <Show when={props.pulse}>
@@ -30,7 +30,7 @@ export function StatCard(props: StatCardProps) {
         <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mt-0.5">{props.label}</p>
       </div>
       <Show when={props.sub && props.sub.length > 0}>
-        <div class="flex flex-wrap gap-3 border-t border-gray-100 pt-3">
+        <div class="flex flex-wrap gap-3 border-t border-colpsi-border pt-3">
           <For each={props.sub}>
             {(s) => (
               <div>

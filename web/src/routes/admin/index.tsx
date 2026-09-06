@@ -91,7 +91,7 @@ export default function AdminDashboard() {
         <button
           onClick={() => { refetch(); }}
           disabled={stats.loading}
-          class="bg-white border-2 border-gray-100 text-gray-500 px-4 py-2 rounded-xl font-bold text-sm hover:border-colpsi-blue hover:text-colpsi-blue transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="bg-white border-2 border-colpsi-border text-gray-500 px-4 py-2 rounded-xl font-bold text-sm hover:border-colpsi-blue hover:text-colpsi-blue transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <span class={stats.loading ? "animate-spin inline-block" : ""}>↻</span>
           <span>{stats.loading && cachedStats() ? "Actualizando..." : "Actualizar"}</span>
@@ -252,7 +252,7 @@ export default function AdminDashboard() {
             <div class="w-64 h-3 bg-gray-100 rounded animate-pulse" />
             <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
               <For each={Array(5).fill(0)}>
-                {() => <div class="h-24 bg-white rounded-xl border border-gray-100 animate-pulse" />}
+                {() => <div class="h-24 bg-white rounded-xl border border-colpsi-border animate-pulse" />}
               </For>
             </div>
           </div>

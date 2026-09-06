@@ -41,7 +41,7 @@ export function FileUpload(props: Props) {
 
   return (
     <div>
-      <label class="flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-2xl h-32 hover:border-colpsi-blue transition-all cursor-pointer bg-gray-50/50 px-4 text-center">
+      <label class="flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-2xl h-32 hover:border-colpsi-blue transition-all cursor-pointer bg-colpsi-surface/50 px-4 text-center">
         <input type="file" accept={props.accept} class="sr-only" onChange={handleChange} />
         <Show when={hasFile()} fallback={<span class="text-2xl">📎</span>}>
           <span class="text-green-600 text-xs font-bold mb-1">✓ Archivo listo</span>

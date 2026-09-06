@@ -163,7 +163,7 @@ export default function AdminStaffPage() {
     <main class="pb-20 animate-in fade-in duration-500">
 
       {/* ── HEADER ────────────────────────────────────────────────────────── */}
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 bg-white p-6 rounded-3xl shadow-sm border border-colpsi-border">
         <div>
           <h1 class="text-2xl font-black text-blue-900 uppercase tracking-tight">Staff</h1>
           <p class="text-gray-400 text-sm mt-0.5 font-medium">Personal administrativo del sistema</p>
@@ -220,11 +220,11 @@ export default function AdminStaffPage() {
       {/* ── LISTADO ───────────────────────────────────────────────────────── */}
       <Suspense fallback={
         <div class="space-y-3">
-          <For each={[1, 2, 3]}>{() => <div class="h-24 bg-white animate-pulse rounded-2xl border border-gray-100" />}</For>
+          <For each={[1, 2, 3]}>{() => <div class="h-24 bg-white animate-pulse rounded-2xl border border-colpsi-border" />}</For>
         </div>
       }>
         <Show when={!result.loading && list().length === 0}>
-          <div class="text-center py-20 bg-white rounded-3xl border border-gray-100">
+          <div class="text-center py-20 bg-white rounded-3xl border border-colpsi-border">
             <p class="text-5xl mb-4">👤</p>
             <p class="text-gray-400 font-bold">No hay administradores registrados</p>
             <A href="/admin/staff/crear" class="mt-4 inline-block text-blue-600 font-black text-sm hover:underline">
@@ -234,7 +234,7 @@ export default function AdminStaffPage() {
         </Show>
 
         <Show when={!result.loading && list().length > 0 && filtered().length === 0}>
-          <div class="text-center py-16 bg-white rounded-3xl border border-gray-100">
+          <div class="text-center py-16 bg-white rounded-3xl border border-colpsi-border">
             <p class="text-gray-400 font-bold">Ningún resultado para los filtros aplicados</p>
           </div>
         </Show>
@@ -246,13 +246,13 @@ export default function AdminStaffPage() {
               const permsCount = countPerms(admin);
               return (
                 <article class={`bg-white rounded-2xl border-2 transition-all duration-200 overflow-hidden ${
-                  admin.is_active ? "border-gray-100 hover:border-blue-100" : "border-dashed border-gray-200 opacity-70"
+                  admin.is_active ? "border-colpsi-border hover:border-blue-100" : "border-dashed border-gray-200 opacity-70"
                 }`}>
                   <div class="flex items-center gap-4 p-4 md:p-5">
 
                     {/* Avatar */}
                     <div class={`flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg uppercase border-2 ${
-                      admin.is_active ? "bg-blue-50 border-blue-100 text-blue-700" : "bg-gray-50 border-gray-200 text-gray-400"
+                      admin.is_active ? "bg-blue-50 border-blue-100 text-blue-700" : "bg-colpsi-surface border-gray-200 text-gray-400"
                     }`}>
                       {admin.username.charAt(0)}
                     </div>
@@ -324,7 +324,7 @@ export default function AdminStaffPage() {
             class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
             onClick={(e) => { if (e.target === e.currentTarget) setConfirmDelete(null); }}
           >
-            <div class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm border border-gray-100 text-center animate-in zoom-in-95 duration-200">
+            <div class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm border border-colpsi-border text-center animate-in zoom-in-95 duration-200">
               <p class="text-4xl mb-4">🗑️</p>
               <h2 class="text-lg font-black text-gray-900 mb-1">¿Eliminar administrador?</h2>
               <p class="text-blue-700 font-black text-sm mb-1">{admin().username}</p>
@@ -337,7 +337,7 @@ export default function AdminStaffPage() {
               <div class="flex gap-3">
                 <button
                   onClick={() => setConfirmDelete(null)}
-                  class="flex-1 px-4 py-3 rounded-2xl border-2 border-gray-200 font-black text-gray-600 hover:bg-gray-50 transition-all text-sm"
+                  class="flex-1 px-4 py-3 rounded-2xl border-2 border-gray-200 font-black text-gray-600 hover:bg-colpsi-surface transition-all text-sm"
                 >
                   Cancelar
                 </button>
@@ -360,7 +360,7 @@ export default function AdminStaffPage() {
           class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
           onClick={(e) => { if (e.target === e.currentTarget) setShowSudo(false); }}
         >
-          <form onSubmit={handleTransferSudo} class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md border border-gray-100 animate-in zoom-in-95 duration-200">
+          <form onSubmit={handleTransferSudo} class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md border border-colpsi-border animate-in zoom-in-95 duration-200">
             <p class="text-4xl mb-4">👑</p>
             <h2 class="text-lg font-black text-gray-900 mb-1">Transferir el rol de Super Usuario</h2>
             <p class="text-gray-500 text-sm mb-5">
@@ -401,7 +401,7 @@ export default function AdminStaffPage() {
               <button
                 type="button"
                 onClick={() => setShowSudo(false)}
-                class="flex-1 px-4 py-3 rounded-2xl border-2 border-gray-200 font-black text-gray-600 hover:bg-gray-50 transition-all text-sm"
+                class="flex-1 px-4 py-3 rounded-2xl border-2 border-gray-200 font-black text-gray-600 hover:bg-colpsi-surface transition-all text-sm"
               >
                 Cancelar
               </button>

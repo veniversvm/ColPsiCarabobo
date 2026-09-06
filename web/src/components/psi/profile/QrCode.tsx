@@ -49,12 +49,12 @@ function QRCodeGenerator(props: QrProps) {
   };
 
   return (
-    <div class="flex flex-col max-w-sm items-center justify-center p-1 bg-gray-50 rounded-2xl border border-gray-100">
+    <div class="flex flex-col max-w-sm items-center justify-center p-1 bg-colpsi-surface rounded-2xl border border-colpsi-border">
       <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">
         Código QR del Perfil
       </p>
       
-      <div class="bg-white p-2 rounded-xl shadow-inner border border-gray-100 mb-3">
+      <div class="bg-white p-2 rounded-xl shadow-inner border border-colpsi-border mb-3">
         <canvas 
           ref={canvasRef} 
           class="max-w-full h-auto rounded-lg"

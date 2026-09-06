@@ -31,11 +31,11 @@ export function ProfileHeader(props: ProfileHeaderProps) {
 
   return (
     <>
-      <div class="bg-white rounded-[2.5rem] p-6 shadow-premium border border-gray-100 text-center relative overflow-hidden">
+      <div class="bg-white rounded-[2.5rem] p-6 shadow-premium border border-colpsi-border text-center relative overflow-hidden">
         
         {/* ── AVATAR ────────────────────────────────────────────────────── */}
         <div 
-          class={`w-28 h-28 md:w-36 md:h-36 mx-auto bg-gray-50 rounded-full overflow-hidden border-4 border-colpsi-yellow shadow-inner mb-5 relative group ${props.profilePicture ? 'cursor-pointer' : ''}`}
+          class={`w-28 h-28 md:w-36 md:h-36 mx-auto bg-colpsi-surface rounded-full overflow-hidden border-4 border-colpsi-yellow shadow-inner mb-5 relative group ${props.profilePicture ? 'cursor-pointer' : ''}`}
           onClick={() => {
             if (props.profilePicture) setIsModalOpen(true);
           }}
@@ -91,7 +91,7 @@ export function ProfileHeader(props: ProfileHeaderProps) {
         </div>
 
         {/* ── QR CODE ───────────────────────────────────────────────────── */}
-        <div class="mt-8 flex flex-col items-center justify-center w-full border-t border-gray-100 pt-6">
+        <div class="mt-8 flex flex-col items-center justify-center w-full border-t border-colpsi-border pt-6">
           <p class="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] mb-3">
             Ficha Digital
           </p>
@@ -121,7 +121,7 @@ export function ProfileHeader(props: ProfileHeaderProps) {
               <img 
                 src={imageUrl()!} 
                 alt={`Foto ampliada de ${fullName()}`}
-                class="w-full max-h-[85vh] min-h-[300px] object-contain rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] bg-gray-50 cursor-default" 
+                class="w-full max-h-[85vh] min-h-[300px] object-contain rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] bg-colpsi-surface cursor-default" 
                 onClick={(e) => e.stopPropagation()} // Previene que se cierre al hacer clic en la imagen
               />
             </div>

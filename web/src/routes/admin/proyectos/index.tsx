@@ -36,7 +36,7 @@ function RoleBadge(props: { project: Project }) {
 function ProjectCard(props: { project: Project; onDelete: (p: Project) => void }) {
   const p = () => props.project;
   return (
-    <div class="bg-white rounded-3xl border border-gray-100 shadow-premium overflow-hidden flex flex-col hover:shadow-xl hover:-translate-y-0.5 transition-all">
+    <div class="bg-white rounded-3xl border border-colpsi-border shadow-premium overflow-hidden flex flex-col hover:shadow-xl hover:-translate-y-0.5 transition-all">
       <A href={`/admin/proyectos/${p().id}`} class="flex flex-col flex-grow p-6 text-left group">
         <div class="flex items-start justify-between gap-3">
           <h3 class="font-black text-lg text-colpsi-blue leading-snug group-hover:text-blue-700 transition-colors line-clamp-2">
@@ -47,7 +47,7 @@ function ProjectCard(props: { project: Project; onDelete: (p: Project) => void }
         <Show when={p().description}>
           <p class="mt-2 text-sm text-gray-500 line-clamp-2">{p().description}</p>
         </Show>
-        <div class="mt-5 pt-4 border-t border-gray-100 flex items-center gap-5 text-xs font-bold text-gray-400">
+        <div class="mt-5 pt-4 border-t border-colpsi-border flex items-center gap-5 text-xs font-bold text-gray-400">
           <span class="flex items-center gap-1">👥 {p().member_count}</span>
           <span class="flex items-center gap-1">🃏 {p().card_count} tarjetas</span>
           <span class="ml-auto text-[11px]">por {p().create_by || "—"}</span>

@@ -45,7 +45,7 @@ export default function DocumentSectionCard(props: Props) {
   return (
     <section
       id={id()}
-      class="bg-white rounded-[2rem] shadow-premium border border-gray-100 overflow-hidden scroll-mt-24"
+      class="bg-white rounded-3xl shadow-premium border border-colpsi-border overflow-hidden scroll-mt-24"
     >
       <button
         type="button"
@@ -66,7 +66,7 @@ export default function DocumentSectionCard(props: Props) {
       </button>
 
       <Show when={abierta()}>
-        <div class="px-6 md:px-8 pb-8 pt-2 border-t border-gray-100">
+        <div class="px-6 md:px-8 pb-8 pt-2 border-t border-colpsi-border">
           <div class="flex justify-center mb-6">
             {BtnVolverAlInicio(irAlInicio)}
           </div>

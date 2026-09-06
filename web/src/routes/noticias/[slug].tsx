@@ -220,13 +220,13 @@ export default function PublicNoticiaDetailPage() {
                 <Show
                   when={data().text?.content}
                   fallback={
-                    <div class="bg-white rounded-3xl p-12 text-center border border-gray-100">
+                    <div class="bg-white rounded-3xl p-12 text-center border border-colpsi-border">
                       <p class="text-gray-400 italic">Esta publicación no tiene contenido detallado.</p>
                     </div>
                   }
                 >
                   <article
-                    class="bg-white rounded-3xl shadow-sm border border-gray-100 px-8 md:px-14 py-12
+                    class="bg-white rounded-3xl shadow-sm border border-colpsi-border px-8 md:px-14 py-12
                       prose prose-lg max-w-none
                       prose-headings:font-black prose-headings:text-blue-900 prose-headings:tracking-tight
                       prose-p:text-gray-700 prose-p:leading-relaxed prose-p:text-[1.05rem]
@@ -277,7 +277,7 @@ function ArticleSkeleton() {
     <div class="animate-pulse" role="status" aria-label="Cargando contenido...">
       <div class="bg-gray-200 h-72" />
       <div class="max-w-3xl mx-auto px-4 py-12 space-y-6">
-        <div class="bg-white rounded-3xl p-12 space-y-4 border border-gray-100">
+        <div class="bg-white rounded-3xl p-12 space-y-4 border border-colpsi-border">
           <div class="h-4 bg-gray-100 rounded w-1/4" />
           <div class="h-6 bg-gray-100 rounded w-full" />
           <div class="h-6 bg-gray-100 rounded w-5/6" />

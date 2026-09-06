@@ -91,7 +91,7 @@ export function LocationSection(props: LocationSectionProps) {
       </div>
 
       {/* ── FUERA DE CARABOBO (VENEZUELA) ──────────────────────────────── */}
-      <div class="pt-6 border-t border-gray-100">
+      <div class="pt-6 border-t border-colpsi-border">
         <h2 class="text-lg font-black text-colpsi-blue mb-5 border-l-4 border-gray-300 pl-3 uppercase tracking-tight">
           🗺️ Otro Estado de Venezuela
         </h2>
@@ -129,7 +129,7 @@ export function LocationSection(props: LocationSectionProps) {
       </div>
 
       {/* ── EXTERIOR (FUERA DE VENEZUELA) ──────────────────────────────── */}
-      <div class="pt-6 border-t border-gray-100">
+      <div class="pt-6 border-t border-colpsi-border">
         <h2 class="text-lg font-black text-colpsi-blue mb-5 border-l-4 border-gray-300 pl-3 uppercase tracking-tight">
           🌐 Exterior (Fuera de Venezuela)
         </h2>

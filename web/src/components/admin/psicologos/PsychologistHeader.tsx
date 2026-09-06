@@ -16,7 +16,7 @@ export function PsychologistHeader(props: Props) {
       <div class="flex gap-3">
         <button
           onClick={props.onImportClick}
-          class="bg-white border-2 border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl font-bold hover:bg-gray-50 transition-colors text-sm"
+          class="bg-white border-2 border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl font-bold hover:bg-colpsi-surface transition-colors text-sm"
         >
           📥 Importar CSV
         </button>

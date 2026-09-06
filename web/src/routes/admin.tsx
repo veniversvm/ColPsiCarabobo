@@ -91,13 +91,13 @@ export default function AdminLayout(props: { children: JSX.Element }) {
             {isCollapsed() ? "▶" : "◀"}
           </button>
 
-          <div class="h-20 flex items-center justify-center border-b border-blue-800/50">
+          <div class="h-20 flex items-center justify-center border-b border-blue-800/50 shrink-0">
             <A href="/admin" class="flex items-center px-4">
               {!isCollapsed() && <span class="text-xl font-black uppercase tracking-widest">Admin</span>}
             </A>
           </div>
           
-          <nav class="flex-grow p-4 space-y-2 overflow-y-auto">
+          <nav class="p-4 space-y-2 pb-2">
             {visibleMenu().map((item) => (
               <A href={item.path} end={item.path === "/admin"} class="flex items-center px-3 py-3.5 rounded-xl text-blue-100 hover:bg-blue-800 transition-all" activeClass="bg-colpsi-yellow !text-colpsi-blue font-black shadow-lg">
                 <span class={`text-xl ${isCollapsed() ? "mx-auto" : "mr-4"}`}>{item.icon}</span>
@@ -111,19 +111,15 @@ export default function AdminLayout(props: { children: JSX.Element }) {
             ))}
           </nav>
 
-          <div class="p-4 border-t border-blue-800/50">
-             <button onClick={logout} class="w-full flex items-center justify-center gap-2 bg-red-500 py-3 rounded-xl font-bold">
-               <span>🚪</span> {!isCollapsed() && "Cerrar Sesión"}
-             </button>
+          <div class="shrink-0 px-4 pt-3 pb-4 border-t border-blue-800/50">
+            <button onClick={logout} class="w-full flex items-center justify-center gap-2 bg-red-500 py-3 rounded-xl font-bold">
+              <span>🚪</span> {!isCollapsed() && "Cerrar Sesión"}
+            </button>
           </div>
         </aside>
 
         {/* CONTENIDO */}
         <div class="flex-grow flex flex-col h-screen overflow-y-auto relative">
-          <header class="hidden md:flex h-20 items-center justify-end px-10 bg-white border-b sticky top-0 z-10">
-             <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">Sistema en línea</span>
-          </header>
-
           <main class="p-4 md:p-8 lg:p-10 flex-grow max-w-7xl mx-auto w-full">
             {/* LAS PÁGINAS SE CARGAN AQUÍ */}
             {props.children}

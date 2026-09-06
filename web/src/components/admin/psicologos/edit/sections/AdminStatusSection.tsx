@@ -59,7 +59,7 @@ export function AdminStatusSection(props: Props) {
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
       {/* Cuenta + Solvencia */}
-        <div class="space-y-4 bg-gray-50 p-6 rounded-2xl border border-gray-100">
+        <div class="space-y-4 bg-colpsi-surface p-6 rounded-2xl border border-colpsi-border">
           <ToggleSwitch
             label="Cuenta Activa en Sistema"
             checked={props.form.is_active}

@@ -31,7 +31,7 @@ export default function MisDocumentosPage() {
   return (
     <main class="bg-colpsi-bg min-h-screen pb-24 font-sans">
       {/* ── HEADER ──────────────────────────────────────────────────────────── */}
-      <div class="bg-heraldic pt-10 pb-20 px-4 md:px-8 shadow-inner">
+      <div class="bg-heraldic pt-12 pb-20 px-4 md:px-8 shadow-inner">
         <div class="max-w-4xl mx-auto flex items-center justify-between">
           <A
             href="/psi"
@@ -68,7 +68,7 @@ export default function MisDocumentosPage() {
           <Show
             when={(docs()?.length ?? 0) > 0}
             fallback={
-              <div class="bg-white rounded-[2.5rem] p-8 md:p-10 shadow-premium border border-gray-100">
+              <div class="bg-white rounded-[2.5rem] p-8 md:p-10 shadow-premium border border-colpsi-border">
                 <div class="flex items-start gap-4">
                   <span class="text-4xl">📂</span>
                   <div class="flex-grow space-y-2">
@@ -104,12 +104,12 @@ export default function MisDocumentosPage() {
                         <div class="space-y-4">
                           <For each={group()}>
                             {(doc: PsiUserDocument) => (
-                              <div class="bg-white rounded-3xl p-5 md:p-6 shadow-premium border border-gray-100 flex flex-col md:flex-row gap-5">
+                              <div class="bg-white rounded-3xl p-5 md:p-6 shadow-premium border border-colpsi-border flex flex-col md:flex-row gap-5">
                                 <a
                                   href={bucketUrl(doc.document_url)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  class="shrink-0 w-full md:w-28 h-40 md:h-28 bg-gray-50 rounded-2xl border border-gray-200 overflow-hidden flex items-center justify-center hover:ring-2 hover:ring-colpsi-yellow transition-all"
+                                  class="shrink-0 w-full md:w-28 h-40 md:h-28 bg-colpsi-surface rounded-2xl border border-gray-200 overflow-hidden flex items-center justify-center hover:ring-2 hover:ring-colpsi-yellow transition-all"
                                 >
                                   <Show
                                     when={!isPdf(doc)}

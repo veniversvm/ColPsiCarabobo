@@ -127,7 +127,7 @@ function NavCard(props: { title: string, desc: string, href: string, icon: strin
       href={props.href} 
       class={`bg-white border-2 ${props.color} p-8 md:p-10 rounded-[2.5rem] shadow-premium hover:shadow-2xl hover:border-colpsi-blue/30 hover:-translate-y-2 transition-all duration-300 group flex flex-col items-center text-center`}
     >
-      <div class="w-20 h-20 bg-gray-50 border border-gray-100 rounded-3xl flex items-center justify-center text-4xl mb-6 group-hover:bg-colpsi-yellow group-hover:scale-110 transition-all duration-300">
+      <div class="w-20 h-20 bg-colpsi-surface border border-colpsi-border rounded-3xl flex items-center justify-center text-4xl mb-6 group-hover:bg-colpsi-yellow group-hover:scale-110 transition-all duration-300">
         {props.icon}
       </div>
       <h3 class="text-colpsi-blue font-black uppercase text-sm tracking-widest mb-3 leading-tight">

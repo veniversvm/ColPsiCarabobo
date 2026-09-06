@@ -10,10 +10,10 @@ interface Props {
 
 export function EditHeader(props: Props) {
   return (
-    <div class="flex items-center gap-4 mb-8 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+    <div class="flex items-center gap-4 mb-8 bg-white p-6 rounded-3xl shadow-sm border border-colpsi-border">
       <button
         onClick={props.onBack}
-        class="w-10 h-10 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-full font-bold flex items-center justify-center transition-colors flex-shrink-0"
+        class="w-10 h-10 bg-colpsi-surface hover:bg-gray-100 text-gray-600 rounded-full font-bold flex items-center justify-center transition-colors flex-shrink-0"
       >←</button>
       <div class="flex-1 min-w-0">
         <h1 class="text-2xl font-black text-blue-900 uppercase tracking-tight">Editar Publicación</h1>

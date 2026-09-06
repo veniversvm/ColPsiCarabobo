@@ -88,10 +88,10 @@ export default function AdminCrearNoticiaPage() {
     <main class="pb-28 animate-in fade-in duration-500 max-w-4xl mx-auto">
 
       {/* ── HEADER ────────────────────────────────────────────────────────── */}
-      <div class="flex items-center gap-4 mb-8 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+      <div class="flex items-center gap-4 mb-8 bg-white p-6 rounded-3xl shadow-sm border border-colpsi-border">
         <button
           onClick={() => navigate(-1)}
-          class="w-10 h-10 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-full font-bold flex items-center justify-center transition-colors flex-shrink-0"
+          class="w-10 h-10 bg-colpsi-surface hover:bg-gray-100 text-gray-600 rounded-full font-bold flex items-center justify-center transition-colors flex-shrink-0"
         >
           ←
         </button>
@@ -115,8 +115,8 @@ export default function AdminCrearNoticiaPage() {
       <form onSubmit={handleSubmit} class="space-y-6">
 
         {/* ══ BLOQUE 1: METADATOS ══════════════════════════════════════════ */}
-        <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 space-y-5">
-          <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest border-b border-gray-100 pb-3">
+        <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-colpsi-border space-y-5">
+          <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest border-b border-colpsi-border pb-3">
             Información General
           </h2>
 
@@ -177,7 +177,7 @@ export default function AdminCrearNoticiaPage() {
               </p>
             </div>
 
-            <div class="flex flex-col justify-center bg-gray-50 rounded-2xl px-5 py-4 border border-gray-100">
+            <div class="flex flex-col justify-center bg-colpsi-surface rounded-2xl px-5 py-4 border border-colpsi-border">
               <ToggleSwitch
                 label="Publicar inmediatamente"
                 checked={isActive()}
@@ -193,8 +193,8 @@ export default function AdminCrearNoticiaPage() {
         </section>
 
         {/* ══ BLOQUE 2: IMAGEN DE PORTADA ══════════════════════════════════ */}
-        <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
-          <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest border-b border-gray-100 pb-3 mb-5">
+        <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-colpsi-border">
+          <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest border-b border-colpsi-border pb-3 mb-5">
             Imagen de Portada
           </h2>
 
@@ -215,7 +215,7 @@ export default function AdminCrearNoticiaPage() {
               </div>
             </div>
           ) : (
-            <label class="flex flex-col items-center justify-center w-full h-44 border-2 border-dashed border-gray-300 rounded-2xl bg-gray-50 hover:bg-blue-50 hover:border-blue-300 transition-all cursor-pointer group">
+            <label class="flex flex-col items-center justify-center w-full h-44 border-2 border-dashed border-gray-300 rounded-2xl bg-colpsi-surface hover:bg-blue-50 hover:border-blue-300 transition-all cursor-pointer group">
               <div class="flex flex-col items-center gap-2 text-gray-400 group-hover:text-blue-500 transition-colors">
                 <svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 9.75h.008M3.375 3h17.25A.375.375 0 0121 3.375v17.25A.375.375 0 0120.625 21H3.375A.375.375 0 013 20.625V3.375A.375.375 0 013.375 3z" />
@@ -229,8 +229,8 @@ export default function AdminCrearNoticiaPage() {
         </section>
 
         {/* ══ BLOQUE 3: CONTENIDO ENRIQUECIDO ══════════════════════════════ */}
-        <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
-          <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest border-b border-gray-100 pb-3 mb-5">
+        <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-colpsi-border">
+          <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest border-b border-colpsi-border pb-3 mb-5">
             Contenido <span class="text-red-400">*</span>
           </h2>
           <RichTextEditor
@@ -244,7 +244,7 @@ export default function AdminCrearNoticiaPage() {
           <button
             type="button"
             onClick={() => navigate(-1)}
-            class="bg-white text-gray-600 border-2 border-gray-200 px-6 py-4 rounded-2xl font-black hover:bg-gray-50 transition-all text-sm"
+            class="bg-white text-gray-600 border-2 border-gray-200 px-6 py-4 rounded-2xl font-black hover:bg-colpsi-surface transition-all text-sm"
           >
             Cancelar
           </button>

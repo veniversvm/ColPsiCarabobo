@@ -4,7 +4,7 @@ import { useNavigate } from "@solidjs/router";
 import { apiPost } from "~/lib/api";
 import { getUserFacingError } from "~/lib/errors";
 
-const IC = "w-full bg-white border-2 border-gray-100 focus:border-blue-500 rounded-2xl px-5 py-3.5 outline-none transition-all text-gray-800 text-sm shadow-sm";
+const IC = "w-full bg-white border-2 border-colpsi-border focus:border-blue-500 rounded-2xl px-5 py-3.5 outline-none transition-all text-gray-800 text-sm shadow-sm";
 const labelClass = "block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2 mb-2";
 
 export default function AdminCrearAreaEjercicioPage() {
@@ -60,10 +60,10 @@ export default function AdminCrearAreaEjercicioPage() {
     <main class="pb-28 animate-in fade-in duration-500 max-w-3xl mx-auto font-sans">
 
       {/* ── HEADER ────────────────────────────────────────────────────────── */}
-      <div class="flex items-center gap-6 mb-10 bg-white p-8 rounded-[2.5rem] shadow-premium border border-gray-100">
+      <div class="flex items-center gap-6 mb-10 bg-white p-8 rounded-[2.5rem] shadow-premium border border-colpsi-border">
         <button
           onClick={() => navigate(-1)}
-          class="w-12 h-12 bg-gray-50 hover:bg-blue-50 text-blue-900 rounded-2xl font-black flex items-center justify-center transition-all flex-shrink-0 border-2 border-transparent hover:border-blue-100 shadow-sm"
+          class="w-12 h-12 bg-colpsi-surface hover:bg-blue-50 text-blue-900 rounded-2xl font-black flex items-center justify-center transition-all flex-shrink-0 border-2 border-transparent hover:border-blue-100 shadow-sm"
           title="Volver"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
@@ -89,7 +89,7 @@ export default function AdminCrearAreaEjercicioPage() {
 
       <form onSubmit={handleSubmit} class="space-y-8">
 
-        <section class="bg-white rounded-[2.5rem] p-8 md:p-10 shadow-premium border border-gray-100 space-y-8">
+        <section class="bg-white rounded-[2.5rem] p-8 md:p-10 shadow-premium border border-colpsi-border space-y-8">
           <div class="border-l-4 border-colpsi-yellow pl-4">
             <h2 class="text-sm font-black text-blue-900 uppercase tracking-widest">
               Información del Catálogo
@@ -145,7 +145,7 @@ export default function AdminCrearAreaEjercicioPage() {
           <button
             type="button"
             onClick={() => navigate(-1)}
-            class="bg-white text-gray-500 border-2 border-gray-100 px-8 py-4 rounded-2xl font-black hover:bg-gray-50 hover:text-gray-700 transition-all text-xs uppercase tracking-widest shadow-xl"
+            class="bg-white text-gray-500 border-2 border-colpsi-border px-8 py-4 rounded-2xl font-black hover:bg-colpsi-surface hover:text-gray-700 transition-all text-xs uppercase tracking-widest shadow-xl"
           >
             Cancelar
           </button>

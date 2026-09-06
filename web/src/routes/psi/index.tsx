@@ -64,7 +64,7 @@ export default function PsiDashboard() {
         
         {/* Card de Estatus de Solvencia */}
         <Suspense fallback={<div class="h-32 bg-white animate-pulse rounded-3xl" />}>
-          <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex items-center justify-between">
+          <div class="bg-white rounded-3xl p-6 shadow-sm border border-colpsi-border flex items-center justify-between">
             <div>
               <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Estatus de Solvencia</p>
               <Show when={profile()?.solvent} 
@@ -81,7 +81,7 @@ export default function PsiDashboard() {
         </Suspense>
 
         {/* Biblioteca Virtual */}
-        <div class={`col-span-2 bg-white rounded-3xl p-4 border shadow-sm ${profile()?.solvent ? 'border-gray-100' : 'border-dashed border-gray-300'}`}>
+        <div class={`col-span-2 bg-white rounded-3xl p-4 border shadow-sm ${profile()?.solvent ? 'border-colpsi-border' : 'border-dashed border-gray-300'}`}>
           <button
             type="button"
             onClick={openLibrary}
@@ -112,25 +112,25 @@ export default function PsiDashboard() {
 
         {/* Acceso Rápido (Grid) */}
         <div class="grid grid-cols-2 gap-4">
-          <A href="/psi/perfil" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center text-center group active:scale-95 transition-transform">
+          <A href="/psi/perfil" class="bg-white p-4 rounded-3xl border border-colpsi-border shadow-sm flex flex-col items-center text-center group active:scale-95 transition-transform">
             <div class="w-12 h-12 bg-blue-50 text-colpsi-blue rounded-2xl flex items-center justify-center mb-2 group-hover:bg-colpsi-yellow transition-colors">
               👤
             </div>
             <span class="text-xs font-bold text-colpsi-blue">Mi Perfil</span>
           </A>
-          <A href="/psi/academico" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center text-center group active:scale-95 transition-transform">
+          <A href="/psi/academico" class="bg-white p-4 rounded-3xl border border-colpsi-border shadow-sm flex flex-col items-center text-center group active:scale-95 transition-transform">
             <div class="w-12 h-12 bg-blue-50 text-colpsi-blue rounded-2xl flex items-center justify-center mb-2 group-hover:bg-colpsi-yellow transition-colors">
               🎓
             </div>
             <span class="text-xs font-bold text-colpsi-blue">Postgrados</span>
           </A>
-          <A href="/psi/documentos" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center text-center group active:scale-95 transition-transform">
+          <A href="/psi/documentos" class="bg-white p-4 rounded-3xl border border-colpsi-border shadow-sm flex flex-col items-center text-center group active:scale-95 transition-transform">
             <div class="w-12 h-12 bg-blue-50 text-colpsi-blue rounded-2xl flex items-center justify-center mb-2 group-hover:bg-colpsi-yellow transition-colors">
               📁
             </div>
             <span class="text-xs font-bold text-colpsi-blue">Mis Documentos</span>
           </A>
-          <A href="/psi/notificaciones" class="relative bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center text-center group active:scale-95 transition-transform">
+          <A href="/psi/notificaciones" class="relative bg-white p-4 rounded-3xl border border-colpsi-border shadow-sm flex flex-col items-center text-center group active:scale-95 transition-transform">
             <div class="w-12 h-12 bg-blue-50 text-colpsi-blue rounded-2xl flex items-center justify-center mb-2 group-hover:bg-colpsi-yellow transition-colors">
               🔔
             </div>
@@ -141,7 +141,7 @@ export default function PsiDashboard() {
               </span>
             </Show>
           </A>
-          <A href="/psi/tickets" class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center text-center group active:scale-95 transition-transform">
+          <A href="/psi/tickets" class="bg-white p-4 rounded-3xl border border-colpsi-border shadow-sm flex flex-col items-center text-center group active:scale-95 transition-transform">
             <div class="w-12 h-12 bg-blue-50 text-colpsi-blue rounded-2xl flex items-center justify-center mb-2 group-hover:bg-colpsi-yellow transition-colors">
               🎫
             </div>
@@ -160,7 +160,7 @@ export default function PsiDashboard() {
             <div class="space-y-4">
               <For each={news()?.data}>
                 {(post) => (
-                  <div class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex gap-4 items-center">
+                  <div class="bg-white p-4 rounded-3xl border border-colpsi-border shadow-sm flex gap-4 items-center">
                     <Show when={post.image_url} fallback={<div class="w-16 h-16 bg-gray-100 rounded-2xl shrink-0" />}>
                        <img src={bucketUrl(post.image_url)} class="w-16 h-16 object-cover rounded-2xl shrink-0" />
                     </Show>
@@ -178,7 +178,7 @@ export default function PsiDashboard() {
       </div>
 
       {/* Tab Bar Inferior (Diseño Mobile-First) */}
-      <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-6 py-3 flex justify-between items-center z-50">
+      <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-colpsi-border px-6 py-3 flex justify-between items-center z-50">
         <A href="/psi" class="text-colpsi-blue flex flex-col items-center">
           <span class="text-xl">🏠</span>
           <span class="text-[10px] font-bold uppercase">Inicio</span>

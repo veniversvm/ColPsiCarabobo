@@ -41,7 +41,7 @@ export default function Navbar() {
                 </A>
               }
             >
-              <div class="flex items-center gap-4 border-l pl-6 border-gray-100">
+              <div class="flex items-center gap-4 border-l pl-6 border-colpsi-border">
                 {/* Info de Usuario / Enlace a Perfil */}
                 <A href={role() === 'admin' ? '/admin' : '/psi'} class="text-right flex flex-col group">
                   <span class="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Bienvenido(a)</span>
@@ -106,7 +106,7 @@ export default function Navbar() {
             <A href="/nosotros" onClick={() => setIsOpen(false)} class={navLinkClass}>Institución (Nosotros)</A>
             <A href="/documentos" onClick={() => setIsOpen(false)} class={navLinkClass}>Marco Legal y Normativo</A>
             
-            <div class="my-4 border-t border-gray-100 pt-4">
+            <div class="my-4 border-t border-colpsi-border pt-4">
               <Show 
                 when={isAuthenticated()} 
                 fallback={
@@ -116,7 +116,7 @@ export default function Navbar() {
                 }
               >
                 <div class="space-y-4">
-                  <div class="flex items-center gap-4 bg-gray-50 p-4 rounded-2xl">
+                  <div class="flex items-center gap-4 bg-colpsi-surface p-4 rounded-2xl">
                     <div class="w-12 h-12 bg-colpsi-blue rounded-xl flex items-center justify-center text-white font-black text-xl">
                       {user()?.username.charAt(0).toUpperCase()}
                     </div>

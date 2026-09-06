@@ -453,7 +453,7 @@ export default function AdminEditPsiPage() {
       <EditPageHeader profile={profile()} />
       <Suspense
         fallback={
-          <div class="h-96 bg-white animate-pulse rounded-[2.5rem] border border-gray-100" />
+          <div class="h-96 bg-white animate-pulse rounded-[2.5rem] border border-colpsi-border" />
         }
       >
         <EditAlert message={message()} />

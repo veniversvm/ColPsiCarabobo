@@ -73,7 +73,7 @@ export default function PsiCrearTicket() {
 
   return (
     <main class="bg-colpsi-bg min-h-screen pb-24">
-      <div class="bg-heraldic pt-10 pb-16 px-6 mb-4">
+      <div class="bg-heraldic pt-12 pb-20 px-6 mb-4">
         <div class="max-w-2xl mx-auto">
           <p class="text-blue-200 text-sm font-bold mb-3">
             <a href="/psi/tickets" class="hover:text-white inline-flex items-center gap-1">← Mis Solicitudes</a>
@@ -84,7 +84,7 @@ export default function PsiCrearTicket() {
       </div>
 
       <div class="max-w-2xl mx-auto px-4">
-        <div class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 space-y-5">
+        <div class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-colpsi-border space-y-5">
           <Show when={receptionDisabled()}>
             <div class="bg-amber-50 border-2 border-amber-200 text-amber-800 rounded-2xl p-5 flex items-start gap-4">
               <span class="text-2xl">⏸️</span>
@@ -96,7 +96,7 @@ export default function PsiCrearTicket() {
               </div>
             </div>
           </Show>
-          <Suspense fallback={<div class="h-16 bg-gray-50 animate-pulse rounded-2xl" />}>
+          <Suspense fallback={<div class="h-16 bg-colpsi-surface animate-pulse rounded-2xl" />}>
             <Show when={motivos().length === 0 && !config.loading}>
               <div class="bg-blue-50 border border-blue-200 text-blue-800 text-sm font-semibold px-4 py-3 rounded-2xl">
                 El colegio aún no ha configurado motivos de atención. Intenta más tarde.
@@ -109,7 +109,7 @@ export default function PsiCrearTicket() {
               <select
                 value={motivoId()}
                 onChange={(e) => setMotivoId(e.currentTarget.value)}
-                class="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 bg-gray-50 outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-800 transition-all"
+                class="w-full px-4 py-3.5 rounded-2xl border-2 border-colpsi-border bg-colpsi-surface outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-800 transition-all"
               >
                 <option value="">Selecciona un motivo...</option>
                 <For each={motivos()}>
@@ -134,7 +134,7 @@ export default function PsiCrearTicket() {
               maxLength={MAX_TICKET_TITLE_CHARS}
               onInput={(e) => setTitle(e.currentTarget.value)}
               placeholder="Ej: Solicitud de constancia de solvencia"
-              class="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 bg-gray-50 outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-800 transition-all"
+              class="w-full px-4 py-3.5 rounded-2xl border-2 border-colpsi-border bg-colpsi-surface outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-800 transition-all"
             />
           </div>
 
@@ -150,7 +150,7 @@ export default function PsiCrearTicket() {
               rows={5}
               onInput={(e) => setDescription(e.currentTarget.value)}
               placeholder="Explica tu solicitud con el detalle que consideres necesario..."
-              class="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 bg-gray-50 outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-800 transition-all resize-none"
+              class="w-full px-4 py-3.5 rounded-2xl border-2 border-colpsi-border bg-colpsi-surface outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-800 transition-all resize-none"
             />
           </div>
 
@@ -159,7 +159,7 @@ export default function PsiCrearTicket() {
             <label class="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">
               Anexos <span class="normal-case font-bold text-gray-300">(opcional)</span>
             </label>
-            <label class="flex flex-col items-center justify-center gap-2 px-6 py-8 rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50/60 cursor-pointer hover:border-colpsi-blue hover:bg-blue-50/40 transition-all">
+            <label class="flex flex-col items-center justify-center gap-2 px-6 py-8 rounded-2xl border-2 border-dashed border-gray-200 bg-colpsi-surface/60 cursor-pointer hover:border-colpsi-blue hover:bg-blue-50/40 transition-all">
               <span class="text-3xl">📎</span>
               <span class="text-sm font-bold text-gray-600">Agregar archivos</span>
               <span class="text-[11px] text-gray-400">PDF, imágenes u otros (máx. 4 MB por archivo)</span>

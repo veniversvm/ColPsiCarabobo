@@ -10,7 +10,7 @@ export default function MainLayout(props: { children: JSX.Element }) {
   return (
     <div class="min-h-screen bg-white flex flex-col font-sans">
       {/* HEADER / NAVBAR */}
-      <header class="bg-white border-b border-gray-100 sticky top-0 z-50">
+      <header class="bg-white border-b border-colpsi-border sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex justify-between h-16 items-center">
             {/* Logo e Identidad */}
@@ -85,7 +85,7 @@ export default function MainLayout(props: { children: JSX.Element }) {
 
         {/* Mobile Menu Overlay */}
         <Show when={isMenuOpen()}>
-          <div class="md:hidden bg-white border-b border-gray-100 px-4 pt-2 pb-6 space-y-2 shadow-xl">
+          <div class="md:hidden bg-white border-b border-colpsi-border px-4 pt-2 pb-6 space-y-2 shadow-xl">
             <a
               href="/directorio"
               class="block py-3 text-gray-700 font-medium border-b border-gray-50"
@@ -134,7 +134,7 @@ export default function MainLayout(props: { children: JSX.Element }) {
       <main class="flex-grow">{props.children}</main>
 
       {/* FOOTER SIMPLE */}
-      <footer class="bg-gray-50 py-8 border-t border-gray-100">
+      <footer class="bg-colpsi-surface py-8 border-t border-colpsi-border">
         <div class="text-center text-gray-400 text-xs px-4">
           <p>© 2026 Colegio de Psicólogos del Estado Carabobo</p>
           <p class="mt-2">Valencia, Venezuela</p>

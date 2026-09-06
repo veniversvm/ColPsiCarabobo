@@ -15,14 +15,14 @@ export function DeleteModal(props: Props) {
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
         onClick={(e) => { if (e.target === e.currentTarget) props.onCancel(); }}
       >
-        <div class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm border border-gray-100 text-center animate-in zoom-in-95 duration-200">
+        <div class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm border border-colpsi-border text-center animate-in zoom-in-95 duration-200">
           <p class="text-4xl mb-4">🗑️</p>
           <h2 class="text-lg font-black text-gray-900 mb-2">¿Archivar publicación?</h2>
           <p class="text-gray-500 text-sm mb-6">El post quedará oculto. Puedes restaurarlo desde el editor.</p>
           <div class="flex gap-3">
             <button
               onClick={props.onCancel}
-              class="flex-1 px-4 py-3 rounded-2xl border-2 border-gray-200 font-black text-gray-600 hover:bg-gray-50 transition-all text-sm"
+              class="flex-1 px-4 py-3 rounded-2xl border-2 border-gray-200 font-black text-gray-600 hover:bg-colpsi-surface transition-all text-sm"
             >
               Cancelar
             </button>

@@ -41,7 +41,7 @@ export default function TicketThread(props: Props) {
                   class={`max-w-[85%] md:max-w-[75%] rounded-3xl px-5 py-4 shadow-sm border ${
                     isAdmin
                       ? "bg-blue-700 text-white border-blue-800 rounded-tr-none"
-                      : "bg-white text-gray-800 border-gray-100 rounded-tl-none"
+                      : "bg-white text-gray-800 border-colpsi-border rounded-tl-none"
                   }`}
                 >
                   <div class={`flex items-baseline justify-between gap-3 mb-1.5`}>
@@ -55,7 +55,7 @@ export default function TicketThread(props: Props) {
                   <p class="text-sm leading-relaxed whitespace-pre-wrap break-words">{m.message}</p>
 
                   <Show when={adjuntos.length > 0}>
-                    <div class={`mt-3 pt-3 border-t ${isAdmin ? "border-blue-600" : "border-gray-100"} flex flex-wrap gap-2`}>
+                    <div class={`mt-3 pt-3 border-t ${isAdmin ? "border-blue-600" : "border-colpsi-border"} flex flex-wrap gap-2`}>
                       <For each={adjuntos}>
                         {(adj) => (
                           <a

@@ -88,7 +88,7 @@ export function ContactCard(props: ContactCardProps) {
 
   return (
     <Show when={hasContactInfo()}>
-      <div class="bg-white rounded-3xl p-6 md:p-8 shadow-premium border border-gray-100">
+      <div class="bg-white rounded-3xl p-6 md:p-8 shadow-premium border border-colpsi-border">
         <h3 class="text-sm md:text-lg font-black text-colpsi-blue uppercase tracking-widest border-b-2 border-gray-50 pb-4 mb-5 flex items-center gap-2">
           <span class="text-2xl">📇</span> Contacto
         </h3>
@@ -98,7 +98,7 @@ export function ContactCard(props: ContactCardProps) {
           <Show when={props.email}>
             <a
               href={`mailto:${props.email}`}
-              class="inline-flex items-center gap-2 bg-gray-50 hover:bg-colpsi-blue/5 text-gray-700 text-sm md:text-base font-bold px-3 py-2 rounded-xl transition-colors break-all"
+              class="inline-flex items-center gap-2 bg-colpsi-surface hover:bg-colpsi-blue/5 text-gray-700 text-sm md:text-base font-bold px-3 py-2 rounded-xl transition-colors break-all"
             >
               <span class="text-xl">✉️</span> {props.email}
             </a>
@@ -106,13 +106,13 @@ export function ContactCard(props: ContactCardProps) {
           <Show when={props.phone}>
             <a
               href={`tel:${props.phone}`}
-              class="inline-flex items-center gap-2 bg-gray-50 hover:bg-colpsi-blue/5 text-gray-700 text-sm md:text-base font-bold px-3 py-2 rounded-xl transition-colors"
+              class="inline-flex items-center gap-2 bg-colpsi-surface hover:bg-colpsi-blue/5 text-gray-700 text-sm md:text-base font-bold px-3 py-2 rounded-xl transition-colors"
             >
               <span class="text-xl">📞</span> {props.phone}
             </a>
           </Show>
           <Show when={props.address}>
-            <span class="inline-flex items-center gap-2 bg-gray-50 text-gray-700 text-sm md:text-base font-bold px-3 py-2 rounded-xl">
+            <span class="inline-flex items-center gap-2 bg-colpsi-surface text-gray-700 text-sm md:text-base font-bold px-3 py-2 rounded-xl">
               <span class="text-xl">🏢</span> {props.address}
             </span>
           </Show>
@@ -123,7 +123,7 @@ export function ContactCard(props: ContactCardProps) {
           <div class="flex flex-col gap-4">
             <For each={blocks()}>
               {(block) => (
-                <div class="bg-gray-50/60 border border-gray-50 rounded-2xl p-4 flex flex-col gap-2">
+                <div class="bg-colpsi-surface/60 border border-gray-50 rounded-2xl p-4 flex flex-col gap-2">
                   <div class="flex items-center justify-between gap-2 flex-wrap">
                     <p class="text-sm md:text-base font-black text-colpsi-blue uppercase tracking-wide flex items-center gap-2">
                       <span class="text-lg">{block.icon}</span> {block.title}
@@ -169,14 +169,14 @@ export function ContactCard(props: ContactCardProps) {
 
         {/* ── Redes sociales ─────────────────────────────────────────── */}
         <Show when={props.socialNetworks?.length}>
-          <div class="mt-5 pt-4 border-t border-gray-100 flex flex-wrap gap-2">
+          <div class="mt-5 pt-4 border-t border-colpsi-border flex flex-wrap gap-2">
             <For each={props.socialNetworks}>
               {(net) => (
                 <a
                   href={net.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="text-xs md:text-sm bg-gray-50 text-colpsi-blue font-bold px-2 md:px-3 py-1.5 rounded-lg hover:bg-colpsi-yellow transition-colors"
+                  class="text-xs md:text-sm bg-colpsi-surface text-colpsi-blue font-bold px-2 md:px-3 py-1.5 rounded-lg hover:bg-colpsi-yellow transition-colors"
                 >
                   {net.name}
                 </a>

@@ -84,7 +84,7 @@ export default function LoginPage() {
     <main class="min-h-[calc(100-64px)] flex items-center justify-center bg-colpsi-bg px-4 py-12">
       <div class="w-full max-w-md">
         {/* CARD CONTAINER */}
-        <div class="bg-white rounded-3xl shadow-xl shadow-blue-900/5 overflow-hidden border border-gray-100">
+        <div class="bg-white rounded-3xl shadow-xl shadow-blue-900/5 overflow-hidden border border-colpsi-border">
           
           {/* TOP DECORATION (Azul Institucional) */}
           <div class="bg-colpsi-blue p-8 text-center">
@@ -117,7 +117,7 @@ export default function LoginPage() {
                     type="text"
                     required
                     placeholder="Usuario o correo electrónico"
-                    class="w-full bg-gray-50 border-2 border-transparent focus:border-colpsi-yellow focus:bg-white rounded-xl px-4 py-3.5 outline-none transition-all text-gray-700"
+                    class="w-full bg-colpsi-surface border-2 border-transparent focus:border-colpsi-yellow focus:bg-white rounded-xl px-4 py-3.5 outline-none transition-all text-gray-700"
                     onInput={(e) => setIdentifier(e.currentTarget.value)}
                   />
                 </div>
@@ -128,14 +128,14 @@ export default function LoginPage() {
                     type="password"
                     required
                     placeholder="••••••••"
-                    class="w-full bg-gray-50 border-2 border-transparent focus:border-colpsi-yellow focus:bg-white rounded-xl px-4 py-3.5 outline-none transition-all text-gray-700"
+                    class="w-full bg-colpsi-surface border-2 border-transparent focus:border-colpsi-yellow focus:bg-white rounded-xl px-4 py-3.5 outline-none transition-all text-gray-700"
                     onInput={(e) => setPassword(e.currentTarget.value)}
                   /> */}
                   <PasswordInputComponent 
                       required 
                       value={password()} 
                       onInput={(e) => setPassword(e.currentTarget.value)}
-                      class="w-full bg-gray-50 border-2 border-transparent focus:border-colpsi-yellow focus:bg-white rounded-xl px-4 py-3.5 outline-none transition-all text-gray-700"
+                      class="w-full bg-colpsi-surface border-2 border-transparent focus:border-colpsi-yellow focus:bg-white rounded-xl px-4 py-3.5 outline-none transition-all text-gray-700"
                       placeholder="••••••••" 
                   />
                 </div>

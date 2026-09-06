@@ -55,7 +55,7 @@ export default function AboutUs() {
 
         <section class="max-w-4xl mx-auto px-6 py-16 space-y-16 -mt-10 relative z-10">
           {/* ── QUIÉNES SOMOS ────────────────────────────────────────────── */}
-          <div class="bg-white rounded-[2.5rem] shadow-premium p-8 md:p-12 border border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+          <div class="bg-white rounded-[2.5rem] shadow-premium p-8 md:p-12 border border-colpsi-border grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div class="space-y-6">
               <h2 class="text-2xl font-black text-colpsi-blue border-l-4 border-colpsi-yellow pl-4 uppercase tracking-tight">
                 ¿Quiénes Somos?
@@ -89,8 +89,8 @@ export default function AboutUs() {
           </div>
 
           {/* ── HISTORIA ─────────────────────────────────────────────────── */}
-          <div class="bg-white p-8 md:p-12 rounded-[2.5rem] shadow-sm border border-gray-100 group hover:border-colpsi-yellow transition-colors">
-            <div class="flex items-center gap-4 mb-8 border-b border-gray-100 pb-6">
+          <div class="bg-white p-8 md:p-12 rounded-[2.5rem] shadow-sm border border-colpsi-border group hover:border-colpsi-yellow transition-colors">
+            <div class="flex items-center gap-4 mb-8 border-b border-colpsi-border pb-6">
               <div class="w-14 h-14 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition-transform border border-amber-100">
                 🏛️
               </div>
@@ -143,7 +143,7 @@ export default function AboutUs() {
                 quedó inmortalizado por los siguientes profesionales pioneros:
               </p>
 
-              <div class="bg-gray-50 rounded-3xl border border-gray-200 p-6 md:p-8 my-8 shadow-inner text-left">
+              <div class="bg-colpsi-surface rounded-3xl border border-gray-200 p-6 md:p-8 my-8 shadow-inner text-left">
                 <ul class="grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-10 text-sm">
                   <li class="flex flex-col border-b border-gray-200 pb-3 gap-1">
                     <span class="text-[10px] text-gray-500 uppercase tracking-widest font-black">
@@ -273,8 +273,8 @@ export default function AboutUs() {
           </div>
 
           {/* ── OBJETIVOS INSTITUCIONALES ────────────────────────────────── */}
-          <div class="bg-white p-8 md:p-12 rounded-[2.5rem] shadow-sm border border-gray-100 group hover:border-colpsi-yellow transition-colors">
-            <div class="flex items-center gap-4 mb-8 border-b border-gray-100 pb-6">
+          <div class="bg-white p-8 md:p-12 rounded-[2.5rem] shadow-sm border border-colpsi-border group hover:border-colpsi-yellow transition-colors">
+            <div class="flex items-center gap-4 mb-8 border-b border-colpsi-border pb-6">
               <div class="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition-transform border border-emerald-100">
                 🚀
               </div>
@@ -285,22 +285,22 @@ export default function AboutUs() {
 
             {/* Resumen Visual */}
             <ul class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm font-medium text-gray-600 mb-8">
-              <li class="flex items-start gap-3 bg-gray-50 p-5 rounded-2xl border border-gray-100/50">
+              <li class="flex items-start gap-3 bg-colpsi-surface p-5 rounded-2xl border border-colpsi-border/50">
                 <span class="text-emerald-500 font-black text-lg mt-0.5">✓</span>
                 Regular y vigilar el ejercicio ético y legal de la psicología en
                 Carabobo.
               </li>
-              <li class="flex items-start gap-3 bg-gray-50 p-5 rounded-2xl border border-gray-100/50">
+              <li class="flex items-start gap-3 bg-colpsi-surface p-5 rounded-2xl border border-colpsi-border/50">
                 <span class="text-emerald-500 font-black text-lg mt-0.5">✓</span>
                 Fomentar la actualización científica y el desarrollo profesional
                 continuo.
               </li>
-              <li class="flex items-start gap-3 bg-gray-50 p-5 rounded-2xl border border-gray-100/50">
+              <li class="flex items-start gap-3 bg-colpsi-surface p-5 rounded-2xl border border-colpsi-border/50">
                 <span class="text-emerald-500 font-black text-lg mt-0.5">✓</span>
                 Defender los derechos laborales, sociales y gremiales de los
                 agremiados.
               </li>
-              <li class="flex items-start gap-3 bg-gray-50 p-5 rounded-2xl border border-gray-100/50">
+              <li class="flex items-start gap-3 bg-colpsi-surface p-5 rounded-2xl border border-colpsi-border/50">
                 <span class="text-emerald-500 font-black text-lg mt-0.5">✓</span>
                 Promover la salud mental y el bienestar biopsicosocial en la
                 comunidad.
@@ -308,7 +308,7 @@ export default function AboutUs() {
             </ul>
 
             {/* Texto Legal Extendido */}
-            <div class="space-y-5 text-gray-600 text-sm leading-relaxed font-medium pt-6 border-t border-gray-100 text-justify">
+            <div class="space-y-5 text-gray-600 text-sm leading-relaxed font-medium pt-6 border-t border-colpsi-border text-justify">
               <p>
                 Derivados directamente de nuestra Acta Constitutiva, la Ley de
                 Ejercicio de la Psicología y el Código de Ética Profesional, los
@@ -372,8 +372,8 @@ export default function AboutUs() {
           </div>
 
           {/* ── VALORES ────────────────────────────────────────────────────── */}
-          <div class="bg-white p-8 md:p-12 rounded-[2.5rem] shadow-sm border border-gray-100 group hover:border-colpsi-yellow transition-colors">
-            <div class="flex items-center gap-4 mb-8 border-b border-gray-100 pb-6">
+          <div class="bg-white p-8 md:p-12 rounded-[2.5rem] shadow-sm border border-colpsi-border group hover:border-colpsi-yellow transition-colors">
+            <div class="flex items-center gap-4 mb-8 border-b border-colpsi-border pb-6">
               <div class="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition-transform border border-purple-100">
                 💎
               </div>
@@ -397,7 +397,7 @@ export default function AboutUs() {
                   Valores Éticos y Científicos
                 </h4>
                 <ul class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs text-justify">
-                  <li class="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                  <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
                     <strong class="text-gray-900 block mb-1">
                       Integridad y Excelencia:
                     </strong>{" "}
@@ -405,7 +405,7 @@ export default function AboutUs() {
                     honestidad, la transparencia y el uso estricto de
                     metodologías científicas avaladas por la disciplina.
                   </li>
-                  <li class="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                  <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
                     <strong class="text-gray-900 block mb-1">
                       Responsabilidad Deontológica:
                     </strong>{" "}
@@ -414,7 +414,7 @@ export default function AboutUs() {
                     la confianza es la base de la relación terapéutica e
                     investigativa.
                   </li>
-                  <li class="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                  <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
                     <strong class="text-gray-900 block mb-1">
                       Rigurosidad y Veracidad:
                     </strong>{" "}
@@ -432,7 +432,7 @@ export default function AboutUs() {
                   Valores Humanitarios (Orientados al Bien Común y el Servicio)
                 </h4>
                 <ul class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-justify">
-                  <li class="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                  <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
                     <strong class="text-gray-900 block mb-1">
                       Empatía y Compasión:
                     </strong>{" "}
@@ -441,7 +441,7 @@ export default function AboutUs() {
                     a aliviar el dolor mental y promover la resiliencia en los
                     individuos.
                   </li>
-                  <li class="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                  <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
                     <strong class="text-gray-900 block mb-1">
                       Respeto a la Dignidad Humana:
                     </strong>{" "}
@@ -450,7 +450,7 @@ export default function AboutUs() {
                     credo, orientación, condición socioeconómica o filiación
                     política.
                   </li>
-                  <li class="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                  <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
                     <strong class="text-gray-900 block mb-1">
                       Inclusión y Justicia Social:
                     </strong>{" "}
@@ -459,7 +459,7 @@ export default function AboutUs() {
                     vulnerables, históricamente desatendidas o en situaciones de
                     riesgo humanitario.
                   </li>
-                  <li class="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                  <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
                     <strong class="text-gray-900 block mb-1">Altruismo:</strong>{" "}
                     Vocación inquebrantable de servicio social, donde la ciencia
                     y la profesión se colocan desinteresadamente a la orden del
@@ -477,7 +477,7 @@ export default function AboutUs() {
                   Agremiado)
                 </h4>
                 <ul class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-justify">
-                  <li class="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                  <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
                     <strong class="text-gray-900 block mb-1">
                       Solidaridad Gremial:
                     </strong>{" "}
@@ -486,7 +486,7 @@ export default function AboutUs() {
                     crecimiento del colectivo fortalece el crecimiento
                     individual.
                   </li>
-                  <li class="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                  <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
                     <strong class="text-gray-900 block mb-1">
                       Institucionalidad y Democracia:
                     </strong>{" "}
@@ -496,7 +496,7 @@ export default function AboutUs() {
                     Creemos en la alternabilidad, el debate de ideas y la
                     participación activa.
                   </li>
-                  <li class="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                  <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
                     <strong class="text-gray-900 block mb-1">
                       Defensa y Dignificación Laboral:
                     </strong>{" "}
@@ -505,7 +505,7 @@ export default function AboutUs() {
                     los psicólogos, combatiendo firmemente el ejercicio ilegal
                     de la profesión y la explotación laboral.
                   </li>
-                  <li class="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                  <li class="bg-colpsi-surface p-5 rounded-xl border border-colpsi-border">
                     <strong class="text-gray-900 block mb-1">
                       Sentido de Pertenencia Institucional:
                     </strong>{" "}

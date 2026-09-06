@@ -174,7 +174,7 @@ export default function PsiProfilePage() {
                       socialNetworks={psi().social_networks}
                     />
                     <Show when={psi().mini_bio || psi().full_bio_content}>
-                      <div class="bg-white rounded-3xl p-6 md:p-8 shadow-premium border border-gray-100">
+                      <div class="bg-white rounded-3xl p-6 md:p-8 shadow-premium border border-colpsi-border">
                         <h3 class="text-xs font-black text-colpsi-blue uppercase tracking-widest mb-3 border-l-4 border-colpsi-yellow pl-3">
                           Perfil Profesional
                         </h3>
@@ -218,11 +218,11 @@ export default function PsiProfilePage() {
 function ProfileSkeleton() {
   return (
     <div class="flex flex-col lg:grid lg:grid-cols-3 gap-6 animate-pulse">
-      <div class="bg-white rounded-3xl h-96 shadow-sm border border-gray-100" />
+      <div class="bg-white rounded-3xl h-96 shadow-sm border border-colpsi-border" />
       <div class="lg:col-span-2 space-y-4">
-        <div class="bg-white rounded-3xl h-32 shadow-sm border border-gray-100" />
-        <div class="bg-white rounded-3xl h-32 shadow-sm border border-gray-100" />
-        <div class="bg-white rounded-3xl h-64 shadow-sm border border-gray-100" />
+        <div class="bg-white rounded-3xl h-32 shadow-sm border border-colpsi-border" />
+        <div class="bg-white rounded-3xl h-32 shadow-sm border border-colpsi-border" />
+        <div class="bg-white rounded-3xl h-64 shadow-sm border border-colpsi-border" />
       </div>
     </div>
   );
@@ -230,7 +230,7 @@ function ProfileSkeleton() {
 
 function NotFound() {
   return (
-    <div class="text-center py-20 bg-white rounded-3xl shadow-sm border border-gray-100">
+    <div class="text-center py-20 bg-white rounded-3xl shadow-sm border border-colpsi-border">
       <Meta name="robots" content="noindex, nofollow" />
       <div class="text-6xl mb-4">🛡️</div>
       <h2 class="text-2xl font-black text-colpsi-blue uppercase tracking-tight">Perfil Protegido</h2>

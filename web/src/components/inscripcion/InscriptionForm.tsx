@@ -287,8 +287,8 @@ export function InscriptionForm() {
 
   const Section = (props: { n: number; title: string; children: any }) => {
     return (
-      <div class="bg-white p-8 md:p-10 rounded-[2rem] shadow-sm border border-gray-100 space-y-6">
-        <div class="flex items-center gap-4 border-b border-gray-100 pb-5">
+      <div class="bg-white p-8 md:p-10 rounded-3xl shadow-sm border border-colpsi-border space-y-6">
+        <div class="flex items-center gap-4 border-b border-colpsi-border pb-5">
           <div class="w-10 h-10 bg-colpsi-blue text-white rounded-xl flex items-center justify-center text-lg font-black shrink-0">
             {props.n}
           </div>
@@ -423,7 +423,7 @@ export function InscriptionForm() {
                 <Field label="País (fuera de Venezuela)" value={country} onChange={setCountry} placeholder="Ej: España" />
               </div>
 
-              <div class="bg-gray-50 p-5 rounded-2xl border border-gray-100">
+              <div class="bg-colpsi-surface p-5 rounded-2xl border border-colpsi-border">
                 <span class="block text-sm font-bold text-gray-700 mb-3">Modalidad de servicio</span>
                 <div class="flex flex-wrap gap-4">
                   <label class="inline-flex items-center gap-2 text-sm font-semibold text-gray-700">

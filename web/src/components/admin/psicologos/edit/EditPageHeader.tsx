@@ -12,11 +12,11 @@ export function EditPageHeader(props: Props) {
   const navigate = useNavigate();
 
   return (
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 bg-white p-6 rounded-3xl shadow-sm border border-colpsi-border">
       <div class="flex items-center gap-4">
         <button
           onClick={() => navigate(-1)}
-          class="w-10 h-10 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-full font-bold flex items-center justify-center transition-colors"
+          class="w-10 h-10 bg-colpsi-surface hover:bg-gray-100 text-gray-600 rounded-full font-bold flex items-center justify-center transition-colors"
         >
           ←
         </button>

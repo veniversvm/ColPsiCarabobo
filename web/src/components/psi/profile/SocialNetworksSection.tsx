@@ -30,7 +30,7 @@ export function SocialNetworksSection(props: SocialNetworksSectionProps) {
       {/* ── Modal de confirmación ────────────────────────────────────────── */}
       <Show when={pendingId()}>
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div class="bg-white rounded-3xl p-8 shadow-2xl max-w-sm w-full mx-4 border border-gray-100">
+          <div class="bg-white rounded-3xl p-8 shadow-2xl max-w-sm w-full mx-4 border border-colpsi-border">
             <div class="text-center mb-6">
               <span class="text-4xl">🔗</span>
               <h3 class="text-lg font-black text-gray-800 mt-3">¿Eliminar esta red social?</h3>
@@ -60,9 +60,9 @@ export function SocialNetworksSection(props: SocialNetworksSectionProps) {
         <div class="mb-8 space-y-3">
           <For each={props.networks}>
             {(net) => (
-              <div class="flex items-center justify-between bg-gray-50 hover:bg-white p-4 rounded-2xl border border-gray-100 hover:border-blue-100 transition-colors group">
+              <div class="flex items-center justify-between bg-colpsi-surface hover:bg-white p-4 rounded-2xl border border-colpsi-border hover:border-blue-100 transition-colors group">
                 <div class="flex items-center gap-3 overflow-hidden">
-                  <span class="bg-white px-3 py-1 rounded-xl text-xs font-black text-colpsi-blue shadow-sm border border-gray-100">
+                  <span class="bg-white px-3 py-1 rounded-xl text-xs font-black text-colpsi-blue shadow-sm border border-colpsi-border">
                     {net.name}
                   </span>
                   <a
@@ -88,7 +88,7 @@ export function SocialNetworksSection(props: SocialNetworksSectionProps) {
         </div>
       </Show>
 
-      <form onSubmit={props.onAddNetwork} class="bg-blue-50/50 p-6 md:p-8 rounded-[2rem] border border-blue-100 shadow-inner">
+      <form onSubmit={props.onAddNetwork} class="bg-blue-50/50 p-6 md:p-8 rounded-3xl border border-blue-100 shadow-inner">
         <div class="flex flex-col md:flex-row gap-4">
           <input
             type="text"

@@ -85,7 +85,7 @@ export function DropdownSelect(props: DropdownSelectProps) {
 
       <Show when={open()}>
         <div
-          class={`absolute left-0 right-0 z-30 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 max-h-64 overflow-y-auto py-2 ${props.panelClass || ""}`}
+          class={`absolute left-0 right-0 z-30 mt-2 bg-white rounded-2xl shadow-2xl border border-colpsi-border max-h-64 overflow-y-auto py-2 ${props.panelClass || ""}`}
         >
           <Show when={props.options.length === 0} fallback={null}>
             <p class="px-5 py-3 text-sm text-gray-400">

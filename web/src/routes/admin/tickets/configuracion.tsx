@@ -55,7 +55,7 @@ export default function AdminTicketsConfiguracion() {
           )}
         </For>
         <Show when={motivos().length === 0 && !motivosResource.loading}>
-          <div class="bg-white rounded-3xl p-12 text-center shadow-sm border border-gray-100">
+          <div class="bg-white rounded-3xl p-12 text-center shadow-sm border border-colpsi-border">
             <p class="text-5xl mb-4">🗂️</p>
             <h3 class="font-black text-gray-700">No hay motivos configurados</h3>
             <p class="text-sm text-gray-500 mt-1">Crea el primer motivo para habilitar las solicitudes de los psicólogos.</p>
@@ -93,7 +93,7 @@ function MotivoCreateForm(props: { onDone: (m: string) => void; onError: (e: any
   };
 
   return (
-    <div class="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
+    <div class="bg-white rounded-3xl p-5 shadow-sm border border-colpsi-border">
       <Show when={!open()} fallback={
         <div class="space-y-3">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -101,13 +101,13 @@ function MotivoCreateForm(props: { onDone: (m: string) => void; onError: (e: any
               value={name()}
               onInput={(e) => setName(e.currentTarget.value)}
               placeholder="Nombre del motivo (ej: Solvencia)"
-              class="w-full px-4 py-3 rounded-2xl border-2 border-gray-100 bg-gray-50 outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-800 transition-all"
+              class="w-full px-4 py-3 rounded-2xl border-2 border-colpsi-border bg-colpsi-surface outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-800 transition-all"
             />
             <input
               value={description()}
               onInput={(e) => setDescription(e.currentTarget.value)}
               placeholder="Descripción (opcional)"
-              class="w-full px-4 py-3 rounded-2xl border-2 border-gray-100 bg-gray-50 outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-800 transition-all"
+              class="w-full px-4 py-3 rounded-2xl border-2 border-colpsi-border bg-colpsi-surface outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-800 transition-all"
             />
           </div>
           <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-center sm:justify-between">
@@ -117,13 +117,13 @@ function MotivoCreateForm(props: { onDone: (m: string) => void; onError: (e: any
                 type="number" min={1} max={50}
                 value={perPsi()}
                 onInput={(e) => setPerPsi(Number(e.currentTarget.value) || 1)}
-                class="ml-2 w-20 px-3 py-2 rounded-xl border-2 border-gray-100 bg-gray-50 outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-800 transition-all"
+                class="ml-2 w-20 px-3 py-2 rounded-xl border-2 border-colpsi-border bg-colpsi-surface outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-800 transition-all"
               />
             </label>
             <div class="flex gap-2">
               <button
                 onClick={() => setOpen(false)}
-                class="px-5 py-3 rounded-2xl border-2 border-gray-100 font-black text-gray-400 hover:bg-gray-50 transition-all text-xs uppercase tracking-widest"
+                class="px-5 py-3 rounded-2xl border-2 border-colpsi-border font-black text-gray-400 hover:bg-colpsi-surface transition-all text-xs uppercase tracking-widest"
               >
                 Cancelar
               </button>
@@ -190,7 +190,7 @@ function MotivoCard(props: { motivo: TicketMotivo; onDone: (m: string) => void; 
   };
 
   return (
-    <div class={`bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden ${busy() ? "opacity-40 pointer-events-none" : ""}`}>
+    <div class={`bg-white rounded-3xl shadow-sm border border-colpsi-border overflow-hidden ${busy() ? "opacity-40 pointer-events-none" : ""}`}>
       <div class="px-6 py-5 flex flex-wrap items-start justify-between gap-3">
         <div class="min-w-0">
           <div class="flex items-center gap-2">
@@ -209,7 +209,7 @@ function MotivoCard(props: { motivo: TicketMotivo; onDone: (m: string) => void; 
         <div class="flex gap-2">
           <button
             onClick={() => { setEditing(!editing()); setName(motivo.name); setDescription(motivo.description ?? ""); setPerPsi(motivo.tickets_per_psi); }}
-            class="px-4 py-2 rounded-xl border-2 border-gray-100 text-xs font-black text-gray-500 hover:border-blue-200 hover:text-colpsi-blue transition-all"
+            class="px-4 py-2 rounded-xl border-2 border-colpsi-border text-xs font-black text-gray-500 hover:border-blue-200 hover:text-colpsi-blue transition-all"
           >
             ✏️ Editar
           </button>
@@ -223,19 +223,19 @@ function MotivoCard(props: { motivo: TicketMotivo; onDone: (m: string) => void; 
       </div>
 
       <Show when={editing()}>
-        <div class="px-6 pb-5 space-y-3 border-t border-gray-100 pt-4">
+        <div class="px-6 pb-5 space-y-3 border-t border-colpsi-border pt-4">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <input
               value={name()}
               onInput={(e) => setName(e.currentTarget.value)}
               placeholder="Nombre"
-              class="w-full px-4 py-2.5 rounded-2xl border-2 border-gray-100 bg-gray-50 outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-800 transition-all"
+              class="w-full px-4 py-2.5 rounded-2xl border-2 border-colpsi-border bg-colpsi-surface outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-800 transition-all"
             />
             <input
               value={description()}
               onInput={(e) => setDescription(e.currentTarget.value)}
               placeholder="Descripción"
-              class="w-full px-4 py-2.5 rounded-2xl border-2 border-gray-100 bg-gray-50 outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-800 transition-all"
+              class="w-full px-4 py-2.5 rounded-2xl border-2 border-colpsi-border bg-colpsi-surface outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-800 transition-all"
             />
           </div>
           <div class="flex items-center justify-between gap-3">
@@ -245,11 +245,11 @@ function MotivoCard(props: { motivo: TicketMotivo; onDone: (m: string) => void; 
                 type="number" min={1} max={50}
                 value={perPsi()}
                 onInput={(e) => setPerPsi(Number(e.currentTarget.value) || 1)}
-                class="ml-2 w-20 px-3 py-2 rounded-xl border-2 border-gray-100 bg-gray-50 outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-800 transition-all"
+                class="ml-2 w-20 px-3 py-2 rounded-xl border-2 border-colpsi-border bg-colpsi-surface outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-800 transition-all"
               />
             </label>
             <div class="flex gap-2">
-              <button onClick={() => setEditing(false)} class="px-4 py-2.5 rounded-xl border-2 border-gray-100 font-black text-gray-400 text-xs uppercase tracking-widest hover:bg-gray-50 transition-all">Cancelar</button>
+              <button onClick={() => setEditing(false)} class="px-4 py-2.5 rounded-xl border-2 border-colpsi-border font-black text-gray-400 text-xs uppercase tracking-widest hover:bg-colpsi-surface transition-all">Cancelar</button>
               <button onClick={save} disabled={saving() || !name().trim()} class="px-4 py-2.5 rounded-xl bg-colpsi-blue text-white font-black text-xs uppercase tracking-widest transition-all active:scale-95 disabled:opacity-40">
                 {saving() ? "Guardando..." : "Guardar"}
               </button>
@@ -315,9 +315,9 @@ function EstadoChip(props: { estado: TicketEstado; onDone: (m: string) => void; 
       <div class="bg-white rounded-2xl border-2 border-blue-200 px-3 py-2 space-y-2 w-full sm:w-auto">
         <div class="flex gap-2">
           <input value={name()} onInput={(e) => setName(e.currentTarget.value)} placeholder="Nombre"
-            class="flex-1 px-3 py-1.5 rounded-lg border border-gray-100 outline-none focus:border-colpsi-yellow text-xs font-semibold text-gray-800 transition-all" />
+            class="flex-1 px-3 py-1.5 rounded-lg border border-colpsi-border outline-none focus:border-colpsi-yellow text-xs font-semibold text-gray-800 transition-all" />
           <input type="number" min={1} value={order()} onInput={(e) => setOrder(Number(e.currentTarget.value) || 1)}
-            class="w-16 px-2 py-1.5 rounded-lg border border-gray-100 outline-none focus:border-colpsi-yellow text-xs font-semibold text-gray-800 transition-all" title="Orden" />
+            class="w-16 px-2 py-1.5 rounded-lg border border-colpsi-border outline-none focus:border-colpsi-yellow text-xs font-semibold text-gray-800 transition-all" title="Orden" />
         </div>
         <label class="flex items-center gap-2 text-[11px] font-black text-gray-500 uppercase tracking-wider cursor-pointer">
           <input type="checkbox" checked={isClosed()} onChange={(e) => setIsClosed(e.currentTarget.checked)}
@@ -325,7 +325,7 @@ function EstadoChip(props: { estado: TicketEstado; onDone: (m: string) => void; 
           Estado de cierre
         </label>
         <div class="flex gap-2">
-          <button onClick={() => setEditing(false)} class="px-3 py-1.5 rounded-lg border border-gray-200 font-black text-gray-400 text-[10px] uppercase tracking-widest hover:bg-gray-50 transition-all">Cancelar</button>
+          <button onClick={() => setEditing(false)} class="px-3 py-1.5 rounded-lg border border-gray-200 font-black text-gray-400 text-[10px] uppercase tracking-widest hover:bg-colpsi-surface transition-all">Cancelar</button>
           <button onClick={save} disabled={!name().trim()} class="px-3 py-1.5 rounded-lg bg-colpsi-blue text-white font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 disabled:opacity-40">Guardar</button>
         </div>
       </div>
@@ -376,16 +376,16 @@ function EstadoCreateForm(props: { motivoId: number; onDone: (m: string) => void
       <div class="bg-white rounded-2xl border border-blue-200 px-3 py-2 space-y-2">
         <div class="flex gap-2">
           <input value={name()} onInput={(e) => setName(e.currentTarget.value)} placeholder="Nombre"
-            class="flex-1 min-w-0 px-3 py-1.5 rounded-lg border border-gray-100 outline-none focus:border-colpsi-yellow text-xs font-semibold text-gray-800 transition-all" />
+            class="flex-1 min-w-0 px-3 py-1.5 rounded-lg border border-colpsi-border outline-none focus:border-colpsi-yellow text-xs font-semibold text-gray-800 transition-all" />
           <input type="number" min={1} value={order()} onInput={(e) => setOrder(Number(e.currentTarget.value) || 1)}
-            class="w-16 px-2 py-1.5 rounded-lg border border-gray-100 outline-none focus:border-colpsi-yellow text-xs font-semibold text-gray-800 transition-all" title="Orden" />
+            class="w-16 px-2 py-1.5 rounded-lg border border-colpsi-border outline-none focus:border-colpsi-yellow text-xs font-semibold text-gray-800 transition-all" title="Orden" />
         </div>
         <label class="flex items-center gap-2 text-[11px] font-black text-gray-500 uppercase tracking-wider cursor-pointer">
           <input type="checkbox" checked={isClosed()} onChange={(e) => setIsClosed(e.currentTarget.checked)} class="accent-red-500 w-4 h-4" />
           Estado de cierre
         </label>
         <div class="flex gap-2">
-          <button onClick={() => setOpen(false)} class="px-3 py-1.5 rounded-lg border border-gray-200 font-black text-gray-400 text-[10px] uppercase tracking-widest hover:bg-gray-50 transition-all">Cancelar</button>
+          <button onClick={() => setOpen(false)} class="px-3 py-1.5 rounded-lg border border-gray-200 font-black text-gray-400 text-[10px] uppercase tracking-widest hover:bg-colpsi-surface transition-all">Cancelar</button>
           <button onClick={submit} disabled={saving() || !name().trim()} class="px-3 py-1.5 rounded-lg bg-colpsi-blue text-white font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 disabled:opacity-40">
             {saving() ? "Creando..." : "Crear"}
           </button>

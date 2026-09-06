@@ -87,7 +87,7 @@ export function PostGradeModal(props: PostGradeModalProps) {
                   <h4 class="text-xs font-black text-colpsi-blue uppercase tracking-wider mb-2">
                     Descripción
                   </h4>
-                  <p class="text-gray-700 text-sm md:text-base leading-relaxed bg-gray-50 p-4 rounded-xl">
+                  <p class="text-gray-700 text-sm md:text-base leading-relaxed bg-colpsi-surface p-4 rounded-xl">
                     {props.postGrade?.description}
                   </p>
                 </div>
@@ -104,7 +104,7 @@ export function PostGradeModal(props: PostGradeModalProps) {
                       {(imgUrl, index) => (
                         <div class="space-y-2">
                           <div 
-                            class="relative aspect-square rounded-xl overflow-hidden border-2 border-gray-100 hover:border-colpsi-yellow transition-all cursor-pointer group shadow-md"
+                            class="relative aspect-square rounded-xl overflow-hidden border-2 border-colpsi-border hover:border-colpsi-yellow transition-all cursor-pointer group shadow-md"
                             onClick={() => openImageModal(imgUrl, `Certificado ${index() + 1}`)}
                           >
                             <img 

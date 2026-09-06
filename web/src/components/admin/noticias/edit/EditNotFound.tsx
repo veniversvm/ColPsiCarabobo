@@ -5,7 +5,7 @@ interface Props {
 
 export function EditNotFound(props: Props) {
   return (
-    <div class="text-center py-24 bg-white rounded-3xl border border-gray-100">
+    <div class="text-center py-24 bg-white rounded-3xl border border-colpsi-border">
       <p class="text-5xl mb-4">😕</p>
       <h2 class="text-lg font-black text-gray-700 mb-2">Publicación no encontrada</h2>
       <p class="text-gray-400 text-sm mb-6">Es posible que haya sido eliminada.</p>

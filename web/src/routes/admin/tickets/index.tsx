@@ -72,14 +72,14 @@ export default function AdminTickets() {
       </div>
 
       {/* Filtros */}
-      <div class="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 space-y-4">
+      <div class="bg-white rounded-3xl p-5 shadow-sm border border-colpsi-border space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-10 gap-3">
           <div class="md:col-span-4 relative">
             <input
               value={q()}
               onInput={(e) => setQ(e.currentTarget.value)}
               placeholder="Buscar por título o descripción..."
-              class="w-full pl-10 pr-4 py-3 rounded-2xl border-2 border-gray-100 bg-gray-50 outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-800 transition-all"
+              class="w-full pl-10 pr-4 py-3 rounded-2xl border-2 border-colpsi-border bg-colpsi-surface outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-800 transition-all"
             />
             <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
           </div>
@@ -87,7 +87,7 @@ export default function AdminTickets() {
           <select
             value={motivoId()}
             onChange={(e) => { setMotivoId(e.currentTarget.value); setEstadoId(""); }}
-            class="md:col-span-3 px-4 py-3 rounded-2xl border-2 border-gray-100 bg-gray-50 outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-700 transition-all"
+            class="md:col-span-3 px-4 py-3 rounded-2xl border-2 border-colpsi-border bg-colpsi-surface outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-700 transition-all"
           >
             <option value="">Todos los motivos</option>
             <For each={motivos()}>
@@ -98,7 +98,7 @@ export default function AdminTickets() {
           <select
             value={estadoId()}
             onChange={(e) => setEstadoId(e.currentTarget.value)}
-            class="md:col-span-3 px-4 py-3 rounded-2xl border-2 border-gray-100 bg-gray-50 outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-700 transition-all"
+            class="md:col-span-3 px-4 py-3 rounded-2xl border-2 border-colpsi-border bg-colpsi-surface outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-700 transition-all"
           >
             <option value="">Todos los estados</option>
             <For each={estadosDisponibles()}>
@@ -135,11 +135,11 @@ export default function AdminTickets() {
       {/* Lista */}
       <Suspense fallback={
         <div class="space-y-3">
-          <For each={[1, 2, 3]}>{() => <div class="h-24 bg-white animate-pulse rounded-3xl border border-gray-100" />}</For>
+          <For each={[1, 2, 3]}>{() => <div class="h-24 bg-white animate-pulse rounded-3xl border border-colpsi-border" />}</For>
         </div>
       }>
         <Show when={!tickets.loading && (tickets()?.data ?? []).length === 0}>
-          <div class="bg-white rounded-3xl p-12 text-center shadow-sm border border-gray-100">
+          <div class="bg-white rounded-3xl p-12 text-center shadow-sm border border-colpsi-border">
             <p class="text-5xl mb-4">🗂️</p>
             <h3 class="font-black text-gray-700">Sin solicitudes que coincidan</h3>
             <p class="text-sm text-gray-500 mt-1">Ajusta los filtros o espera nuevas solicitudes de los psicólogos.</p>
@@ -149,7 +149,7 @@ export default function AdminTickets() {
         <div class="space-y-3">
           <For each={tickets()?.data ?? []}>
             {(t: Ticket) => (
-              <A href={`/admin/tickets/${t.id}`} class="block bg-white rounded-3xl p-5 shadow-sm border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all group">
+              <A href={`/admin/tickets/${t.id}`} class="block bg-white rounded-3xl p-5 shadow-sm border border-colpsi-border hover:border-blue-200 hover:shadow-md transition-all group">
                 <div class="flex items-start gap-4">
                   <div class={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 font-black text-lg ${t.is_closed ? "bg-gray-100 text-gray-400" : "bg-blue-50 text-colpsi-blue group-hover:bg-colpsi-yellow transition-colors"}`}>
                     {t.is_closed ? "✓" : "🎫"}
@@ -179,7 +179,7 @@ export default function AdminTickets() {
         </div>
 
         <Show when={(tickets()?.data ?? []).length > 0}>
-          <div class="flex items-center justify-between bg-white rounded-2xl px-5 py-3 shadow-sm border border-gray-100">
+          <div class="flex items-center justify-between bg-white rounded-2xl px-5 py-3 shadow-sm border border-colpsi-border">
             <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">
               Página {page()} de {totalPages()} · {fluidCount()} solicitudes
             </span>

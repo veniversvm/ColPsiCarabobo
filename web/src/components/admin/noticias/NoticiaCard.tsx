@@ -16,7 +16,7 @@ export function NoticiaCard(props: Props) {
   const cardClass = () => {
     const base = "bg-white rounded-2xl border-2 transition-all duration-200 overflow-hidden";
     if (props.post.status === "published") {
-      return `${base} border-gray-100 hover:border-blue-100`;
+      return `${base} border-colpsi-border hover:border-blue-100`;
     }
     if (props.post.status === "archived") {
       return `${base} border-dashed border-gray-200 opacity-50`;

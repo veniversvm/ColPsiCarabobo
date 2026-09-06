@@ -46,11 +46,11 @@ export default function PsiMisTickets() {
       <div class="max-w-4xl mx-auto px-4 -mt-12 space-y-3">
         <Suspense fallback={
           <div class="space-y-3">
-            <For each={[1, 2, 3]}>{() => <div class="h-28 bg-white animate-pulse rounded-3xl border border-gray-100" />}</For>
+            <For each={[1, 2, 3]}>{() => <div class="h-28 bg-white animate-pulse rounded-3xl border border-colpsi-border" />}</For>
           </div>
         }>
           <Show when={!tickets.loading && (tickets()?.data ?? []).length === 0}>
-            <div class="bg-white rounded-3xl p-12 text-center shadow-sm border border-gray-100">
+            <div class="bg-white rounded-3xl p-12 text-center shadow-sm border border-colpsi-border">
               <p class="text-5xl mb-4">🗂️</p>
               <h3 class="font-black text-gray-700">No tienes solicitudes</h3>
               <p class="text-sm text-gray-500 mt-1">Crea tu primera solicitud para iniciar un trámite con el colegio.</p>
@@ -66,7 +66,7 @@ export default function PsiMisTickets() {
           <div class="space-y-3">
             <For each={tickets()?.data ?? []}>
               {(t: Ticket) => (
-                <A href={`/psi/tickets/${t.id}`} class="block bg-white rounded-3xl p-5 shadow-sm border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all group">
+                <A href={`/psi/tickets/${t.id}`} class="block bg-white rounded-3xl p-5 shadow-sm border border-colpsi-border hover:border-blue-200 hover:shadow-md transition-all group">
                   <div class="flex items-start gap-4">
                     <div class={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 font-black text-lg ${t.is_closed ? "bg-gray-100 text-gray-400" : "bg-blue-50 text-colpsi-blue group-hover:bg-colpsi-yellow transition-colors"}`}>
                       {t.is_closed ? "✓" : "🎫"}
@@ -93,7 +93,7 @@ export default function PsiMisTickets() {
           </div>
 
           <Show when={(tickets()?.data ?? []).length > 0}>
-            <div class="flex items-center justify-between bg-white rounded-2xl px-5 py-3 shadow-sm border border-gray-100 mt-4">
+            <div class="flex items-center justify-between bg-white rounded-2xl px-5 py-3 shadow-sm border border-colpsi-border mt-4">
               <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">
                 Página {page()} de {totalPages()} · {tickets()?.total ?? 0} solicitudes
               </span>

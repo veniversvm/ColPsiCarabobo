@@ -353,7 +353,7 @@ export default function ProfilePage() {
 
   return (
     <main class="bg-colpsi-bg min-h-screen pb-24 font-sans">
-      <div class="bg-heraldic pt-10 pb-24 px-4 md:px-8 shadow-inner">
+      <div class="bg-heraldic pt-12 pb-20 px-4 md:px-8 shadow-inner">
         <div class="max-w-6xl mx-auto flex items-center justify-between">
           <A
             href="/psi"
@@ -379,7 +379,7 @@ export default function ProfilePage() {
       <div class="max-w-6xl mx-auto px-4 md:px-8 -mt-16 relative z-10 space-y-8">
         <Suspense
           fallback={
-            <div class="h-96 bg-white animate-pulse rounded-[2.5rem] shadow-premium border border-gray-100" />
+            <div class="h-96 bg-white animate-pulse rounded-[2.5rem] shadow-premium border border-colpsi-border" />
           }
         >
           <AvatarUploader

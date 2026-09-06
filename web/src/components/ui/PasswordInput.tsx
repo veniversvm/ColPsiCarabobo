@@ -18,7 +18,7 @@ export function PasswordInputComponent(props: PasswordInputProps) {
       <input
         type={show() ? "text" : "password"}
         // Aplicamos un pr-12 (padding right) para que el texto no se monte sobre el ícono
-        class={`w-full pr-12 outline-none transition-all ${local.class || "bg-gray-50 border-2 border-transparent focus:border-colpsi-yellow rounded-xl px-5 py-3 text-colpsi-text"}`}
+        class={`w-full pr-12 outline-none transition-all ${local.class || "bg-colpsi-surface border-2 border-transparent focus:border-colpsi-yellow rounded-xl px-5 py-3 text-colpsi-text"}`}
         {...rest}
       />
       

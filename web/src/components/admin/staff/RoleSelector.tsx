@@ -39,7 +39,7 @@ export default function RoleSelector(props: Props) {
       <Show when={presets.loading}>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <For each={[1, 2, 3]}>
-            {() => <div class="h-28 bg-white animate-pulse rounded-2xl border border-gray-100" />}
+            {() => <div class="h-28 bg-white animate-pulse rounded-2xl border border-colpsi-border" />}
           </For>
         </div>
       </Show>

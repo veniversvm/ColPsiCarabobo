@@ -72,11 +72,11 @@ export default function AdminNotificacionesPage() {
       )}>
         <Suspense fallback={
           <div class="space-y-3">
-            <For each={[1, 2, 3, 4]}>{() => <div class="h-24 bg-white animate-pulse rounded-2xl border border-gray-100" />}</For>
+            <For each={[1, 2, 3, 4]}>{() => <div class="h-24 bg-white animate-pulse rounded-2xl border border-colpsi-border" />}</For>
           </div>
         }>
           <Show when={!list.loading && items().length === 0}>
-            <div class="bg-white rounded-3xl border border-gray-100 p-12 text-center">
+            <div class="bg-white rounded-3xl border border-colpsi-border p-12 text-center">
               <p class="text-5xl mb-4">🔔</p>
               <h3 class="text-lg font-black text-gray-700 mb-1">Sin notificaciones</h3>
               <p class="text-sm text-gray-500">Crea tu primera notificación para los agremiados.</p>
@@ -88,7 +88,7 @@ export default function AdminNotificacionesPage() {
               {(n) => (
                 <A
                   href={`/admin/notificaciones/${n.id}`}
-                  class="block bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all p-5"
+                  class="block bg-white rounded-3xl border border-colpsi-border shadow-sm hover:shadow-md hover:border-blue-200 transition-all p-5"
                 >
                   <div class="flex items-start justify-between gap-4">
                     <div class="min-w-0">
@@ -129,7 +129,7 @@ export default function AdminNotificacionesPage() {
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page() <= 1}
-                class="bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+                class="bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm font-bold text-gray-600 hover:bg-colpsi-surface disabled:opacity-40 transition-colors"
               >
                 ← Anterior
               </button>
@@ -137,7 +137,7 @@ export default function AdminNotificacionesPage() {
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page() >= totalPages}
-                class="bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+                class="bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm font-bold text-gray-600 hover:bg-colpsi-surface disabled:opacity-40 transition-colors"
               >
                 Siguiente →
               </button>

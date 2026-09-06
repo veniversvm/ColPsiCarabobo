@@ -75,7 +75,7 @@ export function ObservationsBlock(props: Props) {
         <div class="mb-6 space-y-3">
           <For each={props.entries}>
             {(entry: ObservacionesEntry) => (
-              <div class="bg-gray-50 hover:bg-white p-4 rounded-2xl border border-gray-100 hover:border-blue-100 transition-colors group">
+              <div class="bg-colpsi-surface hover:bg-white p-4 rounded-2xl border border-colpsi-border hover:border-blue-100 transition-colors group">
                 <Show
                   when={editingId() === entry.id}
                   fallback={

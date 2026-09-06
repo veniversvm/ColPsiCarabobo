@@ -16,7 +16,7 @@ export function AcademicSection(props: AcademicSectionProps) {
   const hasPostGrades = () => props.postGrades && props.postGrades.length > 0;
 
   return (
-    <div class="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-premium border border-gray-100">
+    <div class="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-premium border border-colpsi-border">
       <h3 class="text-xs md:text-sm font-black text-colpsi-blue uppercase tracking-widest mb-6 flex items-center gap-2 border-b-2 border-gray-50 pb-4">
         <span class="text-xl">🎓</span> Formación Académica
       </h3>
@@ -61,7 +61,7 @@ export function AcademicSection(props: AcademicSectionProps) {
 
       {/* ESTADO VACÍO */}
       <Show when={!hasUndergraduate() && !hasPostGrades()}>
-        <div class="bg-gray-50 p-8 rounded-3xl text-center border-2 border-dashed border-gray-200">
+        <div class="bg-colpsi-surface p-8 rounded-3xl text-center border-2 border-dashed border-gray-200">
            <span class="text-3xl grayscale opacity-50 mb-2 block">🎓</span>
            <p class="text-gray-400 text-sm font-bold">Sin información académica pública</p>
         </div>

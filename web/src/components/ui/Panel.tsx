@@ -8,7 +8,7 @@ import { Show, createSignal } from "solid-js";
 export function Panel(props: { children: any; class?: string }) {
   return (
     <div
-      class={`bg-white rounded-[2.5rem] shadow-premium border border-gray-100 overflow-hidden divide-y divide-gray-100 ${
+      class={`bg-white rounded-[2.5rem] shadow-premium border border-colpsi-border overflow-hidden divide-y divide-gray-100 ${
         props.class ?? ""
       }`}
     >
@@ -35,7 +35,7 @@ export function PanelSection(props: {
         type="button"
         onClick={() => setOpen(!open())}
         aria-expanded={open()}
-        class="w-full flex items-center justify-between gap-4 px-6 md:px-8 py-5 text-left hover:bg-gray-50/60 transition-colors group"
+        class="w-full flex items-center justify-between gap-4 px-6 md:px-8 py-5 text-left hover:bg-colpsi-surface/60 transition-colors group"
       >
         <div class="min-w-0">
           <h2 class={`text-lg font-black text-blue-800 border-l-4 ${accent} pl-3`}>

@@ -14,7 +14,7 @@ export default function DocumentIndexCard(props: { doc: DocModulo }) {
   return (
     <A
       href={`/documentos/${d.slug}`}
-      class="group bg-white rounded-[2rem] shadow-premium border border-gray-100 p-7 md:p-8 hover:shadow-xl hover:-translate-y-1 transition-all flex flex-col gap-5"
+      class="group bg-white rounded-3xl shadow-premium border border-colpsi-border p-7 md:p-8 hover:shadow-xl hover:-translate-y-1 transition-all flex flex-col gap-5"
     >
       <div class="flex items-start justify-between gap-4">
         <span class="inline-block px-3 py-1.5 bg-colpsi-blue text-colpsi-yellow rounded-full text-[10px] font-black uppercase tracking-[0.15em]">
@@ -30,7 +30,7 @@ export default function DocumentIndexCard(props: { doc: DocModulo }) {
         <p class="text-sm text-gray-600 leading-relaxed text-justify">{d.descripcion}</p>
       </div>
 
-      <div class="mt-auto pt-2 flex items-center justify-between border-t border-gray-100">
+      <div class="mt-auto pt-2 flex items-center justify-between border-t border-colpsi-border">
         <div class="text-[11px] text-gray-400 font-bold uppercase tracking-wide">
           {secciones} título(s) · {artCount} artículos
         </div>

@@ -110,7 +110,7 @@ export function ImportXlsxModal(props: ImportXlsxModalProps) {
       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-blue-900/40 backdrop-blur-md"
       onClick={(e) => { if (e.target === e.currentTarget) props.onClose(); }}
     >
-      <div class="bg-white rounded-[2.5rem] shadow-premium w-full max-w-2xl border border-gray-100 overflow-hidden animate-in zoom-in-95 duration-200">
+      <div class="bg-white rounded-[2.5rem] shadow-premium w-full max-w-2xl border border-colpsi-border overflow-hidden animate-in zoom-in-95 duration-200">
 
         {/* ── HEADER ────────────────────────────────────────────────────── */}
         <div class="flex items-center justify-between px-10 py-8 border-b border-gray-50">
@@ -127,7 +127,7 @@ export function ImportXlsxModal(props: ImportXlsxModalProps) {
           </div>
           <button
             onClick={props.onClose}
-            class="w-10 h-10 rounded-2xl bg-gray-50 hover:bg-red-50 hover:text-red-500 text-gray-400 font-bold flex items-center justify-center transition-all text-xl shadow-sm"
+            class="w-10 h-10 rounded-2xl bg-colpsi-surface hover:bg-red-50 hover:text-red-500 text-gray-400 font-bold flex items-center justify-center transition-all text-xl shadow-sm"
           >
             ✕
           </button>
@@ -144,7 +144,7 @@ export function ImportXlsxModal(props: ImportXlsxModalProps) {
 
           {/* ── STEP: SELECT ──────────────────────────────────────────── */}
           <Show when={step() === "select"}>
-            <label class="flex flex-col items-center justify-center w-full h-64 border-3 border-dashed border-gray-200 rounded-[2rem] bg-gray-50/50 hover:bg-blue-50 hover:border-blue-300 transition-all cursor-pointer group">
+            <label class="flex flex-col items-center justify-center w-full h-64 border-3 border-dashed border-gray-200 rounded-3xl bg-colpsi-surface/50 hover:bg-blue-50 hover:border-blue-300 transition-all cursor-pointer group">
               <div class="flex flex-col items-center gap-4 text-gray-400 group-hover:text-blue-600 transition-colors">
                 <div class="w-20 h-20 bg-white rounded-3xl shadow-sm flex items-center justify-center text-4xl group-hover:scale-110 transition-transform">
                   📊
@@ -176,7 +176,7 @@ export function ImportXlsxModal(props: ImportXlsxModalProps) {
           {/* ── STEP: CONFIRM ─────────────────────────────────────────── */}
           <Show when={step() === "confirm" && file()}>
             <div class="space-y-6">
-              <div class="flex items-center gap-6 p-6 bg-gray-50 rounded-3xl border border-gray-100 shadow-inner">
+              <div class="flex items-center gap-6 p-6 bg-colpsi-surface rounded-3xl border border-colpsi-border shadow-inner">
                 <div class="text-5xl">📄</div>
                 <div class="flex-1 min-w-0">
                    <p class="text-blue-900 font-black text-lg truncate">{file()?.name}</p>
@@ -218,7 +218,7 @@ export function ImportXlsxModal(props: ImportXlsxModalProps) {
                     <p class="text-5xl font-black text-emerald-700">{res().imported}</p>
                     <p class="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] mt-2">Éxito</p>
                   </div>
-                  <div class={`rounded-3xl p-6 text-center border-2 shadow-sm ${res().failed > 0 ? "bg-red-50 border-red-100" : "bg-gray-50 border-gray-100"}`}>
+                  <div class={`rounded-3xl p-6 text-center border-2 shadow-sm ${res().failed > 0 ? "bg-red-50 border-red-100" : "bg-colpsi-surface border-colpsi-border"}`}>
                     <p class={`text-5xl font-black ${res().failed > 0 ? "text-red-700" : "text-gray-400"}`}>{res().failed}</p>
                     <p class={`text-[10px] font-black uppercase tracking-[0.2em] mt-2 ${res().failed > 0 ? "text-red-600" : "text-gray-400"}`}>
                       Errores
@@ -261,7 +261,7 @@ export function ImportXlsxModal(props: ImportXlsxModalProps) {
         </div>
 
         {/* ── FOOTER ────────────────────────────────────────────────────── */}
-        <div class="px-10 py-8 border-t border-gray-50 bg-gray-50/50 flex justify-between items-center">
+        <div class="px-10 py-8 border-t border-gray-50 bg-colpsi-surface/50 flex justify-between items-center">
           
           <div>
             <Show when={step() === "confirm" || step() === "result"}>

@@ -3,7 +3,7 @@ import { A } from "@solidjs/router";
 
 export function NoticiasHeader() {
   return (
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 bg-white p-6 rounded-3xl shadow-sm border border-colpsi-border">
       <div>
         <h1 class="text-2xl font-black text-blue-900 uppercase tracking-tight">Publicaciones</h1>
         <p class="text-gray-400 text-sm mt-0.5 font-medium">Gestión de noticias y comunicados del Colegio</p>

@@ -69,6 +69,8 @@ Valores oficiales definidos en `web/src/app.css` (`@theme`):
 | `--color-colpsi-navy` | Azul marino del escudo | `#0a174f` | Fondo de héroes (noticias), profundidad heráldica. |
 | `--color-colpsi-navy-800` | Azul marino medio | `#0d2658` | Gradientes heráldicos. |
 | `--color-colpsi-gold` | Dorado suave del escudo | `#dfcc87` | Acentos dorados sutiles, bordes finos. |
+| `--color-colpsi-surface` | Superficie de cards (gris 50) | `#f9fafb` | Fondos de superficies secundarias dentro de cards (`bg-gray-50`). |
+| `--color-colpsi-border` | Borde de cards (gris 100) | `#f3f4f6` | Patrón dominante `border border-colpsi-border` en cards. |
 | `--color-colpsi-yellow` | Amarillo institucional | `#facc15` | Acento: CTA, badges, focos de atención, estados activos. |
 | `--color-colpsi-yellow-dark` | Amarillo oscuro (hover) | `#eab308` | Hover de CTA amarillos. |
 | `--color-colpsi-red` | Rojo institucional | `#991b1b` | Rojo corporativo: estados de alerta, insolvencia, errores. |
@@ -241,6 +243,8 @@ Fuente de verdad de los tokens en el código:
 | `--color-colpsi-navy` | `#0a174f` |
 | `--color-colpsi-navy-800` | `#0d2658` |
 | `--color-colpsi-gold` | `#dfcc87` |
+| `--color-colpsi-surface` | `#f9fafb` |
+| `--color-colpsi-border` | `#f3f4f6` |
 | `--color-colpsi-yellow` | `#facc15` |
 | `--color-colpsi-yellow-dark` | `#eab308` |
 | `--color-colpsi-red` | `#991b1b` |

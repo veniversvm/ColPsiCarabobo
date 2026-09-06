@@ -9,10 +9,10 @@ interface Props {
 }
 
 export function AccountSection(props: Props) {
-  const inputClass = "w-full bg-gray-50 border-2 border-transparent focus:border-colpsi-blue rounded-xl px-4 py-2.5 outline-none";
+  const inputClass = "w-full bg-colpsi-surface border-2 border-transparent focus:border-colpsi-blue rounded-xl px-4 py-2.5 outline-none";
 
   return (
-    <section class="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100">
+    <section class="bg-white rounded-[2rem] p-6 shadow-sm border border-colpsi-border">
       <h2 class="text-lg font-black text-colpsi-blue mb-4 border-l-4 border-colpsi-yellow pl-3">Cuenta y Acceso</h2>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="space-y-1">

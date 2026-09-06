@@ -87,8 +87,8 @@ export default function AdminCrearStaffPage() {
   return (
     <main class="pb-28 animate-in fade-in duration-500 max-w-3xl mx-auto">
 
-      <div class="flex items-center gap-4 mb-8 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-        <button onClick={() => navigate(-1)} class="w-10 h-10 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-full font-bold flex items-center justify-center transition-colors flex-shrink-0">←</button>
+      <div class="flex items-center gap-4 mb-8 bg-white p-6 rounded-3xl shadow-sm border border-colpsi-border">
+        <button onClick={() => navigate(-1)} class="w-10 h-10 bg-colpsi-surface hover:bg-gray-100 text-gray-600 rounded-full font-bold flex items-center justify-center transition-colors flex-shrink-0">←</button>
         <div>
           <h1 class="text-2xl font-black text-blue-900 uppercase tracking-tight">Nuevo Administrador</h1>
           <p class="text-gray-400 text-sm mt-0.5 font-medium">Crea un nuevo miembro del staff con permisos específicos</p>
@@ -101,8 +101,8 @@ export default function AdminCrearStaffPage() {
 
       <form onSubmit={handleSubmit} class="space-y-6">
 
-        <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 space-y-5">
-          <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest border-b border-gray-100 pb-3">Datos de Acceso</h2>
+        <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-colpsi-border space-y-5">
+          <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest border-b border-colpsi-border pb-3">Datos de Acceso</h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
               <label class={labelClass}>Usuario <span class="text-red-400">*</span></label>
@@ -126,16 +126,16 @@ export default function AdminCrearStaffPage() {
           </div>
         </section>
 
-        <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
-          <div class="flex items-center justify-between border-b border-gray-100 pb-3 mb-6">
+        <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-colpsi-border">
+          <div class="flex items-center justify-between border-b border-colpsi-border pb-3 mb-6">
             <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest">Perfil de Rol</h2>
             <span class="text-xs font-black text-gray-500">Atajo: aplica un conjunto de permisos</span>
           </div>
           <RoleSelector perms={perms()} storedRole={role()} onSelect={applyRole} onClear={clearRole} />
         </section>
 
-        <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
-          <div class="flex items-center justify-between border-b border-gray-100 pb-3 mb-6">
+        <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-colpsi-border">
+          <div class="flex items-center justify-between border-b border-colpsi-border pb-3 mb-6">
             <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest">Permisos</h2>
             <span class="text-xs font-black text-gray-500">{totalEnabled()}/{TOTAL_PERMS} activos</span>
           </div>
@@ -154,7 +154,7 @@ export default function AdminCrearStaffPage() {
                       const active = () => perms()[perm.key as keyof PermissionsState];
                       return (
                         <button type="button" onClick={() => togglePerm(perm.key as keyof PermissionsState)}
-                          class={`flex items-center justify-between px-4 py-3 text-sm font-bold transition-all ${active() ? `${ACTIVE_MAP[group.color]} opacity-90` : "bg-white text-gray-400 hover:bg-gray-50"}`}>
+                          class={`flex items-center justify-between px-4 py-3 text-sm font-bold transition-all ${active() ? `${ACTIVE_MAP[group.color]} opacity-90` : "bg-white text-gray-400 hover:bg-colpsi-surface"}`}>
                           <span>{perm.label}</span>
                           <span class="text-base">{active() ? "✓" : "○"}</span>
                         </button>
@@ -168,7 +168,7 @@ export default function AdminCrearStaffPage() {
         </section>
 
         <div class="sticky bottom-6 z-50 flex justify-end gap-3">
-          <button type="button" onClick={() => navigate(-1)} class="bg-white text-gray-600 border-2 border-gray-200 px-6 py-4 rounded-2xl font-black hover:bg-gray-50 transition-all text-sm">Cancelar</button>
+          <button type="button" onClick={() => navigate(-1)} class="bg-white text-gray-600 border-2 border-gray-200 px-6 py-4 rounded-2xl font-black hover:bg-colpsi-surface transition-all text-sm">Cancelar</button>
           <button type="submit" disabled={saving()} class="bg-blue-800 text-white px-10 py-4 rounded-2xl font-black shadow-2xl hover:scale-105 active:scale-95 transition-all disabled:opacity-70 flex items-center gap-3 border-2 border-white text-sm">
             {saving() ? "CREANDO..." : "👤 CREAR ADMINISTRADOR"}
           </button>

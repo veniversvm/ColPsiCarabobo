@@ -112,11 +112,11 @@ export default function PsiTicketDetalle() {
       <div class="max-w-4xl mx-auto px-4 -mt-12 space-y-4">
         <Show when={ticket.loading && !t()}>
           <div class="space-y-3">
-            <For each={[1, 2, 3]}>{() => <div class="h-24 bg-white animate-pulse rounded-3xl border border-gray-100" />}</For>
+            <For each={[1, 2, 3]}>{() => <div class="h-24 bg-white animate-pulse rounded-3xl border border-colpsi-border" />}</For>
           </div>
         </Show>
         <Show when={!ticket.loading && !t()}>
-            <div class="bg-white rounded-3xl p-12 text-center shadow-sm border border-gray-100">
+            <div class="bg-white rounded-3xl p-12 text-center shadow-sm border border-colpsi-border">
               <p class="text-5xl mb-4">🔍</p>
               <h3 class="font-black text-gray-700">Solicitud no encontrada</h3>
               <p class="text-sm text-gray-500 mt-1">Puede que no exista o que no te pertenezca.</p>
@@ -125,13 +125,13 @@ export default function PsiTicketDetalle() {
 
           <Show when={t()}>
             {/* Resumen */}
-            <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+            <div class="bg-white rounded-3xl p-6 shadow-sm border border-colpsi-border">
               <div class="flex flex-wrap items-center gap-2 text-[11px] font-black uppercase tracking-wider">
                 <span class={`px-3 py-1.5 rounded-full ${estadoColor(t()?.estado)}`}>{t()?.estado?.name}</span>
                 <span class="px-3 py-1.5 rounded-full bg-gray-100 text-gray-600">{t()?.motivo?.name}</span>
                 <span class="px-3 py-1.5 rounded-full bg-gray-100 text-gray-400">Creada: {formatTicketDate(t()?.created_at)}</span>
               </div>
-              <p class="text-sm text-gray-600 leading-relaxed mt-4 bg-gray-50 rounded-2xl px-4 py-3 whitespace-pre-wrap">
+              <p class="text-sm text-gray-600 leading-relaxed mt-4 bg-colpsi-surface rounded-2xl px-4 py-3 whitespace-pre-wrap">
                 {t()?.description}
               </p>
               <Show when={closed() && t()?.close_reason}>
@@ -143,7 +143,7 @@ export default function PsiTicketDetalle() {
             </div>
 
             {/* Conversación */}
-            <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+            <div class="bg-white rounded-3xl p-6 shadow-sm border border-colpsi-border">
               <h3 class="font-black text-gray-700 text-sm uppercase tracking-widest mb-4">Conversación</h3>
               <TicketThread
                 mensajes={[...(t()?.mensajes ?? []), ...mensajesExtra()]}
@@ -152,7 +152,7 @@ export default function PsiTicketDetalle() {
               />
 
               <Show when={closed()} fallback={
-                <div class="mt-6 pt-5 border-t border-gray-100">
+                <div class="mt-6 pt-5 border-t border-colpsi-border">
                   <label class="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">
                     Nuevo comentario
                     <span class="float-right normal-case font-bold text-gray-300">{message().length}/{MAX_PSI_MENSAJE_CHARS}</span>
@@ -163,10 +163,10 @@ export default function PsiTicketDetalle() {
                     rows={3}
                     onInput={(e) => setMessage(e.currentTarget.value)}
                     placeholder="Escribe un comentario (máximo 3 seguidos)..."
-                    class="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 bg-gray-50 outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-800 transition-all resize-none"
+                    class="w-full px-4 py-3.5 rounded-2xl border-2 border-colpsi-border bg-colpsi-surface outline-none focus:border-colpsi-yellow text-sm font-semibold text-gray-800 transition-all resize-none"
                   />
                   <div class="flex flex-col sm:flex-row gap-3 mt-3">
-                    <label class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50/60 cursor-pointer hover:border-colpsi-blue transition-all text-sm font-bold text-gray-500">
+                    <label class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border-2 border-dashed border-gray-200 bg-colpsi-surface/60 cursor-pointer hover:border-colpsi-blue transition-all text-sm font-bold text-gray-500">
                       📎 Adjuntar
                       <input type="file" multiple class="hidden"
                         onChange={(e) => { const l = e.currentTarget.files; if (l) setFiles(Array.from(l)); }} />
@@ -199,7 +199,7 @@ export default function PsiTicketDetalle() {
                   </Show>
                 </div>
               }>
-                <div class="mt-6 pt-5 border-t border-gray-100 text-center text-sm font-bold text-gray-400">
+                <div class="mt-6 pt-5 border-t border-colpsi-border text-center text-sm font-bold text-gray-400">
                   Solicitud cerrada — no admite más comentarios.
                 </div>
               </Show>
@@ -207,7 +207,7 @@ export default function PsiTicketDetalle() {
 
             {/* Cierre */}
             <Show when={!closed()}>
-              <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex items-center justify-between">
+              <div class="bg-white rounded-3xl p-6 shadow-sm border border-colpsi-border flex items-center justify-between">
                 <div>
                   <h3 class="font-black text-gray-700 text-sm uppercase tracking-widest">Cerrar solicitud</h3>
                   <p class="text-xs text-gray-400 mt-1">Si consideras tu trámite resuelto, puedes cerrarlo tú mismo.</p>
@@ -223,7 +223,7 @@ export default function PsiTicketDetalle() {
 
             {/* Historial de estados */}
             <Show when={(t()?.status_logs ?? []).length > 0}>
-              <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+              <div class="bg-white rounded-3xl p-6 shadow-sm border border-colpsi-border">
                 <h3 class="font-black text-gray-700 text-sm uppercase tracking-widest mb-4">Historial de la solicitud</h3>
                 <ol class="relative border-l-2 border-gray-200 ml-2 space-y-5">
                   <For each={t()?.status_logs ?? []}>
@@ -260,7 +260,7 @@ export default function PsiTicketDetalle() {
           class="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-blue-900/40 backdrop-blur-md"
           onClick={(e) => { if (e.target === e.currentTarget) setCloseOpen(false); }}
         >
-          <div class="bg-white rounded-[2rem] shadow-2xl p-8 w-full max-w-md border border-gray-100">
+          <div class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md border border-colpsi-border">
             <h3 class="text-lg font-black text-gray-900 mb-1">Cerrar solicitud</h3>
             <p class="text-sm text-gray-500 mb-4">Indica el motivo por el que cierras este ticket.</p>
             <textarea
@@ -269,7 +269,7 @@ export default function PsiTicketDetalle() {
               rows={3}
               onInput={(e) => setCloseReason(e.currentTarget.value)}
               placeholder="Ej: Ya resolví mi trámite..."
-              class="w-full px-4 py-3 rounded-2xl border-2 border-gray-100 bg-gray-50 outline-none focus:border-red-400 text-sm font-semibold text-gray-800 transition-all resize-none"
+              class="w-full px-4 py-3 rounded-2xl border-2 border-colpsi-border bg-colpsi-surface outline-none focus:border-red-400 text-sm font-semibold text-gray-800 transition-all resize-none"
             />
             <p class="text-right text-[11px] text-gray-400 font-bold mt-1">{closeReason().length}/{MAX_CLOSE_REASON_CHARS}</p>
             <Show when={closeError()}>
@@ -279,7 +279,7 @@ export default function PsiTicketDetalle() {
               <button
                 onClick={() => setCloseOpen(false)}
                 disabled={closing()}
-                class="flex-1 px-5 py-3 rounded-2xl border-2 border-gray-100 font-black text-gray-400 hover:bg-gray-50 transition-all text-xs uppercase tracking-widest"
+                class="flex-1 px-5 py-3 rounded-2xl border-2 border-colpsi-border font-black text-gray-400 hover:bg-colpsi-surface transition-all text-xs uppercase tracking-widest"
               >
                 Cancelar
               </button>

@@ -195,7 +195,7 @@ export function AcademicSection(props: AcademicSectionProps) {
 
 
       <div class="space-y-6">
-        <div class="bg-gray-50 p-6 rounded-2xl border border-gray-100">
+        <div class="bg-colpsi-surface p-6 rounded-2xl border border-colpsi-border">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
 
             <Show when={props.showUniversity}>

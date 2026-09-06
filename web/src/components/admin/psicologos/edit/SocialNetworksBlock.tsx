@@ -34,9 +34,9 @@ export function SocialNetworksBlock(props: Props) {
         <div class="mb-6 space-y-3">
           <For each={props.profile?.social_networks}>
             {(net: SocialNetwork) => (
-              <div class="flex items-center justify-between bg-gray-50 hover:bg-white p-4 rounded-2xl border border-gray-100 hover:border-blue-100 transition-colors group">
+              <div class="flex items-center justify-between bg-colpsi-surface hover:bg-white p-4 rounded-2xl border border-colpsi-border hover:border-blue-100 transition-colors group">
                 <div class="flex items-center gap-3 overflow-hidden">
-                  <span class="bg-white px-3 py-1 rounded-xl text-xs font-black text-blue-800 shadow-sm border border-gray-100">
+                  <span class="bg-white px-3 py-1 rounded-xl text-xs font-black text-blue-800 shadow-sm border border-colpsi-border">
                     {net.name}
                   </span>
                   <a

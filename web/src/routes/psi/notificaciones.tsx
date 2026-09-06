@@ -59,11 +59,11 @@ export default function PsiNotificaciones() {
       <div class="max-w-3xl mx-auto px-4 -mt-12 space-y-3">
         <Suspense fallback={
           <div class="space-y-3">
-            <For each={[1, 2, 3]}>{() => <div class="h-24 bg-white animate-pulse rounded-3xl border border-gray-100" />}</For>
+            <For each={[1, 2, 3]}>{() => <div class="h-24 bg-white animate-pulse rounded-3xl border border-colpsi-border" />}</For>
           </div>
         }>
           <Show when={!list.loading && items().length === 0}>
-            <div class="bg-white rounded-3xl p-12 text-center shadow-sm border border-gray-100">
+            <div class="bg-white rounded-3xl p-12 text-center shadow-sm border border-colpsi-border">
               <p class="text-5xl mb-4">📭</p>
               <h3 class="font-black text-gray-700">Sin notificaciones</h3>
               <p class="text-sm text-gray-500 mt-1">No tienes comunicados pendientes.</p>
@@ -83,7 +83,7 @@ export default function PsiNotificaciones() {
                   <button
                     onClick={() => toggleDetail(n)}
                     class={`w-full text-left bg-white rounded-3xl p-5 shadow-sm border transition-all active:scale-[0.99] ${
-                      read ? "border-gray-100" : "border-blue-300 ring-1 ring-blue-100"
+                      read ? "border-colpsi-border" : "border-blue-300 ring-1 ring-blue-100"
                     } ${expanded ? "rounded-b-none border-b-0" : ""}`}
                   >
                     <div class="flex items-start gap-3">
