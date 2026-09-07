@@ -7,6 +7,7 @@ export * from "./EditAlert";
 export * from "./SocialNetworksBlock";
 export * from "./DeontologiaBlock";
 export * from "./ObservationsBlock";
+export * from "./DocumentsBlock";
 export * from "./AuditBlock";
 
 export * from "./sections/AccountSection";
