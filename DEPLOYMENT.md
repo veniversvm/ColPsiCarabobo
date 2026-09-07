@@ -25,8 +25,12 @@ Dos stacks de Docker Compose independientes que comparten la red Docker
 | 29000  | Edge cache nginx (imágenes públicas / bucket) |
 | 29001  | Consola MinIO |
 | 29002  | MinIO directo para SDK (dev local) |
-| 25432  | PostgreSQL |
-| 26432  | PgBouncer |
+| 5432   | PostgreSQL |
+| 6432   | PgBouncer |
+
+> Los puertos de DB/PgBouncer los fija `POSTGRES_HOST_PORT` / `PGBOUNCER_HOST_PORT`
+> en el `api/.env` (este repo usa `5432`/`6432`). El default del compose es
+> `25432`/`26432`, pero si el `.env` los define, el effective es el del `.env`.
 | 26379  | Valkey |
 | 21337  | Audiobookshelf |
 | 25050  | pgAdmin (solo dev) |
@@ -124,7 +128,7 @@ curl -s http://localhost:23000 | grep -o 'Content-Security-Policy[^<]*' | head -
 | `ADMIN_PASSWORD` | definirla para fijar la pass del super admin |
 | `ALLOWED_ORIGINS` | dominio público del frontend (`https://www.tusitio.com`) |
 | `S3_ENDPOINT` | `http://s3:9000` (interno, lo fuerza el compose) |
-| `S3_PUBLIC_URL` | `http://localhost:29000` (imágenes públicas, edge cache) |
+| `S3_PUBLIC_URL` | URL **pública** accesible desde el navegador p.ej. `https://www.tusitio.com` (si el edge cache está tras el dominio) o `http://localhost:29000` en dev |
 | `JWT_LIBRARY_SECRET` | secreto largo y estable (`openssl rand -hex 32`) |
 | `HSTS_MAX_AGE` | `31536000` (1 año, solo se emite sobre HTTPS) |
 | `HSTS_PRELOAD` | `false` (activar solo tras registrarse en hstspreload.org) |
