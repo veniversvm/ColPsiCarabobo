@@ -131,7 +131,9 @@ func (s *PsiService) ImportFromXLSX(ctx context.Context, reader io.Reader, admin
 		}
 
 		// ── Estrategia de Resolución de Identidad (Username Generation) ───────
-		email := getValorSeguro(row, 15)
+		// Los correos se normalizan a minúsculas: los servidores SMTP/dominios los tratan
+		// de forma case-insensitive y evita duplicados por capitalización.
+		email := strings.ToLower(getValorSeguro(row, 15))
 		var username string
 		if strings.Contains(email, "@") {
 			// Previene colisiones usando la combinación de (nombre de correo + FPV)

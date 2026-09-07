@@ -3,8 +3,10 @@ package service
 import (
 	"context"
 	"errors"
-	"github.com/rs/zerolog/log"
+	"strings"
 	"time"
+
+	"github.com/rs/zerolog/log"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -16,6 +18,9 @@ import (
 
 // Login authenticates a psychologist by identifier and password, rotating the session key and returning a signed JWT.
 func (s *PsiService) Login(ctx context.Context, identifier, password string) (string, *domain.PsiUserModel, error) {
+	// Sanitización de entrada: los correos/usernames se guardan en minúsculas,
+	// así que el identifier se normaliza para evitar fallos por capitalización.
+	identifier = strings.ToLower(identifier)
 	psi, err := s.repo.GetByIdentifier(ctx, identifier)
 	if err != nil {
 		return "", nil, errors.New("credenciales inválidas")
@@ -71,6 +76,7 @@ type AudiobookshelfUserResponse struct {
 
 // LoginLibrary authenticates a psychologist and syncs the account with Audiobookshelf, returning a library-specific JWT.
 func (s *PsiService) LoginLibrary(ctx context.Context, identifier, password string) (string, *domain.PsiUserModel, error) {
+	identifier = strings.ToLower(identifier)
 	psi, err := s.repo.GetByIdentifier(ctx, identifier)
 	if err != nil {
 		return "", nil, errors.New("credenciales inválidas")

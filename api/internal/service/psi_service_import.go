@@ -118,6 +118,9 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 		}
 
 		email := getValorSeguro(row, 15)
+		// Los correos se normalizan a minúsculas: los servidores SMTP/dominios los tratan
+		// de forma case-insensitive y evita duplicados por capitalización.
+		email = strings.ToLower(email)
 		emailToProcess := email
 		validEmail := true
 		if email == "" || !strings.Contains(email, "@") {
