@@ -83,7 +83,7 @@ func (s *PsiService) UpdateProfileSelf(
 		if err != nil {
 			return nil, err
 		}
-		psi.Username = *req.Username
+		psi.Username = validate_username
 	}
 	if req.Email != nil {
 		validate_email, err := utils.ParseAndValidateEmail(*req.Email)

@@ -288,7 +288,7 @@ func (s *AdminService) CreateAdmin(
 			UpdateById: &creator.ID,
 		},
 		Credentials: domain.Credentials{
-			Username: req.Username,
+			Username: strings.ToLower(req.Username),
 			Email:    validate_email,
 			IsActive: true,
 			Key:      uuid.Must(uuid.NewV7()).String(),
@@ -414,7 +414,7 @@ func (s *AdminService) UpdateAdmin(
 
 	// 3. Mutación Parcial Segura (Patching)
 	if req.Username != nil {
-		target.Username = *req.Username
+		target.Username = strings.ToLower(*req.Username)
 	}
 	if req.Email != nil {
 		validate_email, err := utils.ParseAndValidateEmail(*req.Email)

@@ -1002,8 +1002,8 @@ func createPsiUSerModel(req request_structs.CreatePsiAdminRequest, psiID uuid.UU
 		AuditModel: audit_moodel,
 		Credentials: domain.Credentials{
 			Key:                uuid.Must(uuid.NewV7()).String(),
-			Username:           req.Username,
-			Email:              req.Email,
+			Username:           strings.ToLower(strings.TrimSpace(req.Username)),
+			Email:              strings.ToLower(strings.TrimSpace(req.Email)),
 			Password:           string(hashed),
 			IsActive:           req.IsActive,
 			MustChangePassword: true,
