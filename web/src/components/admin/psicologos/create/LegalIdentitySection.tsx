@@ -1,4 +1,5 @@
 import { PsicologoForm } from "~/types/admin";
+import FlatDatePicker from "~/components/ui/FlatDatePicker";
 
 // web/src/components/admin/psicologos/create/LegalIdentitySection.tsx
 interface Props {
@@ -7,10 +8,10 @@ interface Props {
 }
 
 export function LegalIdentitySection(props: Props) {
-  const inputClass = "w-full bg-gray-50 border-2 border-transparent focus:border-colpsi-blue rounded-xl px-4 py-2.5 outline-none";
+  const inputClass = "w-full bg-colpsi-surface border-2 border-transparent focus:border-colpsi-blue rounded-xl px-4 py-2.5 outline-none";
 
   return (
-    <section class="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100">
+    <section class="bg-white rounded-[2rem] p-6 shadow-sm border border-colpsi-border">
       <h2 class="text-lg font-black text-colpsi-blue mb-4 border-l-4 border-colpsi-yellow pl-3">Identidad Legal</h2>
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div class="space-y-1 md:col-span-2">
@@ -98,12 +99,10 @@ export function LegalIdentitySection(props: Props) {
         </div>
         <div class="space-y-1 md:col-span-2">
           <label class="text-[10px] font-black text-gray-400 uppercase ml-1">Fecha de Nacimiento <span class="text-red-500">*</span></label>
-          <input 
-            type="date" 
-            required 
-            value={props.form.born_date} 
-            onInput={(e) => props.setForm("born_date", e.currentTarget.value)} 
-            class={inputClass} 
+          <FlatDatePicker
+            value={props.form.born_date}
+            onChange={(v) => props.setForm("born_date", v)}
+            class={inputClass}
           />
         </div>
       </div>

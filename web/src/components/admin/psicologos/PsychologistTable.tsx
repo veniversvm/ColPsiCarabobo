@@ -15,13 +15,14 @@ export function PsychologistTable(props: Props) {
     <div class="overflow-x-auto">
       <table class="w-full text-left border-collapse">
         <thead>
-          <tr class="bg-gray-50/50 border-b border-gray-100">
+          <tr class="bg-colpsi-surface/50 border-b border-colpsi-border">
             <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Nº Control</th>
             <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Agremiado</th>
             <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Credenciales</th>
             <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Solvencia</th>
             <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Estatus</th>
-            <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Acciones</th>          </tr>
+            <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Acciones</th>
+          </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
           <Suspense fallback={

@@ -50,6 +50,7 @@ func main() {
 		&domain.AdminPermissionLog{},
 		&domain.AppSetting{},
 		&domain.SettingsAuditLog{},
+		&domain.PsiPasswordResetToken{},
 	)
 	if err != nil {
 		log.Fatal().Err(err).Str("component", "migrate").Msg("Failed to load gorm schema")

@@ -3,6 +3,7 @@
 import { Show } from "solid-js";
 import { ToggleSwitch } from "~/components/ui/ToggleSwitch";
 import { Field, IC } from "../EditPrimitives";
+import FlatDatePicker from "~/components/ui/FlatDatePicker";
 import type { EditFormState } from "../types";
 
 interface Props {
@@ -48,9 +49,9 @@ export function AcademicSection(props: Props) {
         </div>
 
         <Field label="Fecha de Egreso">
-          <input type="date"
+          <FlatDatePicker
             value={props.form.graduate_date}
-            onInput={(e) => props.setForm("graduate_date", e.currentTarget.value)}
+            onChange={(v) => props.setForm("graduate_date", v)}
             class={IC}
           />
         </Field>
@@ -67,15 +68,15 @@ export function AcademicSection(props: Props) {
         </div>
 
         <Field label="Inscripción al Gremio (Fecha)">
-          <input type="date"
+          <FlatDatePicker
             value={props.form.guild_inscription_date}
-            onInput={(e) => props.setForm("guild_inscription_date", e.currentTarget.value)}
+            onChange={(v) => props.setForm("guild_inscription_date", v)}
             class={IC}
           />
         </Field>
 
         {/* ── Imágenes del Título (S3) ────────────────────────────────── */}
-        <div class="col-span-full pt-4 border-t border-gray-100">
+        <div class="col-span-full pt-4 border-t border-colpsi-border">
           <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">
             Documentación Digital (Imágenes del Título)
           </p>
@@ -87,7 +88,7 @@ export function AcademicSection(props: Props) {
             ].map((img) => (
               <div class="relative group">
                 <label class={`flex flex-col items-center justify-center h-24 border-2 border-dashed rounded-2xl transition-all cursor-pointer ${
-                  props.files[img.id] ? "border-emerald-300 bg-emerald-50" : "border-gray-200 bg-gray-50 hover:bg-blue-50"
+                  props.files[img.id] ? "border-emerald-300 bg-emerald-50" : "border-gray-200 bg-colpsi-surface hover:bg-blue-50"
                 }`}>
                   <Show when={props.files[img.id]} fallback={
                     <>
@@ -115,7 +116,7 @@ export function AcademicSection(props: Props) {
         </div>
 
         {/* ── Registro Legal ──────────────────────────────────────────── */}
-        <div class="col-span-full border-t border-gray-100 pt-6 mt-2">
+        <div class="col-span-full border-t border-colpsi-border pt-6 mt-2">
           <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">
             Datos de Registro de Título (Principal/Estado)
           </p>
@@ -135,9 +136,9 @@ export function AcademicSection(props: Props) {
               />
             </Field>
             <Field label="Fecha de Registro">
-              <input type="date"
+              <FlatDatePicker
                 value={props.form.register_title_date}
-                onInput={(e) => props.setForm("register_title_date", e.currentTarget.value)}
+                onChange={(v) => props.setForm("register_title_date", v)}
                 class={IC}
               />
             </Field>

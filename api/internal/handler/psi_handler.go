@@ -699,3 +699,70 @@ func (h *PsiHandler) GetSitemapData(c *fiber.Ctx) error {
 	}
 	return c.JSON(psis)
 }
+
+// =========================================================================
+// RECUPERACIÓN DE CONTRASEÑA
+// =========================================================================
+
+// RequestPasswordReset godoc
+// @Summary      Solicitar enlace de recuperación
+// @Description  Envía un correo con un enlace de un solo uso para fijar una nueva contraseña.
+// @Description  La respuesta siempre es genérica (no revela si el correo existe).
+// @Tags         Psicólogos - Auth
+// @Accept       json
+// @Produce      json
+// @Param        request body request_structs.RequestPasswordResetDTO true "Correo registrado"
+// @Success      200 {object} map[string]string
+// @Failure      400 {object} map[string]string
+// @Failure      429 {object} map[string]string
+// @Router       /psi/forgot-password [post]
+func (h *PsiHandler) RequestPasswordReset(c *fiber.Ctx) error {
+	var req request_structs.RequestPasswordResetDTO
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "JSON inválido"})
+	}
+
+	if err := h.service.RequestPasswordReset(c.UserContext(), req.Email); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	// Respuesta genérica por diseño — no revela si el correo existe.
+	return c.JSON(fiber.Map{
+		"message": "Si tu correo está registrado, recibirás un enlace para restablecer tu contraseña.",
+	})
+}
+
+// ResetPassword godoc
+// @Summary      Fijar nueva contraseña con token
+// @Description  Valida el token de un solo uso y actualiza la contraseña del psicólogo.
+// @Tags         Psicólogos - Auth
+// @Accept       json
+// @Produce      json
+// @Param        request body request_structs.ResetPasswordDTO true "Token y nueva contraseña"
+// @Success      200 {object} map[string]string
+// @Failure      400 {object} map[string]string
+// @Failure      429 {object} map[string]string
+// @Router       /psi/reset-password [post]
+func (h *PsiHandler) ResetPassword(c *fiber.Ctx) error {
+	var req request_structs.ResetPasswordDTO
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "JSON inválido"})
+	}
+
+	if req.Token == "" || req.NewPassword == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Token y contraseña son obligatorios"})
+	}
+
+	if req.NewPassword != req.ConfirmPassword {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Las contraseñas no coinciden"})
+	}
+
+	err := h.service.ResetPasswordWithToken(c.UserContext(), req.Token, req.NewPassword)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "El enlace es inválido, ya fue utilizado o ha expirado"})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Tu contraseña fue actualizada correctamente. Ya puedes iniciar sesión.",
+	})
+}
