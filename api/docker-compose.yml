@@ -139,11 +139,8 @@ services:
     container_name: colpsi_mailhog
     profiles: ["${MAILPIT_PROFILE:-disabled}"]
     ports:
-      - "21025:1025"   # SMTP server
-      - "28025:8025"   # Web UI (http://localhost:28025)
-    environment:
-      - MH_API_BIND_ADDR=0.0.0.0:28025
-      - MH_SMTP_BIND_ADDR=0.0.0.0:21025
+      - "21025:1025"   # SMTP server (host 21025 → interno 1025)
+      - "28025:8025"   # Web UI + API (http://localhost:28025)
     networks:
       - colpsi_network
 

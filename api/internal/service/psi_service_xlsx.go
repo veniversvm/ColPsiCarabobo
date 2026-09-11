@@ -59,17 +59,7 @@ func (s *PsiService) ImportFromXLSX(ctx context.Context, reader io.Reader, admin
 	successCount := 0
 	var failedRecords []map[string]string
 
-	// 3. OPTIMIZACIÓN CRIPTOGRÁFICA (Performance Tuning)
-	// bcrypt.GenerateFromPassword es una función diseñada matemáticamente para ser
-	// extremadamente lenta (Mitigación de ataques Timing/Bruteforce).
-	// Si un Excel tiene 5,000 psicólogos y generáramos la clave dentro del bucle for,
-	// el proceso tardaría minutos. Al generar una única clave temporal predeterminada
-	// *antes* del bucle, la importación masiva se reduce de minutos a segundos.
-	defaultPassword := utils.GenerateSecureRandomString(12)
-	hashedPasswordBytes, _ := bcrypt.GenerateFromPassword([]byte(defaultPassword), bcrypt.DefaultCost)
-	hashedPassword := string(hashedPasswordBytes)
-
-	// 4. Iteración y Parseo de Filas
+	// 3. Iteración y Parseo de Filas
 	for i, row := range rows {
 		// Omitir fila 0 (Título general) y fila 1 (Encabezados de columnas)
 		if i < 2 {
@@ -90,6 +80,11 @@ func (s *PsiService) ImportFromXLSX(ctx context.Context, reader io.Reader, admin
 		if numFPV == "" && ciStr == "" {
 			continue
 		}
+
+		// Contraseña única por usuario.
+		defaultPassword := utils.GenerateSecureRandomString(12)
+		hashedPasswordBytes, _ := bcrypt.GenerateFromPassword([]byte(defaultPassword), bcrypt.DefaultCost)
+		hashedPassword := string(hashedPasswordBytes)
 
 		// ── Sanitización Semántica: Geo-normalización ───────────────────────
 		// Transforma entradas de texto libre humano (ej. "valencia", "VALENCIA ")

@@ -64,14 +64,6 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 
 	successCount := 0
 	var failedRecords []map[string]string
-	var defaultPassword string
-	if config.Envs.Environment == "development" {
-		defaultPassword = "Colpsi2025!"
-	} else {
-		defaultPassword = utils.GenerateSecureRandomString(16)
-	}
-	hashedPasswordBytes, _ := bcrypt.GenerateFromPassword([]byte(defaultPassword), bcrypt.DefaultCost)
-	hashedPassword := string(hashedPasswordBytes)
 
 	audit := domain.AuditModel{
 		CreateById: &adminID, CreateBy: "Admin_XLSX_Import",
@@ -108,6 +100,17 @@ func (s *PsiService) ImportFromCSV(ctx context.Context, reader io.Reader, adminI
 		if rawControl == "" && rawFPV == "" && rawCI == "" && firstName == "" && lastName == "" {
 			continue
 		}
+
+		// Contraseña única por usuario: en development se usa la hardcodeada para
+		// testing cómodo; en cualquier otro entorno se genera una aleatoria de 16 chars.
+		var defaultPassword string
+		if config.Envs.Environment == "development" {
+			defaultPassword = "Colpsi2025!"
+		} else {
+			defaultPassword = utils.GenerateSecureRandomString(16)
+		}
+		hashedPasswordBytes, _ := bcrypt.GenerateFromPassword([]byte(defaultPassword), bcrypt.DefaultCost)
+		hashedPassword := string(hashedPasswordBytes)
 
 		fpvInt := parseInt(rawFPV)
 		ciInt := parseInt(rawCI)

@@ -209,4 +209,20 @@ type PsiUserRepository interface {
 
 	// DeleteDocument elimina lógicamente (soft delete) un documento del expediente.
 	DeleteDocument(ctx context.Context, id uuid.UUID) error
+
+	// =========================================================================
+	// RECUPERACIÓN DE CONTRASEÑA (TOKENS DE UN SOLO USO)
+	// =========================================================================
+
+	// CreateResetToken persiste un token de recuperación de contraseña.
+	// Solo se almacena el hash SHA-256; el token en claro nunca toca la DB.
+	CreateResetToken(ctx context.Context, token *PsiPasswordResetToken) error
+
+	// GetResetTokenByHash recupera un token por su hash SHA-256.
+	// Incluye el psicólogo asociado (Preload).
+	GetResetTokenByHash(ctx context.Context, tokenHash string) (*PsiPasswordResetToken, error)
+
+	// MarkResetTokenUsed consume el token (used_at = now). Implementa el
+	// contrato de "un solo uso": solo se puede completar un reset por token.
+	MarkResetTokenUsed(ctx context.Context, id uuid.UUID) error
 }

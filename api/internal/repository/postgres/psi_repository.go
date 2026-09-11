@@ -1037,3 +1037,39 @@ func (r *psiRepo) UpdateDocument(ctx context.Context, doc *domain.PsiUserDocumen
 func (r *psiRepo) DeleteDocument(ctx context.Context, id uuid.UUID) error {
 	return r.db.WithContext(ctx).Delete(&domain.PsiUserDocument{}, "id = ?", id).Error
 }
+
+// =========================================================================
+// RECUPERACIÓN DE CONTRASEÑA (TOKENS DE UN SOLO USO)
+// =========================================================================
+
+// CreateResetToken persiste un token de recuperación de contraseña.
+// El token en claro nunca se almacena: solo su hash SHA-256 (hex, 64 chars).
+func (r *psiRepo) CreateResetToken(ctx context.Context, token *domain.PsiPasswordResetToken) error {
+	return r.db.WithContext(ctx).Create(token).Error
+}
+
+// GetResetTokenByHash recupera un token por su hash SHA-256, cargando además
+// el psicólogo asociado para completar el reset sin consultas adicionales.
+func (r *psiRepo) GetResetTokenByHash(ctx context.Context, tokenHash string) (*domain.PsiPasswordResetToken, error) {
+	var token domain.PsiPasswordResetToken
+	err := r.db.WithContext(ctx).
+		Preload("Psi").
+		Where("token_hash = ?", tokenHash).
+		First(&token).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &token, nil
+}
+
+// MarkResetTokenUsed consume el token (used_at = now). Implementa el contrato
+// de un solo uso: un token gastado jamás vuelve a servir para otro reset.
+func (r *psiRepo) MarkResetTokenUsed(ctx context.Context, id uuid.UUID) error {
+	return r.db.WithContext(ctx).
+		Model(&domain.PsiPasswordResetToken{}).
+		Where("id = ?", id).
+		Update("used_at", time.Now()).Error
+}

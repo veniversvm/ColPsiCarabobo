@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 	"github.com/xuri/excelize/v2"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // =========================================================================
@@ -575,6 +576,49 @@ func TestImportFromXLSX_FaultTolerance(t *testing.T) {
 // =========================================================================
 // TEST: ImportFromXLSX — Credentials
 // =========================================================================
+
+func TestImportFromXLSX_PasswordUnicaPorUsuario(t *testing.T) {
+	rows := testRows(
+		testRow{FPV: "1111", CI: "11111111", FirstName: "Ana", LastName: "Perez", Genre: "M", Municipio: "Valencia", Email: "ana1@test.com"},
+		testRow{FPV: "2222", CI: "22222222", FirstName: "Luis", LastName: "Gomez", Genre: "F", Municipio: "Valencia", Email: "luis2@test.com"},
+		testRow{FPV: "3333", CI: "33333333", FirstName: "Carla", LastName: "Ruiz", Genre: "F", Municipio: "Valencia", Email: "carla3@test.com"},
+	)
+
+	hashes := make(map[string]string)
+	mailData := make(map[string]map[string]interface{})
+
+	repo := &mockPsiRepoSvc{
+		CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol []domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
+			hashes[psi.Email] = psi.Password
+			return nil
+		},
+	}
+	mail := &mockMailSvc{
+		SendEmailFunc: func(to, subject, template string, data any) error {
+			mailData[to] = data.(map[string]interface{})
+			return nil
+		},
+	}
+
+	svc := NewPsiService(repo, nil, mail)
+	buf := createTestXLSX(t, rows)
+	success, failed := svc.ImportFromXLSX(context.Background(), buf, uuid.Must(uuid.NewV7()))
+
+	require.Equal(t, 3, success)
+	require.Empty(t, failed)
+	require.Len(t, hashes, 3)
+
+	seen := make(map[string]bool)
+	for email, h := range hashes {
+		require.False(t, seen[h], "usuario %s comparte el mismo hash bcrypt que otro usuario del batch", email)
+		seen[h] = true
+
+		pw, ok := mailData[email]["Password"].(string)
+		require.True(t, ok, "no se envió email con contraseña a %s", email)
+		require.NoError(t, bcrypt.CompareHashAndPassword([]byte(h), []byte(pw)),
+			"email a %s envió contraseña que NO valida contra el hash guardado", email)
+	}
+}
 
 func TestImportFromXLSX_Credentials(t *testing.T) {
 	t.Run("must_change_password es true", func(t *testing.T) {

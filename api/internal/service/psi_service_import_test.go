@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/config"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func TestParseInt(t *testing.T) {
@@ -384,5 +385,91 @@ func TestImportFromCSV_FullMapping(t *testing.T) {
 	require(len(capturedSol) == 3, "historial de solvencias incorrecto (2024-2026)")
 	for i, s := range capturedSol {
 		require(s.Date.Year() == 2024+i && s.Date.Month() == time.December, "fecha de solvencia incorrecta")
+	}
+}
+
+func TestImportFromCSV_PasswordUnicaPorUsuario(t *testing.T) {
+	config.InitConfig()
+
+	rows := [][]string{emptyRow(), emptyRow()}
+
+	addUser := func(fpv, ci, first, last, email string) {
+		row := emptyRow()
+		row[0] = "9"
+		row[3] = fpv
+		row[4] = "33154"
+		row[5] = "V"
+		row[6] = ci
+		row[7] = first
+		row[8] = "María"
+		row[9] = last
+		row[10] = "Gómez"
+		row[11] = "33000"
+		row[13] = "F"
+		row[14] = "SI"
+		row[15] = email
+		row[16] = "valencia"
+		row[25] = "UC"
+		row[26] = "33500"
+		row[30] = "123"
+		row[31] = "5"
+		row[32] = "2"
+		row[44] = "46230"
+		rows = append(rows, row)
+	}
+
+	addUser("1111", "11111111", "Ana", "Pérez", "ana1@test.com")
+	addUser("2222", "22222222", "Luis", "Gómez", "luis2@test.com")
+	addUser("3333", "33333333", "Carla", "Ruiz", "carla3@test.com")
+
+	// hashes[email] = hash bcrypt guardado; mailData[email] = contraseña enviada.
+	hashes := make(map[string]string)
+	mailData := make(map[string]map[string]interface{})
+
+	repo := &mockPsiRepoSvc{
+		CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol []domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
+			hashes[psi.Email] = psi.Password
+			return nil
+		},
+	}
+	mail := &mockMailSvc{
+		SendEmailFunc: func(to, subject, template string, data any) error {
+			mailData[to] = data.(map[string]interface{})
+			return nil
+		},
+	}
+
+	svc := NewPsiService(repo, nil, mail)
+	buf := createTestXLSX(t, rows)
+	success, failed := svc.ImportFromCSV(context.Background(), buf, uuid.Must(uuid.NewV7()))
+
+	if success != 3 {
+		t.Fatalf("debe importar 3 filas, obtuve %d (failed: %v)", success, failed)
+	}
+	if len(hashes) != 3 {
+		t.Fatalf("debe guardar 3 hashes, obtuve %d", len(hashes))
+	}
+
+	// Cada usuario debe tener su propia contraseña (hashi distinto) en no-dev.
+	if config.Envs.Environment != "development" {
+		seen := make(map[string]bool)
+		for email, h := range hashes {
+			if seen[h] {
+				t.Errorf("usuario %s comparte el mismo hash bcrypt con otro usuario del batch", email)
+			}
+			seen[h] = true
+		}
+	}
+
+	// La contraseña enviada por email debe verificar contra el hash guardado del mismo usuario.
+	for email, h := range hashes {
+		pw, ok := mailData[email]["Password"].(string)
+		if !ok {
+			t.Errorf("no se envió email con contraseña a %s", email)
+			continue
+		}
+		if err := bcrypt.CompareHashAndPassword([]byte(h), []byte(pw)); err != nil {
+			t.Errorf("email a %s envió contraseña %q que NO valida contra el hash guardado", email, pw)
+		}
 	}
 }

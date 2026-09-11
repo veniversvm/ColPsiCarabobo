@@ -37,6 +37,10 @@ type mockPsiRepoSvc struct {
 	GetSitemapDataFunc            func(ctx context.Context) ([]domain.PsiUserModel, error)
 	GetSolvenciesFunc             func(ctx context.Context, id uuid.UUID) ([]domain.PsiUserSolvency, error)
 	CreateWithColDataFunc         func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol []domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error
+	ResetPasswordFunc             func(ctx context.Context, psi *domain.PsiUserModel) error
+	CreateResetTokenFunc          func(ctx context.Context, token *domain.PsiPasswordResetToken) error
+	GetResetTokenByHashFunc       func(ctx context.Context, tokenHash string) (*domain.PsiPasswordResetToken, error)
+	MarkResetTokenUsedFunc        func(ctx context.Context, id uuid.UUID) error
 }
 
 func (m *mockPsiRepoSvc) GetByID(ctx context.Context, id uuid.UUID) (*domain.PsiUserModel, error) {
@@ -86,6 +90,18 @@ func (m *mockPsiRepoSvc) GetSolvencies(ctx context.Context, id uuid.UUID) ([]dom
 }
 func (m *mockPsiRepoSvc) CreateWithColData(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol []domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
 	return m.CreateWithColDataFunc(ctx, psi, col, sol, pg)
+}
+func (m *mockPsiRepoSvc) ResetPassword(ctx context.Context, psi *domain.PsiUserModel) error {
+	return m.ResetPasswordFunc(ctx, psi)
+}
+func (m *mockPsiRepoSvc) CreateResetToken(ctx context.Context, token *domain.PsiPasswordResetToken) error {
+	return m.CreateResetTokenFunc(ctx, token)
+}
+func (m *mockPsiRepoSvc) GetResetTokenByHash(ctx context.Context, tokenHash string) (*domain.PsiPasswordResetToken, error) {
+	return m.GetResetTokenByHashFunc(ctx, tokenHash)
+}
+func (m *mockPsiRepoSvc) MarkResetTokenUsed(ctx context.Context, id uuid.UUID) error {
+	return m.MarkResetTokenUsedFunc(ctx, id)
 }
 
 // mockMailSvc simula la pasarela de envíos SMTP (Protocolo Fire-and-Forget).

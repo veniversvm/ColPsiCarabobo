@@ -322,6 +322,11 @@ export default function ProfilePage() {
       setAvatarFile(null);
       setFiles({});
       refetch();
+
+      // Se cambió la contraseña: despejar el aviso de contraseña temporal.
+      if (form.new_password_1) {
+        sessionStorage.removeItem("colpsi_must_change");
+      }
     } catch (err: any) {
       setMessage({
         type: "error",

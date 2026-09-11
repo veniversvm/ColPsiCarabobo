@@ -102,6 +102,11 @@ func SetupPsiRoutes(router fiber.Router, psiRepo domain.PsiUserRepository, admin
 	// Login con rate limiting — 10 intentos por IP cada 15 minutos
 	psiGroup.Post("/login", middleware.NoStore(), middleware.AuthRateLimiter(), h.Login)
 	psiGroup.Post("/login-library", middleware.NoStore(), middleware.AuthRateLimiter(), h.LoginLibrary)
+
+	// Recuperación de contraseña — rate limiting compartido (anti-bombardero de correos)
+	psiGroup.Post("/forgot-password", middleware.NoStore(), middleware.AuthRateLimiter(), h.RequestPasswordReset)
+	psiGroup.Post("/reset-password", middleware.NoStore(), middleware.AuthRateLimiter(), h.ResetPassword)
+
 	psiGroup.Get("/directory", h.SearchDirectory)
 	psiGroup.Get("/:id", h.GetPublicProfile)
 }

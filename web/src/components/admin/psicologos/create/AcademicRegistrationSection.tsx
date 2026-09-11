@@ -1,4 +1,5 @@
 import { PsicologoForm } from "~/types/admin";
+import FlatDatePicker from "~/components/ui/FlatDatePicker";
 
 // web/src/components/admin/psicologos/create/AcademicRegistrationSection.tsx
 interface Props {
@@ -7,10 +8,10 @@ interface Props {
 }
 
 export function AcademicRegistrationSection(props: Props) {
-  const inputClass = "w-full bg-gray-50 border-2 border-transparent focus:border-colpsi-blue rounded-xl px-4 py-2.5 outline-none";
+  const inputClass = "w-full bg-colpsi-surface border-2 border-transparent focus:border-colpsi-blue rounded-xl px-4 py-2.5 outline-none";
 
   return (
-    <section class="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100">
+    <section class="bg-white rounded-[2rem] p-6 shadow-sm border border-colpsi-border">
       <h2 class="text-lg font-black text-colpsi-blue mb-4 border-l-4 border-colpsi-yellow pl-3">Registro Académico Base</h2>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="space-y-1 md:col-span-2">
@@ -25,12 +26,10 @@ export function AcademicRegistrationSection(props: Props) {
         </div>
         <div class="space-y-1">
           <label class="text-[10px] font-black text-gray-400 uppercase ml-1">Fecha de Egreso <span class="text-red-500">*</span></label>
-          <input 
-            type="date" 
-            required 
-            value={props.form.graduate_date} 
-            onInput={(e) => props.setForm("graduate_date", e.currentTarget.value)} 
-            class={inputClass} 
+          <FlatDatePicker
+            value={props.form.graduate_date}
+            onChange={(v) => props.setForm("graduate_date", v)}
+            class={inputClass}
           />
         </div>
         <div class="space-y-1 md:col-span-3">
@@ -43,7 +42,7 @@ export function AcademicRegistrationSection(props: Props) {
           />
         </div>
 
-        <div class="col-span-full mt-4"><hr class="border-gray-100"/></div>
+        <div class="col-span-full mt-4"><hr class="border-colpsi-border"/></div>
         
         <div class="space-y-1">
           <label class="text-[10px] font-black text-gray-400 uppercase ml-1">Estado de Registro <span class="text-red-500">*</span></label>
@@ -57,12 +56,10 @@ export function AcademicRegistrationSection(props: Props) {
         </div>
         <div class="space-y-1">
           <label class="text-[10px] font-black text-gray-400 uppercase ml-1">Fecha de Registro <span class="text-red-500">*</span></label>
-          <input 
-            type="date" 
-            required 
-            value={props.form.register_title_date} 
-            onInput={(e) => props.setForm("register_title_date", e.currentTarget.value)} 
-            class={inputClass} 
+          <FlatDatePicker
+            value={props.form.register_title_date}
+            onChange={(v) => props.setForm("register_title_date", v)}
+            class={inputClass}
           />
         </div>
         <div class="space-y-1">
