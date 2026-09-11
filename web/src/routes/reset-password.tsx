@@ -19,7 +19,9 @@ export default function ResetPasswordPage() {
   const [error, setError] = createSignal<string | null>(null);
   const [done, setDone] = createSignal(false);
 
-  const token = () => (searchParams().token as string) || "";
+  // useSearchParams() devuelve [location.query, setter]: query es un memo
+  // reactivo (acceso por propiedad), NO una función.
+  const token = () => (searchParams.token as string) || "";
 
   const handleSubmit = async (e: Event) => {
     e.preventDefault();
