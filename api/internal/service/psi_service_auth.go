@@ -119,7 +119,7 @@ func (s *PsiService) LoginLibrary(ctx context.Context, identifier, password stri
 		return "", nil, err
 	}
 
-	absID, absErr := s.sincronizarConAudiobookshelf(ctx, psi.Username, password, psi.Email)
+	absID, absErr := s.sincronizarConAudiobookshelf(ctx, AbsUsernameFor(psi), password, psi.Email)
 	if absErr != nil {
 		log.Warn().Err(absErr).Str("component", "psi_service_auth").Msg("Error sincronizando con Audiobookshelf")
 	} else if absID != "" {

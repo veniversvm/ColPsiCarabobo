@@ -11,6 +11,7 @@ import (
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/middleware"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/request_structs"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/service"
 	utils "github.com/veniversvm/ColPsiCarabobo/api/internal/utils"
 )
 
@@ -249,6 +250,47 @@ func (h *PsiHandler) ResetPsiPasswordByAdmin(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{"message": "Contraseña reiniciada. La nueva clave temporal fue enviada al correo del psicólogo."})
+}
+
+// SyncAudiobookshelfByAdmin godoc
+// @Summary      Sincronizar cuenta de la Biblioteca Virtual (Admin)
+// @Description  Fuerza la sincronización de la cuenta Audiobookshelf del psicólogo: crea la cuenta si no existe, la reactiva si el agremiado está solvente/activo y la desactiva si perdió el derecho. El username en ABS es el correo del agremiado.
+// @Tags         Administración - Psicólogos
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id path string true "UUID del Psicólogo"
+// @Success      200 {object} map[string]interface{} "message + report de la sincronización (created/reactivated/deactivated/skipped/errors)"
+// @Failure      400 {object} map[string]string "error: ID inválido"
+// @Failure      401 {object} map[string]string "error: No autorizado"
+// @Failure      403 {object} map[string]string "error: Permisos insuficientes"
+// @Failure      404 {object} map[string]string "error: Registro no encontrado"
+// @Failure      503 {object} map[string]string "error: Biblioteca digital no disponible"
+// @Router       /admin/psi/{id}/sync-abs [post]
+func (h *PsiHandler) SyncAudiobookshelfByAdmin(c *fiber.Ctx) error {
+	admin, err := middleware.GetAuthenticatedAdmin(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
+	}
+	targetID, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ID de psicólogo inválido"})
+	}
+
+	report, err := h.service.SyncAudiobookshelfForPsi(c.UserContext(), admin, targetID)
+	if err != nil {
+		if errors.Is(err, domain.ErrPsiNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Psicólogo no encontrado"})
+		}
+		if errors.Is(err, service.ErrAbsUnauthorized) || errors.Is(err, service.ErrAbsUnavailable) {
+			return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{"error": "La biblioteca digital no está disponible"})
+		}
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Cuenta de la biblioteca virtual sincronizada correctamente.",
+		"report":  report,
+	})
 }
 
 // ListAllPsis godoc

@@ -55,6 +55,7 @@ func SetupPsiRoutes(router fiber.Router, psiRepo domain.PsiUserRepository, admin
 	adminGroup.Patch("/:id", h.UpdatePsiByAdmin)
 	adminGroup.Delete("/:id", h.DeletePsiByAdmin)
 	adminGroup.Post("/:id/reset-password", h.ResetPsiPasswordByAdmin)
+	adminGroup.Post("/:id<uuid>/sync-abs", h.SyncAudiobookshelfByAdmin)
 
 	// Expediente deontológico (acceso exclusivo admin)
 	adminGroup.Get("/:id<uuid>/deontologia", h.ListDeontologiaByAdmin)

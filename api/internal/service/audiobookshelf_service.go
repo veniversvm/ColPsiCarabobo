@@ -25,7 +25,7 @@ import (
 // datos del usuario ABS involucrado.
 type AudiobookshelfAccess struct {
 	URL      string // URL pública de auto-login para abrir en el navegador
-	Username string // Usuario en Audiobookshelf (psi_<ci>)
+	Username string // Usuario en Audiobookshelf (correo canónico del agremiado)
 	UserID   string // Id interno de la cuenta en Audiobookshelf
 	Created  bool   // true si la cuenta se creó en esta llamada
 }
@@ -77,6 +77,7 @@ type AbsUser struct {
 	ID       string
 	Username string
 	IsActive bool
+	Type     string // tipo ABS: "user" (agremiado) o "root"/"admin" (no gestionables)
 }
 
 type absLoginResponse struct {
@@ -84,28 +85,49 @@ type absLoginResponse struct {
 }
 
 // GetAccess garantiza la cuenta del agremiado en ABS y devuelve la URL de
-// auto-login. username debe ser el nombre único del usuario (psi_<ci>).
+// auto-login. username debe ser el nombre canónico del usuario (su correo).
+//
+// Además de crear la cuenta si no existe, repara cuentas que no aceptan el
+// login directo: las desactivadas por haber dejado de ser solventes se
+// reactivan (revisión pendiente de nueva solvencia) y las creadas con la clave
+// real por el flujo legacy se re-sincronizan con la clave derivada. Así el
+// acceso nunca queda bloqueado por un estado ABS desactualizado.
 func (s *AudiobookshelfService) GetAccess(ctx context.Context, username string) (*AudiobookshelfAccess, error) {
 	password := s.passwordFor(username)
 
-	// 1) Intento directo: la cuenta ya existe y la clave derivada es válida.
+	// 1) Intento directo: la cuenta existe, está activa y la clave derivada es válida.
 	user, err := s.login(ctx, username, password)
 	if err == nil {
 		return s.buildAccess(user, false)
 	}
 
-	// 2) La cuenta no existe (o la clave no coincide): se aprovisiona.
+	// 2) Login directo fallido: se diagnostica con privilegios de admin.
 	adminToken, err := s.adminLogin(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	_, created, err := s.createUser(ctx, adminToken, username, password)
+	// 2a) La cuenta existe pero está inactiva o con otra clave: se reactiva y
+	//     re-sincroniza la clave derivada para restablecer el acceso.
+	existing, err := s.findUser(ctx, adminToken, username)
 	if err != nil {
-		// Carrera entre dos peticiones simultáneas: otra ya la creó.
-		if !strings.Contains(strings.ToLower(err.Error()), "already taken") {
+		return nil, err
+	}
+	if existing != nil {
+		if err := s.RefreshUserCredentials(ctx, existing.ID, username); err != nil {
 			return nil, err
 		}
+		user, err = s.login(ctx, username, password)
+		if err != nil {
+			return nil, fmt.Errorf("%w: no se pudo autenticar la cuenta existente", ErrAbsUnavailable)
+		}
+		return s.buildAccess(user, false)
+	}
+
+	// 2b) No existe: se crea al vuelo (maneja la carrera "already taken").
+	_, created, err := s.createUser(ctx, adminToken, username, password)
+	if err != nil {
+		return nil, err
 	}
 
 	user, err = s.login(ctx, username, password)
@@ -227,6 +249,7 @@ func (s *AudiobookshelfService) listUsers(ctx context.Context, adminToken string
 			ID       string `json:"id"`
 			Username string `json:"username"`
 			IsActive bool   `json:"isActive"`
+			Type     string `json:"type"`
 		} `json:"users"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
@@ -235,14 +258,74 @@ func (s *AudiobookshelfService) listUsers(ctx context.Context, adminToken string
 
 	users := make([]AbsUser, 0, len(parsed.Users))
 	for _, u := range parsed.Users {
-		users = append(users, AbsUser{ID: u.ID, Username: u.Username, IsActive: u.IsActive})
+		users = append(users, AbsUser{ID: u.ID, Username: u.Username, IsActive: u.IsActive, Type: u.Type})
 	}
 	return users, nil
+}
+
+// findUser busca una cuenta ABS por username con un token admin ya obtenido.
+// Devuelve nil si no existe.
+func (s *AudiobookshelfService) findUser(ctx context.Context, adminToken, username string) (*AbsUser, error) {
+	users, err := s.listUsers(ctx, adminToken)
+	if err != nil {
+		return nil, err
+	}
+	for i := range users {
+		if users[i].Username == username {
+			return &users[i], nil
+		}
+	}
+	return nil, nil
 }
 
 // DeactivateUser desactiva la cuenta ABS de un agremiado que dejó de ser
 // solvente. PATCH /api/users/{id} con isActive=false.
 func (s *AudiobookshelfService) DeactivateUser(ctx context.Context, userID string) error {
+	adminToken, err := s.adminLogin(ctx)
+	if err != nil {
+		return err
+	}
+	return s.DeactivateUserWithToken(ctx, adminToken, userID)
+}
+
+// DeactivateUserWithToken igual que DeactivateUser pero reutilizando un token
+// admin ya obtenido. Se usa en los loops masivos de sync: un login por cuenta
+// agota el rate limiter de /login de ABS y deja cuentas sin procesar.
+func (s *AudiobookshelfService) DeactivateUserWithToken(ctx context.Context, adminToken, userID string) error {
+	return s.setUserActive(ctx, adminToken, userID, false)
+}
+
+// ReactivateUser reactiva la cuenta ABS de un agremiado que recuperó la
+// solvencia. PATCH /api/users/{id} con isActive=true.
+func (s *AudiobookshelfService) ReactivateUser(ctx context.Context, userID string) error {
+	adminToken, err := s.adminLogin(ctx)
+	if err != nil {
+		return err
+	}
+	return s.ReactivateUserWithToken(ctx, adminToken, userID)
+}
+
+// ReactivateUserWithToken igual que ReactivateUser pero reutilizando un token
+// admin ya obtenido (para loops masivos de sync).
+func (s *AudiobookshelfService) ReactivateUserWithToken(ctx context.Context, adminToken, userID string) error {
+	return s.setUserActive(ctx, adminToken, userID, true)
+}
+
+// setUserActive activa o desactiva una cuenta ABS vía PATCH /api/users/{id}.
+func (s *AudiobookshelfService) setUserActive(ctx context.Context, adminToken, userID string, active bool) error {
+	if userID == "" {
+		return fmt.Errorf("%w: id de usuario vacío", ErrAbsUnavailable)
+	}
+	body, _ := json.Marshal(map[string]bool{"isActive": active})
+	return s.patchUser(ctx, adminToken, userID, body)
+}
+
+// RefreshUserCredentials reactiva una cuenta ABS existente y le re-sincroniza
+// la clave derivada del secreto global (PATCH /api/users/{id}). Se usa cuando
+// el login directo con la clave derivada falla: cuentas creadas por el flujo
+// legacy con la clave real, o cuentas desactivadas cuyo agremiado recuperó la
+// solvencia. La clave nunca se expone al cliente.
+func (s *AudiobookshelfService) RefreshUserCredentials(ctx context.Context, userID, username string) error {
 	if userID == "" {
 		return fmt.Errorf("%w: id de usuario vacío", ErrAbsUnavailable)
 	}
@@ -250,8 +333,15 @@ func (s *AudiobookshelfService) DeactivateUser(ctx context.Context, userID strin
 	if err != nil {
 		return err
 	}
+	body, _ := json.Marshal(map[string]interface{}{
+		"isActive": true,
+		"password": s.passwordFor(username),
+	})
+	return s.patchUser(ctx, adminToken, userID, body)
+}
 
-	body, _ := json.Marshal(map[string]bool{"isActive": false})
+// patchUser ejecuta un PATCH sobre una cuenta ABS con el token admin.
+func (s *AudiobookshelfService) patchUser(ctx context.Context, adminToken, userID string, body []byte) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, s.baseURL+"/api/users/"+userID, bytes.NewReader(body))
 	if err != nil {
 		return err

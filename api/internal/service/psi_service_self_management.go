@@ -339,23 +339,22 @@ func (s *PsiService) UpdateProfileSelf(
 		return nil, err
 	}
 
+	// La cuenta ABS se identifica por el correo del agremiado (no por el
+	// username). Solo un cambio de email se propaga a la biblioteca: renombra
+	// la cuenta de ABS para conservar progreso/librerías. La clave de ABS
+	// deriva del secreto global y un cambio de username no afecta ABS.
 	var absUsername *string
 	var absEmail *string
-	var absPassword *string
 
-	if req.Username != nil {
-		absUsername = req.Username
-	}
 	if req.Email != nil {
-		absEmail = req.Email
-	}
-	if req.NewPassword1 != nil && *req.NewPassword1 != "" {
-		absPassword = req.NewPassword1
+		newEmail := strings.ToLower(strings.TrimSpace(*req.Email))
+		absUsername = &newEmail
+		absEmail = &newEmail
 	}
 
-	if absUsername != nil || absEmail != nil || absPassword != nil {
-		if absErr := s.actualizarEnAudiobookshelf(ctx, psi.AudioBookShellId, absUsername, absPassword, absEmail); absErr != nil {
-			log.Warn().Err(absErr).Str("component", "psi_service_self_management").Msg("Error al sincronizar actualización con Audiobookshelf")
+	if absUsername != nil || absEmail != nil {
+		if absErr := s.actualizarEnAudiobookshelf(ctx, psi.AudioBookShellId, absUsername, nil, absEmail); absErr != nil {
+			log.Warn().Err(absErr).Str("component", "psi_service_self_management").Msg("Error al sincronizar el email con Audiobookshelf")
 		}
 	}
 

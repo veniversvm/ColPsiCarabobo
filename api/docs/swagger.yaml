@@ -4220,6 +4220,60 @@ paths:
       summary: Reiniciar clave de un psicólogo
       tags:
       - Administración - Psicólogos
+  /admin/psi/{id}/sync-abs:
+    post:
+      description: 'Fuerza la sincronización de la cuenta Audiobookshelf del psicólogo:
+        crea la cuenta si no existe, la reactiva si el agremiado está solvente/activo
+        y la desactiva si perdió el derecho. El username en ABS es el correo del agremiado.'
+      parameters:
+      - description: UUID del Psicólogo
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: message + report de la sincronización (created/reactivated/deactivated/skipped/errors)
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 'error: ID inválido'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: 'error: No autorizado'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: 'error: Permisos insuficientes'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: 'error: Registro no encontrado'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "503":
+          description: 'error: Biblioteca digital no disponible'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Sincronizar cuenta de la Biblioteca Virtual (Admin)
+      tags:
+      - Administración - Psicólogos
   /admin/psi/birthdays:
     get:
       description: Retorna los agremiados que cumplen años hoy o en los próximos días

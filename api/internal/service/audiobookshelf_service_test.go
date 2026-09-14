@@ -16,22 +16,37 @@ import (
 // fakeAbs emula la API de Audiobookshelf para las pruebas.
 type fakeAbs struct {
 	mu          sync.Mutex
-	users       map[string]string      // username -> password
-	usersActive map[string]bool        // username -> isActive
-	adminUser   string                 // username del admin
-	adminPass   string                 // password del admin
-	loginCalls  int                    // contador de /login
-	createCalls int                    // contador de POST /api/users
-	deactCalls  int                    // contador de PATCH /api/users/:id
-	usersIDs    map[string]string      // username -> id
+	users       map[string]string // username -> password
+	usersActive map[string]bool   // username -> isActive
+	usersType   map[string]string // username -> tipo ABS (user/root/admin)
+	adminUser   string            // username del admin
+	adminPass   string            // password del admin
+	loginCalls  int               // contador de /login
+	createCalls int               // contador de POST /api/users
+	patchCalls  int               // contador de PATCH /api/users/:id (reactivación y clave)
+	deactCalls  int               // contador de PATCH isActive=false
+	reactCalls  int               // contador de PATCH isActive=true
+	usersIDs    map[string]string // username -> id
 }
 
 func newFakeAbs() *fakeAbs {
 	return &fakeAbs{
 		users:       map[string]string{},
 		usersActive: map[string]bool{},
+		usersType:   map[string]string{},
 		usersIDs:    map[string]string{},
 	}
+}
+
+// tipo devuelve el tipo ABS de un usuario: por defecto "user", salvo el admin.
+func (f *fakeAbs) tipo(username string) string {
+	if t, ok := f.usersType[username]; ok {
+		return t
+	}
+	if username == f.adminUser {
+		return "root"
+	}
+	return "user"
 }
 
 func (f *fakeAbs) handler() http.Handler {
@@ -115,6 +130,7 @@ func (f *fakeAbs) handler() http.Handler {
 				"id":       f.usersIDs[username],
 				"username": username,
 				"isActive": f.usersActive[username],
+				"type":     f.tipo(username),
 			})
 		}
 		json.NewEncoder(w).Encode(map[string]interface{}{"users": users})
@@ -134,7 +150,7 @@ func (f *fakeAbs) handler() http.Handler {
 		}
 		f.mu.Lock()
 		defer f.mu.Unlock()
-		f.deactCalls++
+		f.patchCalls++
 		if r.Header.Get("Authorization") != "Bearer tok-"+f.adminUser {
 			w.WriteHeader(http.StatusUnauthorized)
 			w.Write([]byte(`{"error":"Unauthorized"}`))
@@ -149,12 +165,23 @@ func (f *fakeAbs) handler() http.Handler {
 			}
 		}
 		var body struct {
-			IsActive bool `json:"isActive"`
+			IsActive *bool  `json:"isActive"`
+			Password string `json:"password"`
 		}
 		json.NewDecoder(r.Body).Decode(&body)
-		f.usersActive[username] = body.IsActive
+		if body.IsActive != nil {
+			f.usersActive[username] = *body.IsActive
+			if *body.IsActive {
+				f.reactCalls++
+			} else {
+				f.deactCalls++
+			}
+		}
+		if body.Password != "" {
+			f.users[username] = body.Password
+		}
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"user":{"id":"` + id + `","isActive":` + map[bool]string{true: "true", false: "false"}[body.IsActive] + `}}`))
+		w.Write([]byte(`{"user":{"id":"` + id + `","isActive":true}}`))
 	})
 
 	return mux
@@ -334,4 +361,71 @@ func TestDeactivateUser_AdminUnauthorized(t *testing.T) {
 	err := svc.DeactivateUser(context.Background(), "id-x")
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "falta configurar")
+}
+
+func TestReactivateUser(t *testing.T) {
+	fake := newFakeAbs()
+	fake.adminUser = "colpsi-bot"
+	fake.adminPass = "adminpass"
+
+	svc, _ := buildSvc(t, fake)
+	fake.users["psi_1111"] = svc.passwordFor("psi_1111")
+	fake.usersActive["psi_1111"] = false
+	fake.usersIDs["psi_1111"] = "id-psi_1111"
+
+	err := svc.ReactivateUser(context.Background(), "id-psi_1111")
+	require.NoError(t, err)
+	require.Equal(t, 1, fake.reactCalls)
+	require.Equal(t, 0, fake.deactCalls)
+	require.True(t, fake.usersActive["psi_1111"])
+}
+
+func TestReactivateUser_AdminUnauthorized(t *testing.T) {
+	fake := newFakeAbs()
+	// admin sin credenciales configuradas en el servicio
+	svc, _ := buildSvc(t, fake)
+	err := svc.ReactivateUser(context.Background(), "id-x")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "falta configurar")
+}
+
+func TestGetAccess_ReactivatesExistingInactive(t *testing.T) {
+	fake := newFakeAbs()
+	fake.adminUser = "colpsi-bot"
+	fake.adminPass = "adminpass"
+
+	svc, _ := buildSvc(t, fake)
+	// El usuario existe pero su cuenta quedó desactivada (dejó de ser solvente
+	// y recuperó la solvencia). GetAccess debe reactivarla y autenticar.
+	fake.users["psi_12345678"] = svc.passwordFor("psi_12345678")
+	fake.usersActive["psi_12345678"] = false
+	fake.usersIDs["psi_12345678"] = "id-psi_12345678"
+
+	access, err := svc.GetAccess(context.Background(), "psi_12345678")
+	require.NoError(t, err)
+	require.False(t, access.Created)
+	require.Equal(t, "id-psi_12345678", access.UserID)
+	require.Equal(t, "https://abs.public/login/?accessToken=tok-psi_12345678", access.URL)
+	require.True(t, fake.usersActive["psi_12345678"])
+	require.Equal(t, 1, fake.reactCalls)
+}
+
+func TestGetAccess_ResyncsLegacyPassword(t *testing.T) {
+	fake := newFakeAbs()
+	fake.adminUser = "colpsi-bot"
+	fake.adminPass = "adminpass"
+
+	svc, _ := buildSvc(t, fake)
+	// Cuenta creada por el flujo legacy con la clave real (≠ derivada): el
+	// login directo falla y GetAccess re-sincroniza la clave derivada.
+	fake.users["psi_12345678"] = "clave-real-legacy"
+	fake.usersActive["psi_12345678"] = true
+	fake.usersIDs["psi_12345678"] = "id-psi_12345678"
+
+	access, err := svc.GetAccess(context.Background(), "psi_12345678")
+	require.NoError(t, err)
+	require.Equal(t, "id-psi_12345678", access.UserID)
+	require.Equal(t, svc.passwordFor("psi_12345678"), fake.users["psi_12345678"])
+	require.True(t, fake.usersActive["psi_12345678"])
+	require.Equal(t, 1, fake.patchCalls)
 }

@@ -991,12 +991,13 @@ func (r *psiRepo) GetSitemapData(ctx context.Context) ([]domain.PsiUserModel, er
 
 // GetAllForABSSync recupera los datos mínimos de todos los agremiados (incluidos
 // los soft-deleted, vía Unscoped) para reconciliar las cuentas de Audiobookshelf.
-// El campo DeletedAt se trae explícitamente para saber si el registro fue borrado.
+// El campo DeletedAt se trae explícitamente para saber si el registro fue borrado
+// y Email para derivar el username ABS (el correo del agremiado).
 func (r *psiRepo) GetAllForABSSync(ctx context.Context) ([]domain.PsiUserModel, error) {
 	var users []domain.PsiUserModel
 	err := r.db.WithContext(ctx).
 		Unscoped().
-		Select("id, ci, solvent, is_active, audio_book_shell_id, deleted_at").
+		Select("id, ci, email, solvent, is_active, audio_book_shell_id, deleted_at").
 		Find(&users).Error
 	return users, err
 }

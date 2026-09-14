@@ -2687,6 +2687,86 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/psi/{id}/sync-abs": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Fuerza la sincronización de la cuenta Audiobookshelf del psicólogo: crea la cuenta si no existe, la reactiva si el agremiado está solvente/activo y la desactiva si perdió el derecho. El username en ABS es el correo del agremiado.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Psicólogos"
+                ],
+                "summary": "Sincronizar cuenta de la Biblioteca Virtual (Admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del Psicólogo",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "message + report de la sincronización (created/reactivated/deactivated/skipped/errors)",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "error: ID inválido",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "error: No autorizado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "error: Permisos insuficientes",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "error: Registro no encontrado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "error: Biblioteca digital no disponible",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/admin/roles/presets": {
             "get": {
                 "security": [

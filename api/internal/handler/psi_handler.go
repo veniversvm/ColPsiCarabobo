@@ -353,7 +353,7 @@ func (h *PsiHandler) GetAudiobookshelfAccess(c *fiber.Ctx) error {
 		})
 	}
 
-	username := fmt.Sprintf("psi_%d", psi.CI)
+	username := service.AbsUsernameFor(psi)
 	access, err := h.abs.GetAccess(c.UserContext(), username)
 	if err != nil {
 		log.Warn().Err(err).Str("component", "psi-handler").
@@ -484,7 +484,9 @@ func (h *PsiHandler) Logout(c *fiber.Ctx) error {
 //
 // @Summary      Validar sesión de psicólogo
 // @Description  Devuelve 200 si el token JWT es válido y la sesión sigue activa;
-//               devuelve 401 (via el middleware ProtectedPsiUser) si fue revocada o expiró.
+//
+//	devuelve 401 (via el middleware ProtectedPsiUser) si fue revocada o expiró.
+//
 // @Tags         Psicólogos - Sesión
 // @Produce      json
 // @Security     BearerAuth

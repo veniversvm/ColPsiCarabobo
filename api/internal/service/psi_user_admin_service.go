@@ -722,26 +722,27 @@ func (s *PsiService) UpdatePsiByAdmin(
 		return fmt.Errorf("error al persistir los cambios: %w", err)
 	}
 
-	// 👇 NUEVA SINCRONIZACIÓN ASÍNCRONA TRAS ÉXITO EN DB (Eventual Consistency) 👇
+	// La cuenta ABS se identifica por el correo del agremiado (no por su
+	// username de login): solo un cambio de email se propaga a la biblioteca
+	// (renombra la cuenta para conservar progreso/librerías). La contraseña de
+	// ABS deriva del secreto global y este panel no la modifica.
 	var absUsername *string
 	var absEmail *string
 
-	// Validamos si el admin solicitó cambiar las credenciales
-	if req.Username != nil {
-		absUsername = req.Username
-	}
 	if req.Email != nil {
-		absEmail = req.Email
+		newEmail := strings.ToLower(strings.TrimSpace(*req.Email))
+		absUsername = &newEmail
+		absEmail = &newEmail
 	}
 
-	// Notificación de Microservicio: Si hubo cambios en credenciales base,
-	// se dispara una actualización hacia la biblioteca virtual.
+	// Notificación de Microservicio: Si hubo cambios en el correo, se dispara
+	// una actualización hacia la biblioteca virtual.
 	if absUsername != nil || absEmail != nil {
-		// Pasamos nil en la contraseña porque el admin no la está modificando en este panel
+		// Pasamos nil en la contraseña porque la clave deriva del secreto global.
 		if absErr := s.actualizarEnAudiobookshelf(ctx, psi.AudioBookShellId, absUsername, nil, absEmail); absErr != nil {
 			// Logueamos el error interno pero no bloqueamos el retorno exitoso de la petición
 			// (Degradación Elegante)
-			log.Warn().Err(absErr).Str("component", "psi_user_admin_service").Msg("Error al sincronizar actualización del administrador con Audiobookshelf")
+			log.Warn().Err(absErr).Str("component", "psi_user_admin_service").Msg("Error al sincronizar el email del administrador con Audiobookshelf")
 		}
 	}
 

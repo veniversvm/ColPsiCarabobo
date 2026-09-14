@@ -75,6 +75,12 @@ const resetPasswordServer = action(async (id: string) => {
   return await apiPost(`/admin/psi/${id}/reset-password`, {});
 });
 
+const syncAbsServer = action(async (id: string) => {
+  "use server";
+  const { apiPost } = await import("~/lib/api");
+  return await apiPost(`/admin/psi/${id}/sync-abs`, {});
+});
+
 const addDeontologiaServer = action(
   async (params: { id: string; content: string }) => {
     "use server";
@@ -202,6 +208,7 @@ export default function AdminEditPsiPage() {
   const runUpdateAction = useAction(updateAdminPsiServer);
   const runDeletePicture = useAction(deleteProfilePictureServer);
   const runResetPassword = useAction(resetPasswordServer);
+  const runSyncAbs = useAction(syncAbsServer);
   const [profile, { refetch }] = createResource(() =>
     apiGet<any>(`/admin/psi/${params.id}`),
   );
@@ -220,6 +227,7 @@ export default function AdminEditPsiPage() {
   const [saving, setSaving] = createSignal(false);
   const [deletingPicture, setDeletingPicture] = createSignal(false);
   const [resettingPassword, setResettingPassword] = createSignal(false);
+  const [syncingAbs, setSyncingAbs] = createSignal(false);
   const [message, setMessage] = createSignal<{
     type: "success" | "error";
     text: string;
@@ -417,6 +425,43 @@ export default function AdminEditPsiPage() {
     }
   };
 
+  const handleSyncAbs = async () => {
+    const id = params.id ?? "";
+    if (!id || syncingAbs()) return;
+    setSyncingAbs(true);
+    setMessage(null);
+    try {
+      const resp = await runSyncAbs(id);
+      const report = resp?.report;
+      const bits: string[] = [];
+      if (report) {
+        if (report.created > 0) bits.push(`${report.created} creada`);
+        if (report.reactivated > 0) bits.push(`${report.reactivated} reactivada`);
+        if (report.deactivated > 0) bits.push(`${report.deactivated} desactivada`);
+        if (report.skipped > 0) bits.push(`${report.skipped} sin cambios`);
+      }
+      const detail = bits.length
+        ? ` (${bits.join(", ")})`
+        : report?.errors?.length
+          ? ` (${report.errors.length} error/es)`
+          : ".";
+      setMessage({
+        type: "success",
+        text: `Cuenta de la Biblioteca Virtual sincronizada${detail}`,
+      });
+    } catch (err: any) {
+      const msg = err?.message || String(err);
+      setMessage({
+        type: "error",
+        text:
+          msg.replace(/^.*?ApiError:\s*/i, "") ||
+          "Error al sincronizar la biblioteca.",
+      });
+    } finally {
+      setSyncingAbs(false);
+    }
+  };
+
   const handleResetPassword = async () => {
     const id = params.id ?? "";
     if (
@@ -472,6 +517,8 @@ export default function AdminEditPsiPage() {
                 onDeletePicture={handleDeletePicture}
                 onResetPassword={handleResetPassword}
                 resettingPassword={resettingPassword()}
+                onSyncAbs={handleSyncAbs}
+                syncingAbs={syncingAbs()}
               />
             </PanelSection>
             <PanelSection title="Estatus Administrativo" accent="border-yellow-400">
