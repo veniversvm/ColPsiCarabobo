@@ -58,8 +58,11 @@ func NewAdminService(repo domain.UserAdminRepository, mailService IMailService) 
 // queda criptográficamente inservible de manera instantánea.
 func (s *AdminService) Login(ctx context.Context, identifier, password string) (string, *domain.UserAdmin, error) {
 
-	// Sanitización de entrada (Evita fallos por Capitalization en DB)
-	lowercased := strings.ToLower(identifier)
+	// Sanitización de entrada (Evita fallos por Capitalization en DB).
+	// Se recorre el identifier de espacios y la contraseña de espacios al
+	// inicio/final para evitar fallos por pegado con espacios involuntarios.
+	lowercased := strings.ToLower(strings.TrimSpace(identifier))
+	password = strings.TrimSpace(password)
 
 	admin, err := s.repo.GetByIdentifier(ctx, lowercased)
 	if err != nil {

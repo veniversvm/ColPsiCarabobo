@@ -20,7 +20,10 @@ import (
 func (s *PsiService) Login(ctx context.Context, identifier, password string) (string, *domain.PsiUserModel, error) {
 	// Sanitización de entrada: los correos/usernames se guardan en minúsculas,
 	// así que el identifier se normaliza para evitar fallos por capitalización.
-	identifier = strings.ToLower(identifier)
+	// La contraseña se recorta de espacios al inicio/final para evitar fallos
+	// por pegado con espacios involuntarios.
+	identifier = strings.ToLower(strings.TrimSpace(identifier))
+	password = strings.TrimSpace(password)
 	psi, err := s.repo.GetByIdentifier(ctx, identifier)
 	if err != nil {
 		return "", nil, errors.New("credenciales inválidas")
@@ -76,7 +79,8 @@ type AudiobookshelfUserResponse struct {
 
 // LoginLibrary authenticates a psychologist and syncs the account with Audiobookshelf, returning a library-specific JWT.
 func (s *PsiService) LoginLibrary(ctx context.Context, identifier, password string) (string, *domain.PsiUserModel, error) {
-	identifier = strings.ToLower(identifier)
+	identifier = strings.ToLower(strings.TrimSpace(identifier))
+	password = strings.TrimSpace(password)
 	psi, err := s.repo.GetByIdentifier(ctx, identifier)
 	if err != nil {
 		return "", nil, errors.New("credenciales inválidas")

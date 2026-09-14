@@ -10,18 +10,18 @@ import (
 )
 
 // =========================================================================
-// TEST: AuthRateLimiter (10 req / 15 min)
+// TEST: AuthRateLimiter (15 req / 5 min)
 // =========================================================================
 
 func TestAuthRateLimiter(t *testing.T) {
-	t.Run("10 POST requests permitidas", func(t *testing.T) {
+	t.Run("15 POST requests permitidas", func(t *testing.T) {
 		// Cada llamada a AuthRateLimiter() crea una nueva instancia de limiter
 		app := fiber.New()
 		app.Post("/login", AuthRateLimiter(), func(c *fiber.Ctx) error {
 			return c.Status(200).JSON(fiber.Map{"ok": true})
 		})
 
-		for i := 0; i < 10; i++ {
+		for i := 0; i < 15; i++ {
 			req := httptest.NewRequest("POST", "/login", strings.NewReader(`{"pass":"test"}`))
 			req.Header.Set("Content-Type", "application/json")
 			resp, err := app.Test(req)
@@ -35,20 +35,20 @@ func TestAuthRateLimiter(t *testing.T) {
 		}
 	})
 
-	t.Run("11º POST retorna 429", func(t *testing.T) {
+	t.Run("16º POST retorna 429", func(t *testing.T) {
 		app := fiber.New()
 		app.Post("/login", AuthRateLimiter(), func(c *fiber.Ctx) error {
 			return c.Status(200).JSON(fiber.Map{"ok": true})
 		})
 
-		// Agotar las 10 permits
-		for i := 0; i < 10; i++ {
+		// Agotar las 15 permits
+		for i := 0; i < 15; i++ {
 			req := httptest.NewRequest("POST", "/login", strings.NewReader(`{"pass":"test"}`))
 			req.Header.Set("Content-Type", "application/json")
 			app.Test(req)
 		}
 
-		// 11º request debería ser bloqueada
+		// 16º request debería ser bloqueada
 		req := httptest.NewRequest("POST", "/login", strings.NewReader(`{"pass":"test"}`))
 		req.Header.Set("Content-Type", "application/json")
 		resp, err := app.Test(req)

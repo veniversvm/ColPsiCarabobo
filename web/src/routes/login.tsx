@@ -37,9 +37,10 @@ export default function LoginPage() {
 
     try {
       // 1. Login en Go (Obtenemos el Token)
+      // Username/correo normalizado a minúsculas y contraseña sin espacios al inicio/final.
       const authResponse = await apiPost<{ token: string; must_change_password?: boolean }>("/psi/login", {
-        identifier: identifier(),
-        password: password(),
+        identifier: identifier().trim().toLowerCase(),
+        password: password().trim(),
       });
 
       // 2. Recuperar el perfil completo

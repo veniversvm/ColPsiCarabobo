@@ -65,14 +65,14 @@ func newRateLimiterStorage() fiber.Storage {
 // de autenticación del usuario general (psicólogos).
 //
 // Umbral de Tolerancia:
-// Permite 10 intentos por IP en una ventana temporal de 15 minutos. Este límite
+// Permite 15 intentos por IP en una ventana temporal de 5 minutos. Este límite
 // fue diseñado para ser lo suficientemente holgado para un usuario humano legítimo
 // que olvidó su contraseña, pero matemáticamente inviable para un script que
 // intente romper la seguridad por fuerza bruta.
 func AuthRateLimiter() fiber.Handler {
 	return limiter.New(limiter.Config{
-		Max:        10,
-		Expiration: 15 * time.Minute,
+		Max:        15,
+		Expiration: 5 * time.Minute,
 		Storage:    newRateLimiterStorage(),
 
 		// KeyGenerator define cómo se identifica a un "actor" único.
@@ -88,7 +88,7 @@ func AuthRateLimiter() fiber.Handler {
 		LimitReached: func(c *fiber.Ctx) error {
 			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
 				"error":   "Demasiados intentos de acceso.",
-				"message": "Por seguridad, tu acceso ha sido bloqueado temporalmente. Intenta de nuevo en 15 minutos.",
+				"message": "Por seguridad, tu acceso ha sido bloqueado temporalmente. Intenta de nuevo en 5 minutos.",
 			})
 		},
 

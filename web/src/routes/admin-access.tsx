@@ -35,9 +35,11 @@ export default function AdminLoginPage() {
 
     try {
       // 1. Petición al endpoint (Solo devuelve message y token)
+      // Username/correo normalizado a minúsculas y contraseña sin espacios al inicio/final.
+      const id = identifier().trim().toLowerCase();
       const response = await apiPost<{ message: string, token: string }>("/auth/login", {
-        identifier: identifier(),
-        password: password(),
+        identifier: id,
+        password: password().trim(),
       });
 
       // 2. Extraer el Payload del JWT (Nivel Senior)
@@ -50,8 +52,8 @@ export default function AdminLoginPage() {
       // y el identificador que el usuario tipeó en la pantalla.
       login(response.token, {
         id: payload.user_id,    // El UUID real que inyectamos en Go
-        username: identifier(), // Lo que escribió en el formulario
-        email: identifier(),
+        username: id, // Lo que escribió en el formulario (normalizado)
+        email: id,
         role: "admin",          // El router leerá esto y te dejará pasar
         firstName: "Administrador",
       });

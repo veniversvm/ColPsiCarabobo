@@ -99,7 +99,7 @@ func SetupPsiRoutes(router fiber.Router, psiRepo domain.PsiUserRepository, admin
 	// No necesita token de admin porque es para el sitemap público
 	psiGroup.Get("/public/sitemap-data", h.GetSitemapData)
 
-	// Login con rate limiting — 10 intentos por IP cada 15 minutos
+	// Login con rate limiting — 15 intentos por IP cada 5 minutos
 	psiGroup.Post("/login", middleware.NoStore(), middleware.AuthRateLimiter(), h.Login)
 	psiGroup.Post("/login-library", middleware.NoStore(), middleware.AuthRateLimiter(), h.LoginLibrary)
 
