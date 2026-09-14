@@ -72,6 +72,7 @@ export default function DirectoryPage() {
       setHasMore(false);
     } finally {
       setLoading(false);
+      setTimeout(fillViewport, 0);
     }
   };
 
@@ -83,6 +84,13 @@ export default function DirectoryPage() {
       setShowLoading(false);
     }
   });
+
+  const fillViewport = () => {
+    if (loadingMore() || !hasMore() || loading()) return;
+    if (!sentinel) return;
+    const threshold = (window.innerHeight || 1) + 400;
+    if (sentinel.getBoundingClientRect().top <= threshold) loadMore();
+  };
 
   const loadMore = async () => {
     if (loadingMore() || !hasMore() || loading()) return;
@@ -101,6 +109,7 @@ export default function DirectoryPage() {
       console.error("[directorio] error scroll:", err);
     } finally {
       setLoadingMore(false);
+      setTimeout(fillViewport, 0);
     }
   };
 
