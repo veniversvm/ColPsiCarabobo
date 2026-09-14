@@ -313,8 +313,10 @@ func TestPsiRequestReset_MailHog_TokenReal(t *testing.T) {
 
 	// 2. Usar el token real desde "el correo" para fijar la nueva contraseña.
 	newPassword := "NuevaClaveSegura#2026"
-	if err := svc.ResetPasswordWithToken(context.Background(), rawToken, newPassword); err != nil {
+	if returnedPSI, err := svc.ResetPasswordWithToken(context.Background(), rawToken, newPassword); err != nil {
 		t.Fatalf("ResetPasswordWithToken falló con el token real: %v", err)
+	} else if returnedPSI == nil || returnedPSI.Key == "" {
+		t.Fatal("el reset debe devolver el psicólogo con la nueva Key")
 	}
 
 	if updatedPSI == nil {
@@ -331,7 +333,7 @@ func TestPsiRequestReset_MailHog_TokenReal(t *testing.T) {
 	}
 
 	// 3. Un segundo intento con el mismo token debe fallar (single-use + hash quemado).
-	if err := svc.ResetPasswordWithToken(context.Background(), rawToken, "OtraClave#2026"); err == nil {
+	if _, err := svc.ResetPasswordWithToken(context.Background(), rawToken, "OtraClave#2026"); err == nil {
 		t.Error("reusar el token debe ser rechazado")
 	}
 }

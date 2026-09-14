@@ -4,13 +4,29 @@
 // URL (?token=...) y fija su nueva contraseña. El token es de un solo uso y
 // expira en 1 hora.
 import { createSignal, Show } from "solid-js";
-import { useSearchParams, useNavigate, A } from "@solidjs/router";
+import { getRequestEvent } from "solid-js/web";
+import { useSearchParams, useNavigate, A, action, useAction } from "@solidjs/router";
 import { apiPost, ApiError } from "~/lib/api";
 import { getUserFacingError } from "~/lib/errors";
+import { useAuth } from "~/lib/auth";
 import { PasswordInputComponent } from "~/components/ui/PasswordInput";
+
+const syncJwtCookie = action(async (token: string) => {
+  "use server";
+  if (!token) return { error: "Token requerido." };
+  const event = getRequestEvent();
+  const secure = import.meta.env.PROD === true;
+  event?.response?.headers?.set(
+    "Set-Cookie",
+    `jwt=${token}; HttpOnly; Path=/; Max-Age=86400; SameSite=Strict${secure ? "; Secure" : ""}`,
+  );
+  return { ok: true };
+});
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
+  const { login } = useAuth();
+  const syncJwt = useAction(syncJwtCookie);
   const [searchParams] = useSearchParams();
 
   const [password, setPassword] = createSignal("");
@@ -38,11 +54,35 @@ export default function ResetPasswordPage() {
 
     setLoading(true);
     try {
-      await apiPost("/psi/reset-password", {
+      const res = await apiPost<{
+        token?: string;
+        id?: string;
+        username?: string;
+        email?: string;
+        first_name?: string;
+        last_name?: string;
+      }>("/psi/reset-password", {
         token: token(),
         new_password: password(),
         confirm_password: confirm(),
       });
+
+      // La API emite un JWT fresco tras el reset → auto-login sin volver a
+      // digitar. Se persiste la cookie HttpOnly y se inicia la sesión local.
+      if (res?.token) {
+        await syncJwt(res.token);
+        login(res.token, {
+          id: res.id || "",
+          username: res.username || "",
+          email: res.email || "",
+          role: "psi",
+          firstName: res.first_name || "",
+          lastName: res.last_name || "",
+        });
+        navigate("/psi", { replace: true });
+        return;
+      }
+
       setDone(true);
       setTimeout(() => navigate("/login", { replace: true }), 2500);
     } catch (err) {

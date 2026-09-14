@@ -163,10 +163,24 @@ func (h *PsiHandler) UpdateOwnProfile(c *fiber.Ctx) error {
 
 	h.invalidateDirectory()
 
-	return c.JSON(fiber.Map{
+	// Si cambió la contraseña, la Key de sesión fue rotada y los JWTs previos
+	// quedaron invalidados. Se emite un token fresco firmado con la nueva Key
+	// para no desloguear al usuario activo en el mismo cambio.
+	response := fiber.Map{
 		"message": "Perfil actualizado correctamente",
 		"id":      profile.ID,
-	})
+	}
+	if req.NewPassword1 != nil && *req.NewPassword1 != "" {
+		token, err := service.NewPsiSessionToken(profile)
+		if err != nil {
+			log.Warn().Err(err).Str("component", "psi-handler").Msg("No se pudo emitir token tras rotar la clave")
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Error de sistema al renovar la sesión"})
+		}
+		response["token"] = token
+		response["password_changed"] = true
+	}
+
+	return c.JSON(response)
 }
 
 // SearchDirectory godoc
@@ -734,12 +748,12 @@ func (h *PsiHandler) RequestPasswordReset(c *fiber.Ctx) error {
 
 // ResetPassword godoc
 // @Summary      Fijar nueva contraseña con token
-// @Description  Valida el token de un solo uso y actualiza la contraseña del psicólogo.
+// @Description  Valida el token de un solo uso, actualiza la contraseña del psicólogo y retorna un JWT fresco (auto-login).
 // @Tags         Psicólogos - Auth
 // @Accept       json
 // @Produce      json
 // @Param        request body request_structs.ResetPasswordDTO true "Token y nueva contraseña"
-// @Success      200 {object} map[string]string
+// @Success      200 {object} map[string]interface{}
 // @Failure      400 {object} map[string]string
 // @Failure      429 {object} map[string]string
 // @Router       /psi/reset-password [post]
@@ -757,12 +771,26 @@ func (h *PsiHandler) ResetPassword(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Las contraseñas no coinciden"})
 	}
 
-	err := h.service.ResetPasswordWithToken(c.UserContext(), req.Token, req.NewPassword)
+	psi, err := h.service.ResetPasswordWithToken(c.UserContext(), req.Token, req.NewPassword)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "El enlace es inválido, ya fue utilizado o ha expirado"})
 	}
 
+	// Auto-login: la Key fue rotada en el reset y se emite un JWT fresco con esa
+	// nueva Key para que el usuario quede logueado sin volver a digitar.
+	token, err := service.NewPsiSessionToken(psi)
+	if err != nil {
+		log.Warn().Err(err).Str("component", "psi-handler").Msg("No se pudo emitir token tras reset de contraseña")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "La contraseña se actualizó, pero no se pudo iniciar sesión automáticamente. Intenta ingresar de nuevo."})
+	}
+
 	return c.JSON(fiber.Map{
-		"message": "Tu contraseña fue actualizada correctamente. Ya puedes iniciar sesión.",
+		"message":    "Contraseña actualizada correctamente.",
+		"token":      token,
+		"id":         psi.ID,
+		"username":   psi.Username,
+		"email":      psi.Email,
+		"first_name": psi.FirstName,
+		"last_name":  psi.LastName,
 	})
 }

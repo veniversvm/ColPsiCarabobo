@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 
@@ -304,4 +306,62 @@ func TestPsiService_Logout_AuditTrail(t *testing.T) {
 			t.Error("UpdateById debería apuntar al ID del usuario")
 		}
 	})
+}
+
+// TestNewPsiSessionToken verifica que el helper emite un JWT que se valida con
+// la Key del psicólogo (permitiendo la rotación de clave sin logout) y que
+// expira aproximadamente en 24h.
+func TestNewPsiSessionToken(t *testing.T) {
+	psiID := uuid.Must(uuid.NewV7())
+	psi := &domain.PsiUserModel{
+		ID: psiID,
+		Credentials: domain.Credentials{
+			Username: "psi_auth",
+			Key:      "clave-de-sesion-rotada",
+		},
+	}
+
+	tokenStr, err := NewPsiSessionToken(psi)
+	if err != nil {
+		t.Fatalf("NewPsiSessionToken error: %v", err)
+	}
+	if tokenStr == "" {
+		t.Fatal("el token no debe estar vacío")
+	}
+
+	parsed, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("método de firma inesperado")
+		}
+		return []byte(psi.Key), nil
+	})
+	if err != nil || !parsed.Valid {
+		t.Fatalf("el token debe validarse con la Key del psi: %v", err)
+	}
+
+	claims, ok := parsed.Claims.(jwt.MapClaims)
+	if !ok {
+		t.Fatal("claims inválidos")
+	}
+	if claims["user_id"] != psiID.String() {
+		t.Errorf("user_id = %v, want %s", claims["user_id"], psiID.String())
+	}
+	if claims["role"] != "psi" {
+		t.Errorf("role = %v, want psi", claims["role"])
+	}
+	exp, ok := claims["exp"].(float64)
+	if !ok {
+		t.Fatal("claim exp ausente o malformado")
+	}
+	wantExp := int64(exp)
+	if wantExp-int64(time.Now().Unix()) > 25*3600 || wantExp-int64(time.Now().Unix()) < 23*3600 {
+		t.Errorf("exp debe estar ~24h en el futuro, got %d ahora %d", wantExp, time.Now().Unix())
+	}
+
+	// Un token firmado con la Key vieja no debe validar contra la Key nueva.
+	if _, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+		return []byte("otra-key"), nil
+	}); err == nil {
+		t.Error("el token no debe validar con una Key distinta (rotación)")
+	}
 }

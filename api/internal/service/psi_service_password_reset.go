@@ -84,9 +84,11 @@ func (s *PsiService) RequestPasswordReset(ctx context.Context, email string) err
 
 // ResetPasswordWithToken valida el token de un solo uso, fija la nueva
 // contraseña del psicólogo y rota la Key de sesión (invalidando JWTs).
-func (s *PsiService) ResetPasswordWithToken(ctx context.Context, tokenStr, newPassword string) error {
+// Retorna el psicólogo ya actualizado para que el handler pueda emitir un JWT
+// fresco (auto-login) firmado con la nueva Key.
+func (s *PsiService) ResetPasswordWithToken(ctx context.Context, tokenStr, newPassword string) (*domain.PsiUserModel, error) {
 	if len(newPassword) < 8 {
-		return domain.ErrInvalidRequest
+		return nil, domain.ErrInvalidRequest
 	}
 
 	tokenHash := hashToken(tokenStr)
@@ -94,26 +96,26 @@ func (s *PsiService) ResetPasswordWithToken(ctx context.Context, tokenStr, newPa
 	resetToken, err := s.repo.GetResetTokenByHash(ctx, tokenHash)
 	if err != nil {
 		log.Warn().Err(err).Str("component", "psi_service").Msg("Error buscando token de reset")
-		return domain.ErrInvalidRequest
+		return nil, domain.ErrInvalidRequest
 	}
 	if resetToken == nil {
-		return domain.ErrInvalidRequest
+		return nil, domain.ErrInvalidRequest
 	}
 
 	// Validaciones: token no expirado, no usado
 	if resetToken.UsedAt != nil {
 		log.Warn().Str("component", "psi_service").Msg("Intento de reusar token de reset")
-		return domain.ErrInvalidRequest
+		return nil, domain.ErrInvalidRequest
 	}
 	if time.Now().After(resetToken.ExpiresAt) {
 		log.Warn().Str("component", "psi_service").Msg("Token de reset expirado")
-		return domain.ErrInvalidRequest
+		return nil, domain.ErrInvalidRequest
 	}
 
 	// Hashear la nueva contraseña
 	hashed, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
 	if err != nil {
-		return errors.New("error al procesar la contraseña")
+		return nil, errors.New("error al procesar la contraseña")
 	}
 
 	// Cargar el psicólogo y actualizar credenciales
@@ -125,7 +127,7 @@ func (s *PsiService) ResetPasswordWithToken(ctx context.Context, tokenStr, newPa
 	psi.UpdateById = &psi.ID
 
 	if err := s.repo.ResetPassword(ctx, psi); err != nil {
-		return fmt.Errorf("error al actualizar la contraseña: %w", err)
+		return nil, fmt.Errorf("error al actualizar la contraseña: %w", err)
 	}
 
 	// Marcar token como consumido (single-use)
@@ -133,5 +135,5 @@ func (s *PsiService) ResetPasswordWithToken(ctx context.Context, tokenStr, newPa
 		log.Warn().Err(err).Str("component", "psi_service").Msg("Error al marcar token como usado")
 	}
 
-	return nil
+	return psi, nil
 }
