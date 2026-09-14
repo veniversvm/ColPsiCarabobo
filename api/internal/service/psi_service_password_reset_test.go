@@ -178,12 +178,19 @@ func TestPsiService_ResetPasswordWithToken(t *testing.T) {
 			return nil
 		}
 
-		if err := svc.ResetPasswordWithToken(context.Background(), "raw-token", "NuevaClave123!"); err != nil {
+		returnedPSI, err := svc.ResetPasswordWithToken(context.Background(), "raw-token", "NuevaClave123!")
+		if err != nil {
 			t.Fatalf("error inesperado: %v", err)
 		}
 
 		if updatedPSI == nil {
 			t.Fatal("no se actualizó el psicólogo")
+		}
+		if returnedPSI == nil {
+			t.Fatal("el reset debe devolver el psicólogo actualizado")
+		}
+		if returnedPSI.Key == "" || returnedPSI.Key != updatedPSI.Key {
+			t.Error("el psicólogo retornado debe traer la nueva Key rotada")
 		}
 		if updatedPSI.Password == string(hashedOld) {
 			t.Error("la contraseña no fue re-hasheada")
@@ -209,7 +216,7 @@ func TestPsiService_ResetPasswordWithToken(t *testing.T) {
 			return nil, nil
 		}
 
-		if err := svc.ResetPasswordWithToken(context.Background(), "raw-token", "NuevaClave123!"); err == nil {
+		if _, err := svc.ResetPasswordWithToken(context.Background(), "raw-token", "NuevaClave123!"); err == nil {
 			t.Error("debe rechazar un token desconocido")
 		}
 	})
@@ -222,7 +229,7 @@ func TestPsiService_ResetPasswordWithToken(t *testing.T) {
 			return token, nil
 		}
 
-		if err := svc.ResetPasswordWithToken(context.Background(), "raw-token", "NuevaClave123!"); err == nil {
+		if _, err := svc.ResetPasswordWithToken(context.Background(), "raw-token", "NuevaClave123!"); err == nil {
 			t.Error("debe rechazar un token expirado")
 		}
 	})
@@ -237,7 +244,7 @@ func TestPsiService_ResetPasswordWithToken(t *testing.T) {
 			return token, nil
 		}
 
-		if err := svc.ResetPasswordWithToken(context.Background(), "raw-token", "NuevaClave123!"); err == nil {
+		if _, err := svc.ResetPasswordWithToken(context.Background(), "raw-token", "NuevaClave123!"); err == nil {
 			t.Error("debe rechazar un token ya consumido")
 		}
 	})
@@ -246,7 +253,7 @@ func TestPsiService_ResetPasswordWithToken(t *testing.T) {
 		repo := &mockPsiRepoSvc{}
 		svc := NewPsiService(repo, nil, nil)
 
-		if err := svc.ResetPasswordWithToken(context.Background(), "raw-token", "123"); err == nil {
+		if _, err := svc.ResetPasswordWithToken(context.Background(), "raw-token", "123"); err == nil {
 			t.Error("debe rechazar contraseñas cortas")
 		}
 	})

@@ -2134,6 +2134,32 @@ definitions:
     - identifier
     - password
     type: object
+  request_structs.RequestPasswordResetDTO:
+    properties:
+      email:
+        example: psicologo@email.com
+        type: string
+    required:
+    - email
+    type: object
+  request_structs.ResetPasswordDTO:
+    properties:
+      confirm_password:
+        example: NuevaClaveSegura123!
+        minLength: 8
+        type: string
+      new_password:
+        example: NuevaClaveSegura123!
+        minLength: 8
+        type: string
+      token:
+        example: a1b2c3...
+        type: string
+    required:
+    - confirm_password
+    - new_password
+    - token
+    type: object
   request_structs.ServiceModalityDTO:
     properties:
       distance:
@@ -5644,6 +5670,35 @@ paths:
       summary: Descargar adjunto de notificación
       tags:
       - Agremiado - Notificaciones
+  /notifications/psi-user/{id}/read:
+    patch:
+      description: 'Marca la notificación como leída para el agremiado. Acción explícita:'
+      parameters:
+      - description: UUID de la notificación
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: boolean
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Marcar notificación como leída (agremiado)
+      tags:
+      - Agremiado - Notificaciones
   /notifications/psi-user/unread-count:
     get:
       description: Retorna el número de notificaciones no leídas del agremiado (para
@@ -5786,6 +5841,44 @@ paths:
       summary: Directorio Público de Psicólogos
       tags:
       - Psicólogos - Público
+  /psi/forgot-password:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Envía un correo con un enlace de un solo uso para fijar una nueva contraseña.
+        La respuesta siempre es genérica (no revela si el correo existe).
+      parameters:
+      - description: Correo registrado
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.RequestPasswordResetDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "429":
+          description: Too Many Requests
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Solicitar enlace de recuperación
+      tags:
+      - Psicólogos - Auth
   /psi/login:
     post:
       consumes:
@@ -6195,6 +6288,42 @@ paths:
       summary: Validar sesión de psicólogo
       tags:
       - Psicólogos - Sesión
+  /psi/reset-password:
+    post:
+      consumes:
+      - application/json
+      description: Valida el token de un solo uso, actualiza la contraseña del psicólogo
+        y retorna un JWT fresco (auto-login).
+      parameters:
+      - description: Token y nueva contraseña
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.ResetPasswordDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "429":
+          description: Too Many Requests
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Fijar nueva contraseña con token
+      tags:
+      - Psicólogos - Auth
   /psi/tickets:
     get:
       parameters:

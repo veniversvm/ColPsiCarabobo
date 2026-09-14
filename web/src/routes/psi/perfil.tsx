@@ -7,6 +7,7 @@ import {
 } from "solid-js";
 import { createStore } from "solid-js/store";
 import { A, action, useAction } from "@solidjs/router";
+import { getRequestEvent } from "solid-js/web";
 import { apiGet, apiPatch, apiPost, apiDelete } from "~/lib/api";
 import {
   sanitizeEmail,
@@ -14,6 +15,7 @@ import {
   sanitizeText,
   enforceMaxLength,
 } from "~/lib/sanitizer";
+import { useAuth } from "~/lib/auth";
 import { ProfileFormData } from "~/types/psi";
 
 import { AccountSection } from "~/components/psi/profile/AccountSection";
@@ -95,10 +97,25 @@ const updateProfileServer = action(async (formData: FormData) => {
     }
   }
 
-  return await apiPatch("/psi/me", cleanFd);
+  const result = await apiPatch<any>("/psi/me", cleanFd);
+
+  // Cambio de contraseña → Go rota la Key y devuelve un token fresco. Se
+  // persiste en la cookie HttpOnly para que SSR y las server actions sigan
+  // autenticando (el cliente también guarda su copia en sessionStorage).
+  if (result?.token) {
+    const event = getRequestEvent();
+    const secure = import.meta.env.PROD === true;
+    event?.response?.headers?.set(
+      "Set-Cookie",
+      `jwt=${result.token}; HttpOnly; Path=/; Max-Age=86400; SameSite=Strict${secure ? "; Secure" : ""}`,
+    );
+  }
+
+  return result;
 });
 
 export default function ProfilePage() {
+  const { login, user } = useAuth();
   const [profile, { refetch }] = createResource(() => apiGet<any>("/psi/me"));
   const [specialties] = createResource(() => apiGet<any[]>("/specialties")); // Asumiendo que esta API devuelve áreas de trabajo ahora
 
@@ -311,11 +328,18 @@ export default function ProfilePage() {
     if (avatar) fd.append("profile_picture", avatar);
 
     try {
-      await runUpdateAction(fd);
+      const res = await runUpdateAction(fd);
       setMessage({
         type: "success",
         text: "Perfil actualizado correctamente.",
       });
+
+      // La API devolvió un JWT fresco (se cambió la contraseña y Go rotó la
+      // Key). Se re-loguea con el nuevo token para no salir de sesión.
+      if (res?.token && user()) {
+        login(res.token, user());
+      }
+
       setForm("password", "");
       setForm("new_password_1", "");
       setForm("new_password_2", "");

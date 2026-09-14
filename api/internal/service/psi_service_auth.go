@@ -16,6 +16,21 @@ import (
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 )
 
+// NewPsiSessionToken firma un JWT de sesión de 24h con la Key actual del
+// psicólogo (acceso por-usuario). Lo usan Login, el cambio de contraseña propio
+// (autogestión) y el reset por token de recuperación, para que quien cambia su
+// clave reciba un token fresco en la misma respuesta y no pierda su sesión
+// activa (la Key rotada invalida los JWTs previos por diseño).
+func NewPsiSessionToken(psi *domain.PsiUserModel) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id": psi.ID.String(),
+		"role":    "psi",
+		"exp":     time.Now().Add(24 * time.Hour).Unix(),
+		"iat":     time.Now().Unix(),
+	})
+	return token.SignedString([]byte(psi.Key))
+}
+
 // Login authenticates a psychologist by identifier and password, rotating the session key and returning a signed JWT.
 func (s *PsiService) Login(ctx context.Context, identifier, password string) (string, *domain.PsiUserModel, error) {
 	// Sanitización de entrada: los correos/usernames se guardan en minúsculas,
@@ -47,12 +62,10 @@ func (s *PsiService) Login(ctx context.Context, identifier, password string) (st
 		return "", nil, errors.New("error de sistema al iniciar sesión")
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id": psi.ID.String(),
-		"role":    "psi",
-		"exp":     time.Now().Add(24 * time.Hour).Unix(),
-		"iat":     time.Now().Unix(),
-	})
+	token, err := NewPsiSessionToken(psi)
+	if err != nil {
+		return "", nil, err
+	}
 
 	mailData := map[string]interface{}{
 		"Name":      psi.Username,
@@ -66,8 +79,7 @@ func (s *PsiService) Login(ctx context.Context, identifier, password string) (st
 		}
 	}
 
-	signed, err := token.SignedString([]byte(newKey))
-	return signed, psi, err
+	return token, psi, nil
 }
 
 // AudiobookshelfUserResponse represents the API response when creating or fetching an Audiobookshelf user.

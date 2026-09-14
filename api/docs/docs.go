@@ -4661,6 +4661,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/notifications/psi-user/{id}/read": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Marca la notificación como leída para el agremiado. Acción explícita:",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Agremiado - Notificaciones"
+                ],
+                "summary": "Marcar notificación como leída (agremiado)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID de la notificación",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "boolean"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/posts": {
             "get": {
                 "description": "Obtiene noticias. El contenido varía según el usuario: Público (solo publicados públicos), Psicólogo (públicos + gremiales), Admin (todos los estados).",
@@ -4797,6 +4843,61 @@ const docTemplate = `{
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/psi/forgot-password": {
+            "post": {
+                "description": "Envía un correo con un enlace de un solo uso para fijar una nueva contraseña.\nLa respuesta siempre es genérica (no revela si el correo existe).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Psicólogos - Auth"
+                ],
+                "summary": "Solicitar enlace de recuperación",
+                "parameters": [
+                    {
+                        "description": "Correo registrado",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.RequestPasswordResetDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -5430,6 +5531,59 @@ const docTemplate = `{
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/psi/reset-password": {
+            "post": {
+                "description": "Valida el token de un solo uso, actualiza la contraseña del psicólogo y retorna un JWT fresco (auto-login).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Psicólogos - Auth"
+                ],
+                "summary": "Fijar nueva contraseña con token",
+                "parameters": [
+                    {
+                        "description": "Token y nueva contraseña",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.ResetPasswordDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -8515,6 +8669,42 @@ const docTemplate = `{
                 "password": {
                     "type": "string",
                     "example": "12345678"
+                }
+            }
+        },
+        "request_structs.RequestPasswordResetDTO": {
+            "type": "object",
+            "required": [
+                "email"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "psicologo@email.com"
+                }
+            }
+        },
+        "request_structs.ResetPasswordDTO": {
+            "type": "object",
+            "required": [
+                "confirm_password",
+                "new_password",
+                "token"
+            ],
+            "properties": {
+                "confirm_password": {
+                    "type": "string",
+                    "minLength": 8,
+                    "example": "NuevaClaveSegura123!"
+                },
+                "new_password": {
+                    "type": "string",
+                    "minLength": 8,
+                    "example": "NuevaClaveSegura123!"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "a1b2c3..."
                 }
             }
         },

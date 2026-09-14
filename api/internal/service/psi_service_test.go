@@ -282,3 +282,89 @@ func TestPsiService_UpdateProfileSelf_LazyLoading(t *testing.T) {
 		}
 	})
 }
+
+// TestUpdateProfileSelf_PasswordChangeRotatesKey verifica que al cambiar la
+// propia contraseña el servicio re-hashea la clave Y rota la Key de sesión
+// (el handler emitirá un token fresco con esa Key para no desloguear al usuario).
+func TestUpdateProfileSelf_PasswordChangeRotatesKey(t *testing.T) {
+	repo := &mockPsiRepoSvc{}
+	svc := NewPsiService(repo, nil, nil)
+	psiID := uuid.Must(uuid.NewV7())
+	hashed, _ := bcrypt.GenerateFromPassword([]byte("passviejo"), bcrypt.DefaultCost)
+
+	psi := &domain.PsiUserModel{
+		ID: psiID,
+		Credentials: domain.Credentials{
+			Username: "psico_rot",
+			Password: string(hashed),
+			Key:      "clave-sesion-vieja",
+		},
+	}
+
+	repo.ValidateUniqueCredentialsFunc = func(ctx context.Context, u, e string, ex uuid.UUID) error { return nil }
+	repo.UpdatePublicProfileFunc = func(ctx context.Context, p *domain.PsiUserModel, c *domain.PsiUserColData, t *domain.TextModel) error {
+		return nil
+	}
+
+	newPass1 := "NuevaClaveFuerte#1"
+	newPass2 := "NuevaClaveFuerte#1"
+	req := request_structs.PsiUserUpdateRequestSelf{
+		Password:      "passviejo",
+		NewPassword1: &newPass1,
+		NewPassword2: &newPass2,
+	}
+
+	updated, err := svc.UpdateProfileSelf(context.Background(), psi, psi.ID, req, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatalf("UpdateProfileSelf error: %v", err)
+	}
+	if updated == nil {
+		t.Fatal("UpdateProfileSelf no devolvió el perfil actualizado")
+	}
+	if updated.Key == "" || updated.Key == "clave-sesion-vieja" {
+		t.Error("la Key de sesión debe rotarse al cambiar la contraseña")
+	}
+	if bcrypt.CompareHashAndPassword([]byte(updated.Password), []byte(newPass1)) != nil {
+		t.Error("el hash persistido no corresponde a la nueva contraseña")
+	}
+	if bcrypt.CompareHashAndPassword([]byte(updated.Password), []byte("passviejo")) == nil {
+		t.Error("la contraseña vieja no debe seguir validando")
+	}
+}
+
+// TestUpdateProfileSelf_NoPasswordChangeKeepsKey asegura que si NO hay cambio
+// de contraseña, la Key permanece intacta (no hay rotación innecesaria).
+func TestUpdateProfileSelf_NoPasswordChangeKeepsKey(t *testing.T) {
+	repo := &mockPsiRepoSvc{}
+	svc := NewPsiService(repo, nil, nil)
+	psiID := uuid.Must(uuid.NewV7())
+	hashed, _ := bcrypt.GenerateFromPassword([]byte("passviejo"), bcrypt.DefaultCost)
+
+	psi := &domain.PsiUserModel{
+		ID: psiID,
+		Credentials: domain.Credentials{
+			Username: "psico_nokey",
+			Password: string(hashed),
+			Key:      "clave-sesion-estable",
+		},
+	}
+
+	repo.ValidateUniqueCredentialsFunc = func(ctx context.Context, u, e string, ex uuid.UUID) error { return nil }
+	repo.UpdatePublicProfileFunc = func(ctx context.Context, p *domain.PsiUserModel, c *domain.PsiUserColData, t *domain.TextModel) error {
+		return nil
+	}
+
+	newBio := "Solo edito la biografía"
+	req := request_structs.PsiUserUpdateRequestSelf{
+		Password: "passviejo",
+		MiniBio:  &newBio,
+	}
+
+	updated, err := svc.UpdateProfileSelf(context.Background(), psi, psi.ID, req, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatalf("UpdateProfileSelf error: %v", err)
+	}
+	if updated.Key != "clave-sesion-estable" {
+		t.Errorf("la Key no debe rotarse sin cambio de contraseña, got %q", updated.Key)
+	}
+}
