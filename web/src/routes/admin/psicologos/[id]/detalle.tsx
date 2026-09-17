@@ -205,10 +205,19 @@ const RAW_BOOL_FIELDS = [
 export default function AdminEditPsiPage() {
   const params = useParams();
 
-  const runUpdateAction = useAction(updateAdminPsiServer);
+const runUpdateAction = useAction(updateAdminPsiServer);
   const runDeletePicture = useAction(deleteProfilePictureServer);
   const runResetPassword = useAction(resetPasswordServer);
   const runSyncAbs = useAction(syncAbsServer);
+  const runAddSocial = useAction(addSocialServer);
+  const runDeleteSocial = useAction(deleteSocialServer);
+  const runAddDeontologia = useAction(addDeontologiaServer);
+  const runUpdateDeontologia = useAction(updateDeontologiaServer);
+  const runAddObservaciones = useAction(addObservacionesServer);
+  const runUpdateObservaciones = useAction(updateObservacionesServer);
+  const runAddDocumento = useAction(addDocumentServer);
+  const runUpdateDocumento = useAction(updateDocumentServer);
+  const runDeleteDocumento = useAction(deleteDocumentServer);
   const [profile, { refetch }] = createResource(() =>
     apiGet<any>(`/admin/psi/${params.id}`),
   );
@@ -588,13 +597,13 @@ export default function AdminEditPsiPage() {
                 onAdd={async (p) => {
                   const id = params.id ?? "";
                   if (!id) return;
-                  await addSocialServer({ id, payload: p });
+                  await runAddSocial({ id, payload: p });
                   refetch();
                 }}
                 onDelete={async (sid) => {
                   const id = params.id ?? "";
                   if (!id || !confirm("¿Eliminar?")) return;
-                  await deleteSocialServer({ psiId: id, socialId: sid });
+                  await runDeleteSocial({ psiId: id, socialId: sid });
                   refetch();
                 }}
               />
@@ -606,13 +615,13 @@ export default function AdminEditPsiPage() {
                 onAdd={async (content) => {
                   const id = params.id ?? "";
                   if (!id) return;
-                  await addDeontologiaServer({ id, content });
+                  await runAddDeontologia({ id, content });
                   refetchDeontologia();
                 }}
                 onUpdate={async (entryId, content) => {
                   const id = params.id ?? "";
                   if (!id) return;
-                  await updateDeontologiaServer({ psiId: id, entryId, content });
+                  await runUpdateDeontologia({ psiId: id, entryId, content });
                   refetchDeontologia();
                 }}
               />
@@ -624,13 +633,13 @@ export default function AdminEditPsiPage() {
                 onAdd={async (content) => {
                   const id = params.id ?? "";
                   if (!id) return;
-                  await addObservacionesServer({ id, content });
+                  await runAddObservaciones({ id, content });
                   refetchObservaciones();
                 }}
                 onUpdate={async (entryId, content) => {
                   const id = params.id ?? "";
                   if (!id) return;
-                  await updateObservacionesServer({ psiId: id, entryId, content });
+                  await runUpdateObservaciones({ psiId: id, entryId, content });
                   refetchObservaciones();
                 }}
               />
@@ -642,19 +651,19 @@ export default function AdminEditPsiPage() {
                 onAdd={async (payload) => {
                   const id = params.id ?? "";
                   if (!id) return;
-                  await addDocumentServer({ id, payload });
+                  await runAddDocumento({ id, payload });
                   refetchDocumentos();
                 }}
                 onUpdate={async (docId, payload) => {
                   const id = params.id ?? "";
                   if (!id) return;
-                  await updateDocumentServer({ psiId: id, docId, payload });
+                  await runUpdateDocumento({ psiId: id, docId, payload });
                   refetchDocumentos();
                 }}
                 onDelete={async (docId) => {
                   const id = params.id ?? "";
                   if (!id) return;
-                  await deleteDocumentServer({ psiId: id, docId });
+                  await runDeleteDocumento({ psiId: id, docId });
                   refetchDocumentos();
                 }}
               />

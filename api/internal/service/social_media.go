@@ -28,7 +28,7 @@ import (
 const MaxSocialNetworks = 10
 
 // =========================================================================
-// GESTIÓN DE REDES SOCIALES
+// GESTIÓN DE REDES SOCIALES (AUTOGESTIÓN)
 // =========================================================================
 
 // AddSocialNetwork vincula una nueva red social al perfil del psicólogo.
@@ -132,6 +132,119 @@ func (s *PsiService) DeleteSocialNetwork(ctx context.Context, executorRole strin
 		// garantizada previamente en la capa de Middleware).
 	} else {
 		return errors.New("rol no autorizado")
+	}
+
+	return s.repo.DeleteSocialNetwork(ctx, netID)
+}
+
+// =========================================================================
+// GESTIÓN DE REDES SOCIALES (MODERACIÓN ADMIN)
+// =========================================================================
+
+// AddSocialNetworkByAdmin vincula una nueva red social al perfil de un psicólogo
+// desde el panel de moderación. Aplica la misma normalización y cuota que la
+// autogestión, pero registra la auditoría con la identidad del administrador.
+func (s *PsiService) AddSocialNetworkByAdmin(ctx context.Context, admin *domain.UserAdmin, psiID uuid.UUID, req request_structs.CreateSocialNetworkRequest) error {
+	// 1. VALIDACIÓN DE PERMISOS (Gatekeeping)
+	if !admin.Sudo && !admin.CanUpdatePsi && !admin.CanCreatePsi {
+		return domain.ErrInsufficientPerms
+	}
+
+	// 2. INTEGRIDAD REFERENCIAL
+	if _, err := s.repo.GetByID(ctx, psiID); err != nil {
+		return domain.ErrPsiNotFound
+	}
+
+	// 3. CONTROL DE CUOTA (Defensive Programming)
+	currentCount, err := s.repo.CountSocialNetworksByPsiID(ctx, psiID)
+	if err != nil {
+		return fmt.Errorf("error al verificar límite de redes sociales: %w", err)
+	}
+	if currentCount >= MaxSocialNetworks {
+		return domain.ErrMaxSocialNetworks
+	}
+
+	// 4. PREPARACIÓN DEL MODELO E INMUTABILIDAD
+	// La auditoría refleja al operador administrativo, no al psicólogo.
+	network := &domain.PsiUserSocialNetwork{
+		ID: uuid.Must(uuid.NewV7()),
+		AuditModel: domain.AuditModel{
+			CreateBy:   admin.Username,
+			CreateById: &admin.ID,
+			UpdateBy:   admin.Username,
+			UpdateById: &admin.ID,
+		},
+		PsiUserID: psiID,
+
+		// NORMALIZACIÓN CENTRALIZADA (mismo estándar que la autogestión):
+		Name:     utils.NormalizePlatformName(req.Name),
+		URL:      strings.TrimSpace(req.URL),
+		IsActive: true,
+	}
+
+	// 5. PERSISTENCIA
+	return s.repo.CreateSocialNetwork(ctx, network)
+}
+
+// UpdateSocialNetworkByAdmin permite la edición parcial (PATCH) de una red social
+// de un psicólogo desde el panel de moderación.
+//
+// Prevención de Vulnerabilidad IDOR (Insecure Direct Object Reference):
+// Verifica que el UUID de la red social pertenezca realmente al psicólogo indicado
+// en la ruta, bloqueando la inyección de un ID de otra ficha.
+func (s *PsiService) UpdateSocialNetworkByAdmin(ctx context.Context, admin *domain.UserAdmin, psiID, netID uuid.UUID, req request_structs.UpdateSocialNetworkRequest) error {
+	// 1. VALIDACIÓN DE PERMISOS (Gatekeeping)
+	if !admin.Sudo && !admin.CanUpdatePsi && !admin.CanCreatePsi {
+		return domain.ErrInsufficientPerms
+	}
+
+	// 2. EXISTENCIA (404 si no está)
+	network, err := s.repo.GetSocialNetworkByID(ctx, netID)
+	if err != nil {
+		return errors.New("red social no encontrada")
+	}
+
+	// 3. SEGURIDAD (Ownership Check): la red debe pertenecer al psicólogo de la ruta.
+	if network.PsiUserID != psiID {
+		return domain.ErrSocialPermDenied
+	}
+
+	// 4. Actualización de auditoría (Rastro Forense del operador)
+	network.UpdateBy = admin.Username
+	network.UpdateById = &admin.ID
+
+	// 5. Aplicación de cambios parciales (Evaluación de Punteros)
+	if req.Name != nil {
+		network.Name = utils.NormalizePlatformName(*req.Name)
+	}
+	if req.URL != nil {
+		network.URL = strings.TrimSpace(*req.URL)
+	}
+	if req.IsActive != nil {
+		network.IsActive = *req.IsActive
+	}
+
+	return s.repo.UpdateSocialNetwork(ctx, network)
+}
+
+// DeleteSocialNetworkByAdmin elimina lógicamente una red social de un psicólogo
+// desde el panel de moderación. Verifica la pertenencia al psicólogo de la ruta
+// para prevenir IDOR.
+func (s *PsiService) DeleteSocialNetworkByAdmin(ctx context.Context, admin *domain.UserAdmin, psiID, netID uuid.UUID) error {
+	// 1. VALIDACIÓN DE PERMISOS (Gatekeeping)
+	if !admin.Sudo && !admin.CanUpdatePsi && !admin.CanCreatePsi && !admin.CanDeletePsi {
+		return domain.ErrInsufficientPerms
+	}
+
+	// 2. EXISTENCIA (404 si no está)
+	network, err := s.repo.GetSocialNetworkByID(ctx, netID)
+	if err != nil {
+		return errors.New("red social no encontrada")
+	}
+
+	// 3. SEGURIDAD (Ownership Check): la red debe pertenecer al psicólogo de la ruta.
+	if network.PsiUserID != psiID {
+		return domain.ErrSocialOwnDenied
 	}
 
 	return s.repo.DeleteSocialNetwork(ctx, netID)

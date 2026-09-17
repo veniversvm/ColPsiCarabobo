@@ -48,6 +48,7 @@ Sitio web del Colegio de Psicólogos de Carabobo. Incluye:
 | 19 | `app_settings`, `settings_audit_logs`, `settings_service.go`, `settings_handler.go` | Interruptores globales de recepción (tickets/inscripciones), 409 `reception_disabled`, banners de UI, `ReceptionSwitchesCard` |
 | 20 | `pkg/database/seed.go` | `SeedSudoPermissions` idempotente: fuerza la matriz completa `true` para `sudo=true` en cada arranque |
 | 21 | `admin-access.tsx`, `login.tsx` | Aviso de rate-limit (429) con tiempo de espera real en login de admin y psicólogo |
+| 22 | `admin/psicologos/[id]/detalle.tsx`, `psi_router.go`, `psi_user_social_admin.go`, `social_media.go` | Endpoints admin del detalle de psicólogo reparados: las 9 server actions se invocaban sin `useAction` (TypeError `singleFlight`) en Presencia Digital / Expediente Deontológico / Observaciones / Documentos; rutas admin de social en la API (POST/PATCH/DELETE `/admin/psi/:id/social`) con gate RBAC `Sudo || CanUpdatePsi || CanCreatePsi` (delete admite `CanDeletePsi`), cuota máx 10 y chequeo IDOR |
 
 ## Comandos (web)
 

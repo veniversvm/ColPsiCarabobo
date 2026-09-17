@@ -73,6 +73,11 @@ func SetupPsiRoutes(router fiber.Router, psiRepo domain.PsiUserRepository, admin
 	adminGroup.Patch("/:id<uuid>/documents/:docId<uuid>", h.UpdateDocumentByAdmin)
 	adminGroup.Delete("/:id<uuid>/documents/:docId<uuid>", h.DeleteDocumentByAdmin)
 
+	// Presencia digital / redes sociales (gestión exclusiva admin; el psi gestiona las suyas vía /psi/me)
+	adminGroup.Post("/:id<uuid>/social", h.AddSocialNetworkByAdmin)
+	adminGroup.Patch("/:id<uuid>/social/:socialId<uuid>", h.UpdateSocialNetworkByAdmin)
+	adminGroup.Delete("/:id<uuid>/social/:socialId<uuid>", h.DeleteSocialNetworkByAdmin)
+
 	// =========================================================================
 	// ZONA 2: AUTOGESTIÓN
 	// =========================================================================

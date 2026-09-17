@@ -26,6 +26,11 @@ type mockPsiRepoSocialMedia struct {
 	GetSocialNetworkFunc    func(ctx context.Context, id uuid.UUID) (*domain.PsiUserSocialNetwork, error)
 	UpdateSocialNetworkFunc func(ctx context.Context, sn *domain.PsiUserSocialNetwork) error
 	DeleteSocialNetworkFunc func(ctx context.Context, id uuid.UUID) error
+	GetByIDFunc             func(ctx context.Context, id uuid.UUID) (*domain.PsiUserModel, error)
+}
+
+func (m *mockPsiRepoSocialMedia) GetByID(ctx context.Context, id uuid.UUID) (*domain.PsiUserModel, error) {
+	return m.GetByIDFunc(ctx, id)
 }
 
 func (m *mockPsiRepoSocialMedia) CountSocialNetworksByPsiID(ctx context.Context, id uuid.UUID) (int64, error) {
@@ -159,6 +164,153 @@ func TestPsiService_DeleteSocialNetwork_Roles(t *testing.T) {
 		err := svc.DeleteSocialNetwork(ctx, "admin", uuid.Must(uuid.NewV7()), netID)
 		if err != nil {
 			t.Errorf("Admin debería poder borrar, error: %v", err)
+		}
+	})
+}
+
+// =========================================================================
+// MODERACIÓN ADMINISTRATIVA
+// =========================================================================
+
+// TestPsiService_AddSocialNetworkByAdmin evalúa el gatekeeping del panel de
+// moderación: solo staff con permisos de gestión de colegiados puede añadir
+// una red social a una ficha ajena.
+func TestPsiService_AddSocialNetworkByAdmin(t *testing.T) {
+	repo := &mockPsiRepoSocialMedia{}
+	svc := &PsiService{repo: repo}
+	ctx := context.Background()
+
+	psiID := uuid.Must(uuid.NewV7())
+	adminSudo := &domain.UserAdmin{ID: uuid.Must(uuid.NewV7()), Credentials: domain.Credentials{Username: "sudo_admin"}, Sudo: true}
+	adminSinPermisos := &domain.UserAdmin{ID: uuid.Must(uuid.NewV7()), Credentials: domain.Credentials{Username: "lector_admin"}}
+	req := request_structs.CreateSocialNetworkRequest{Name: "ig", URL: "https://instagram.com/test"}
+
+	repo.GetByIDFunc = func(ctx context.Context, id uuid.UUID) (*domain.PsiUserModel, error) {
+		return &domain.PsiUserModel{ID: psiID}, nil
+	}
+	repo.CountSocialNetworksFunc = func(ctx context.Context, id uuid.UUID) (int64, error) { return 2, nil }
+	repo.CreateSocialNetworkFunc = func(ctx context.Context, sn *domain.PsiUserSocialNetwork) error { return nil }
+
+	t.Run("Éxito: Sudo añade red a ficha ajena con auditoría admin", func(t *testing.T) {
+		var captured *domain.PsiUserSocialNetwork
+		repo.CreateSocialNetworkFunc = func(ctx context.Context, sn *domain.PsiUserSocialNetwork) error {
+			captured = sn
+			return nil
+		}
+		err := svc.AddSocialNetworkByAdmin(ctx, adminSudo, psiID, req)
+		if err != nil {
+			t.Fatalf("No se esperaba error, se obtuvo: %v", err)
+		}
+		if captured == nil || captured.PsiUserID != psiID {
+			t.Error("La red no se persistió para la ficha indicada")
+		}
+		if captured == nil || captured.CreateBy != "sudo_admin" {
+			t.Error("La auditoría debe registrar al operador administrativo")
+		}
+	})
+
+	t.Run("Error: Permisos insuficientes", func(t *testing.T) {
+		err := svc.AddSocialNetworkByAdmin(ctx, adminSinPermisos, psiID, req)
+		if err == nil || !errors.Is(err, domain.ErrInsufficientPerms) {
+			t.Errorf("Se esperaba ErrInsufficientPerms, se obtuvo: %v", err)
+		}
+	})
+
+	t.Run("Error: Cuota alcanzada", func(t *testing.T) {
+		repo.CountSocialNetworksFunc = func(ctx context.Context, id uuid.UUID) (int64, error) { return 10, nil }
+		err := svc.AddSocialNetworkByAdmin(ctx, adminSudo, psiID, req)
+		if err == nil || !errors.Is(err, domain.ErrMaxSocialNetworks) {
+			t.Errorf("Se esperaba ErrMaxSocialNetworks, se obtuvo: %v", err)
+		}
+		repo.CountSocialNetworksFunc = func(ctx context.Context, id uuid.UUID) (int64, error) { return 2, nil }
+	})
+}
+
+// TestPsiService_UpdateSocialNetworkByAdmin evalúa el gatekeeping y la verificación
+// de pertenencia (IDOR) en la edición administrativa de una red social.
+func TestPsiService_UpdateSocialNetworkByAdmin(t *testing.T) {
+	repo := &mockPsiRepoSocialMedia{}
+	svc := &PsiService{repo: repo}
+	ctx := context.Background()
+
+	psiID := uuid.Must(uuid.NewV7())
+	otraFicha := uuid.Must(uuid.NewV7())
+	netID := uuid.Must(uuid.NewV7())
+	admin := &domain.UserAdmin{ID: uuid.Must(uuid.NewV7()), Credentials: domain.Credentials{Username: "secretaria"}, CanUpdatePsi: true}
+
+	repo.GetByIDFunc = func(ctx context.Context, id uuid.UUID) (*domain.PsiUserModel, error) {
+		return &domain.PsiUserModel{ID: psiID}, nil
+	}
+
+	t.Run("Éxito: actualiza red perteneciente a la ficha", func(t *testing.T) {
+		repo.GetSocialNetworkFunc = func(ctx context.Context, id uuid.UUID) (*domain.PsiUserSocialNetwork, error) {
+			return &domain.PsiUserSocialNetwork{ID: netID, PsiUserID: psiID}, nil
+		}
+		repo.UpdateSocialNetworkFunc = func(ctx context.Context, sn *domain.PsiUserSocialNetwork) error { return nil }
+		name := "Instagram"
+		err := svc.UpdateSocialNetworkByAdmin(ctx, admin, psiID, netID, request_structs.UpdateSocialNetworkRequest{Name: &name})
+		if err != nil {
+			t.Errorf("No se esperaba error, se obtuvo: %v", err)
+		}
+	})
+
+	t.Run("Error: IDOR — red de otra ficha", func(t *testing.T) {
+		repo.GetSocialNetworkFunc = func(ctx context.Context, id uuid.UUID) (*domain.PsiUserSocialNetwork, error) {
+			return &domain.PsiUserSocialNetwork{ID: netID, PsiUserID: otraFicha}, nil
+		}
+		err := svc.UpdateSocialNetworkByAdmin(ctx, admin, psiID, netID, request_structs.UpdateSocialNetworkRequest{})
+		if err == nil || !errors.Is(err, domain.ErrSocialPermDenied) {
+			t.Errorf("Se esperaba ErrSocialPermDenied, se obtuvo: %v", err)
+		}
+	})
+
+	t.Run("Error: Permisos insuficientes", func(t *testing.T) {
+		lector := &domain.UserAdmin{ID: uuid.Must(uuid.NewV7()), Credentials: domain.Credentials{Username: "lector"}}
+		err := svc.UpdateSocialNetworkByAdmin(ctx, lector, psiID, netID, request_structs.UpdateSocialNetworkRequest{})
+		if err == nil || !errors.Is(err, domain.ErrInsufficientPerms) {
+			t.Errorf("Se esperaba ErrInsufficientPerms, se obtuvo: %v", err)
+		}
+	})
+}
+
+// TestPsiService_DeleteSocialNetworkByAdmin evalúa el gatekeeping y la verificación
+// de pertenencia (IDOR) en el borrado administrativo de una red social.
+func TestPsiService_DeleteSocialNetworkByAdmin(t *testing.T) {
+	repo := &mockPsiRepoSocialMedia{}
+	svc := &PsiService{repo: repo}
+	ctx := context.Background()
+
+	psiID := uuid.Must(uuid.NewV7())
+	otraFicha := uuid.Must(uuid.NewV7())
+	netID := uuid.Must(uuid.NewV7())
+	admin := &domain.UserAdmin{ID: uuid.Must(uuid.NewV7()), Credentials: domain.Credentials{Username: "secretaria"}, CanDeletePsi: true}
+
+	t.Run("Éxito: borra red perteneciente a la ficha", func(t *testing.T) {
+		repo.GetSocialNetworkFunc = func(ctx context.Context, id uuid.UUID) (*domain.PsiUserSocialNetwork, error) {
+			return &domain.PsiUserSocialNetwork{ID: netID, PsiUserID: psiID}, nil
+		}
+		repo.DeleteSocialNetworkFunc = func(ctx context.Context, id uuid.UUID) error { return nil }
+		err := svc.DeleteSocialNetworkByAdmin(ctx, admin, psiID, netID)
+		if err != nil {
+			t.Errorf("No se esperaba error, se obtuvo: %v", err)
+		}
+	})
+
+	t.Run("Error: IDOR — red de otra ficha", func(t *testing.T) {
+		repo.GetSocialNetworkFunc = func(ctx context.Context, id uuid.UUID) (*domain.PsiUserSocialNetwork, error) {
+			return &domain.PsiUserSocialNetwork{ID: netID, PsiUserID: otraFicha}, nil
+		}
+		err := svc.DeleteSocialNetworkByAdmin(ctx, admin, psiID, netID)
+		if err == nil || !errors.Is(err, domain.ErrSocialOwnDenied) {
+			t.Errorf("Se esperaba ErrSocialOwnDenied, se obtuvo: %v", err)
+		}
+	})
+
+	t.Run("Error: Permisos insuficientes", func(t *testing.T) {
+		lector := &domain.UserAdmin{ID: uuid.Must(uuid.NewV7()), Credentials: domain.Credentials{Username: "lector"}}
+		err := svc.DeleteSocialNetworkByAdmin(ctx, lector, psiID, netID)
+		if err == nil || !errors.Is(err, domain.ErrInsufficientPerms) {
+			t.Errorf("Se esperaba ErrInsufficientPerms, se obtuvo: %v", err)
 		}
 	})
 }
