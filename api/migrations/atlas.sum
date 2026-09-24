@@ -1,4 +1,5 @@
-h1:iTncrMivMKbWPaDgsEUPa78qJT7IbbFWeg9UgEyJxFY=
+h1:5RP2jy96eQvlUkKqtcTOiokZ1YrEgcwQBXsCL4V/cuA=
 20260906232227_baseline.sql h1:j1Y/KjsoWjp4Mg2lqelfRAbPE6zt816LUIVMJ/2yMEE=
 20260911162745_password_reset_tokens.sql h1:0znf8uqLkph1boJ18EdxrWrTNM8X8Bhb0eDZpbqmidI=
 20260914140000_posts_publish_scheduled_idx.sql h1:/U/hJlJ3wKQ95W0giNN98JRTwZv3SgITt4hGJT9/4B0=
+20260924141347_audit_api_change_logs.sql h1:LJymaLh9VrKikF+ty8mMeOeqo4a4QEXozA0qJnzBMbo=
