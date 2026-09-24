@@ -4,56 +4,12 @@
 
 import { createMemo, Show, For } from "solid-js";
 import type { ApiChangeLog, AuditChange } from "~/types/audit";
-import { actionLabel, entityLabel } from "~/types/audit";
+import { actionLabel, entityLabel, fieldLabel, parseAuditJson } from "~/types/audit";
 
 interface Props {
   log: ApiChangeLog | null;
   onClose: () => void;
 }
-
-// Rótulos legibles para los campos del diff más comunes.
-const FIELD_LABELS: Record<string, string> = {
-  first_name: "Primer nombre",
-  second_name: "Segundo nombre",
-  last_name: "Apellido",
-  second_last_name: "Segundo apellido",
-  fpv: "Nº FPV",
-  ci: "Cédula",
-  nationality: "Nacionalidad",
-  control_number: "Nº de control",
-  genre: "Género",
-  solvent: "Solvencia",
-  proof_of_life: "Fe de vida",
-  is_active: "Activo",
-  username: "Usuario",
-  email: "Correo",
-  contact_phone: "Teléfono de contacto",
-  contact_cell_phone: "Celular de contacto",
-  contact_email: "Correo de contacto",
-  service_address: "Dirección de servicio",
-  municipality_carabobo: "Municipio (Carabobo)",
-  state_outside: "Estado (fuera)",
-  municipality_outside_carabobo: "Municipio (fuera)",
-  country: "País",
-  primary_work_area: "Área de ejercicio principal",
-  secondary_work_area: "Área de ejercicio secundaria",
-  primary_specialty_id: "Especialidad principal",
-  secondary_specialty_id: "Especialidad secundaria",
-  service_modality_presencial: "Modalidad presencial",
-  service_modality_distance: "Modalidad a distancia",
-  service_modality_telephone: "Modalidad telefónica",
-  role: "Rol",
-  can_read_psi: "Permiso · Ver psi", can_create_psi: "Permiso · Crear psi", can_update_psi: "Permiso · Editar psi", can_delete_psi: "Permiso · Eliminar psi",
-  can_create_admin: "Permiso · Crear staff", can_update_admin: "Permiso · Editar staff", can_delete_admin: "Permiso · Eliminar staff",
-  can_publish: "Permiso · Publicar", can_update_publish: "Permiso · Editar publicaciones", can_delete_publish: "Permiso · Eliminar publicaciones",
-  can_send_notifications: "Permiso · Enviar notificaciones", can_manage_notifications: "Permiso · Gestionar notificaciones", can_read_notifications: "Permiso · Leer notificaciones",
-  can_create_tags: "Permiso · Crear tags", can_edit_tags: "Permiso · Editar tags", can_delete_tags: "Permiso · Eliminar tags",
-  can_manage_projects: "Permiso · Proyectos", can_manage_tickets: "Permiso · Tickets",
-  can_view_logs: "Permiso · Ver bitácora", can_export_logs: "Permiso · Exportar bitácora",
-  status: "Estado",
-};
-
-const fieldLabel = (k: string): string => FIELD_LABELS[k] ?? k.replaceAll("_", " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
 const fmtBool = (v: unknown): string => (typeof v === "boolean" ? (v ? "✓ Sí" : "✗ No") : String(v ?? "—"));
 
@@ -68,27 +24,18 @@ const fmtDate = (iso: string): string => {
 export function AuditLogDrawer(props: Props) {
   const log = () => props.log;
 
-  // Parseo seguro del JSON de cambios/metadata (la API los manda crudos).
+  // Parseo defensivo de cambios/metadata: la API los manda como objeto (jsonb)
+  // o como string serializado (historias previas al fix del tipo).
   const changesMap = createMemo<Record<string, AuditChange>>(() => {
     const l = log();
     if (!l?.changes) return {};
-    try {
-      const parsed = JSON.parse(l.changes);
-      return parsed && typeof parsed === "object" ? parsed : {};
-    } catch {
-      return {};
-    }
+    return parseAuditJson(l.changes) as Record<string, AuditChange>;
   });
 
   const metadataMap = createMemo<Record<string, unknown>>(() => {
     const l = log();
     if (!l?.metadata) return {};
-    try {
-      const parsed = JSON.parse(l.metadata);
-      return parsed && typeof parsed === "object" ? parsed : {};
-    } catch {
-      return {};
-    }
+    return parseAuditJson(l.metadata);
   });
 
   return (

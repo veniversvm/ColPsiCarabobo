@@ -11,6 +11,8 @@ import { AuditLogDrawer } from "~/components/admin/auditoria/AuditLogDrawer";
 import {
   actionLabel,
   entityLabel,
+  auditChangesKeys,
+  fieldLabel,
   type ApiChangeLog,
   type AuditListResponse,
   type AuditStatsResponse,
@@ -367,6 +369,12 @@ export default function AdminAuditoriaPage() {
                       <span>🕒 {fmtDate(log.created_at)}</span>
                       <Show when={log.ip}><span>🌐 {log.ip}</span></Show>
                     </div>
+                    <Show when={auditChangesKeys(log.changes).length > 0}>
+                      <p class="text-[11px] font-black text-gray-500 truncate mt-1.5">
+                        ✏️ {auditChangesKeys(log.changes).slice(0, 4).map(fieldLabel).join(" · ")}
+                        <Show when={auditChangesKeys(log.changes).length > 4}> …</Show>
+                      </p>
+                    </Show>
                   </button>
                 )}
               </For>
