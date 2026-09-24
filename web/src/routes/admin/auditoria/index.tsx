@@ -342,6 +342,7 @@ export default function AdminAuditoriaPage() {
           </Show>
 
           <Show when={logs().length > 0}>
+            <PaginationBar page={page} total={total} setPage={setPage} />
             <div class="space-y-3">
               <For each={logs()}>
                 {(log) => (
@@ -381,27 +382,7 @@ export default function AdminAuditoriaPage() {
             </div>
 
             {/* ── Paginación ── */}
-            <Show when={total() > 20}>
-              <div class="flex items-center justify-center gap-4 mt-6">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page() <= 1}
-                  class="px-4 py-2 rounded-xl bg-white border-2 border-gray-200 text-gray-600 font-black text-xs disabled:opacity-40"
-                >
-                  ← Anterior
-                </button>
-                <span class="text-xs font-black text-gray-500">
-                  Página {page()} · {total()} registros
-                </span>
-                <button
-                  onClick={() => setPage((p) => p + 1)}
-                  disabled={page() * 20 >= total()}
-                  class="px-4 py-2 rounded-xl bg-white border-2 border-gray-200 text-gray-600 font-black text-xs disabled:opacity-40"
-                >
-                  Siguiente →
-                </button>
-              </div>
-            </Show>
+            <PaginationBar page={page} total={total} setPage={setPage} />
           </Show>
         </Suspense>
       </Show>
@@ -409,5 +390,38 @@ export default function AdminAuditoriaPage() {
       {/* ── DRAWER DE DETALLE ──────────────────────────────────────────────── */}
       <AuditLogDrawer log={selected()} onClose={() => setSelected(null)} />
     </main>
+  );
+}
+
+// Barra de paginación reutilizable: se renderiza arriba y abajo del listado.
+// Solo aparece cuando hay más de una página (total > 20) y comparte el estado
+// `page` del listado; cada cambio de filtro resetea a la página 1.
+function PaginationBar(props: {
+  page: () => number;
+  total: () => number;
+  setPage: (updater: (prev: number) => number) => void;
+}) {
+  return (
+    <Show when={props.total() > 20}>
+      <div class="flex items-center justify-center gap-4 py-4">
+        <button
+          onClick={() => props.setPage((p) => Math.max(1, p - 1))}
+          disabled={props.page() <= 1}
+          class="px-4 py-2 rounded-xl bg-white border-2 border-gray-200 text-gray-600 font-black text-xs disabled:opacity-40"
+        >
+          ← Anterior
+        </button>
+        <span class="text-xs font-black text-gray-500">
+          Página {props.page()} · {props.total()} registros
+        </span>
+        <button
+          onClick={() => props.setPage((p) => p + 1)}
+          disabled={props.page() * 20 >= props.total()}
+          class="px-4 py-2 rounded-xl bg-white border-2 border-gray-200 text-gray-600 font-black text-xs disabled:opacity-40"
+        >
+          Siguiente →
+        </button>
+      </div>
+    </Show>
   );
 }
