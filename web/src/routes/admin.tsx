@@ -72,6 +72,7 @@ export default function AdminLayout(props: { children: JSX.Element }) {
     { title: "Notificaciones", path: "/admin/notificaciones", icon: "🔔", always: false, perms: ["can_send_notifications", "can_manage_notifications", "can_read_notifications"] },
     { title: "Tickets", path: "/admin/tickets", icon: "🎫", always: false, perms: ["can_manage_tickets"] },
     { title: "Proyectos", path: "/admin/proyectos", icon: "📋", always: false, perms: ["can_manage_projects"] },
+    { title: "Auditoría", path: "/admin/auditoria", icon: "🧾", always: false, perms: ["can_view_logs"] },
     { title: "Staff", path: "/admin/staff", icon: "🛡️", always: false, perms: ["can_create_admin", "can_update_admin", "can_delete_admin"] },
   ];
 

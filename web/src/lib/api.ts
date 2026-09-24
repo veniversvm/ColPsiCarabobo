@@ -105,3 +105,32 @@ export function apiPatch<T>(endpoint: string, data: any, options?: RequestInit) 
 export function apiDelete<T>(endpoint: string, options?: RequestInit) {
   return fetchApi<T>(endpoint, { ...options, method: "DELETE" });
 }
+
+// apiDownloadBlob descarga un recurso binario (p. ej. CSV de auditoría) con el
+// token isomórfico. Útil cuando el enlace NO puede viajar como <a href>
+// (el auth va por cabecera Authorization / credenciales).
+export async function apiDownloadBlob(endpoint: string): Promise<Blob> {
+  const url = `${API_BASE_URL}${endpoint}`;
+  const headers = new Headers();
+
+  let token = "";
+  if (isServer) {
+    const event = getRequestEvent();
+    const cookieHeader = event?.request.headers.get("cookie") || "";
+    const match = cookieHeader.match(/(^| )jwt=([^;]+)/);
+    if (match) token = match[2];
+  } else {
+    token = sessionStorage.getItem("jwt") || "";
+  }
+
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+
+  const response = await fetch(url, { method: "GET", headers, credentials: "include" });
+  if (!response.ok) {
+    let errorData: any = null;
+    try { errorData = await response.json(); } catch { /* no JSON */ }
+    const msg = errorData?.error || errorData?.message || "Error inesperado";
+    throw new ApiError(response.status, msg, errorData);
+  }
+  return response.blob();
+}

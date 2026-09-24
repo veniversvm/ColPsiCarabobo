@@ -44,6 +44,8 @@ interface Admin {
   can_delete_tags: boolean;
   can_manage_projects: boolean;
   can_manage_tickets: boolean;
+  can_view_logs?: boolean;
+  can_export_logs?: boolean;
 }
 
 export default function AdminEditarStaffPage() {
@@ -89,6 +91,7 @@ export default function AdminEditarStaffPage() {
       can_send_notifications: a.can_send_notifications, can_manage_notifications: a.can_manage_notifications, can_read_notifications: a.can_read_notifications,
       can_create_tags: a.can_create_tags, can_edit_tags: a.can_edit_tags, can_delete_tags: a.can_delete_tags,
       can_manage_projects: a.can_manage_projects, can_manage_tickets: a.can_manage_tickets,
+      can_view_logs: a.can_view_logs ?? false, can_export_logs: a.can_export_logs ?? false,
     });
     setRole(a.role ?? null);
     setInitialized(true);

@@ -21,9 +21,11 @@ export interface PermissionState {
   can_delete_tags: boolean;
   can_manage_projects: boolean;
   can_manage_tickets: boolean;
+  can_view_logs: boolean;
+  can_export_logs: boolean;
 }
 
-export const TOTAL_PERMS = 18;
+export const TOTAL_PERMS = 20;
 
 export const PERM_KEYS: (keyof PermissionState)[] = [
   "can_read_psi", "can_create_psi", "can_update_psi", "can_delete_psi",
@@ -32,6 +34,7 @@ export const PERM_KEYS: (keyof PermissionState)[] = [
   "can_send_notifications", "can_manage_notifications", "can_read_notifications",
   "can_create_tags", "can_edit_tags", "can_delete_tags",
   "can_manage_projects", "can_manage_tickets",
+  "can_view_logs", "can_export_logs",
 ];
 
 export const defaultPerms = (): PermissionState => ({
@@ -41,6 +44,7 @@ export const defaultPerms = (): PermissionState => ({
   can_send_notifications: false, can_manage_notifications: false, can_read_notifications: false,
   can_create_tags: false, can_edit_tags: false, can_delete_tags: false,
   can_manage_projects: false, can_manage_tickets: false,
+  can_view_logs: false, can_export_logs: false,
 });
 
 export const PERM_GROUPS = [
@@ -58,19 +62,21 @@ export const PERM_GROUPS = [
     perms: [{ key: "can_manage_projects", label: "Gestionar" }] },
   { label: "Tickets", icon: "🎫", color: "cyan",
     perms: [{ key: "can_manage_tickets", label: "Gestionar" }] },
+  { label: "Auditoría", icon: "🧾", color: "slate",
+    perms: [{ key: "can_view_logs", label: "Ver bitácora" }, { key: "can_export_logs", label: "Exportar (CSV)" }] },
 ] as const;
 
 export const COLOR_MAP: Record<string, string> = {
   blue: "bg-blue-50 border-blue-200 text-blue-700", purple: "bg-purple-50 border-purple-200 text-purple-700",
   emerald: "bg-emerald-50 border-emerald-200 text-emerald-700", amber: "bg-amber-50 border-amber-200 text-amber-700",
   rose: "bg-rose-50 border-rose-200 text-rose-700", indigo: "bg-indigo-50 border-indigo-200 text-indigo-700",
-  cyan: "bg-cyan-50 border-cyan-200 text-cyan-700",
+  cyan: "bg-cyan-50 border-cyan-200 text-cyan-700", slate: "bg-slate-50 border-slate-300 text-slate-700",
 };
 export const ACTIVE_MAP: Record<string, string> = {
   blue: "bg-blue-700 border-blue-700 text-white", purple: "bg-purple-700 border-purple-700 text-white",
   emerald: "bg-emerald-700 border-emerald-700 text-white", amber: "bg-amber-700 border-amber-700 text-white",
   rose: "bg-rose-700 border-rose-700 text-white", indigo: "bg-indigo-700 border-indigo-700 text-white",
-  cyan: "bg-cyan-700 border-cyan-700 text-white",
+  cyan: "bg-cyan-700 border-cyan-700 text-white", slate: "bg-slate-700 border-slate-700 text-white",
 };
 
 // Preset tal cual lo devuelve GET /admin/roles/presets (admin_roles.go).

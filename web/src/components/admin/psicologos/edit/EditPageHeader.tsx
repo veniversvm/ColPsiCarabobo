@@ -1,15 +1,31 @@
 // web/src/components/admin/psicologos/edit/EditPageHeader.tsx
 
-import { Show } from "solid-js";
-import { useNavigate } from "@solidjs/router";
+import { createResource, Show } from "solid-js";
+import { useNavigate, A } from "@solidjs/router";
+import { apiGet } from "~/lib/api";
 import type { PsiProfile } from "./types";
 
 interface Props {
   profile: PsiProfile | undefined;
 }
 
+interface AdminMePerms {
+  sudo: boolean;
+  can_view_logs?: boolean;
+}
+
 export function EditPageHeader(props: Props) {
   const navigate = useNavigate();
+
+  // Solo cosmético: el backend sigue siendo la barrera real (404 enmascarado).
+  const [me] = createResource<AdminMePerms | null>(async () => {
+    try {
+      return await apiGet<AdminMePerms>("/admin/me");
+    } catch {
+      return null;
+    }
+  });
+  const canViewLogs = () => me()?.sudo || me()?.can_view_logs || false;
 
   return (
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 bg-white p-6 rounded-3xl shadow-sm border border-colpsi-border">
@@ -29,6 +45,15 @@ export function EditPageHeader(props: Props) {
       </div>
 
       <div class="flex items-center gap-3 flex-wrap">
+        <Show when={canViewLogs() && props.profile?.id}>
+          <A
+            href={`/admin/auditoria?psi_id=${props.profile!.id}`}
+            class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-black uppercase transition-colors"
+            title="Historial de cambios de este colegiado en la bitácora"
+          >
+            🧾 Ver bitácora
+          </A>
+        </Show>
         <Show when={props.profile?.solvent}>
           <span class="bg-green-100 text-green-700 px-3 py-1.5 rounded-lg text-xs font-black uppercase">Solvente</span>
         </Show>
