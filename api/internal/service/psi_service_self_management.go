@@ -29,6 +29,10 @@ func (s *PsiService) UpdateProfileSelf(
 	titleImgThree *multipart.FileHeader,
 ) (*domain.PsiUserModel, error) {
 
+	// Snapshot previo para el diff por campo de la bitácora (auto-gestión).
+	beforeSnapshot := psiSelfSnapshot(psi)
+	var beforeColData map[string]any
+
 	if err := bcrypt.CompareHashAndPassword([]byte(psi.Password), []byte(req.Password)); err != nil {
 		return nil, domain.ErrPasswordIncorrect
 	}
@@ -271,6 +275,8 @@ func (s *PsiService) UpdateProfileSelf(
 		if err != nil {
 			return nil, err
 		}
+		// Snapshot previo de los switches de privacidad (diff de la bitácora).
+		beforeColData = colDataPrivacySnapshot(currentColData)
 
 		if v := req.ShowUniversityUndergraduate(); v != nil {
 			currentColData.ShowUniversityUndergraduate = *v
@@ -338,6 +344,32 @@ func (s *PsiService) UpdateProfileSelf(
 		}
 		return nil, err
 	}
+
+	// ── Bitácora de cambios: auto-gestión del perfil con diff por campo ──
+	evt := auditPsiSelfEvent(psi, domain.AuditActionUpdate)
+	evt.Changes = BuildDiff(beforeSnapshot, psiSelfSnapshot(psi))
+	if beforeColData != nil && colDataToUpdate != nil {
+		for k, v := range BuildDiff(beforeColData, colDataPrivacySnapshot(colDataToUpdate)) {
+			evt.Changes[k] = v
+		}
+	}
+	meta := map[string]any{}
+	if req.NewPassword1 != nil && *req.NewPassword1 != "" {
+		meta["password_changed"] = true
+	}
+	if profilePic != nil {
+		meta["profile_picture_updated"] = true
+	}
+	if titleImgOne != nil || titleImgTwo != nil || titleImgThree != nil {
+		meta["title_images_updated"] = true
+	}
+	if req.FullBio != nil {
+		meta["full_bio_updated"] = true
+	}
+	if len(meta) > 0 {
+		evt.Metadata = meta
+	}
+	RecordAudit(ctx, evt)
 
 	// La cuenta ABS se identifica por el correo del agremiado (no por el
 	// username). Solo un cambio de email se propaga a la biblioteca: renombra

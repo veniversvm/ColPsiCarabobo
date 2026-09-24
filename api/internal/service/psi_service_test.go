@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/google/uuid"
@@ -31,6 +32,7 @@ type mockPsiRepoSvc struct {
 	GetPostGradeByIDFunc          func(ctx context.Context, id uuid.UUID) (*domain.PsiUserPostGrade, error)
 	UpdatePostGradeFunc           func(ctx context.Context, pg *domain.PsiUserPostGrade) error
 	CreatePostGradeFunc           func(ctx context.Context, pg *domain.PsiUserPostGrade) error
+	DeletePostGradeFunc           func(ctx context.Context, id uuid.UUID) error
 	GetTextContentByIDFunc        func(ctx context.Context, id uuid.UUID) (string, error)
 	ValidateUniqueCredentialsFunc func(ctx context.Context, username, email string, excludeID uuid.UUID) error
 	SearchDirectoryFunc           func(ctx context.Context, filter request_structs.PsiDirectoryFilterDTO) ([]domain.PsiUserModel, int64, error)
@@ -69,6 +71,9 @@ func (m *mockPsiRepoSvc) UpdatePostGrade(ctx context.Context, pg *domain.PsiUser
 }
 func (m *mockPsiRepoSvc) CreatePostGrade(ctx context.Context, pg *domain.PsiUserPostGrade) error {
 	return m.CreatePostGradeFunc(ctx, pg)
+}
+func (m *mockPsiRepoSvc) DeletePostGrade(ctx context.Context, id uuid.UUID) error {
+	return m.DeletePostGradeFunc(ctx, id)
 }
 func (m *mockPsiRepoSvc) GetTextContentByID(ctx context.Context, id uuid.UUID) (string, error) {
 	if m.GetTextContentByIDFunc == nil {
@@ -367,4 +372,48 @@ func TestUpdateProfileSelf_NoPasswordChangeKeepsKey(t *testing.T) {
 	if updated.Key != "clave-sesion-estable" {
 		t.Errorf("la Key no debe rotarse sin cambio de contraseña, got %q", updated.Key)
 	}
+}
+
+// TestPsiService_DeletePostGrade evalúa la baja de un título académico en la
+// auto-gestión: propiedad validada (IDOR), borrado físico y bitácora.
+func TestPsiService_DeletePostGrade(t *testing.T) {
+	repo := &mockPsiRepoSvc{}
+	svc := &PsiService{repo: repo}
+	ctx := context.Background()
+
+	psiID := uuid.Must(uuid.NewV7())
+	otherID := uuid.Must(uuid.NewV7())
+	pgID := uuid.Must(uuid.NewV7())
+	owner := &domain.PsiUserModel{ID: psiID, Credentials: domain.Credentials{Username: "jung"}}
+
+	repo.GetPostGradeByIDFunc = func(ctx context.Context, id uuid.UUID) (*domain.PsiUserPostGrade, error) {
+		return &domain.PsiUserPostGrade{ID: pgID, PsiUserID: psiID, Title: "Maestría en Psicología Clínica", University: "UCV", GraduationYear: 2015}, nil
+	}
+	repo.DeletePostGradeFunc = func(ctx context.Context, id uuid.UUID) error { return nil }
+
+	// Éxito: el dueño elimina su propio título.
+	t.Run("Psi: Puede eliminar su propio título", func(t *testing.T) {
+		if err := svc.DeletePostGrade(ctx, owner, pgID); err != nil {
+			t.Errorf("Error inesperado: %v", err)
+		}
+	})
+
+	// IDOR: un psicólogo no puede borrar el título de otro.
+	t.Run("Psi: No puede eliminar título ajeno", func(t *testing.T) {
+		attacker := &domain.PsiUserModel{ID: otherID, Credentials: domain.Credentials{Username: "freud"}}
+		err := svc.DeletePostGrade(ctx, attacker, pgID)
+		if err == nil || !errors.Is(err, domain.ErrPermissionDenied) {
+			t.Errorf("Se debió denegar el borrado ajeno, got: %v", err)
+		}
+	})
+
+	// Registro inexistente.
+	t.Run("Psi: Título no encontrado", func(t *testing.T) {
+		repo.GetPostGradeByIDFunc = func(ctx context.Context, id uuid.UUID) (*domain.PsiUserPostGrade, error) {
+			return nil, errors.New("not found")
+		}
+		if err := svc.DeletePostGrade(ctx, owner, pgID); err == nil {
+			t.Error("Se esperaba error de registro no encontrado")
+		}
+	})
 }

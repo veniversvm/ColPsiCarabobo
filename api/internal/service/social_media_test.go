@@ -140,6 +140,9 @@ func TestPsiService_DeleteSocialNetwork_Roles(t *testing.T) {
 	repo.GetSocialNetworkFunc = func(ctx context.Context, id uuid.UUID) (*domain.PsiUserSocialNetwork, error) {
 		return &domain.PsiUserSocialNetwork{ID: netID, PsiUserID: ownerID}, nil
 	}
+	repo.GetByIDFunc = func(ctx context.Context, id uuid.UUID) (*domain.PsiUserModel, error) {
+		return &domain.PsiUserModel{ID: ownerID, FirstName: "Dueño", LastName: "Prueba", FPV: 99999, Credentials: domain.Credentials{Username: "dueno"}}, nil
+	}
 
 	// Escenario 1: Autogestión exitosa (Ownership Validado)
 	t.Run("Psi: Puede borrar su propia red", func(t *testing.T) {
@@ -284,6 +287,10 @@ func TestPsiService_DeleteSocialNetworkByAdmin(t *testing.T) {
 	otraFicha := uuid.Must(uuid.NewV7())
 	netID := uuid.Must(uuid.NewV7())
 	admin := &domain.UserAdmin{ID: uuid.Must(uuid.NewV7()), Credentials: domain.Credentials{Username: "secretaria"}, CanDeletePsi: true}
+
+	repo.GetByIDFunc = func(ctx context.Context, id uuid.UUID) (*domain.PsiUserModel, error) {
+		return &domain.PsiUserModel{ID: psiID, FirstName: "Ficha", LastName: "Objetivo", FPV: 77777}, nil
+	}
 
 	t.Run("Éxito: borra red perteneciente a la ficha", func(t *testing.T) {
 		repo.GetSocialNetworkFunc = func(ctx context.Context, id uuid.UUID) (*domain.PsiUserSocialNetwork, error) {

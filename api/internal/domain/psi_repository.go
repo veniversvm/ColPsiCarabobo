@@ -114,6 +114,9 @@ type PsiUserRepository interface {
 	// UpdatePostGrade modifica los datos de un título existente (Título, Universidad, Soportes).
 	UpdatePostGrade(ctx context.Context, pg *PsiUserPostGrade) error
 
+	// DeletePostGrade elimina (físicamente) un título académico del expediente.
+	DeletePostGrade(ctx context.Context, id uuid.UUID) error
+
 	// =========================================================================
 	// GESTION DE SOLVENCIAS
 	// =========================================================================

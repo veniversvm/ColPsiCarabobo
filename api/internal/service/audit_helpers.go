@@ -73,6 +73,20 @@ func permissionSetToMap(p PermissionSet) map[string]any {
 	}
 }
 
+// auditPsiSelfEvent construye un evento con el psicólogo como actor y entidad
+// (auto-gestión: perfil, títulos académicos y redes sociales).
+func auditPsiSelfEvent(psi *domain.PsiUserModel, action string) AuditEvent {
+	return AuditEvent{
+		Entity:        domain.AuditEntityPsi,
+		EntityID:      psi.ID.String(),
+		EntityLabel:   psiAuditLabel(psi),
+		Action:        action,
+		ActorID:       psi.ID,
+		ActorRole:     "psi",
+		ActorUsername: psi.Username,
+	}
+}
+
 // psiCoreSnapshot captura los campos editables del expediente de un psicólogo
 // (identidad, contactos, estado gremial y ubicación) para calcular el diff por
 // campo al actualizarlo desde el panel admin. Se excluyen credenciales, textos
@@ -108,9 +122,112 @@ func psiCoreSnapshot(psi *domain.PsiUserModel) map[string]any {
 		"secondary_work_area":              psi.SecondaryWorkArea,
 		"primary_specialty_id":             psi.PrimarySpecialtyID,
 		"secondary_specialty_id":           psi.SecondarySpecialtyID,
-		"service_modality_presencial":      psi.ServiceModalityPresencial,
-		"service_modality_distance":        psi.ServiceModalityDistance,
-		"service_modality_telephone":       psi.ServiceModalityTelephone,
 		"show_service_modality":            psi.ShowServiceModality,
+	}
+}
+
+// psiSelfSnapshot captura los campos que el psicólogo puede auto-gestionar en
+// su portal (contactos, privacidad, modalidad y mini bio) para el diff por
+// campo de la bitácora. Reutiliza psiCoreSnapshot y añade los switches de
+// visibilidad y canales por ubicación. Se excluyen credenciales, hashes, S3
+// keys y campos de auditoría.
+func psiSelfSnapshot(psi *domain.PsiUserModel) map[string]any {
+	if psi == nil {
+		return map[string]any{}
+	}
+	m := psiCoreSnapshot(psi)
+	extra := map[string]any{
+		"show_contact_email":                  psi.ShowContactEmail,
+		"show_public_service_address":         psi.ShowPublicServiceAddress,
+		"show_municipality_carabobo":          psi.ShowMunicipalityCarabobo,
+		"phone_carabobo":                      psi.PhoneCarabobo,
+		"show_phone_carabobo":                 psi.ShowPhoneCarabobo,
+		"cel_phone_carabobo":                  psi.CelPhoneCarabobo,
+		"show_cel_phone_carabobo":             psi.ShowCelPhoneCarabobo,
+		"show_state_outside":                  psi.ShowStateOutside,
+		"show_municipality_outside_carabobo":  psi.ShowMunicipalityOutSideCarabobo,
+		"phone_outside_carabobo":              psi.PhoneOutSideCarabobo,
+		"show_phone_outside_carabobo":         psi.ShowPhoneOutSideCarabobo,
+		"cel_phone_outside_carabobo":          psi.CelPhoneOutSideCarabobo,
+		"show_cel_phone_outside_carabobo":     psi.ShowCellPhoneOutSideCarabobo,
+		"service_address_outside_carabobo":    psi.ServiceAddressOutSideCarabobo,
+		"show_public_service_address_outside_carabobo": psi.ShowPublicServiceAddressOutSideCarabobo,
+		"phone_outside_venezuela":             psi.PhoneOutSideVenezuela,
+		"show_phone_outside_venezuela":        psi.ShowPhoneOutSideVenezuela,
+		"cell_phone_outside_venezuela":        psi.CellPhoneOutSideVenezuela,
+		"show_cell_phone_outside_venezuela":   psi.ShowCellPhoneOutSideVenezuela,
+		"service_address_outside_venezuela":   psi.ServiceAddressOutSideVenezuela,
+		"show_public_service_address_outside_venezuela": psi.ShowPublicServiceAddressOutSideVenezuela,
+		"mini_bio":                            psi.MiniBio,
+	}
+	for k, v := range extra {
+		m[k] = v
+	}
+	return m
+}
+
+// colDataPrivacySnapshot captura los switches de privacidad académica que viven
+// en psi_user_col_data (auto-gestión) para el diff por campo de la bitácora.
+func colDataPrivacySnapshot(c *domain.PsiUserColData) map[string]any {
+	if c == nil {
+		return map[string]any{}
+	}
+	return map[string]any{
+		"show_university_undergraduate": c.ShowUniversityUndergraduate,
+		"show_graduate_date":            c.ShowGraduateDate,
+		"show_mention_undergraduate":    c.ShowMentionUndergraduate,
+		"birthday_notification":         c.BirthdayNotification,
+	}
+}
+
+// postGradeSnapshot captura los campos de un título académico para el diff.
+func postGradeSnapshot(pg *domain.PsiUserPostGrade) map[string]any {
+	if pg == nil {
+		return map[string]any{}
+	}
+	return map[string]any{
+		"post_grade_title":           pg.Title,
+		"post_grade_university":      pg.University,
+		"post_grade_graduation_year": pg.GraduationYear,
+		"post_grade_description":     pg.Description,
+	}
+}
+
+// postGradeRemovalChanges convierte el snapshot de un título académico en diff
+// de eliminación (solo `from`: el registro ya no existe tras la baja).
+func postGradeRemovalChanges(pg *domain.PsiUserPostGrade) map[string]domain.AuditChange {
+	removal := map[string]domain.AuditChange{}
+	for k, v := range postGradeSnapshot(pg) {
+		removal[k] = domain.AuditChange{From: v}
+	}
+	return removal
+}
+
+// socialSnapshot captura los campos de una red social para el diff.
+func socialSnapshot(sn *domain.PsiUserSocialNetwork) map[string]any {
+	if sn == nil {
+		return map[string]any{}
+	}
+	return map[string]any{
+		"social_name":   sn.Name,
+		"social_url":    sn.URL,
+		"social_active": sn.IsActive,
+	}
+}
+
+// socialCreateChanges arma el diff de creación de una red social (solo `to`).
+func socialCreateChanges(sn *domain.PsiUserSocialNetwork) map[string]domain.AuditChange {
+	return map[string]domain.AuditChange{
+		"social_name":   {To: sn.Name},
+		"social_url":    {To: sn.URL},
+		"social_active": {To: sn.IsActive},
+	}
+}
+
+// socialRemovalChanges arma el diff de eliminación de una red social (solo `from`).
+func socialRemovalChanges(sn *domain.PsiUserSocialNetwork) map[string]domain.AuditChange {
+	return map[string]domain.AuditChange{
+		"social_name": {From: sn.Name},
+		"social_url":  {From: sn.URL},
 	}
 }

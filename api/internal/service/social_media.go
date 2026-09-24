@@ -68,7 +68,15 @@ func (s *PsiService) AddSocialNetwork(ctx context.Context, psi *domain.PsiUserMo
 	}
 
 	// 3. PERSISTENCIA
-	return s.repo.CreateSocialNetwork(ctx, network)
+	if err := s.repo.CreateSocialNetwork(ctx, network); err != nil {
+		return err
+	}
+
+	// Bitácora de cambios: alta de red social (auto-gestión).
+	evt := auditPsiSelfEvent(psi, domain.AuditActionCreate)
+	evt.Changes = socialCreateChanges(network)
+	RecordAudit(ctx, evt)
+	return nil
 }
 
 // UpdateSocialNetwork permite la edición parcial (PATCH) de una red social.
@@ -90,6 +98,9 @@ func (s *PsiService) UpdateSocialNetwork(ctx context.Context, psi *domain.PsiUse
 		return domain.ErrSocialPermDenied
 	}
 
+	// Snapshot previo para el diff por campo de la bitácora.
+	beforeSnapshot := socialSnapshot(network)
+
 	// Actualización de auditoría (Rastro Forense)
 	network.UpdateBy = psi.Username
 	network.UpdateById = &psi.ID
@@ -105,7 +116,15 @@ func (s *PsiService) UpdateSocialNetwork(ctx context.Context, psi *domain.PsiUse
 		network.IsActive = *req.IsActive
 	}
 
-	return s.repo.UpdateSocialNetwork(ctx, network)
+	if err := s.repo.UpdateSocialNetwork(ctx, network); err != nil {
+		return err
+	}
+
+	// Bitácora de cambios: edición de red social (auto-gestión).
+	evt := auditPsiSelfEvent(psi, domain.AuditActionUpdate)
+	evt.Changes = BuildDiff(beforeSnapshot, socialSnapshot(network))
+	RecordAudit(ctx, evt)
+	return nil
 }
 
 // DeleteSocialNetwork gestiona la destrucción lógica o física de una red social.
@@ -134,7 +153,33 @@ func (s *PsiService) DeleteSocialNetwork(ctx context.Context, executorRole strin
 		return errors.New("rol no autorizado")
 	}
 
-	return s.repo.DeleteSocialNetwork(ctx, netID)
+	// Etiqueta del expediente para la bitácora (best-effort, no altera el flujo).
+	label := network.PsiUserID.String()
+	actorUsername := ""
+	if owner, gErr := s.repo.GetByID(ctx, network.PsiUserID); gErr == nil && owner != nil {
+		label = psiAuditLabel(owner)
+		if executorRole == "psi" {
+			actorUsername = owner.Username
+		}
+	}
+
+	if err := s.repo.DeleteSocialNetwork(ctx, netID); err != nil {
+		return err
+	}
+
+	// Bitácora de cambios: baja de red social.
+	evt := AuditEvent{
+		Entity:        domain.AuditEntityPsi,
+		EntityID:      network.PsiUserID.String(),
+		EntityLabel:   label,
+		Action:        domain.AuditActionDelete,
+		ActorID:       executorID,
+		ActorRole:     executorRole,
+		ActorUsername: actorUsername,
+		Changes:       socialRemovalChanges(network),
+	}
+	RecordAudit(ctx, evt)
+	return nil
 }
 
 // =========================================================================
@@ -151,7 +196,8 @@ func (s *PsiService) AddSocialNetworkByAdmin(ctx context.Context, admin *domain.
 	}
 
 	// 2. INTEGRIDAD REFERENCIAL
-	if _, err := s.repo.GetByID(ctx, psiID); err != nil {
+	target, err := s.repo.GetByID(ctx, psiID)
+	if err != nil {
 		return domain.ErrPsiNotFound
 	}
 
@@ -183,7 +229,15 @@ func (s *PsiService) AddSocialNetworkByAdmin(ctx context.Context, admin *domain.
 	}
 
 	// 5. PERSISTENCIA
-	return s.repo.CreateSocialNetwork(ctx, network)
+	if err := s.repo.CreateSocialNetwork(ctx, network); err != nil {
+		return err
+	}
+
+	// Bitácora de cambios: alta de red social (moderación admin).
+	evt := auditAdminEvent(admin, domain.AuditEntityPsi, psiID.String(), psiAuditLabel(target), domain.AuditActionCreate)
+	evt.Changes = socialCreateChanges(network)
+	RecordAudit(ctx, evt)
+	return nil
 }
 
 // UpdateSocialNetworkByAdmin permite la edición parcial (PATCH) de una red social
@@ -209,6 +263,15 @@ func (s *PsiService) UpdateSocialNetworkByAdmin(ctx context.Context, admin *doma
 		return domain.ErrSocialPermDenied
 	}
 
+	// Etiqueta del expediente para la bitácora (best-effort).
+	label := psiID.String()
+	if target, gErr := s.repo.GetByID(ctx, psiID); gErr == nil && target != nil {
+		label = psiAuditLabel(target)
+	}
+
+	// Snapshot previo para el diff por campo de la bitácora.
+	beforeSnapshot := socialSnapshot(network)
+
 	// 4. Actualización de auditoría (Rastro Forense del operador)
 	network.UpdateBy = admin.Username
 	network.UpdateById = &admin.ID
@@ -224,7 +287,15 @@ func (s *PsiService) UpdateSocialNetworkByAdmin(ctx context.Context, admin *doma
 		network.IsActive = *req.IsActive
 	}
 
-	return s.repo.UpdateSocialNetwork(ctx, network)
+	if err := s.repo.UpdateSocialNetwork(ctx, network); err != nil {
+		return err
+	}
+
+	// Bitácora de cambios: edición de red social (moderación admin).
+	evt := auditAdminEvent(admin, domain.AuditEntityPsi, psiID.String(), label, domain.AuditActionUpdate)
+	evt.Changes = BuildDiff(beforeSnapshot, socialSnapshot(network))
+	RecordAudit(ctx, evt)
+	return nil
 }
 
 // DeleteSocialNetworkByAdmin elimina lógicamente una red social de un psicólogo
@@ -247,5 +318,19 @@ func (s *PsiService) DeleteSocialNetworkByAdmin(ctx context.Context, admin *doma
 		return domain.ErrSocialOwnDenied
 	}
 
-	return s.repo.DeleteSocialNetwork(ctx, netID)
+	// Etiqueta del expediente para la bitácora (best-effort).
+	label := psiID.String()
+	if target, gErr := s.repo.GetByID(ctx, psiID); gErr == nil && target != nil {
+		label = psiAuditLabel(target)
+	}
+
+	if err := s.repo.DeleteSocialNetwork(ctx, netID); err != nil {
+		return err
+	}
+
+	// Bitácora de cambios: baja de red social (moderación admin).
+	evt := auditAdminEvent(admin, domain.AuditEntityPsi, psiID.String(), label, domain.AuditActionDelete)
+	evt.Changes = socialRemovalChanges(network)
+	RecordAudit(ctx, evt)
+	return nil
 }
