@@ -50,6 +50,7 @@ func main() {
 		&domain.AdminPermissionLog{},
 		&domain.AppSetting{},
 		&domain.SettingsAuditLog{},
+		&domain.ApiChangeLog{},
 		&domain.PsiPasswordResetToken{},
 	)
 	if err != nil {

@@ -53,6 +53,10 @@ type AdminPermissionsDTO struct {
 
 	// Tickets de Solicitudes (colas, chat y configuración del módulo)
 	CanManageTickets *bool `json:"can_manage_tickets" example:"false"`
+
+	// Auditoría (bitácora de cambios a nivel de API)
+	CanViewLogs   *bool `json:"can_view_logs" example:"false"`
+	CanExportLogs *bool `json:"can_export_logs" example:"false"`
 }
 
 // CreateAdminRequest define la carga útil (Payload) para el aprovisionamiento

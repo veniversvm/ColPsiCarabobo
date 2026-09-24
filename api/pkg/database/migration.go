@@ -37,6 +37,7 @@ func RunMigrations(db *gorm.DB) error {
 		&domain.AdminPermissionLog{}, // Auditoría forense de cambios de permisos
 		&domain.AppSetting{},         // KV global de configuración (interruptores)
 		&domain.SettingsAuditLog{},   // Auditoría de cambios de configuración global
+		&domain.ApiChangeLog{},       // Bitácora de cambios a nivel de API (audit logs)
 	)
 
 	if err != nil {

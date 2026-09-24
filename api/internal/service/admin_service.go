@@ -113,6 +113,9 @@ func (s *AdminService) Login(ctx context.Context, identifier, password string) (
 	}
 
 	signed, err := token.SignedString([]byte(newKey))
+
+	// Bitácora de cambios: inicio de sesión del staff (best-effort, diferido).
+	RecordAudit(ctx, auditAdminEvent(admin, domain.AuditEntityStaff, admin.ID.String(), admin.Username, domain.AuditActionLogin))
 	return signed, admin, err
 }
 
@@ -122,7 +125,13 @@ func (s *AdminService) Logout(ctx context.Context, admin *domain.UserAdmin) erro
 	admin.Key = ""
 	admin.UpdateBy = admin.Username
 	admin.UpdateById = &admin.ID
-	return s.repo.UpdateKey(ctx, admin)
+	if err := s.repo.UpdateKey(ctx, admin); err != nil {
+		return err
+	}
+
+	// Bitácora de cambios: cierre de sesión del staff.
+	RecordAudit(ctx, auditAdminEvent(admin, domain.AuditEntityStaff, admin.ID.String(), admin.Username, domain.AuditActionLogout))
+	return nil
 }
 
 // =========================================================================
@@ -235,6 +244,8 @@ func buildPermissionMatrix(
 		{"Delete Tags", req.CanDeleteTags, target.CanDeleteTags, updater.CanDeleteTags, func(v bool) { target.CanDeleteTags = v }},
 		{"Manage Projects", req.CanManageProjects, target.CanManageProjects, updater.CanManageProjects, func(v bool) { target.CanManageProjects = v }},
 		{"Manage Tickets", req.CanManageTickets, target.CanManageTickets, updater.CanManageTickets, func(v bool) { target.CanManageTickets = v }},
+		{"View Logs", req.CanViewLogs, target.CanViewLogs, updater.CanViewLogs, func(v bool) { target.CanViewLogs = v }},
+		{"Export Logs", req.CanExportLogs, target.CanExportLogs, updater.CanExportLogs, func(v bool) { target.CanExportLogs = v }},
 	}
 }
 
@@ -361,6 +372,11 @@ func (s *AdminService) CreateAdmin(
 		log.Warn().Err(err).Str("component", "admin_service").Msg("No se pudo escribir el log de creación de personal")
 	}
 
+	// Bitácora de cambios: alta de un miembro del staff.
+	evt := auditAdminEvent(&creator, domain.AuditEntityStaff, newAdmin.ID.String(), newAdmin.Username, domain.AuditActionCreate)
+	evt.Metadata = map[string]any{"role": newAdmin.Role}
+	RecordAudit(ctx, evt)
+
 	// 7. Mantenimiento del Caché (Purge Completo)
 	// Al insertar un nuevo registro, el paginado cacheado del listado es inválido. Se limpia preventivamente.
 	s.cache.Flush()
@@ -471,6 +487,17 @@ func (s *AdminService) UpdateAdmin(
 		log.Warn().Err(err).Str("component", "admin_service").Msg("No se pudo escribir el log de cambio de permisos")
 	}
 
+	// Bitácora de cambios: edición de staff con diff por campo (permisos y rol).
+	evt := auditAdminEvent(&updater, domain.AuditEntityStaff, target.ID.String(), target.Username, domain.AuditActionUpdate)
+	evt.Changes = BuildDiff(permissionSetToMap(permsBefore), permissionSetToMap(AdminPermissionSet(target)))
+	if roleFrom != target.Role {
+		if evt.Changes == nil {
+			evt.Changes = map[string]domain.AuditChange{}
+		}
+		evt.Changes["role"] = domain.AuditChange{From: roleFrom, To: target.Role}
+	}
+	RecordAudit(ctx, evt)
+
 	s.cache.Flush() // Limpiar vistas cacheadas del listado de personal
 	return nil
 }
@@ -515,6 +542,9 @@ func (s *AdminService) DeleteAdmin(
 	if err := s.repo.Delete(ctx, targetID); err != nil {
 		return err
 	}
+
+	// Bitácora de cambios: baja lógica de un miembro del staff.
+	RecordAudit(ctx, auditAdminEvent(updater, domain.AuditEntityStaff, target.ID.String(), target.Username, domain.AuditActionDelete))
 
 	// Purga obligatoria para eliminarlo de las grillas paginadas del dashboard
 	s.cache.Flush()
@@ -569,6 +599,11 @@ func (s *AdminService) TransferSudo(ctx context.Context, current *domain.UserAdm
 		log.Warn().Err(err).Str("component", "admin_service").Msg("No se pudo escribir el log de transferencia de Sudo")
 	}
 
+	// Bitácora de cambios: sucesión del rol Sudo.
+	evt := auditAdminEvent(current, domain.AuditEntityStaff, successor.ID.String(), successor.Username, domain.AuditActionTransferSudo)
+	evt.Metadata = map[string]any{"from": current.Username, "to": successor.Username}
+	RecordAudit(ctx, evt)
+
 	s.cache.Flush()
 	return nil
 }
@@ -613,5 +648,7 @@ func diffPermissionSet(before, after PermissionSet) bool {
 		before.CanEditTags != after.CanEditTags ||
 		before.CanDeleteTags != after.CanDeleteTags ||
 		before.CanManageProjects != after.CanManageProjects ||
-		before.CanManageTickets != after.CanManageTickets
+		before.CanManageTickets != after.CanManageTickets ||
+		before.CanViewLogs != after.CanViewLogs ||
+		before.CanExportLogs != after.CanExportLogs
 }

@@ -79,6 +79,8 @@ func (s *PsiService) Login(ctx context.Context, identifier, password string) (st
 		}
 	}
 
+	// Bitácora de cambios: inicio de sesión del agremiado.
+	RecordAudit(ctx, auditPsiAuthEvent(psi, domain.AuditActionLogin))
 	return token, psi, nil
 }
 
@@ -138,5 +140,11 @@ func (s *PsiService) Logout(ctx context.Context, psi *domain.PsiUserModel) error
 	psi.Key = ""
 	psi.UpdateBy = psi.Username
 	psi.UpdateById = &psi.ID
-	return s.repo.UpdateKey(ctx, psi)
+	if err := s.repo.UpdateKey(ctx, psi); err != nil {
+		return err
+	}
+
+	// Bitácora de cambios: cierre de sesión del agremiado.
+	RecordAudit(ctx, auditPsiAuthEvent(psi, domain.AuditActionLogout))
+	return nil
 }

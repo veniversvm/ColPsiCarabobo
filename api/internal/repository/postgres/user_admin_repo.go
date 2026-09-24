@@ -114,6 +114,10 @@ func (r *adminRepo) Update(ctx context.Context, user *domain.UserAdmin) error {
 		// ── Permisos: Tickets de Solicitudes ──────────────────────────
 		"can_manage_tickets": gorm.Expr("?", user.CanManageTickets),
 
+		// ── Permisos: Auditoría (bitácora de cambios) ──────────────────
+		"can_view_logs":   gorm.Expr("?", user.CanViewLogs),
+		"can_export_logs": gorm.Expr("?", user.CanExportLogs),
+
 		// ── Rótulo del preset aplicado (solo metadato) ───────────────
 		"role": user.Role,
 

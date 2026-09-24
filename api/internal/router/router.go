@@ -21,12 +21,15 @@ import (
 )
 
 // SetupRouter initializes all API routes, middleware, and dependency injection.
-func SetupRouter(app *fiber.App, db *gorm.DB, s3Client *s3.S3Client, appCache *cache.Cache, mailSvc service.IMailService, notificationSvc *service.NotificationService) {
+func SetupRouter(app *fiber.App, db *gorm.DB, s3Client *s3.S3Client, appCache *cache.Cache, mailSvc service.IMailService, notificationSvc *service.NotificationService, auditSvc *service.AuditService) {
 
 	// ── Analytics: instanciar repo, servicio y registrar middleware global ────
 	analyticsRepo := postgres.NewAnalyticsRepository(db)
 	analyticsSvc := service.NewAnalyticsService(analyticsRepo)
 	app.Use(middleware.AnalyticsMiddleware(analyticsSvc))
+
+	// ── Audit: transportar IP/User-Agent en el contexto de cada request ─────
+	app.Use(middleware.AuditRequestMeta())
 
 	// ── Repositories: instanciar una sola vez para todos los routers ─────────
 	adminRepo := postgres.NewAdminRepository(db)
@@ -61,6 +64,7 @@ func SetupRouter(app *fiber.App, db *gorm.DB, s3Client *s3.S3Client, appCache *c
 	SetupNotificationRoutes(api, adminRepo, psiRepo, analyticsSvc, notificationSvc)
 	SetupInscriptionRoutes(api, inscriptionRepo, psiRepo, adminRepo, settingsRepo, s3Client, mailSvc, analyticsSvc)
 	SetupKanbanRoutes(api, adminRepo, psiRepo, kanbanRepo, analyticsSvc)
+	SetupAuditRoutes(api, adminRepo, psiRepo, auditSvc, analyticsSvc)
 
 	// =========================================================================
 	// DEFAULT 404 HANDLER (CATCH-ALL)

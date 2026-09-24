@@ -158,6 +158,11 @@ func (s *NotificationService) CreateNotification(ctx context.Context, admin *dom
 		return nil, err
 	}
 
+	// Bitácora de cambios: creación/envío de notificación (sin el cuerpo completo).
+	evt := auditAdminEvent(admin, domain.AuditEntityNotification, notification.ID.String(), notification.Title, domain.AuditActionCreate)
+	evt.Metadata = map[string]any{"target_type": string(notification.TargetType), "scheduled": scheduled, "send_email": notification.SendEmail}
+	RecordAudit(ctx, evt)
+
 	// Si es programada, no se resuelven destinatarios aún.
 	if scheduled {
 		return map[string]interface{}{
@@ -402,7 +407,15 @@ func (s *NotificationService) CancelNotification(ctx context.Context, admin *dom
 		return err
 	}
 	// Limpiar targets si existieran.
-	return s.repo.DeleteTargets(ctx, id)
+	if err := s.repo.DeleteTargets(ctx, id); err != nil {
+		return err
+	}
+
+	// Bitácora de cambios: cancelación de una notificación.
+	evt := auditAdminEvent(admin, domain.AuditEntityNotification, n.ID.String(), n.Title, domain.AuditActionChangeState)
+	evt.Metadata = map[string]any{"estado": "cancelada"}
+	RecordAudit(ctx, evt)
+	return nil
 }
 
 // AttachFile asocia un archivo subido a S3 con una notificación.
