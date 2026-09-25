@@ -1,9 +1,9 @@
 // web/src/components/ui/Notebook.tsx
-// Pestañas horizontales estilo Odoo (notebook): barra gris clara con la pestaña
-// activa en blanco y línea superior en el color del gremio intercalado por
-// posición (ciclo de 6: azul, amarillo, navy, oro, azul-claro, amarillo-oscuro),
-// conectada al panel de contenido. Las inactivas muestran su línea al 35% para
-// que la intercalación se lea sin romper la sobriedad.
+// Pestañas horizontales estilo Odoo con color único por posición: cada pestaña
+// toma un color institucional del gremio (ciclo de 6: azul, amarillo, navy, oro,
+// azul-claro, amarillo-oscuro) en su TÍTULO y su FONDO para diferenciarse de un
+// vistazo. La activa se pinta de lleno (fondo sólido + título blanco/navy según
+// luminancia); las inactivas quedan tintadas al 12% con título del color propio.
 // Cada NotebookPage hace lazy-mount: la pestaña inicial se hidrata desde el SSR y
 // las demás se montan al activarse por primera vez; una vez visitadas permanecen
 // en el DOM (ocultas) para conservar estado local (TipTap, flatpickr, selecciones
@@ -25,15 +25,17 @@ interface NotebookContextValue {
 
 const NotebookContext = createContext<NotebookContextValue>();
 
-// Colores institucionales del gremio (paleta @theme de app.css) intercalados por
-// posición de pestaña. Orden: azul, amarillo, navy, oro, azul-claro, amarillo-osc.
+// Pares (fondo sólido, título sobre sólido) de los colores institucionales del
+// gremio (paleta @theme de app.css) intercalados por posición de pestaña.
+// Orden: azul, amarillo, navy, oro, azul-claro, amarillo-oscuro. El título "on"
+// se elige por luminancia para leerse sobre el fondo sólido de la activa.
 const TAB_COLORS = [
-  "#1e3a8a",
-  "#facc15",
-  "#0a174f",
-  "#dfcc87",
-  "#1e40af",
-  "#eab308",
+  { bg: "#1e3a8a", on: "#ffffff" },
+  { bg: "#facc15", on: "#172554" },
+  { bg: "#0a174f", on: "#ffffff" },
+  { bg: "#dfcc87", on: "#172554" },
+  { bg: "#1e40af", on: "#ffffff" },
+  { bg: "#eab308", on: "#172554" },
 ];
 
 export function Notebook(props: {
@@ -52,18 +54,19 @@ export function Notebook(props: {
           <For each={props.pages}>
             {(page, i) => {
               const isActive = () => active() === page.id;
-              const color = TAB_COLORS[i() % TAB_COLORS.length];
+              const t = TAB_COLORS[i() % TAB_COLORS.length];
               return (
                 <button
                   type="button"
                   role="tab"
                   aria-selected={isActive()}
                   onClick={() => setActive(page.id)}
-                  style={{ borderTopColor: isActive() ? color : `${color}59` }}
-                  class={`relative px-4 py-2.5 text-sm whitespace-nowrap border-t-2 -mb-px transition-colors ${
-                    isActive()
-                      ? "bg-white font-semibold text-colpsi-blue"
-                      : "border-t-transparent text-colpsi-muted hover:text-colpsi-blue hover:bg-white/60"
+                  style={{
+                    backgroundColor: isActive() ? t.bg : `${t.bg}1f`,
+                    color: isActive() ? t.on : t.bg,
+                  }}
+                  class={`relative px-4 py-2.5 text-sm whitespace-nowrap -mb-px transition-colors hover:brightness-95 ${
+                    isActive() ? "font-semibold" : "font-medium"
                   }`}
                 >
                   {page.icon && (
