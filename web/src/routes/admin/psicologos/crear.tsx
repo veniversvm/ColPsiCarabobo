@@ -148,11 +148,11 @@ register_number: parseInt(String(form.register_number), 10) || 0,
   };
 
   return (
-    <div class="space-y-6 animate-in fade-in duration-500 pb-24 max-w-5xl mx-auto">
+    <div class="space-y-4 pb-12 max-w-5xl mx-auto">
       <FormHeader />
       <FormMessage type={message()?.type} text={message()?.text || ""} details={message()?.details} />
       
-      <form onSubmit={handleSubmit} class="space-y-8">
+      <form onSubmit={handleSubmit} class="space-y-4">
         {/* Cada sección debe actualizarse para manejar los nuevos nombres de campos */}
         <AccountSection            form={form} setForm={updateField} />
         <LegalIdentitySection      form={form} setForm={updateField} />

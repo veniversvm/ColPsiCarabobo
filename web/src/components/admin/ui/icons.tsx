@@ -8,7 +8,7 @@ type IconName =
   | "kanban" | "shield" | "logout" | "refresh" | "chevronRight" | "menu"
   | "panelLeft" | "sliders" | "search" | "plus" | "pencil" | "trash" | "dots"
   | "chevronDown" | "user" | "checkCircle" | "inbox" | "arrowRight" | "check"
-  | "clock" | "mail";
+  | "clock" | "mail" | "alertTriangle";
 
 const S = {
   rect: (x: number, y: number, w: number, h: number, rx = 2) =>
@@ -128,6 +128,11 @@ const icons: Record<IconName, () => JSX.Element> = {
   mail: () => (<>
     {S.rect(2, 4, 20, 16, 2)}
     {S.path("m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7")}
+  </>),
+  alertTriangle: () => (<>
+    {S.path("M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z")}
+    {S.line(12, 9, 12, 13)}
+    {S.line(12, 17, 12.01, 17)}
   </>),
 };
 

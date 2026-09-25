@@ -1,16 +1,21 @@
 // web/src/components/admin/psicologos/create/FormHeader.tsx
 import { A } from "@solidjs/router";
+import { PageHeader } from "~/components/admin/ui/PageHeader";
 
 export function FormHeader() {
   return (
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-black text-colpsi-blue">Alta de Colegiado</h1>
-        <p class="text-gray-500 text-sm mt-1">Apertura de nuevo expediente institucional (* Campos obligatorios)</p>
-      </div>
-      <A href="/admin/psicologos" class="bg-white border-2 border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl font-bold hover:bg-colpsi-surface transition-colors text-sm">
-        Cancelar
-      </A>
-    </div>
+    <PageHeader
+      crumbs={[{ label: "Psicólogos", href: "/admin/psicologos" }, { label: "Alta de Colegiado" }]}
+      title="Alta de Colegiado"
+      description="Apertura de nuevo expediente institucional (* Campos obligatorios)"
+      actions={
+        <A
+          href="/admin/psicologos"
+          class="inline-flex items-center justify-center h-9 px-3.5 rounded-md border border-colpsi-border bg-white text-sm font-medium text-colpsi-text hover:bg-colpsi-bg transition-colors"
+        >
+          Cancelar
+        </A>
+      }
+    />
   );
 }
