@@ -313,3 +313,41 @@ lógica, RBAC, server actions y endpoints intactos.
 2. Docker: `docker compose build web && docker compose up -d`.
 3. Smoke test visual: `/admin-access` → login → dashboard, listas y CRUD del admin.
 4. Confirmar que el menú filtrado por permisos (RBAC) y el badge de tickets siguen funcionando.
+
+---
+
+## 8. Entregado — Notebook estilo Odoo (rama `feat/admin-paneles-pro`)
+
+Pestañas horizontales tipo Odoo (notebook) implementadas y verificadas con
+`npm run build` en tres rutas: `/psi/perfil`, `/admin/psicologos/[id]/detalle`
+e `/admin/inscripciones/[id]`.
+
+### Componente compartido
+
+- **`web/src/components/ui/Notebook.tsx`** — barra de pestañas + paneles con
+  *lazy-mount* SSR-seguro (`NotebookContext` + `NotebookPage`): la pestaña
+  inicial se hidrata desde el SSR; las demás se montan al activarse la primera
+  vez y luego permanecen montadas (ocultas) para conservar estado local
+  (TipTap, flatpickr, selecciones temporales).
+- **Ciclo de 6 colores intercalados por posición**: azul `#1e3a8a`, amarillo
+  fuerte (título oscurecido `#a16207`), navy `#0a174f`, vinotinto `#722f37`,
+  verde `#166534`, azul-claro `#1e40af`. El título conserva **siempre** su color
+  (regla del usuario); la selección se marca con el **degradado azul heráldico**
+  (navy → azul → azul-oscuro) + título en píldora clara de su color.
+- **`shrink-0`** en cada pestaña: los títulos largos no se cortan
+  (`overflow-hidden`); la fila desplaza con `overflow-x-auto`.
+- **Subtítulo bajo la barra**: punto del color de la pestaña + nombre de la
+  sección activa, en el color del título de la pestaña; y **cuadro explicativo**
+  opcional (`description` por página) que describe para qué sirve cada área.
+
+### Rutas migradas
+
+| Ruta | Notebooks / pestañas |
+|---|---|
+| `/psi/perfil` | 8 pestañas con iconos (user, mail, book, mapPin, fileText, sliders, shield, link) y descripciones |
+| `/admin/psicologos/[id]/detalle` | 2 notebooks: 8 (expediente, dentro del form) + 5 (gestión, fuera del form) |
+| `/admin/inscripciones/[id]` | 4 pestañas |
+
+La lógica, los RBAC y las server actions quedaron **intactos** (cambios solo de
+presentación). Notas: `Panel.tsx` (primitiva anterior) se eliminó por ser dead
+code; los commits viven en `feat/admin-paneles-pro` y se fusionaron a `main`.
