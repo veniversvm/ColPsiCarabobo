@@ -2,7 +2,7 @@
  * Página de perfil público del psicólogo con URLs amigables y SSR.
  * Formato: nombre-apellido(s)-fpv-1234
  */
-import { createSignal, Show, Suspense } from "solid-js";
+import { createSignal, Show, Suspense, For } from "solid-js";
 import { createResource } from "solid-js";
 import { useParams, A } from "@solidjs/router";
 import { apiGet, ApiError } from "~/lib/api";
@@ -171,8 +171,30 @@ export default function PsiProfilePage() {
                     <ContactCard
                       email={psi().email}
                       location={psi().location}
-                      socialNetworks={psi().social_networks}
                     />
+
+                    {/* ── Redes sociales (tarjeta propia, visible) ─────────── */}
+                    <Show when={psi().social_networks?.length}>
+                      <div class="bg-white rounded-3xl p-6 md:p-8 shadow-premium border border-colpsi-border">
+                        <h3 class="text-sm md:text-lg font-black text-colpsi-blue uppercase tracking-widest border-b-2 border-gray-50 pb-4 mb-5 flex items-center gap-2">
+                          <span class="text-2xl">🔗</span> Redes Sociales
+                        </h3>
+                        <div class="flex flex-wrap gap-2.5">
+                          <For each={psi().social_networks}>
+                            {(net) => (
+                              <a
+                                href={net.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="inline-flex items-center gap-2 bg-colpsi-surface hover:bg-colpsi-blue/5 text-gray-700 text-sm md:text-base font-bold px-3 py-2 rounded-xl transition-colors break-all"
+                              >
+                                <span class="text-xl">🔗</span> {net.name}
+                              </a>
+                            )}
+                          </For>
+                        </div>
+                      </div>
+                    </Show>
                     <Show when={psi().mini_bio || psi().full_bio_content}>
                       <div class="bg-white rounded-3xl p-6 md:p-8 shadow-premium border border-colpsi-border">
                         <h3 class="text-xs font-black text-colpsi-blue uppercase tracking-widest mb-3 border-l-4 border-colpsi-yellow pl-3">

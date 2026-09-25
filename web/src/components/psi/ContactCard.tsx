@@ -1,13 +1,12 @@
 // web/src/components/psi/ContactCard.tsx
 import { Show, For } from "solid-js";
-import { SocialNetwork, PsiLocation } from "~/types/psi";
+import { PsiLocation } from "~/types/psi";
 
 interface ContactCardProps {
   email?: string;
   phone?: string;
   address?: string;
   location: PsiLocation;
-  socialNetworks?: SocialNetwork[];
 }
 
 type LocationBlock = {
@@ -29,8 +28,7 @@ export function ContactCard(props: ContactCardProps) {
     props.email ||
     props.phone ||
     props.address ||
-    hasAnyLocation() ||
-    props.socialNetworks?.length;
+    hasAnyLocation();
 
   // Colores del badge según el tipo de ubicación
   const tagClasses = (tag: string) => {
@@ -162,24 +160,6 @@ export function ContactCard(props: ContactCardProps) {
                     </div>
                   )}
                 </div>
-              )}
-            </For>
-          </div>
-        </Show>
-
-        {/* ── Redes sociales ─────────────────────────────────────────── */}
-        <Show when={props.socialNetworks?.length}>
-          <div class="mt-5 pt-4 border-t border-colpsi-border flex flex-wrap gap-2">
-            <For each={props.socialNetworks}>
-              {(net) => (
-                <a
-                  href={net.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="text-xs md:text-sm bg-colpsi-surface text-colpsi-blue font-bold px-2 md:px-3 py-1.5 rounded-lg hover:bg-colpsi-yellow transition-colors"
-                >
-                  {net.name}
-                </a>
               )}
             </For>
           </div>
