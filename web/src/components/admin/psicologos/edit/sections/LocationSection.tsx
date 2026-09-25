@@ -5,6 +5,7 @@ import { ToggleSwitch } from "~/components/ui/ToggleSwitch";
 import { MUNICIPIOS_CARABOBO, ESTADOS_VENEZUELA, municipiosDe } from "~/lib/geo";
 import { Field, IC } from "../EditPrimitives";
 import type { EditFormState } from "../types";
+import { Icon } from "~/components/admin/ui/icons";
 
 interface Props {
   form: EditFormState;
@@ -25,7 +26,7 @@ export function LocationSection(props: Props) {
         <div class="space-y-6">
           <div class="flex items-center gap-2 border-l-4 border-blue-600 pl-3">
             <h3 class="text-sm font-black text-blue-900 uppercase tracking-widest">
-              📍 Presencia en Carabobo
+              <Icon name="mapPin" class="w-3.5 h-3.5 inline-block mr-1.5 align-text-bottom" /> Presencia en Carabobo
             </h3>
           </div>
           
@@ -77,7 +78,7 @@ export function LocationSection(props: Props) {
         <div class="space-y-6 pt-4 border-t border-colpsi-border">
           <div class="flex items-center gap-2 border-l-4 border-purple-600 pl-3">
             <h3 class="text-sm font-black text-purple-900 uppercase tracking-widest">
-              🗺️ Otro Estado de Venezuela
+              <Icon name="map" class="w-3.5 h-3.5 inline-block mr-1.5 align-text-bottom" /> Otro Estado de Venezuela
             </h3>
           </div>
           
@@ -173,7 +174,7 @@ export function LocationSection(props: Props) {
         <div class="space-y-6 pt-4 border-t border-colpsi-border">
           <div class="flex items-center gap-2 border-l-4 border-emerald-600 pl-3">
             <h3 class="text-sm font-black text-emerald-900 uppercase tracking-widest">
-              🌐 Exterior (Fuera de Venezuela)
+              <Icon name="globe" class="w-3.5 h-3.5 inline-block mr-1.5 align-text-bottom" /> Exterior (Fuera de Venezuela)
             </h3>
           </div>
           

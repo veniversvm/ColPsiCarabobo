@@ -103,7 +103,7 @@ export default function AdminDashboard() {
       {/* ── ERROR ───────────────────────────────────────────────────────── */}
       <Show when={stats.error}>
         <div class="border border-red-200 bg-red-50 rounded-md p-3 text-sm text-red-700 font-medium">
-          ⚠️ Error al cargar estadísticas — verifica que el servidor esté activo.
+          <Icon name="alertTriangle" class="w-4 h-4 inline-block align-text-bottom mr-1.5" /> Error al cargar estadísticas — verifica que el servidor esté activo.
         </div>
       </Show>
 

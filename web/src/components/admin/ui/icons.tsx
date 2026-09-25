@@ -8,7 +8,9 @@ export type IconName =
   | "kanban" | "shield" | "logout" | "refresh" | "chevronRight" | "menu"
   | "panelLeft" | "sliders" | "search" | "plus" | "pencil" | "trash" | "dots"
   | "chevronDown" | "user" | "checkCircle" | "inbox" | "arrowRight" | "check"
-  | "clock" | "mail" | "alertTriangle" | "globe" | "eye" | "send" | "x" | "info";
+  | "clock" | "mail" | "alertTriangle" | "globe" | "eye" | "send" | "x" | "info"
+  | "camera" | "key" | "mapPin" | "book" | "paperclip" | "lightbulb" | "rocket"
+  | "barChart" | "map";
 
 const S = {
   rect: (x: number, y: number, w: number, h: number, rx = 2) =>
@@ -155,6 +157,42 @@ const icons: Record<IconName, () => JSX.Element> = {
     {S.circle(12, 12, 10)}
     {S.line(12, 16, 12, 12)}
     {S.line(12, 8, 12.01, 8)}
+  </>),
+  camera: () => (<>
+    {S.path("M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z")}
+    {S.circle(12, 13, 3)}
+  </>),
+  key: () => (<>
+    {S.path("m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4")}
+  </>),
+  mapPin: () => (<>
+    {S.path("M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z")}
+    {S.circle(12, 10, 3)}
+  </>),
+  book: () => (<>
+    {S.path("M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20")}
+  </>),
+  paperclip: () => (<>
+    {S.path("m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48")}
+  </>),
+  lightbulb: () => (<>
+    {S.path("M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5")}
+    {S.path("M9 18h6")}
+    {S.path("M10 22h4")}
+  </>),
+  rocket: () => (<>
+    {S.path("M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z")}
+    {S.path("m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z")}
+    {S.path("M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0")}
+    {S.path("M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5")}
+  </>),
+  barChart: () => (<>
+    {S.line(12, 20, 12, 10)} {S.line(18, 20, 18, 4)} {S.line(6, 20, 6, 16)}
+  </>),
+  map: () => (<>
+    {S.path("M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z")}
+    {S.path("M15 5.764v15")}
+    {S.path("M9 3.236v15")}
   </>),
 };
 

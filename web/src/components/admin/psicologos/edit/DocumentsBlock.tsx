@@ -11,6 +11,7 @@ import {
 import { getUserFacingError } from "~/lib/errors";
 import FlatDatePicker from "~/components/ui/FlatDatePicker";
 import type { PsiUserDocument, PsiUserDocumentType } from "~/types/psi";
+import { Icon } from "~/components/admin/ui/icons";
 
 interface Props {
   entries: PsiUserDocument[] | undefined;
@@ -184,7 +185,7 @@ export function DocumentsBlock(props: Props) {
                           when={!isPdf(doc)}
                           fallback={
                             <div class="flex flex-col items-center justify-center text-red-500">
-                              <span class="text-2xl">📕</span>
+                              <Icon name="book" class="w-6 h-6" />
                               <span class="text-[9px] font-black uppercase mt-1">
                                 PDF
                               </span>
@@ -201,7 +202,6 @@ export function DocumentsBlock(props: Props) {
                       <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-2 flex-wrap">
                           <span class="bg-white px-2 py-0.5 rounded-lg text-[10px] font-black text-blue-800 shadow-sm border border-colpsi-border">
-                            {DOCUMENT_TYPE_EMOJI[doc.document_type ?? "otro"]}{" "}
                             {DOCUMENT_TYPE_LABELS[doc.document_type ?? "otro"]}
                           </span>
                           {doc.title && (
@@ -217,7 +217,7 @@ export function DocumentsBlock(props: Props) {
                         </Show>
                         <div class="flex items-center gap-3 mt-2 flex-wrap text-[10px] font-bold text-gray-400">
                           {doc.filename && (
-                            <span class="truncate max-w-[180px]">📎 {doc.filename}</span>
+                            <span class="truncate max-w-[180px] inline-flex items-center gap-1"><Icon name="paperclip" class="w-3 h-3 shrink-0" /> {doc.filename}</span>
                           )}
                           {formatDate(doc.document_date) && (
                             <span>{formatDate(doc.document_date)}</span>
@@ -315,7 +315,7 @@ export function DocumentsBlock(props: Props) {
                               setEditFile(input.files?.[0] ?? null);
                             }}
                           />
-                          {editFile() ? "✓ " + editFile()!.name : "📎 Elegir archivo"}
+                          {editFile() ? <><Icon name="check" class="w-4 h-4 shrink-0" /> {editFile()!.name}</> : <><Icon name="paperclip" class="w-4 h-4 shrink-0" /> Elegir archivo</>}
                         </label>
                       </div>
                       <div class="md:col-span-2">
@@ -412,7 +412,7 @@ export function DocumentsBlock(props: Props) {
                   class="sr-only"
                   onChange={pickFile}
                 />
-                {file() ? "✓ " + file()!.name : "📎 Seleccionar archivo"}
+                {file() ? <><Icon name="check" class="w-4 h-4 shrink-0" /> {file()!.name}</> : <><Icon name="paperclip" class="w-4 h-4 shrink-0" /> Seleccionar archivo</>}
               </label>
             </div>
             <div>

@@ -5,6 +5,7 @@ import { ToggleSwitch } from "~/components/ui/ToggleSwitch";
 import { Field, IC } from "../EditPrimitives";
 import FlatDatePicker from "~/components/ui/FlatDatePicker";
 import type { EditFormState } from "../types";
+import { Icon } from "~/components/admin/ui/icons";
 
 interface Props {
   form: EditFormState;
@@ -92,12 +93,12 @@ export function AcademicSection(props: Props) {
                 }`}>
                   <Show when={props.files[img.id]} fallback={
                     <>
-                      <span class="text-xl">📄</span>
+                      <Icon name="fileText" class="w-5 h-5 text-slate-400" />
                       <span class="text-[9px] font-bold text-gray-400 uppercase mt-1">{img.label}</span>
                     </>
                   }>
-                    <span class="text-emerald-600 text-[10px] font-black uppercase text-center px-2">
-                      ✅ {props.files[img.id].name.slice(0, 15)}...
+                    <span class="inline-flex items-center gap-1 text-emerald-600 text-[10px] font-black uppercase text-center px-2">
+                      <Icon name="check" class="w-3.5 h-3.5 shrink-0" /> {props.files[img.id].name.slice(0, 15)}...
                     </span>
                   </Show>
                   <input type="file" accept="image/*" class="hidden" onChange={(e) => handleFileChange(img.id, e)} />
@@ -108,7 +109,7 @@ export function AcademicSection(props: Props) {
                     type="button"
                     onClick={() => removeFile(img.id)}
                     class="absolute -top-2 -right-2 bg-red-500 text-white w-5 h-5 rounded-full text-[10px] shadow-md flex items-center justify-center hover:bg-red-600 transition-colors"
-                  >✕</button>
+                  >✕<Icon name="x" class="w-3 h-3" /></button>
                 </Show>
               </div>
             ))}

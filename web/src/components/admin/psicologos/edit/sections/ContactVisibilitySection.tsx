@@ -3,6 +3,7 @@
 import { ToggleSwitch } from "~/components/ui/ToggleSwitch";
 import { Field, IC } from "../EditPrimitives";
 import type { EditFormState } from "../types";
+import { Icon } from "~/components/admin/ui/icons";
 
 interface Props {
   form: EditFormState;
@@ -93,7 +94,7 @@ export function ContactVisibilitySection(props: Props) {
 
         {/* ── NOTA SOBRE TELÉFONOS PÚBLICOS ── */}
         <div class="bg-amber-50 p-4 rounded-2xl border border-amber-100 flex items-start gap-3">
-          <span class="text-lg">💡</span>
+          <Icon name="lightbulb" class="w-5 h-5 shrink-0 text-amber-600 mt-0.5" />
           <p class="text-[11px] text-amber-800 leading-relaxed">
             <span class="font-bold uppercase block mb-1">Nota sobre teléfonos públicos:</span>
             Los números de teléfono que aparecen en el directorio (Carabobo, Otros Estados o Exterior) se editan en la sección de <strong>"Ubicación Geográfica"</strong> más abajo, ya que están vinculados a la zona donde el psicólogo ejerce.

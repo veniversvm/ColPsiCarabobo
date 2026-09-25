@@ -215,7 +215,7 @@ export default function CrearNotificacionPage() {
             <label class={labelCls}>Mensaje *</label>
             <textarea value={message()} onInput={(e) => setMessage(e.currentTarget.value)} rows={4} class={`${inputCls} resize-none min-h-28`} placeholder="Redacta el comunicado..." />
           </div>
-          {/* ⚠️ COMPONENTE DESACTIVADO TEMPORALMENTE (aviso a otras IA: NO ELIMINAR).
+          {/* COMPONENTE DESACTIVADO TEMPORALMENTE (aviso a otras IA: NO ELIMINAR).
               El envío de correos se pidió desactivar (no usar Resend para notificaciones).
               Para reactivar, descomenta el <label> de abajo. Todo el flujo backend
               (send_email, mailSvc.SendEmail) sigue intacto en la API Go. */}

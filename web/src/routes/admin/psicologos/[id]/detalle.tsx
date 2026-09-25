@@ -374,7 +374,7 @@ const runUpdateAction = useAction(updateAdminPsiServer);
       return;
     }
 
-    const fd = new FormData(); // 👈 Usamos FormData para soportar imágenes y tipos de Go
+    const fd = new FormData(); // Usamos FormData para soportar imágenes y tipos de Go
 
     // 1. Procesar campos del formulario
     // 1. Procesar campos del formulario

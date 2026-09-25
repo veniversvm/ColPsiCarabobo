@@ -5,6 +5,7 @@ import QRCodeGenerator from "~/components/psi/profile/QrCode";
 import { bucketUrl } from "~/lib/bucket";
 import { Field, IC } from "../EditPrimitives";
 import type { EditFormState } from "../types";
+import { Icon } from "~/components/admin/ui/icons";
 
 interface Props {
   url: string;
@@ -50,14 +51,14 @@ export function AccountSection(props: Props) {
             <div class="w-32 h-32 rounded-3xl overflow-hidden border-4 border-gray-50 shadow-md bg-gray-100 flex items-center justify-center relative">
               <Show 
                 when={previewUrl()} 
-                fallback={<span class="text-4xl text-gray-300">👤</span>}
+                fallback={<Icon name="user" class="w-12 h-12 text-slate-300" />}
               >
                 <img src={previewUrl()} alt="Avatar" class="w-full h-full object-cover" />
               </Show>
               
               {/* Overlay de carga */}
               <label class="absolute inset-0 bg-blue-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer text-white p-2 text-center">
-                <span class="text-lg">📷</span>
+                <span class="w-6 h-6"><Icon name="camera" class="w-6 h-6" /></span>
                 <span class="text-[9px] font-bold uppercase leading-tight">Cambiar Foto</span>
                 <input type="file" accept="image/*" class="hidden" onChange={handleFileChange} />
               </label>
@@ -69,7 +70,7 @@ export function AccountSection(props: Props) {
                 class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs shadow-lg flex items-center justify-center hover:bg-red-600 transition-colors"
                 title="Quitar imagen seleccionada"
               >
-                ✕
+                <Icon name="x" class="w-3 h-3" />
               </button>
             </Show>
           </div>
@@ -82,7 +83,7 @@ export function AccountSection(props: Props) {
               class="text-[10px] font-black uppercase tracking-widest bg-red-50 text-red-600 border border-red-200 rounded-lg px-3 py-1.5 hover:bg-red-100 transition-colors"
               title="Eliminar la foto de perfil del psicólogo"
             >
-              🗑 Eliminar foto
+              <span class="inline-flex items-center gap-1.5"><Icon name="trash" class="w-3.5 h-3.5" /> Eliminar foto</span>
             </button>
           </Show>
         </div>
@@ -127,7 +128,7 @@ export function AccountSection(props: Props) {
               >
                 <Show
                   when={props.resettingPassword}
-                  fallback={<span>🔑 Reiniciar clave</span>}
+                  fallback={<><Icon name="key" class="w-3.5 h-3.5" /> Reiniciar clave</>}
                 >
                   <span class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   <span>Procesando...</span>
@@ -149,7 +150,7 @@ export function AccountSection(props: Props) {
               >
                 <Show
                   when={props.syncingAbs}
-                  fallback={<span>🔄 Sincronizar biblioteca</span>}
+                  fallback={<><Icon name="refresh" class="w-3.5 h-3.5" /> Sincronizar biblioteca</>}
                 >
                   <span class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   <span>Procesando...</span>
