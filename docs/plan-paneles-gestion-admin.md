@@ -420,3 +420,45 @@ datos, API y lógica intactos):
 Verificado con `npm run build` y `curl` del SSR: `mailto:` presente, **0**
 `href="tel:"` y orden perfil < contacto < formación. Commits: `f5adfd7`,
 `29bedf2`.
+
+### Panel de Control: acentos institucionales y barra lateral con color (tras la fusión 4)
+
+Entrega de presentación sobre el dashboard y la barra lateral del admin
+(`web/src/routes/admin/index.tsx`, `admin.tsx` y los componentes
+`admin/dashboard/*`). Solo clases y props opcionales; sin cambios de lógica,
+API ni tipos del backend.
+
+**Dashboard — acentos institucionales sutiles** (commit `de19e9a`):
+
+- `sectionTitle(t, accent)` gana una **barrita vertical redondeada** por sección:
+  dorada (`bg-colpsi-yellow`) en "Inicios de sesión" y azul
+  (`bg-colpsi-blue`) en el resto — el azul/amarillo heráldico del escudo.
+- Acento **degradado `colpsi-blue → colpsi-yellow`** (`w-16 h-1`) justo bajo la
+  cabecera "Panel de Control" (sin tocar `PageHeader`, que es compartido).
+- `TopProfiles` — jerarquía de color: `#1` en `text-colpsi-yellow-dark`, `#2–3`
+  en `text-colpsi-blue/80`, resto gris; el conteo pasa a azul institucional.
+- `RankingList` — prop opcional **`accent`** (clase de la barra de progreso,
+  default `bg-colpsi-blue/50`, compatible con usos futuros); en el panel las
+  tres listas se diferencian: especialidades azul, municipios índigo
+  (`bg-indigo-400/50`), términos ámbar (`bg-amber-400/50`).
+
+**Barra lateral — un color por botón + tipografía 15px** (commit `8d135f0`):
+
+- Cada item del menú lleva un **chip de icono** (`w-8 h-8 rounded-lg`) con su
+  color: Dashboard azul institucional, Psicólogos índigo, Inscripciones
+  esmeralda, Áreas ámbar, Noticias rosa, Notificaciones violeta, Tickets
+  naranja, Proyectos cian, Staff teal. Los SVG del menú ya usan
+  `stroke="currentColor"`, así el icono hereda el color del chip.
+- El item **activo** conserva la píldora blanca + borde dorado
+  (`border-l-colpsi-yellow`) y pinta la etiqueta con el color del item
+  (`isMenuActive()` decide la clase por ruta).
+- Tipografía de la barra (logo, items y "Salir de sesión"): `text-sm` 14px →
+  **`text-[15px]`**; altura de item `h-9 → h-10` para acomodar el chip. Topbar,
+  dashboard y resto del panel intactos.
+
+**Verificación**: `npm run build` ✅ + captura headless (Chromium, sesión admin
+sembrada): chips con `bg-{color}-100`, `font-size: 15px` computado en logo e
+items, etiqueta activa `text-colpsi-blue` y borde dorado; sin errores JS.
+Efecto de la DB dev revertido (password temporal del admin restaurada a su hash).
+Nota: los rankings muestran "Sin datos aún" mientras la DB dev no registre
+búsquedas; las clases `accent` ya están generadas en el CSS del build.
