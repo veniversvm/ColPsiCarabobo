@@ -10,13 +10,13 @@ export function EditFeedback(props: Props) {
   return (
     <>
       <Show when={props.error}>
-        <div class="mb-6 p-4 rounded-2xl bg-red-50 text-red-800 font-bold text-sm border-l-4 border-red-500 shadow-sm">
+        <div class="p-3 rounded-md bg-red-50 text-red-700 border border-red-200 text-sm font-medium">
           {props.error}
         </div>
       </Show>
       <Show when={props.success}>
-        <div class="mb-6 p-4 rounded-2xl bg-emerald-50 text-emerald-800 font-bold text-sm border-l-4 border-emerald-500 shadow-sm">
-          ✓ Publicación actualizada correctamente. Redirigiendo...
+        <div class="p-3 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-sm font-medium">
+          Publicación actualizada correctamente. Redirigiendo...
         </div>
       </Show>
     </>

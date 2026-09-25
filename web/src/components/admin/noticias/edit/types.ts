@@ -13,21 +13,21 @@ export interface PostDetail {
   text: { id: string; content: string };
 }
 
-export const STATUS_OPTIONS: { value: PostStatus; label: string; icon: string }[] = [
-  { value: "draft",     label: "Borrador",   icon: "📝" },
-  { value: "published", label: "Publicado",  icon: "✅" },
-  { value: "archived",  label: "Archivado",  icon: "📦" },
-  { value: "scheduled", label: "Programado", icon: "⏰" },
+export const STATUS_OPTIONS: { value: PostStatus; label: string }[] = [
+  { value: "draft",     label: "Borrador" },
+  { value: "published", label: "Publicado" },
+  { value: "archived",  label: "Archivado" },
+  { value: "scheduled", label: "Programado" },
 ];
 
 export const STATUS_BADGE: Record<PostStatus, string> = {
-  published: "bg-emerald-100 text-emerald-700",
-  draft:     "bg-amber-100 text-amber-700",
-  archived:  "bg-gray-100 text-gray-500",
-  scheduled: "bg-purple-100 text-purple-700",
+  published: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  draft:     "bg-amber-50 text-amber-700 border-amber-200",
+  archived:  "bg-slate-100 text-slate-600 border-slate-200",
+  scheduled: "bg-purple-50 text-purple-700 border-purple-200",
 };
 
 export const imgUrl = (key: string) => bucketUrl(key);
 
-export const IC = "w-full bg-white border-2 border-gray-200 focus:border-blue-500 rounded-xl px-4 py-2.5 outline-none transition-all text-gray-800 text-sm";
-export const labelClass = "block text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1";
+export const IC = "h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none placeholder:text-slate-400 focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/15 transition-colors text-colpsi-text";
+export const labelClass = "block text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide ml-1 mb-1";

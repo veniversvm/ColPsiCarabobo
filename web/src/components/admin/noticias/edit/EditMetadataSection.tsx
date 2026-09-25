@@ -18,8 +18,8 @@ interface Props {
 
 export function EditMetadataSection(props: Props) {
   return (
-    <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-colpsi-border space-y-5">
-      <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest border-b border-colpsi-border pb-3">
+    <section class="bg-white rounded-lg p-5 border border-colpsi-border space-y-4">
+      <h2 class="text-base font-semibold text-colpsi-text border-b border-colpsi-border pb-3">
         Información General
       </h2>
 
@@ -34,7 +34,7 @@ export function EditMetadataSection(props: Props) {
           onInput={(e) => props.setTitle(e.currentTarget.value)}
           class={IC}
         />
-        <p class="text-[10px] text-gray-400 mt-1 text-right">{props.title().length}/100</p>
+        <p class="text-xs text-colpsi-muted mt-1 text-right">{props.title().length}/100</p>
       </div>
 
       {/* Resumen */}
@@ -45,36 +45,36 @@ export function EditMetadataSection(props: Props) {
           maxLength={250}
           value={props.shortDescription()}
           onInput={(e) => props.setShortDescription(e.currentTarget.value)}
-          class={`${IC} resize-none`}
+          class={`${IC} resize-none min-h-20`}
         />
-        <p class="text-[10px] text-gray-400 mt-1 text-right">{props.shortDescription().length}/250</p>
+        <p class="text-xs text-colpsi-muted mt-1 text-right">{props.shortDescription().length}/250</p>
       </div>
 
       {/* Audiencia y Estado */}
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Audiencia */}
         <div>
           <label class={labelClass}>Audiencia</label>
-          <div class="flex gap-3 mt-1">
+          <div class="flex gap-2 mt-1">
             {(["public", "psi"] as const).map((t) => (
               <button
                 type="button"
                 onClick={() => props.setType(t)}
-                class={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wide border-2 transition-all ${
+                class={`flex-1 h-9 rounded-md border text-xs font-semibold transition-colors ${
                   props.type() === t
                     ? t === "public"
                       ? "bg-emerald-600 text-white border-emerald-600"
-                      : "bg-blue-700 text-white border-blue-700"
-                    : "bg-white text-gray-500 border-gray-200 hover:border-gray-300"
+                      : "bg-colpsi-blue text-white border-colpsi-blue"
+                    : "bg-white text-colpsi-muted border-colpsi-border hover:border-colpsi-blue/40"
                 }`}
               >
-                {t === "public" ? "🌐 Público" : "🔒 Colegiados"}
+                {t === "public" ? "Público" : "Colegiados"}
               </button>
             ))}
           </div>
-          <p class="text-[10px] text-gray-400 mt-1 ml-1">
-            {props.type() === "public" 
-              ? "Visible para cualquier visitante." 
+          <p class="text-[11px] text-colpsi-muted mt-1 ml-1">
+            {props.type() === "public"
+              ? "Visible para cualquier visitante."
               : "Solo psicólogos con sesión iniciada."}
           </p>
         </div>
@@ -87,13 +87,13 @@ export function EditMetadataSection(props: Props) {
               <button
                 type="button"
                 onClick={() => props.setStatus(opt.value)}
-                class={`py-2 rounded-xl text-xs font-black uppercase tracking-wide border-2 transition-all ${
+                class={`h-9 rounded-md border text-xs font-semibold transition-colors ${
                   props.status() === opt.value
-                    ? "bg-blue-800 text-white border-blue-800"
-                    : "bg-white text-gray-500 border-gray-200 hover:border-gray-300"
+                    ? "bg-colpsi-blue text-white border-colpsi-blue"
+                    : "bg-white text-colpsi-muted border-colpsi-border hover:border-colpsi-blue/40"
                 }`}
               >
-                {opt.icon} {opt.label}
+                {opt.label}
               </button>
             ))}
           </div>
@@ -138,7 +138,7 @@ export function EditMetadataSection(props: Props) {
               </select>
             </div>
           </div>
-          <p class="text-[10px] text-gray-400 mt-1 ml-1">
+          <p class="text-[11px] text-colpsi-muted mt-1 ml-1">
             El post se publicará automáticamente en esta fecha y hora.
           </p>
         </div>

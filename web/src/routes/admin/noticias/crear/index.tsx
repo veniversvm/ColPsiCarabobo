@@ -3,13 +3,14 @@ import { createSignal } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import { RichTextEditor } from "~/components/ui/RichTextEditor";
 import { ToggleSwitch } from "~/components/ui/ToggleSwitch";
+import { Icon } from "~/components/admin/ui/icons";
 
 // ── Acción multipart ──────────────────────────────────────────────────────────
 // No usamos server action aquí porque el endpoint acepta multipart/form-data
 // con un archivo adjunto. Lo enviamos directamente desde el cliente con fetch.
 
-const IC = "w-full bg-white border-2 border-gray-200 focus:border-blue-500 rounded-xl px-4 py-2.5 outline-none transition-all text-gray-800 text-sm";
-const labelClass = "block text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1";
+const IC = "h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none placeholder:text-slate-400 focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/15 transition-colors text-colpsi-text";
+const labelClass = "block text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide ml-1 mb-1";
 
 // ─────────────────────────────────────────────────────────────────────────────
 export default function AdminCrearNoticiaPage() {
@@ -85,38 +86,35 @@ export default function AdminCrearNoticiaPage() {
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
-    <main class="pb-28 animate-in fade-in duration-500 max-w-4xl mx-auto">
+    <main class="space-y-4 pb-12 max-w-4xl mx-auto">
 
       {/* ── HEADER ────────────────────────────────────────────────────────── */}
-      <div class="flex items-center gap-4 mb-8 bg-white p-6 rounded-3xl shadow-sm border border-colpsi-border">
+      <div class="flex items-center gap-3 pb-4 border-b border-colpsi-border">
         <button
           onClick={() => navigate(-1)}
-          class="w-10 h-10 bg-colpsi-surface hover:bg-gray-100 text-gray-600 rounded-full font-bold flex items-center justify-center transition-colors flex-shrink-0"
+          class="inline-flex items-center justify-center h-8 w-8 rounded-md border border-colpsi-border bg-white text-colpsi-muted hover:text-colpsi-blue hover:bg-colpsi-bg transition-colors"
+          title="Volver"
         >
-          ←
+          <Icon name="chevronRight" class="w-4 h-4 rotate-180" />
         </button>
         <div>
-          <h1 class="text-2xl font-black text-blue-900 uppercase tracking-tight">
-            Nueva Publicación
-          </h1>
-          <p class="text-gray-400 text-sm mt-0.5 font-medium">
-            Crea una noticia o comunicado para la plataforma
-          </p>
+          <h1 class="text-lg font-semibold text-colpsi-text">Nueva Publicación</h1>
+          <p class="text-sm text-colpsi-muted mt-0.5">Crea una noticia o comunicado para la plataforma</p>
         </div>
       </div>
 
       {/* ── ERROR ─────────────────────────────────────────────────────────── */}
       {error() && (
-        <div class="mb-6 p-4 rounded-2xl bg-red-50 text-red-800 font-bold text-sm border-l-4 border-red-500 shadow-sm">
+        <div class="p-3 rounded-md bg-red-50 text-red-700 border border-red-200 text-sm font-medium">
           {error()}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} class="space-y-6">
+      <form onSubmit={handleSubmit} class="space-y-4">
 
         {/* ══ BLOQUE 1: METADATOS ══════════════════════════════════════════ */}
-        <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-colpsi-border space-y-5">
-          <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest border-b border-colpsi-border pb-3">
+        <section class="bg-white rounded-lg p-5 border border-colpsi-border space-y-4">
+          <h2 class="text-base font-semibold text-colpsi-text border-b border-colpsi-border pb-3">
             Información General
           </h2>
 
@@ -132,7 +130,7 @@ export default function AdminCrearNoticiaPage() {
               onInput={(e) => setTitle(e.currentTarget.value)}
               class={IC}
             />
-            <p class="text-[10px] text-gray-400 mt-1 text-right">{title().length}/100</p>
+            <p class="text-xs text-colpsi-muted mt-1 text-right">{title().length}/100</p>
           </div>
 
           {/* Resumen */}
@@ -144,46 +142,46 @@ export default function AdminCrearNoticiaPage() {
               placeholder="Breve descripción que aparece en la lista de noticias..."
               value={shortDescription()}
               onInput={(e) => setShortDescription(e.currentTarget.value)}
-              class={`${IC} resize-none`}
+              class={`${IC} resize-none min-h-20`}
             />
-            <p class="text-[10px] text-gray-400 mt-1 text-right">{shortDescription().length}/250</p>
+            <p class="text-xs text-colpsi-muted mt-1 text-right">{shortDescription().length}/250</p>
           </div>
 
           {/* Tipo y estado en fila */}
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class={labelClass}>Audiencia</label>
-              <div class="flex gap-3 mt-1">
+              <div class="flex gap-2 mt-1">
                 {(["public", "psi"] as const).map((t) => (
                   <button
                     type="button"
                     onClick={() => setType(t)}
-                    class={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wide border-2 transition-all ${
+                    class={`flex-1 h-9 rounded-md border text-xs font-semibold transition-colors ${
                       type() === t
                         ? t === "public"
                           ? "bg-emerald-600 text-white border-emerald-600"
-                          : "bg-blue-700 text-white border-blue-700"
-                        : "bg-white text-gray-500 border-gray-200 hover:border-gray-300"
+                          : "bg-colpsi-blue text-white border-colpsi-blue"
+                        : "bg-white text-colpsi-muted border-colpsi-border hover:border-colpsi-blue/40"
                     }`}
                   >
-                    {t === "public" ? "🌐 Público" : "🔒 Colegiados"}
+                    {t === "public" ? "Público" : "Colegiados"}
                   </button>
                 ))}
               </div>
-              <p class="text-[10px] text-gray-400 mt-1 ml-1">
+              <p class="text-[11px] text-colpsi-muted mt-1 ml-1">
                 {type() === "public"
                   ? "Visible para cualquier visitante del sitio."
                   : "Solo psicólogos con sesión iniciada."}
               </p>
             </div>
 
-            <div class="flex flex-col justify-center bg-colpsi-surface rounded-2xl px-5 py-4 border border-colpsi-border">
+            <div class="flex flex-col justify-center bg-colpsi-bg rounded-md px-4 py-3 border border-colpsi-border">
               <ToggleSwitch
                 label="Publicar inmediatamente"
                 checked={isActive()}
                 onChange={(v) => setIsActive(v)}
               />
-              <p class="text-[10px] text-gray-400 mt-2 ml-1">
+              <p class="text-[11px] text-colpsi-muted mt-2 ml-1">
                 {isActive()
                   ? "Visible en la plataforma al guardar."
                   : "Se guardará como borrador (no visible)."}
@@ -193,34 +191,35 @@ export default function AdminCrearNoticiaPage() {
         </section>
 
         {/* ══ BLOQUE 2: IMAGEN DE PORTADA ══════════════════════════════════ */}
-        <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-colpsi-border">
-          <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest border-b border-colpsi-border pb-3 mb-5">
+        <section class="bg-white rounded-lg p-5 border border-colpsi-border">
+          <h2 class="text-base font-semibold text-colpsi-text border-b border-colpsi-border pb-3 mb-4">
             Imagen de Portada
           </h2>
 
           {imagePreview() ? (
-            <div class="relative group rounded-2xl overflow-hidden border-2 border-gray-200">
+            <div class="relative group rounded-lg overflow-hidden border border-colpsi-border">
               <img src={imagePreview()!} alt="Vista previa" class="w-full max-h-64 object-cover" />
               <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <button
                   type="button"
                   onClick={clearImage}
-                  class="bg-white text-red-600 font-black px-4 py-2 rounded-xl text-sm hover:bg-red-50 transition-all shadow"
+                  class="inline-flex items-center gap-1.5 h-9 px-3 bg-white text-colpsi-red font-semibold rounded-md text-xs border border-colpsi-border shadow-sm hover:bg-red-50 transition-colors"
                 >
-                  🗑 Quitar imagen
+                  <Icon name="trash" class="w-3.5 h-3.5" />
+                  Quitar imagen
                 </button>
               </div>
-              <div class="absolute bottom-2 left-2 bg-black/60 text-white text-[10px] font-bold px-2 py-1 rounded-lg">
+              <div class="absolute bottom-2 left-2 bg-black/60 text-white text-[10px] font-semibold px-2 py-1 rounded-md">
                 {imageFile()?.name}
               </div>
             </div>
           ) : (
-            <label class="flex flex-col items-center justify-center w-full h-44 border-2 border-dashed border-gray-300 rounded-2xl bg-colpsi-surface hover:bg-blue-50 hover:border-blue-300 transition-all cursor-pointer group">
-              <div class="flex flex-col items-center gap-2 text-gray-400 group-hover:text-blue-500 transition-colors">
+            <label class="flex flex-col items-center justify-center w-full h-44 border-2 border-dashed border-slate-300 rounded-lg bg-colpsi-bg hover:bg-white hover:border-colpsi-blue/40 transition-colors cursor-pointer group">
+              <div class="flex flex-col items-center gap-2 text-colpsi-muted group-hover:text-colpsi-blue transition-colors">
                 <svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 9.75h.008M3.375 3h17.25A.375.375 0 0121 3.375v17.25A.375.375 0 0120.625 21H3.375A.375.375 0 013 20.625V3.375A.375.375 0 013.375 3z" />
                 </svg>
-                <span class="font-bold text-sm">Haz clic para subir imagen</span>
+                <span class="font-semibold text-sm">Haz clic para subir imagen</span>
                 <span class="text-[11px]">JPG, PNG, WebP · Máx. 5MB</span>
               </div>
               <input type="file" accept="image/*" class="hidden" onChange={handleImageChange} />
@@ -229,8 +228,8 @@ export default function AdminCrearNoticiaPage() {
         </section>
 
         {/* ══ BLOQUE 3: CONTENIDO ENRIQUECIDO ══════════════════════════════ */}
-        <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-colpsi-border">
-          <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest border-b border-colpsi-border pb-3 mb-5">
+        <section class="bg-white rounded-lg p-5 border border-colpsi-border">
+          <h2 class="text-base font-semibold text-colpsi-text border-b border-colpsi-border pb-3 mb-4">
             Contenido <span class="text-red-400">*</span>
           </h2>
           <RichTextEditor
@@ -240,20 +239,20 @@ export default function AdminCrearNoticiaPage() {
         </section>
 
         {/* ── BOTÓN FLOTANTE ─────────────────────────────────────────────── */}
-        <div class="sticky bottom-6 z-50 flex justify-end gap-3">
+        <div class="sticky bottom-4 z-50 flex justify-end gap-2">
           <button
             type="button"
             onClick={() => navigate(-1)}
-            class="bg-white text-gray-600 border-2 border-gray-200 px-6 py-4 rounded-2xl font-black hover:bg-colpsi-surface transition-all text-sm"
+            class="h-10 px-4 rounded-md border border-colpsi-border bg-white text-sm font-medium text-colpsi-text hover:bg-colpsi-bg transition-colors"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={saving()}
-            class="bg-blue-800 text-white px-10 py-4 rounded-2xl font-black shadow-2xl hover:scale-105 active:scale-95 transition-all disabled:opacity-70 flex items-center gap-3 border-2 border-white text-sm"
+            class="inline-flex items-center justify-center gap-2 h-10 px-5 rounded-md bg-colpsi-blue text-white text-sm font-semibold transition-colors hover:bg-colpsi-blue-light disabled:opacity-60"
           >
-            {saving() ? "PUBLICANDO..." : isActive() ? "🚀 PUBLICAR AHORA" : "💾 GUARDAR BORRADOR"}
+            {saving() ? "Procesando..." : isActive() ? "Publicar ahora" : "Guardar borrador"}
           </button>
         </div>
 

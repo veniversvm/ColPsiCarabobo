@@ -117,7 +117,7 @@ export default function AdminEditarNoticiaPage() {
   };
 
   return (
-    <main class="pb-28 animate-in fade-in duration-500 max-w-4xl mx-auto">
+    <main class="space-y-4 pb-12 max-w-4xl mx-auto">
 
       <EditHeader 
         post={post() ?? null}
@@ -139,7 +139,7 @@ export default function AdminEditarNoticiaPage() {
         {(p) => {
           initForm(p());
           return (
-            <form onSubmit={handleSubmit} class="space-y-6">
+            <form onSubmit={handleSubmit} class="space-y-4">
 
               <EditMetadataSection
                 title={title}

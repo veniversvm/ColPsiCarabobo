@@ -14,9 +14,10 @@ import {
   type PermissionState,
   type RolePreset,
 } from "~/lib/staff-permissions";
+import { Icon } from "~/components/admin/ui/icons";
 
-const IC = "w-full bg-white border-2 border-gray-200 focus:border-blue-500 rounded-xl px-4 py-2.5 outline-none transition-all text-gray-800 text-sm";
-const labelClass = "block text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1";
+const IC = "h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none placeholder:text-slate-400 focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/15 transition-colors text-colpsi-text";
+const labelClass = "block text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide ml-1 mb-1";
 
 export default function AdminCrearStaffPage() {
   const navigate = useNavigate();
@@ -85,29 +86,31 @@ export default function AdminCrearStaffPage() {
   };
 
   return (
-    <main class="pb-28 animate-in fade-in duration-500 max-w-3xl mx-auto">
+    <main class="space-y-4 pb-12 max-w-3xl mx-auto">
 
-      <div class="flex items-center gap-4 mb-8 bg-white p-6 rounded-3xl shadow-sm border border-colpsi-border">
-        <button onClick={() => navigate(-1)} class="w-10 h-10 bg-colpsi-surface hover:bg-gray-100 text-gray-600 rounded-full font-bold flex items-center justify-center transition-colors flex-shrink-0">←</button>
+      <div class="flex items-center gap-3 pb-4 border-b border-colpsi-border">
+        <button onClick={() => navigate(-1)} class="inline-flex items-center justify-center h-8 w-8 rounded-md border border-colpsi-border bg-white text-colpsi-muted hover:text-colpsi-blue hover:bg-colpsi-bg transition-colors" title="Volver">
+          <Icon name="chevronRight" class="w-4 h-4 rotate-180" />
+        </button>
         <div>
-          <h1 class="text-2xl font-black text-blue-900 uppercase tracking-tight">Nuevo Administrador</h1>
-          <p class="text-gray-400 text-sm mt-0.5 font-medium">Crea un nuevo miembro del staff con permisos específicos</p>
+          <h1 class="text-lg font-semibold text-colpsi-text">Nuevo Administrador</h1>
+          <p class="text-sm text-colpsi-muted mt-0.5">Crea un nuevo miembro del staff con permisos específicos</p>
         </div>
       </div>
 
       {error() && (
-        <div class="mb-6 p-4 rounded-2xl bg-red-50 text-red-800 font-bold text-sm border-l-4 border-red-500 shadow-sm">{error()}</div>
+        <div class="p-3 rounded-md bg-red-50 text-red-700 border border-red-200 text-sm font-medium">{error()}</div>
       )}
 
-      <form onSubmit={handleSubmit} class="space-y-6">
+      <form onSubmit={handleSubmit} class="space-y-4">
 
-        <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-colpsi-border space-y-5">
-          <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest border-b border-colpsi-border pb-3">Datos de Acceso</h2>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <section class="bg-white rounded-lg p-5 border border-colpsi-border space-y-4">
+          <h2 class="text-base font-semibold text-colpsi-text border-b border-colpsi-border pb-3">Datos de Acceso</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class={labelClass}>Usuario <span class="text-red-400">*</span></label>
               <input type="text" required maxLength={25} placeholder="ej. jperez" value={username()} onInput={(e) => setUsername(e.currentTarget.value)} class={IC} />
-              <p class="text-[10px] text-gray-400 mt-1 text-right">{username().length}/25</p>
+              <p class="text-xs text-colpsi-muted mt-1 text-right">{username().length}/25</p>
             </div>
             <div>
               <label class={labelClass}>Email <span class="text-red-400">*</span></label>
@@ -117,46 +120,46 @@ export default function AdminCrearStaffPage() {
           <div>
             <label class={labelClass}>Contraseña <span class="text-red-400">*</span></label>
             <div class="relative">
-              <input type={showPassword() ? "text" : "password"} required placeholder="Mínimo 8 caracteres, mayúsculas y números" value={password()} onInput={(e) => setPassword(e.currentTarget.value)} class={`${IC} pr-12`} />
-              <button type="button" onClick={() => setShowPassword((v) => !v)} class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs font-bold px-1">
+              <input type={showPassword() ? "text" : "password"} required placeholder="Mínimo 8 caracteres, mayúsculas y números" value={password()} onInput={(e) => setPassword(e.currentTarget.value)} class={`${IC} pr-14`} />
+              <button type="button" onClick={() => setShowPassword((v) => !v)} class="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-semibold text-colpsi-muted hover:text-colpsi-blue px-2 py-1">
                 {showPassword() ? "Ocultar" : "Ver"}
               </button>
             </div>
-            <p class="text-[10px] text-gray-400 mt-1 ml-1">El sistema enviará las credenciales al email del administrador.</p>
+            <p class="text-[11px] text-colpsi-muted mt-1 ml-1">El sistema enviará las credenciales al email del administrador.</p>
           </div>
         </section>
 
-        <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-colpsi-border">
-          <div class="flex items-center justify-between border-b border-colpsi-border pb-3 mb-6">
-            <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest">Perfil de Rol</h2>
-            <span class="text-xs font-black text-gray-500">Atajo: aplica un conjunto de permisos</span>
+        <section class="bg-white rounded-lg p-5 border border-colpsi-border">
+          <div class="flex items-center justify-between border-b border-colpsi-border pb-3 mb-4">
+            <h2 class="text-base font-semibold text-colpsi-text">Perfil de Rol</h2>
+            <span class="text-xs font-medium text-colpsi-muted">Atajo: aplica un conjunto de permisos</span>
           </div>
           <RoleSelector perms={perms()} storedRole={role()} onSelect={applyRole} onClear={clearRole} />
         </section>
 
-        <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-colpsi-border">
-          <div class="flex items-center justify-between border-b border-colpsi-border pb-3 mb-6">
-            <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest">Permisos</h2>
-            <span class="text-xs font-black text-gray-500">{totalEnabled()}/{TOTAL_PERMS} activos</span>
+        <section class="bg-white rounded-lg p-5 border border-colpsi-border">
+          <div class="flex items-center justify-between border-b border-colpsi-border pb-3 mb-4">
+            <h2 class="text-base font-semibold text-colpsi-text">Permisos</h2>
+            <span class="text-xs font-medium text-colpsi-muted">{totalEnabled()}/{TOTAL_PERMS} activos</span>
           </div>
-          <div class="space-y-4">
+          <div class="space-y-3">
             {PERM_GROUPS.map((group) => {
-              const allOn = () => group.perms.every((p) => perms()[p.key as keyof PermissionsState]);
+              const allOn = () => group.perms.every((p) => perms()[p.key as keyof PermissionState]);
               return (
-                <div class={`rounded-2xl border-2 overflow-hidden ${COLOR_MAP[group.color].split(" ").slice(0, 2).join(" ")}`}>
+                <div class={`rounded-md border border-colpsi-border overflow-hidden`}>
                   <button type="button" onClick={() => toggleGroup(group.perms.map((p) => p.key))}
-                    class={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors ${allOn() ? ACTIVE_MAP[group.color] : `${COLOR_MAP[group.color]} hover:opacity-90`}`}>
-                    <span class="font-black text-sm flex items-center gap-2"><span>{group.icon}</span>{group.label}</span>
-                    <span class="text-[11px] font-black opacity-80">{allOn() ? "Quitar todos" : "Dar todos"}</span>
+                    class={`w-full flex items-center justify-between px-4 py-2.5 text-left transition-colors ${allOn() ? ACTIVE_MAP[group.color] : `${COLOR_MAP[group.color]} hover:opacity-90`}`}>
+                    <span class="font-semibold text-sm">{group.label}</span>
+                    <span class="text-[11px] font-medium opacity-80">{allOn() ? "Quitar todos" : "Dar todos"}</span>
                   </button>
-                  <div class="grid grid-cols-3 gap-px bg-gray-100">
+                  <div class="grid grid-cols-3 gap-px bg-colpsi-border">
                     {group.perms.map((perm) => {
-                      const active = () => perms()[perm.key as keyof PermissionsState];
+                      const active = () => perms()[perm.key as keyof PermissionState];
                       return (
-                        <button type="button" onClick={() => togglePerm(perm.key as keyof PermissionsState)}
-                          class={`flex items-center justify-between px-4 py-3 text-sm font-bold transition-all ${active() ? `${ACTIVE_MAP[group.color]} opacity-90` : "bg-white text-gray-400 hover:bg-colpsi-surface"}`}>
+                        <button type="button" onClick={() => togglePerm(perm.key as keyof PermissionState)}
+                          class={`flex items-center justify-between px-4 py-2.5 text-sm font-medium transition-colors ${active() ? `${ACTIVE_MAP[group.color]} opacity-90` : "bg-white text-colpsi-muted hover:bg-colpsi-bg"}`}>
                           <span>{perm.label}</span>
-                          <span class="text-base">{active() ? "✓" : "○"}</span>
+                          <span class="text-sm">{active() ? "✓" : "○"}</span>
                         </button>
                       );
                     })}
@@ -167,10 +170,11 @@ export default function AdminCrearStaffPage() {
           </div>
         </section>
 
-        <div class="sticky bottom-6 z-50 flex justify-end gap-3">
-          <button type="button" onClick={() => navigate(-1)} class="bg-white text-gray-600 border-2 border-gray-200 px-6 py-4 rounded-2xl font-black hover:bg-colpsi-surface transition-all text-sm">Cancelar</button>
-          <button type="submit" disabled={saving()} class="bg-blue-800 text-white px-10 py-4 rounded-2xl font-black shadow-2xl hover:scale-105 active:scale-95 transition-all disabled:opacity-70 flex items-center gap-3 border-2 border-white text-sm">
-            {saving() ? "CREANDO..." : "👤 CREAR ADMINISTRADOR"}
+        <div class="sticky bottom-4 z-50 flex justify-end gap-2">
+          <button type="button" onClick={() => navigate(-1)} class="h-10 px-4 rounded-md border border-colpsi-border bg-white text-sm font-medium text-colpsi-text hover:bg-colpsi-bg transition-colors">Cancelar</button>
+          <button type="submit" disabled={saving()} class="inline-flex items-center justify-center gap-2 h-10 px-5 rounded-md bg-colpsi-blue text-white text-sm font-semibold transition-colors hover:bg-colpsi-blue-light disabled:opacity-60">
+            <Icon name="user" />
+            {saving() ? "Creando..." : "Crear Administrador"}
           </button>
         </div>
 
