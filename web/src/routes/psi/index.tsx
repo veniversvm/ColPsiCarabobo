@@ -6,7 +6,7 @@
  * FIX SENIOR: Este es el dashboard principal del psicólogo. Se carga información sensible del perfil, por lo que se accede a través de la cookie de autenticación.
  * El endpoint /psi/me en Go se encarga de devolver toda la información relevante del perfil en una sola petición para optimizar la experiencia.
  */
-import { createResource, createSignal, For, Show, Suspense, onMount } from "solid-js";
+import { createResource, createSignal, For, Show, Suspense } from "solid-js";
 import { useAuth } from "~/lib/auth";
 import { apiGet } from "~/lib/api";
 import { bucketUrl } from "~/lib/bucket";
@@ -18,21 +18,6 @@ export default function PsiDashboard() {
   // Cargamos los datos extendidos del perfil y las noticias gremiales
   const [profile] = createResource(() => apiGet<any>("/psi/me"));
   const [news] = createResource(() => apiGet<any>("/posts?limit=3"));
-
-  // Aviso simple (no bloqueante) de contraseña temporal. El login lo marca en
-  // sessionStorage cuando la cuenta llega con must_change_password=true y se
-  // despeja al cambiar la contraseña en /psi/perfil.
-  const [showKeyWarning, setShowKeyWarning] = createSignal(false);
-  onMount(() => {
-    if (typeof sessionStorage !== "undefined" && sessionStorage.getItem("colpsi_must_change") === "1") {
-      setShowKeyWarning(true);
-    }
-  });
-
-  const dismissKeyWarning = () => {
-    setShowKeyWarning(false);
-    sessionStorage.removeItem("colpsi_must_change");
-  };
 
   // Contador de notificaciones no leídas (para el badge)
   const [unread] = createResource(
@@ -77,23 +62,6 @@ export default function PsiDashboard() {
       {/* Contenido Principal (Subido sobre la cabecera) */}
       <div class="max-w-4xl mx-auto px-4 -mt-12 space-y-6">
 
-        {/* Aviso de contraseña temporal */}
-        <Show when={showKeyWarning()}>
-          <div class="bg-colpsi-yellow/90 border border-yellow-600/30 rounded-2xl p-4 flex items-center gap-3 shadow-sm">
-            <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center shrink-0 text-lg">🔑</div>
-            <div class="flex-1">
-              <p class="text-sm font-bold text-colpsi-blue">Estás usando una contraseña temporal</p>
-              <p class="text-xs text-colpsi-blue/80">Por seguridad, cámbiala desde tu perfil.</p>
-            </div>
-            <div class="flex items-center gap-2">
-              <A href="/psi/perfil" class="bg-colpsi-blue text-white text-xs font-bold px-3 py-2 rounded-lg hover:opacity-90 transition-opacity">
-                Cambiar
-              </A>
-              <button type="button" onClick={dismissKeyWarning} class="text-colpsi-blue/60 hover:text-colpsi-blue px-2 text-lg leading-none" aria-label="Descartar aviso">×</button>
-            </div>
-          </div>
-        </Show>
-        
         {/* Card de Estatus de Solvencia */}
         <Suspense fallback={<div class="h-32 bg-white animate-pulse rounded-3xl" />}>
           <div class="bg-white rounded-3xl p-6 shadow-sm border border-colpsi-border flex items-center justify-between">

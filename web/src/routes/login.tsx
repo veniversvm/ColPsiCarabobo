@@ -38,7 +38,7 @@ export default function LoginPage() {
     try {
       // 1. Login en Go (Obtenemos el Token)
       // Username/correo normalizado a minúsculas y contraseña sin espacios al inicio/final.
-      const authResponse = await apiPost<{ token: string; must_change_password?: boolean }>("/psi/login", {
+      const authResponse = await apiPost<{ token: string }>("/psi/login", {
         identifier: identifier().trim().toLowerCase(),
         password: password().trim(),
       });
@@ -62,12 +62,6 @@ export default function LoginPage() {
         firstName: userProfile.first_name,
         lastName: userProfile.last_name,
       });
-
-      // Aviso simple de contraseña temporal (must_change_password): el login
-      // lo reporta y el banner del dashboard psi lo muestra hasta cambiarla.
-      if (authResponse.must_change_password) {
-        sessionStorage.setItem("colpsi_must_change", "1");
-      }
 
       // Persistir el JWT en la cookie HttpOnly para que SSR/Server Actions autentiquen contra Go
       await syncJwt(authResponse.token);
