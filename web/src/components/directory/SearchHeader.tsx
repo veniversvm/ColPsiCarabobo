@@ -20,7 +20,7 @@ interface SearchHeaderProps {
 export function SearchHeader(props: SearchHeaderProps) {
   return (
     <section class="bg-heraldic pt-16 pb-20 px-6 text-center relative shadow-2xl">
-      <div class="max-w-5xl mx-auto space-y-6 relative z-10">
+      <div class="max-w-5xl mx-auto space-y-6">
         <h1 class="text-white text-3xl md:text-5xl font-black tracking-tighter italic uppercase">
           Directorio Profesional
         </h1>
