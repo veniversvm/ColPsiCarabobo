@@ -45,3 +45,67 @@ forma de saber cuáles comunicados quedaban pendientes de revisión.
 - `api/internal/service/notification_service.go` (`MarkAsRead`)
 - `api/internal/repository/postgres/notification_repo.go` (`ListByUser` con Preload de targets)
 - `web/src/routes/psi/notificaciones.tsx`
+
+---
+
+## Fix: la tarjeta no respondía (pill muerto y cuerpo sin expandir)
+
+### Síntoma
+
+El botón `✓ Marcar como leída` no volteaba la tarjeta a `✓ Leída` y el clic en el cuerpo
+(apertura/cierre del panel) no hacía nada. El badge `X nuevas` sí se actualizaba, y la
+petición `PATCH /read` llegaba al servidor si se forzaba el handler — la red y el estado
+global funcionaban; la **UI del item** no re-renderizaba.
+
+### Causa raíz
+
+Dentro del `<For each={items()}>`, el callback del item calculaba los derivados reactivos
+como **constantes evaluadas una sola vez**:
+
+```tsx
+<For each={items()}>
+  {(n) => {
+    const read = isRead(n);                // readIds() leída aquí
+    const expanded = opened() === n.id;    // opened() leída aquí
+    return ( ...JSX que usa read y expanded... );
+  }}
+</For>
+```
+
+`<For>` compila a `mapArray` **no-keyed**, y este NO re-ejecuta el callback del item cuando
+cambian señales leídas *dentro* de él: solo re-renderiza si cambia la referencia del item o
+el array. `read` y `expanded` quedaban congelados en su primer valor (`false`/`false`),
+así que ni el pill volteaba ni el cuerpo expandía. El badge del encabezado sí funcionaba
+porque su `<Show>` vive fuera del `<For>` (cada expresión granular re-evalúa). Verificado en
+aislamiento con el runtime cliente (`solid-js/dist/solid.js`, `mapArray`): flipper la señal
+no re-ejecuta el item.
+
+### Fix aplicado
+
+Cada derivado reactivo del item es un `createMemo` (se crea una única vez por item — el
+callback del `mapArray` corre una vez — y se re-evalúa cuando cambian sus dependencias):
+
+```tsx
+<For each={items()}>
+  {(n) => {
+    const read = createMemo(() => isRead(n));
+    const expanded = createMemo(() => opened() === n.id);
+    return ( ...JSX que usa read() y expanded()... );
+  }}
+</For>
+```
+
+Regla: **nunca congelar señales en un `const` dentro del callback de un `<For>` no-keyed;
+si el valor depende de reactividad, debe ser un memo.**
+
+### Endurecimientos adicionales del mismo archivo (misma entrega)
+
+- **Página CSR-only** (`<Show when={!isServer}>` + skeleton en SSR, patrón del kanban):
+  elimina de raíz cualquier mismatch de hidratación (fechas con timezone del server, etc.)
+  y simplifica el ciclo recursos→fetch (sessionStorage). El contenido real se monta solo
+  en el navegador.
+- **`timeZone: "America/Caracas"`** en `formatDate`: la fecha se muestra idéntica en SSR
+  (Deno corre en UTC) y navegador, evitando días corridos en notificaciones nocturnas.
+- La reproducción E2E (Chromium headless, usuario psi sembrado en dev) confirma: el pill
+  voltea al instante (optimista), llega el `PATCH`, el contador baja, y el clic en el
+  cuerpo expande/cierra sin marcar leída (semántica decidida).
