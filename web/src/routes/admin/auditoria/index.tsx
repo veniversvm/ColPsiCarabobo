@@ -19,6 +19,7 @@ import {
   type AuditStat,
 } from "~/types/audit";
 import { ACTION_LABELS, ENTITY_LABELS } from "~/types/audit";
+import { Icon } from "~/components/admin/ui/icons";
 
 type Tab = "general" | "psi" | "staff" | "stats";
 
@@ -29,8 +30,8 @@ interface AdminMeAudit {
 }
 
 const IC =
-  "w-full bg-white border-2 border-gray-200 focus:border-blue-500 rounded-xl px-3 py-2 outline-none transition-all text-gray-800 text-sm";
-const LBL = "block text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1";
+  "h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none placeholder:text-slate-400 focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/15 transition-colors text-colpsi-text";
+const LBL = "block text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide ml-1 mb-1";
 
 const fmtDate = (iso: string): string => {
   try {
@@ -169,35 +170,42 @@ export default function AdminAuditoriaPage() {
   const statTotal = (list: AuditStat[] | undefined) => (list ?? []).reduce((s, x) => s + x.count, 0);
 
   return (
-    <main class="pb-20 animate-in fade-in duration-500">
+    <main class="pb-12 space-y-4">
       {/* ── HEADER ────────────────────────────────────────────────────────── */}
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 bg-white p-6 rounded-3xl shadow-sm border border-colpsi-border">
-        <div>
-          <h1 class="text-2xl font-black text-blue-900 uppercase tracking-tight flex items-center gap-2">
-            <span>🧾</span> Auditoría
-          </h1>
-          <p class="text-gray-400 text-sm mt-0.5 font-medium">
-            Bitácora de cambios del sistema · quién, qué y cuándo
-          </p>
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-colpsi-border">
+        <div class="flex items-center gap-3">
+          <span class="inline-flex h-9 w-9 items-center justify-center rounded-md bg-colpsi-bg border border-colpsi-border text-colpsi-blue">
+            <Icon name="sliders" class="w-4.5 h-4.5" />
+          </span>
+          <div>
+            <h1 class="text-lg font-semibold text-colpsi-text">Auditoría</h1>
+            <p class="text-sm text-colpsi-muted mt-0.5">
+              Bitácora de cambios del sistema · quién, qué y cuándo
+            </p>
+          </div>
         </div>
         <Show when={canExport()}>
           <button
             onClick={handleExport}
             disabled={exportBusy}
-            class="inline-flex items-center gap-2 bg-blue-800 hover:bg-blue-900 text-white font-black px-6 py-3 rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-all text-sm disabled:opacity-60"
+            class="inline-flex items-center gap-2 h-9 px-4 rounded-md bg-colpsi-blue hover:bg-colpsi-blue-light text-white font-semibold transition-all text-sm disabled:opacity-60"
           >
-            <span>{exportBusy() ? "⏳" : "⬇"}</span> {exportBusy() ? "Generando..." : "Exportar CSV"}
+            <Show when={exportBusy()} fallback={<Icon name="arrowRight" class="w-4 h-4 rotate-90" />}>
+              <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            </Show>
+            {exportBusy() ? "Generando..." : "Exportar CSV"}
           </button>
         </Show>
       </div>
       <Show when={exportError()}>
-        <div class="mb-4 p-4 rounded-2xl bg-red-50 text-red-800 font-bold text-sm border-l-4 border-red-500 shadow-sm">
-          ⚠️ {exportError()}
+        <div class="p-3 rounded-md bg-red-50 text-red-700 border border-red-200 text-sm font-medium inline-flex items-center gap-2 w-full">
+          <Icon name="alertTriangle" class="w-4 h-4" />
+          {exportError()}
         </div>
       </Show>
 
       {/* ── TABS ───────────────────────────────────────────────────────────── */}
-      <div class="flex flex-wrap gap-2 mb-6">
+      <div class="flex flex-wrap gap-2">
         {([
           ["general", "General"],
           ["psi", "Por psicólogo"],
@@ -206,10 +214,10 @@ export default function AdminAuditoriaPage() {
         ] as [Tab, string][]).map(([t, label]) => (
           <button
             onClick={() => changeTab(t)}
-            class={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wide transition-all border-2 ${
+            class={`h-9 px-4 rounded-md text-xs font-semibold transition-all border ${
               tab() === t
-                ? "bg-blue-800 text-white border-blue-800"
-                : "bg-white text-gray-500 border-gray-200 hover:border-gray-300"
+                ? "bg-colpsi-blue text-white border-colpsi-blue"
+                : "bg-white text-colpsi-muted border-colpsi-border hover:border-colpsi-blue/40"
             }`}
           >
             {label}
@@ -219,23 +227,24 @@ export default function AdminAuditoriaPage() {
 
       {/* ── BANNER DE ENLACE PROFUNDO ─────────────────────────────────────── */}
       <Show when={tab() === "psi" && entityID()}>
-        <div class="mb-6 flex items-center gap-3 bg-indigo-50 border-l-4 border-indigo-500 rounded-2xl px-4 py-3 text-sm">
-          <span class="text-lg">👤</span>
-          <p class="font-bold text-indigo-800">
-            Historial completo de <span class="underline">{psiLabel()}</span>
+        <div class="flex items-center gap-3 bg-indigo-50 border border-indigo-200 rounded-md px-4 py-2.5 text-sm">
+          <Icon name="user" class="w-4 h-4 text-indigo-600 shrink-0" />
+          <p class="font-medium text-indigo-800">
+            Historial completo de <span class="font-semibold underline">{psiLabel()}</span>
           </p>
           <button
             onClick={() => { setEntityID(""); setTab("general"); }}
-            class="ml-auto text-xs font-black text-indigo-600 hover:underline"
+            class="ml-auto inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:underline"
           >
-            Quitar filtro ✕
+            Quitar filtro
+            <Icon name="x" class="w-3.5 h-3.5" />
           </button>
         </div>
       </Show>
 
       {/* ── FILTROS (todas menos stats) ───────────────────────────────────── */}
       <Show when={tab() !== "stats"}>
-        <div class="bg-white rounded-3xl border border-colpsi-border shadow-sm p-5 mb-6">
+        <div class="bg-white rounded-lg border border-colpsi-border p-5">
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div class="col-span-2 md:col-span-1">
               <label class={LBL}>Buscar texto</label>
@@ -289,13 +298,13 @@ export default function AdminAuditoriaPage() {
 
       {/* ── ESTADÍSTICAS ───────────────────────────────────────────────────── */}
       <Show when={tab() === "stats"}>
-        <div class="bg-white rounded-3xl border border-colpsi-border shadow-sm p-5 mb-6">
+        <div class="bg-white rounded-lg border border-colpsi-border p-5">
           <div class="flex items-end gap-4 flex-wrap">
             <div class="w-48">
               <label class={LBL}>Desde (por defecto: últimos 30 días)</label>
               <input type="date" value={desde()} onInput={(e) => setDesde(e.currentTarget.value)} class={IC} />
             </div>
-            <p class="text-xs text-gray-400 font-bold pb-2">
+            <p class="text-xs text-colpsi-muted font-medium pb-2.5">
               {statTotal(stats()?.stats)} sucesos registrados
             </p>
           </div>
@@ -304,26 +313,28 @@ export default function AdminAuditoriaPage() {
         <Show when={stats.loading && !stats()}>
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             <For each={Array(8).fill(0)}>
-              {() => <div class="h-24 bg-white rounded-2xl border border-colpsi-border animate-pulse" />}
+              {() => <div class="h-24 bg-white rounded-lg border border-colpsi-border animate-pulse" />}
             </For>
           </div>
         </Show>
         <Show when={!stats.loading && stats() && (stats()?.stats ?? []).length === 0}>
-          <div class="text-center py-20 bg-white rounded-3xl border border-colpsi-border">
-            <p class="text-4xl mb-3">📭</p>
-            <p class="text-gray-400 font-bold">Sin sucesos en el período</p>
+          <div class="text-center py-16 bg-white rounded-lg border border-colpsi-border">
+            <span class="inline-flex h-12 w-12 items-center justify-center rounded-md bg-colpsi-bg text-colpsi-muted mb-4">
+              <Icon name="inbox" class="w-6 h-6" />
+            </span>
+            <p class="font-semibold text-colpsi-text">Sin sucesos en el período</p>
           </div>
         </Show>
         <Show when={!stats.loading && (stats()?.stats ?? []).length > 0}>
           <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             <For each={stats()?.stats ?? []}>
               {(s) => (
-                <div class="bg-white rounded-2xl border border-colpsi-border p-5 shadow-sm">
-                  <p class="text-3xl font-black text-blue-800">{s.count}</p>
-                  <p class="text-xs font-black uppercase tracking-widest text-gray-500 mt-1">
+                <div class="bg-white rounded-lg border border-colpsi-border p-5">
+                  <p class="text-2xl font-semibold text-colpsi-blue">{s.count}</p>
+                  <p class="text-xs font-semibold uppercase tracking-wide text-colpsi-muted mt-1">
                     {entityLabel(s.entity)}
                   </p>
-                  <p class="text-[11px] text-gray-400 font-bold">{actionLabel(s.action)}</p>
+                  <p class="text-[11px] text-colpsi-muted/80 font-medium">{actionLabel(s.action)}</p>
                 </div>
               )}
             </For>
@@ -333,46 +344,48 @@ export default function AdminAuditoriaPage() {
 
       {/* ── TABLA DE LOGS ──────────────────────────────────────────────────── */}
       <Show when={tab() !== "stats"}>
-        <Suspense fallback={<div class="space-y-3"><For each={Array(6).fill(0)}>{() => <div class="h-20 bg-white animate-pulse rounded-2xl border border-colpsi-border" />}</For></div>}>
+        <Suspense fallback={<div class="space-y-3"><For each={Array(6).fill(0)}>{() => <div class="h-20 bg-white animate-pulse rounded-lg border border-colpsi-border" />}</For></div>}>
           <Show when={!result.loading && logs().length === 0}>
-            <div class="text-center py-20 bg-white rounded-3xl border border-colpsi-border">
-              <p class="text-5xl mb-4">🧾</p>
-              <p class="text-gray-400 font-bold">Sin registros para los filtros aplicados</p>
+            <div class="text-center py-16 bg-white rounded-lg border border-colpsi-border">
+              <span class="inline-flex h-12 w-12 items-center justify-center rounded-md bg-colpsi-bg text-colpsi-muted mb-4">
+                <Icon name="fileText" class="w-6 h-6" />
+              </span>
+              <p class="font-semibold text-colpsi-text">Sin registros para los filtros aplicados</p>
             </div>
           </Show>
 
           <Show when={logs().length > 0}>
             <PaginationBar page={page} total={total} setPage={setPage} />
-            <div class="space-y-3">
+            <div class="space-y-2">
               <For each={logs()}>
                 {(log) => (
                   <button
                     onClick={() => setSelected(log)}
-                    class="w-full text-left bg-white rounded-2xl border border-colpsi-border hover:border-blue-200 hover:shadow-md transition-all p-4"
+                    class="w-full text-left bg-white rounded-md border border-colpsi-border hover:border-colpsi-blue/40 hover:bg-colpsi-bg/40 transition-all p-4"
                   >
                     <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mb-1">
-                      <span class={`text-[10px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider ${
-                        log.action === "create" ? "bg-emerald-100 text-emerald-700"
-                        : log.action === "delete" ? "bg-red-100 text-red-700"
-                        : log.action === "update" || log.action === "update_permissions" || log.action === "role_change" ? "bg-amber-100 text-amber-700"
-                        : log.action === "login" || log.action === "logout" ? "bg-blue-50 text-blue-600"
-                        : "bg-gray-100 text-gray-600"
+                      <span class={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide ${
+                        log.action === "create" ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                        : log.action === "delete" ? "bg-red-50 text-colpsi-red border border-red-200"
+                        : log.action === "update" || log.action === "update_permissions" || log.action === "role_change" ? "bg-amber-50 text-amber-700 border border-amber-200"
+                        : log.action === "login" || log.action === "logout" ? "bg-blue-50 text-colpsi-blue border border-blue-200"
+                        : "bg-slate-100 text-slate-600 border border-slate-200"
                       }`}>
                         {actionLabel(log.action)}
                       </span>
-                      <span class="text-[10px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider bg-slate-100 text-slate-600">
+                      <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide bg-slate-100 text-slate-600 border border-slate-200">
                         {entityLabel(log.entity)}
                       </span>
-                      <span class="text-sm font-black text-gray-900 truncate max-w-[45%]">{log.entity_label || log.entity_id}</span>
+                      <span class="text-sm font-semibold text-colpsi-text truncate max-w-[45%]">{log.entity_label || log.entity_id}</span>
                     </div>
-                    <div class="flex flex-wrap items-center gap-x-4 gap-y-0.5 text-[11px] text-gray-400 font-medium">
-                      <span>👤 <span class="font-bold text-gray-600">{log.actor_username || "—"}</span> <span class="text-gray-300">({log.actor_role || "—"})</span></span>
-                      <span>🕒 {fmtDate(log.created_at)}</span>
-                      <Show when={log.ip}><span>🌐 {log.ip}</span></Show>
+                    <div class="flex flex-wrap items-center gap-x-4 gap-y-0.5 text-[11px] text-colpsi-muted font-medium">
+                      <span class="inline-flex items-center gap-1"><Icon name="user" class="w-3.5 h-3.5" /> <span class="font-semibold text-colpsi-text">{log.actor_username || "—"}</span> <span class="text-colpsi-muted/70">({log.actor_role || "—"})</span></span>
+                      <span class="inline-flex items-center gap-1"><Icon name="clock" class="w-3.5 h-3.5" /> {fmtDate(log.created_at)}</span>
+                      <Show when={log.ip}><span class="inline-flex items-center gap-1"><Icon name="globe" class="w-3.5 h-3.5" /> {log.ip}</span></Show>
                     </div>
                     <Show when={auditChangesKeys(log.changes).length > 0}>
-                      <p class="text-[11px] font-black text-gray-500 truncate mt-1.5">
-                        ✏️ {auditChangesKeys(log.changes).slice(0, 4).map(fieldLabel).join(" · ")}
+                      <p class="inline-flex items-center gap-1 text-[11px] font-medium text-colpsi-muted truncate mt-1.5">
+                        <Icon name="pencil" class="w-3 h-3" /> {auditChangesKeys(log.changes).slice(0, 4).map(fieldLabel).join(" · ")}
                         <Show when={auditChangesKeys(log.changes).length > 4}> …</Show>
                       </p>
                     </Show>
@@ -407,19 +420,21 @@ function PaginationBar(props: {
         <button
           onClick={() => props.setPage((p) => Math.max(1, p - 1))}
           disabled={props.page() <= 1}
-          class="px-4 py-2 rounded-xl bg-white border-2 border-gray-200 text-gray-600 font-black text-xs disabled:opacity-40"
+          class="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-white border border-colpsi-border text-colpsi-muted font-medium text-xs disabled:opacity-40 hover:border-colpsi-blue/40 transition-colors"
         >
-          ← Anterior
+          <Icon name="chevronRight" class="w-3.5 h-3.5 rotate-180" />
+          Anterior
         </button>
-        <span class="text-xs font-black text-gray-500">
+        <span class="text-xs font-medium text-colpsi-muted">
           Página {props.page()} · {props.total()} registros
         </span>
         <button
           onClick={() => props.setPage((p) => p + 1)}
           disabled={props.page() * 20 >= props.total()}
-          class="px-4 py-2 rounded-xl bg-white border-2 border-gray-200 text-gray-600 font-black text-xs disabled:opacity-40"
+          class="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-white border border-colpsi-border text-colpsi-muted font-medium text-xs disabled:opacity-40 hover:border-colpsi-blue/40 transition-colors"
         >
-          Siguiente →
+          Siguiente
+          <Icon name="chevronRight" class="w-3.5 h-3.5" />
         </button>
       </div>
     </Show>

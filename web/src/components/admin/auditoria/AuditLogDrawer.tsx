@@ -5,6 +5,7 @@
 import { createMemo, Show, For } from "solid-js";
 import type { ApiChangeLog, AuditChange } from "~/types/audit";
 import { actionLabel, entityLabel, fieldLabel, parseAuditJson } from "~/types/audit";
+import { Icon } from "~/components/admin/ui/icons";
 
 interface Props {
   log: ApiChangeLog | null;
@@ -48,31 +49,31 @@ export function AuditLogDrawer(props: Props) {
           {/* Panel */}
           <aside class="relative w-full max-w-lg h-full bg-white shadow-2xl overflow-y-auto animate-in slide-in-from-right duration-300">
             {/* Header */}
-            <div class="sticky top-0 z-10 bg-white border-b border-gray-100 px-6 py-4 flex items-start justify-between gap-3">
+            <div class="sticky top-0 z-10 bg-white border-b border-colpsi-border px-5 py-3.5 flex items-start justify-between gap-3">
               <div class="min-w-0">
-                <p class="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                <p class="text-[10px] font-semibold uppercase tracking-wide text-colpsi-muted">
                   {entityLabel(l().entity)} · {actionLabel(l().action)}
                 </p>
-                <h3 class="text-lg font-black text-gray-900 truncate mt-0.5">{l().entity_label || l().entity_id}</h3>
+                <h3 class="text-lg font-semibold text-colpsi-text truncate mt-0.5">{l().entity_label || l().entity_id}</h3>
               </div>
               <button
                 onClick={props.onClose}
-                class="flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 font-bold flex items-center justify-center transition-colors"
+                class="flex-shrink-0 inline-flex items-center justify-center h-8 w-8 rounded-md bg-colpsi-bg hover:bg-colpsi-border/60 text-colpsi-muted hover:text-colpsi-blue transition-colors"
               >
-                ✕
+                <Icon name="x" class="w-4 h-4" />
               </button>
             </div>
 
-            <div class="px-6 py-5 space-y-6">
+            <div class="px-5 py-5 space-y-5">
               {/* ── Meta ── */}
               <dl class="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-                <div><dt class="text-[10px] font-black uppercase tracking-widest text-gray-400">Fecha</dt><dd class="font-bold text-gray-800">{fmtDate(l().created_at)}</dd></div>
-                <div><dt class="text-[10px] font-black uppercase tracking-widest text-gray-400">Actor</dt><dd class="font-bold text-gray-800">{l().actor_username || "—"} <span class="text-gray-400 font-medium">({l().actor_role || "—"})</span></dd></div>
-                <div><dt class="text-[10px] font-black uppercase tracking-widest text-gray-400">IP</dt><dd class="font-bold text-gray-800">{l().ip || "—"}</dd></div>
-                <div><dt class="text-[10px] font-black uppercase tracking-widest text-gray-400">Entidad ID</dt><dd class="font-bold text-gray-800 truncate">{l().entity_id || "—"}</dd></div>
+                <div><dt class="text-[10px] font-semibold uppercase tracking-wide text-colpsi-muted">Fecha</dt><dd class="font-medium text-colpsi-text">{fmtDate(l().created_at)}</dd></div>
+                <div><dt class="text-[10px] font-semibold uppercase tracking-wide text-colpsi-muted">Actor</dt><dd class="font-medium text-colpsi-text">{l().actor_username || "—"} <span class="text-colpsi-muted">({l().actor_role || "—"})</span></dd></div>
+                <div><dt class="text-[10px] font-semibold uppercase tracking-wide text-colpsi-muted">IP</dt><dd class="font-medium text-colpsi-text">{l().ip || "—"}</dd></div>
+                <div><dt class="text-[10px] font-semibold uppercase tracking-wide text-colpsi-muted">Entidad ID</dt><dd class="font-medium text-colpsi-text truncate">{l().entity_id || "—"}</dd></div>
               </dl>
               <Show when={l().user_agent}>
-                <div class="bg-gray-50 rounded-xl px-3 py-2 text-[11px] text-gray-500 break-all font-medium">
+                <div class="bg-colpsi-bg rounded-md px-3 py-2 text-[11px] text-colpsi-muted break-all font-medium border border-colpsi-border">
                   {l().user_agent}
                 </div>
               </Show>
@@ -80,21 +81,21 @@ export function AuditLogDrawer(props: Props) {
               {/* ── Diff ── */}
               <Show when={Object.keys(changesMap()).length > 0}>
                 <section>
-                  <h4 class="text-xs font-black uppercase tracking-widest text-gray-400 mb-3">Cambios</h4>
+                  <h4 class="text-xs font-semibold uppercase tracking-wide text-colpsi-muted mb-2.5">Cambios</h4>
                   <div class="space-y-2">
                     <For each={Object.entries(changesMap())}>
                       {([key, chg]) => (
-                        <div class="rounded-xl border border-gray-200 overflow-hidden">
-                          <p class="bg-gray-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-gray-500 border-b border-gray-200">
+                        <div class="rounded-md border border-colpsi-border overflow-hidden">
+                          <p class="bg-colpsi-bg px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-colpsi-muted border-b border-colpsi-border">
                             {fieldLabel(key)}
                           </p>
-                          <div class="grid grid-cols-2 divide-x divide-gray-200">
-                            <div class="px-3 py-2.5 bg-red-50/60 text-red-700 text-sm font-bold break-words">
-                              <span class="block text-[9px] font-black uppercase tracking-widest text-red-400 mb-0.5">Antes</span>
+                          <div class="grid grid-cols-2 divide-x divide-colpsi-border">
+                            <div class="px-3 py-2.5 bg-red-50/60 text-colpsi-red text-sm font-medium break-words">
+                              <span class="block text-[9px] font-semibold uppercase tracking-wide text-colpsi-red/70 mb-0.5">Antes</span>
                               {fmtBool(chg.from)}
                             </div>
-                            <div class="px-3 py-2.5 bg-emerald-50/60 text-emerald-700 text-sm font-bold break-words">
-                              <span class="block text-[9px] font-black uppercase tracking-widest text-emerald-500 mb-0.5">Después</span>
+                            <div class="px-3 py-2.5 bg-emerald-50/60 text-emerald-700 text-sm font-medium break-words">
+                              <span class="block text-[9px] font-semibold uppercase tracking-wide text-emerald-600/70 mb-0.5">Después</span>
                               {fmtBool(chg.to)}
                             </div>
                           </div>
@@ -105,19 +106,19 @@ export function AuditLogDrawer(props: Props) {
                 </section>
               </Show>
               <Show when={Object.keys(changesMap()).length === 0}>
-                <p class="text-sm text-gray-400 font-medium">Sin campos detallados para este suceso.</p>
+                <p class="text-sm text-colpsi-muted">Sin campos detallados para este suceso.</p>
               </Show>
 
               {/* ── Metadata ── */}
               <Show when={Object.keys(metadataMap()).length > 0}>
                 <section>
-                  <h4 class="text-xs font-black uppercase tracking-widest text-gray-400 mb-3">Metadatos</h4>
+                  <h4 class="text-xs font-semibold uppercase tracking-wide text-colpsi-muted mb-2.5">Metadatos</h4>
                   <dl class="space-y-1.5 text-sm">
                     <For each={Object.entries(metadataMap())}>
                       {([k, v]) => (
                         <div class="flex items-start justify-between gap-3">
-                          <dt class="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-0.5">{fieldLabel(k)}</dt>
-                          <dd class="text-gray-800 font-bold text-right break-words max-w-[65%]">{fmtBool(v)}</dd>
+                          <dt class="text-[10px] font-semibold uppercase tracking-wide text-colpsi-muted mt-0.5">{fieldLabel(k)}</dt>
+                          <dd class="text-colpsi-text font-medium text-right break-words max-w-[65%]">{fmtBool(v)}</dd>
                         </div>
                       )}
                     </For>
