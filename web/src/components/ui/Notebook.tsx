@@ -2,8 +2,10 @@
 // Pestañas horizontales estilo Odoo con color único por posición: cada pestaña
 // toma un color institucional del gremio (ciclo de 6: azul, amarillo fuerte,
 // navy, vinotinto, verde, azul-claro) en su TÍTULO y su FONDO para diferenciarse
-// de un vistazo. La activa se pinta de lleno (fondo sólido + título blanco/navy
-// según luminancia); las inactivas quedan tintadas al 12% con título del color.
+// de un vistazo. Cada pestaña conserva siempre su color propio (tintado al 12% +
+// título del color); la seleccionada se pinta con el degradado azul heráldico
+// del escudo (navy → azul → azul-oscuro, título blanco) para que nunca quede
+// demasiado clara.
 // Cada NotebookPage hace lazy-mount: la pestaña inicial se hidrata desde el SSR y
 // las demás se montan al activarse por primera vez; una vez visitadas permanecen
 // en el DOM (ocultas) para conservar estado local (TipTap, flatpickr, selecciones
@@ -25,18 +27,22 @@ interface NotebookContextValue {
 
 const NotebookContext = createContext<NotebookContextValue>();
 
-// Pares (fondo sólido, título sobre sólido) intercalados por posición de pestaña.
-// Institucionales de @theme (azul, amarillo fuerte, navy, azul-claro) + vinotinto
-// y verde complementario. El título "on" se elige por luminancia para leerse
-// sobre el fondo sólido de la activa.
+// Colores institucionales intercalados por posición de pestaña. Institucionales
+// de @theme (azul, amarillo fuerte, navy, azul-claro) + vinotinto y verde
+// complementario. Se usan tintados al 12% en inactivas y como título propio.
 const TAB_COLORS = [
-  { bg: "#1e3a8a", on: "#ffffff" },  // azul
-  { bg: "#facc15", on: "#172554" },  // amarillo fuerte
-  { bg: "#0a174f", on: "#ffffff" },  // navy
-  { bg: "#722f37", on: "#ffffff" },  // vinotinto
-  { bg: "#166534", on: "#ffffff" },  // verde complementario
-  { bg: "#1e40af", on: "#ffffff" },  // azul-claro
+  "#1e3a8a",  // azul
+  "#facc15",  // amarillo fuerte
+  "#0a174f",  // navy
+  "#722f37",  // vinotinto
+  "#166534",  // verde complementario
+  "#1e40af",  // azul-claro
 ];
+
+// Degradado azul heráldico del escudo (mismo de la @utility bg-heraldic en
+// app.css): navy → azul → azul-oscuro. Fondo de la pestaña seleccionada.
+const HERALDIC_GRADIENT =
+  "linear-gradient(135deg, #0a174f 0%, #1e3a8a 52%, #172554 100%)";
 
 export function Notebook(props: {
   pages: Array<{ id: string; label: string; icon?: IconName }>;
@@ -62,8 +68,9 @@ export function Notebook(props: {
                   aria-selected={isActive()}
                   onClick={() => setActive(page.id)}
                   style={{
-                    backgroundColor: isActive() ? t.bg : `${t.bg}1f`,
-                    color: isActive() ? t.on : t.bg,
+                    backgroundColor: isActive() ? undefined : `${t}1f`,
+                    backgroundImage: isActive() ? HERALDIC_GRADIENT : undefined,
+                    color: isActive() ? "#ffffff" : t,
                   }}
                   class={`relative px-4 py-2.5 text-sm whitespace-nowrap -mb-px transition-colors hover:brightness-95 ${
                     isActive() ? "font-semibold" : "font-medium"
