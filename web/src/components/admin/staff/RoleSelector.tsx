@@ -3,6 +3,7 @@
 // GET /admin/roles/presets y resalta el que coincide con los permisos actuales.
 import { createResource, For, Show } from "solid-js";
 import { apiGet } from "~/lib/api";
+import { Icon } from "~/components/admin/ui/icons";
 import {
   findRoleForPerms,
   type PermissionState,
@@ -39,7 +40,7 @@ export default function RoleSelector(props: Props) {
       <Show when={presets.loading}>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <For each={[1, 2, 3]}>
-            {() => <div class="h-28 bg-white animate-pulse rounded-2xl border border-colpsi-border" />}
+            {() => <div class="h-28 bg-white animate-pulse rounded-lg border border-colpsi-border" />}
           </For>
         </div>
       </Show>
@@ -53,21 +54,21 @@ export default function RoleSelector(props: Props) {
                 <button
                   type="button"
                   onClick={() => props.onSelect(preset)}
-                  class={`text-left rounded-2xl border-2 p-4 transition-all ${
+                  class={`text-left rounded-lg border p-4 transition-all ${
                     isActive()
-                      ? "bg-blue-50 border-blue-600 shadow-sm"
-                      : "bg-white border-gray-200 hover:border-blue-300"
+                      ? "bg-blue-50 border-colpsi-blue"
+                      : "bg-white border-colpsi-border hover:border-colpsi-blue/50"
                   }`}
                 >
                   <div class="flex items-center justify-between gap-2 mb-1">
-                    <span class={`font-black text-sm ${isActive() ? "text-blue-800" : "text-gray-800"}`}>
+                    <span class={`font-semibold text-sm ${isActive() ? "text-colpsi-blue" : "text-colpsi-text"}`}>
                       {preset.name}
                     </span>
-                    {isActive() && <span class="text-blue-700 text-xs">●</span>}
+                    <Show when={isActive()}><Icon name="check" class="w-4 h-4 text-colpsi-blue shrink-0" /></Show>
                   </div>
-                  <p class="text-[11px] text-gray-500 leading-snug mb-2">{preset.description}</p>
-                  <span class={`text-[10px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider ${
-                    isActive() ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-500"
+                  <p class="text-[11px] text-colpsi-muted leading-snug mb-2">{preset.description}</p>
+                  <span class={`text-[11px] font-semibold px-2 py-0.5 rounded-md uppercase tracking-wide ${
+                    isActive() ? "bg-blue-100 text-colpsi-blue" : "bg-colpsi-bg text-colpsi-muted"
                   }`}>
                     {permCount(preset)}/{Object.keys(preset.permissions).length} permisos
                   </span>
@@ -79,19 +80,19 @@ export default function RoleSelector(props: Props) {
           <button
             type="button"
             onClick={props.onClear}
-            class={`text-left rounded-2xl border-2 border-dashed p-4 transition-all ${
+            class={`text-left rounded-lg border border-dashed p-4 transition-all ${
               activeSlug() === "personalizado"
-                ? "bg-gray-100 border-gray-400"
-                : "bg-white border-gray-300 hover:border-gray-400"
+                ? "bg-colpsi-bg border-colpsi-blue/60"
+                : "bg-white border-colpsi-border hover:border-colpsi-blue/50"
             }`}
           >
             <div class="flex items-center justify-between gap-2 mb-1">
-              <span class={`font-black text-sm ${activeSlug() === "personalizado" ? "text-gray-800" : "text-gray-500"}`}>
+              <span class={`font-semibold text-sm ${activeSlug() === "personalizado" ? "text-colpsi-text" : "text-colpsi-muted"}`}>
                 Personalizado
               </span>
-              {activeSlug() === "personalizado" && <span class="text-gray-700 text-xs">●</span>}
+              <Show when={activeSlug() === "personalizado"}><Icon name="check" class="w-4 h-4 text-colpsi-blue shrink-0" /></Show>
             </div>
-            <p class="text-[11px] text-gray-500 leading-snug mb-2">
+            <p class="text-[11px] text-colpsi-muted leading-snug mb-2">
               Sin preset: cada permiso se configura a mano.
             </p>
           </button>

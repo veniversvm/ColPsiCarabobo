@@ -27,24 +27,24 @@ function ActivationSection(props: { form: EditFormState }) {
   return (
     <div class={`pt-3 border-t ${allOk() ? "border-green-200" : "border-amber-200"}`}>
       <div class="flex items-center justify-between mb-2">
-        <h3 class="text-xs font-bold text-gray-600 uppercase tracking-widest">
+        <h3 class="text-xs font-bold text-gray-600 uppercase tracking-wide">
           Verificaciones de Activación
         </h3>
-        <span class={`text-[10px] font-black px-2 py-0.5 rounded-full ${allOk() ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
+        <span class={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${allOk() ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
           {allOk() ? "Completos" : "Pendientes"}
         </span>
       </div>
       <ul class="space-y-1.5">
         {reqs().map((r) => (
           <li class="flex items-center gap-2 text-xs font-semibold text-gray-600">
-            <span class={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black ${r.ok ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
+            <span class={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-semibold ${r.ok ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
               {r.ok ? "✓" : "!"}
             </span>
             {r.label}
           </li>
         ))}
       </ul>
-      <p class="mt-2 text-[10px] text-gray-400 leading-relaxed">
+      <p class="mt-2 text-[11px] text-colpsi-muted leading-relaxed">
         Confirmaciones que realiza la administración con el expediente en mano
         antes de activar la cuenta. El N° de FPV acredita la inscripción
         ministerial; la solvencia nace al aprobar la inscripción
@@ -59,7 +59,7 @@ export function AdminStatusSection(props: Props) {
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
       {/* Cuenta + Solvencia */}
-        <div class="space-y-4 bg-colpsi-surface p-6 rounded-2xl border border-colpsi-border">
+        <div class="space-y-4 bg-colpsi-bg p-6 rounded-lg border border-colpsi-border">
           <ToggleSwitch
             label="Cuenta Activa en Sistema"
             checked={props.form.is_active}
@@ -88,8 +88,8 @@ export function AdminStatusSection(props: Props) {
         </div>
 
         {/* Roles Gremiales */}
-        <div class="space-y-3 bg-blue-50/50 p-6 rounded-2xl border border-blue-100">
-          <h3 class="text-xs font-bold text-blue-800 uppercase tracking-widest border-b border-blue-100 pb-2 mb-3">
+        <div class="space-y-3 bg-blue-50/50 p-6 rounded-lg border border-blue-100">
+          <h3 class="text-xs font-bold text-colpsi-blue uppercase tracking-wide border-b border-blue-100 pb-2 mb-3">
             Roles Gremiales
           </h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">

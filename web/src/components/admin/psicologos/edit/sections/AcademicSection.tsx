@@ -78,7 +78,7 @@ export function AcademicSection(props: Props) {
 
         {/* ── Imágenes del Título (S3) ────────────────────────────────── */}
         <div class="col-span-full pt-4 border-t border-colpsi-border">
-          <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">
+          <p class="text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide mb-4">
             Documentación Digital (Imágenes del Título)
           </p>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -88,16 +88,16 @@ export function AcademicSection(props: Props) {
               { id: "title_image_three", label: "Anexo / Registro" }
             ].map((img) => (
               <div class="relative group">
-                <label class={`flex flex-col items-center justify-center h-24 border-2 border-dashed rounded-2xl transition-all cursor-pointer ${
-                  props.files[img.id] ? "border-emerald-300 bg-emerald-50" : "border-gray-200 bg-colpsi-surface hover:bg-blue-50"
+                <label class={`flex flex-col items-center justify-center h-24 border-2 border-dashed rounded-lg transition-all cursor-pointer ${
+                  props.files[img.id] ? "border-emerald-300 bg-emerald-50" : "border-gray-200 bg-colpsi-bg hover:bg-blue-50"
                 }`}>
                   <Show when={props.files[img.id]} fallback={
                     <>
                       <Icon name="fileText" class="w-5 h-5 text-slate-400" />
-                      <span class="text-[9px] font-bold text-gray-400 uppercase mt-1">{img.label}</span>
+                      <span class="text-[9px] font-bold text-colpsi-muted uppercase mt-1">{img.label}</span>
                     </>
                   }>
-                    <span class="inline-flex items-center gap-1 text-emerald-600 text-[10px] font-black uppercase text-center px-2">
+                    <span class="inline-flex items-center gap-1 text-emerald-600 text-[11px] font-semibold uppercase text-center px-2">
                       <Icon name="check" class="w-3.5 h-3.5 shrink-0" /> {props.files[img.id].name.slice(0, 15)}...
                     </span>
                   </Show>
@@ -108,7 +108,7 @@ export function AcademicSection(props: Props) {
                   <button 
                     type="button"
                     onClick={() => removeFile(img.id)}
-                    class="absolute -top-2 -right-2 bg-red-500 text-white w-5 h-5 rounded-full text-[10px] shadow-md flex items-center justify-center hover:bg-red-600 transition-colors"
+                    class="absolute -top-2 -right-2 bg-red-500 text-white w-5 h-5 rounded-full text-[11px] shadow-md flex items-center justify-center hover:bg-red-600 transition-colors"
                   >✕<Icon name="x" class="w-3 h-3" /></button>
                 </Show>
               </div>
@@ -118,7 +118,7 @@ export function AcademicSection(props: Props) {
 
         {/* ── Registro Legal ──────────────────────────────────────────── */}
         <div class="col-span-full border-t border-colpsi-border pt-6 mt-2">
-          <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">
+          <p class="text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide mb-4">
             Datos de Registro de Título (Principal/Estado)
           </p>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -163,8 +163,8 @@ export function AcademicSection(props: Props) {
       </div>
 
       {/* ── Privacidad ────────────────────────────────────────────────── */}
-      <div class="mt-8 bg-blue-50/50 p-6 rounded-3xl border border-blue-100">
-        <p class="text-[10px] font-black text-blue-900 uppercase tracking-widest mb-4">
+      <div class="mt-8 bg-blue-50/50 p-6 rounded-lg border border-blue-100">
+        <p class="text-[11px] font-semibold text-colpsi-blue uppercase tracking-wide mb-4">
           Privacidad de Formación Académica (Directorio Público)
         </p>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">

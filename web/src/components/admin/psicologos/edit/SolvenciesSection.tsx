@@ -43,9 +43,9 @@ export const SolvenciesSection = (props: SolvenciesSectionProps) => {
     <div>
 
       {/* Input de adición */}
-          <div class="flex items-end gap-4 mb-8 bg-slate-50 p-5 rounded-2xl border border-slate-100">
+          <div class="flex items-end gap-4 mb-8 bg-slate-50 p-5 rounded-lg border border-slate-100">
             <div class="flex-1 max-w-[200px]">
-              <label class="block text-[10px] font-black text-slate-400 mb-1.5 uppercase tracking-widest">Año fiscal</label>
+              <label class="block text-[11px] font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Año fiscal</label>
               <input 
                 type="number" 
                 value={newYear()}
@@ -64,12 +64,12 @@ export const SolvenciesSection = (props: SolvenciesSectionProps) => {
             </button>
           </div>
 
-          <div class="overflow-hidden rounded-2xl border border-slate-100 shadow-sm">
+          <div class="overflow-hidden rounded-lg border border-slate-100 shadow-sm">
             <table class="w-full text-left border-collapse">
               <thead class="bg-slate-50/50">
                 <tr>
-                  <th class="p-4 text-[11px] font-black text-slate-500 uppercase tracking-widest">Año de Solvencia</th>
-                  <th class="p-4 text-[11px] font-black text-slate-500 uppercase text-center tracking-widest">Estado API</th>
+                  <th class="p-4 text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Año de Solvencia</th>
+                  <th class="p-4 text-[11px] font-semibold text-slate-500 uppercase text-center tracking-wide">Estado API</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-50">
@@ -88,11 +88,11 @@ export const SolvenciesSection = (props: SolvenciesSectionProps) => {
                       return (
                         <tr class="hover:bg-slate-50/80 transition-colors group">
                           <td class="p-4 font-mono text-base text-slate-700">
-                            <span class="font-black text-slate-900">{year}</span>
-                            <span class="text-[10px] text-slate-400 ml-3 uppercase font-sans font-bold tracking-tighter opacity-0 group-hover:opacity-100 transition-opacity">Cierre 31 Dic</span>
+                            <span class="font-semibold text-slate-900">{year}</span>
+                            <span class="text-[11px] text-slate-400 ml-3 uppercase font-sans font-bold tracking-tighter opacity-0 group-hover:opacity-100 transition-opacity">Cierre 31 Dic</span>
                           </td>
                           <td class="p-4 text-center">
-                            <span class={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter border ${
+                            <span class={`inline-flex items-center px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-tighter border ${
                               isSaved 
                                 ? "bg-emerald-50 text-emerald-600 border-emerald-100" 
                                 : "bg-amber-50 text-amber-600 border-amber-100 animate-pulse"

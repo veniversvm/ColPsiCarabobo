@@ -20,8 +20,8 @@ interface Props {
   onDelete: (docId: string) => Promise<void>;
 }
 
-const IC = "w-full bg-white border-2 border-gray-200 focus:border-blue-500 rounded-xl px-4 py-2.5 outline-none transition-all text-gray-800 text-sm";
-const FIELD = "block text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1";
+const IC = "h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none placeholder:text-slate-400 focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/15 transition-colors text-colpsi-text";
+const FIELD = "block text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide ml-1 mb-1";
 
 const formatDate = (dateStr?: string | null) => {
   if (!dateStr) return "";
@@ -152,7 +152,7 @@ export function DocumentsBlock(props: Props) {
 
   return (
     <div>
-      <p class="text-xs text-gray-500 mb-6">
+      <p class="text-xs text-colpsi-muted mb-6">
         Registro digital del expediente del psicólogo (CI, título, RIF,
         comprobantes de solvencia, etc.). La administración puede cargar, editar
         y eliminar; el psicólogo solo puede consultarlos desde su portal.
@@ -160,7 +160,7 @@ export function DocumentsBlock(props: Props) {
       </p>
 
       <Show when={error()}>
-        <div class="mb-6 p-4 rounded-2xl bg-red-50 text-red-700 font-bold text-sm border border-red-100">
+        <div class="mb-6 p-4 rounded-lg bg-red-50 text-red-700 font-bold text-sm border border-red-100">
           {error()}
         </div>
       </Show>
@@ -170,7 +170,7 @@ export function DocumentsBlock(props: Props) {
         <div class="mb-6 space-y-3">
           <For each={props.entries}>
             {(doc: PsiUserDocument) => (
-              <div class="bg-colpsi-surface hover:bg-white p-4 rounded-2xl border border-colpsi-border hover:border-blue-100 transition-colors">
+              <div class="bg-colpsi-bg hover:bg-white p-4 rounded-lg border border-colpsi-border hover:border-blue-100 transition-colors">
                 <Show
                   when={editingId() === doc.id}
                   fallback={
@@ -186,7 +186,7 @@ export function DocumentsBlock(props: Props) {
                           fallback={
                             <div class="flex flex-col items-center justify-center text-red-500">
                               <Icon name="book" class="w-6 h-6" />
-                              <span class="text-[9px] font-black uppercase mt-1">
+                              <span class="text-[9px] font-semibold uppercase mt-1">
                                 PDF
                               </span>
                             </div>
@@ -201,21 +201,21 @@ export function DocumentsBlock(props: Props) {
                       </a>
                       <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-2 flex-wrap">
-                          <span class="bg-white px-2 py-0.5 rounded-lg text-[10px] font-black text-blue-800 shadow-sm border border-colpsi-border">
+                          <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold text-colpsi-blue border border-blue-200 bg-blue-50">
                             {DOCUMENT_TYPE_LABELS[doc.document_type ?? "otro"]}
                           </span>
                           {doc.title && (
-                            <h3 class="text-sm font-black text-gray-800">
+                            <h3 class="text-sm font-semibold text-colpsi-text">
                               {doc.title}
                             </h3>
                           )}
                         </div>
                         <Show when={doc.notes}>
-                          <p class="text-xs text-gray-500 mt-1 line-clamp-2">
+                          <p class="text-xs text-colpsi-muted mt-1 line-clamp-2">
                             {doc.notes}
                           </p>
                         </Show>
-                        <div class="flex items-center gap-3 mt-2 flex-wrap text-[10px] font-bold text-gray-400">
+                        <div class="flex items-center gap-3 mt-2 flex-wrap text-[11px] font-bold text-colpsi-muted">
                           {doc.filename && (
                             <span class="truncate max-w-[180px] inline-flex items-center gap-1"><Icon name="paperclip" class="w-3 h-3 shrink-0" /> {doc.filename}</span>
                           )}
@@ -228,7 +228,7 @@ export function DocumentsBlock(props: Props) {
                       <div class="flex md:flex-col gap-2 shrink-0">
                         <button
                           onClick={() => startEdit(doc)}
-                          class="text-gray-400 hover:text-blue-600 hover:bg-blue-50 p-2 rounded-xl transition-colors"
+                          class="text-colpsi-muted hover:text-blue-600 hover:bg-blue-50 p-2 rounded-xl transition-colors"
                           title="Editar"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -237,7 +237,7 @@ export function DocumentsBlock(props: Props) {
                         </button>
                         <button
                           onClick={() => handleDelete(doc)}
-                          class="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-xl transition-colors"
+                          class="text-colpsi-muted hover:text-red-500 hover:bg-red-50 p-2 rounded-xl transition-colors"
                           title="Eliminar"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -250,12 +250,12 @@ export function DocumentsBlock(props: Props) {
                 >
                   <div class="space-y-4">
                     <div class="flex items-center justify-between">
-                      <h4 class="text-sm font-black text-blue-800 uppercase">
+                      <h4 class="text-sm font-semibold text-colpsi-blue uppercase">
                         Editando: {doc.title}
                       </h4>
                       <button
                         onClick={cancelEdit}
-                        class="text-xs font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-200 p-2 rounded-xl transition-colors"
+                        class="text-xs font-medium text-colpsi-muted hover:text-colpsi-text hover:bg-colpsi-bg p-2 rounded-md transition-colors"
                       >
                         Cancelar
                       </button>
@@ -294,7 +294,7 @@ export function DocumentsBlock(props: Props) {
                           onChange={(v) => setEdit("document_date", v)}
                           class={IC}
                         />
-                        <label class="flex items-center gap-2 mt-2 text-xs font-bold text-gray-500 cursor-pointer">
+                        <label class="flex items-center gap-2 mt-2 text-xs font-medium text-colpsi-muted cursor-pointer">
                           <input
                             type="checkbox"
                             checked={clearDate()}
@@ -305,7 +305,7 @@ export function DocumentsBlock(props: Props) {
                       </div>
                       <div>
                         <label class={FIELD}>Reemplazar archivo (opcional)</label>
-                        <label class="flex items-center justify-center gap-2 border-2 border-dashed border-gray-300 rounded-xl px-4 py-2.5 cursor-pointer hover:border-blue-400 transition-colors bg-white text-sm text-gray-500 font-bold">
+                        <label class="flex items-center justify-center gap-2 border border-dashed border-slate-300 rounded-md px-4 py-2.5 cursor-pointer hover:border-blue-400 transition-colors bg-white text-sm text-colpsi-muted font-bold">
                           <input
                             type="file"
                             accept=".pdf,image/*"
@@ -332,9 +332,9 @@ export function DocumentsBlock(props: Props) {
                       <button
                         onClick={() => saveEdit(doc)}
                         disabled={savingEdit() || !edit.title.trim()}
-                        class="bg-blue-800 text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-900 active:scale-95 transition-all shadow-md disabled:opacity-70"
+                        class="bg-colpsi-blue text-white px-6 py-2.5 rounded-md text-sm font-semibold hover:bg-colpsi-blue-light transition-all disabled:opacity-70"
                       >
-                        {savingEdit() ? "GUARDANDO..." : "GUARDAR CAMBIOS"}
+                        {savingEdit() ? "Guardando..." : "Guardar cambios"}
                       </button>
                     </div>
                   </div>
@@ -346,7 +346,7 @@ export function DocumentsBlock(props: Props) {
       </Show>
 
       <Show when={!props.entries?.length}>
-        <p class="text-sm italic text-gray-400 mb-5">
+        <p class="text-sm text-colpsi-muted mb-5">
           Sin documentos en el expediente.
         </p>
       </Show>
@@ -357,19 +357,20 @@ export function DocumentsBlock(props: Props) {
         fallback={
           <button
             onClick={() => { setShowForm(true); setError(null); }}
-            class="bg-blue-800 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-900 active:scale-95 transition-all shadow-md"
+            class="inline-flex items-center gap-2 h-9 px-4 rounded-md bg-colpsi-blue text-white text-sm font-semibold hover:bg-colpsi-blue-light transition-all"
           >
-            + REGISTRAR DOCUMENTO
+            <Icon name="plus" class="w-4 h-4" />
+            Registrar documento
           </button>
         }
       >
-        <form onSubmit={handleAdd} class="bg-blue-50/50 p-5 rounded-2xl border border-blue-100 space-y-4">
+        <form onSubmit={handleAdd} class="bg-colpsi-bg/60 p-5 rounded-lg border border-colpsi-border space-y-4">
           <div class="flex items-center justify-between">
-            <h4 class="text-sm font-black text-blue-800 uppercase">Nuevo documento</h4>
+            <h4 class="text-sm font-semibold text-colpsi-text">Nuevo documento</h4>
             <button
               type="button"
               onClick={() => { setShowForm(false); resetAddForm(); }}
-              class="text-xs font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-200 p-2 rounded-xl transition-colors"
+              class="text-xs font-medium text-colpsi-muted hover:text-colpsi-text hover:bg-colpsi-bg p-2 rounded-md transition-colors"
             >
               Cerrar
             </button>
@@ -404,7 +405,7 @@ export function DocumentsBlock(props: Props) {
             </div>
             <div class="md:col-span-2">
               <label class={FIELD}>Archivo (imagen o PDF · máx. 4 MB)</label>
-              <label class="flex items-center gap-3 border-2 border-dashed border-gray-300 rounded-xl px-4 py-4 cursor-pointer hover:border-blue-400 transition-colors bg-white text-sm text-gray-500 font-bold">
+              <label class="flex items-center gap-3 border border-dashed border-slate-300 rounded-md px-4 py-4 cursor-pointer hover:border-blue-400 transition-colors bg-white text-sm text-colpsi-muted font-bold">
                 <input
                   type="file"
                   required
@@ -438,9 +439,9 @@ export function DocumentsBlock(props: Props) {
             <button
               type="submit"
               disabled={saving()}
-              class="bg-blue-800 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-900 active:scale-95 transition-all shadow-md disabled:opacity-70"
+              class="inline-flex items-center gap-2 h-9 px-4 rounded-md bg-colpsi-blue text-white text-sm font-semibold hover:bg-colpsi-blue-light transition-all disabled:opacity-70"
             >
-              {saving() ? "SUBIR..." : "SUBIR DOCUMENTO"}
+              {saving() ? "Subiendo..." : <><Icon name="paperclip" class="w-3.5 h-3.5" /> Subir documento</>}
             </button>
           </div>
         </form>

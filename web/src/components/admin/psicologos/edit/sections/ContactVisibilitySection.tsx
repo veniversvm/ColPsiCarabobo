@@ -16,14 +16,14 @@ export function ContactVisibilitySection(props: Props) {
         
         {/* ── SECCIÓN A: CONTACTO INTERNO (GREMIO) ── */}
         <div>
-          <div class="flex items-center gap-2 mb-4 border-l-4 border-blue-500 pl-3">
-            <h3 class="text-sm font-black text-blue-900 uppercase tracking-widest">
+          <div class="flex items-center gap-2 mb-4 border-b border-colpsi-border pb-2.5">
+            <h3 class="text-sm font-semibold text-colpsi-blue uppercase tracking-wide">
               Información de Contacto Interno
             </h3>
             <span class="text-[9px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md font-bold uppercase">Uso Privado</span>
           </div>
           
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-5 bg-colpsi-surface/50 p-6 rounded-2xl border border-colpsi-border">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5 bg-colpsi-bg/50 p-6 rounded-lg border border-colpsi-border">
             <Field label="Teléfono Local (Gremio)">
               <input type="tel"
                 value={props.form.contact_phone || ""}
@@ -40,7 +40,7 @@ export function ContactVisibilitySection(props: Props) {
                 placeholder="Ej: 0414-0000000"
               />
             </Field>
-            <p class="md:col-span-2 text-[10px] text-gray-400 italic">
+            <p class="md:col-span-2 text-[11px] text-colpsi-muted italic">
               * Estos números son para comunicación exclusiva entre el Colegio y el agremiado. No se muestran en el directorio público.
             </p>
           </div>
@@ -48,8 +48,8 @@ export function ContactVisibilitySection(props: Props) {
 
         {/* ── SECCIÓN B: CONTACTO DE CONSULTA (PÚBLICO) ── */}
         <div class="pt-2">
-          <div class="flex items-center gap-2 mb-4 border-l-4 border-emerald-500 pl-3">
-            <h3 class="text-sm font-black text-blue-900 uppercase tracking-widest">
+          <div class="flex items-center gap-2 mb-4 border-b border-colpsi-border pb-2.5">
+            <h3 class="text-sm font-semibold text-colpsi-blue uppercase tracking-wide">
               Datos de Consulta y Visibilidad Pública
             </h3>
             <span class="text-[9px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-md font-bold uppercase">Directorio</span>
@@ -93,7 +93,7 @@ export function ContactVisibilitySection(props: Props) {
         </div>
 
         {/* ── NOTA SOBRE TELÉFONOS PÚBLICOS ── */}
-        <div class="bg-amber-50 p-4 rounded-2xl border border-amber-100 flex items-start gap-3">
+        <div class="bg-amber-50 p-4 rounded-lg border border-amber-100 flex items-start gap-3">
           <Icon name="lightbulb" class="w-5 h-5 shrink-0 text-amber-600 mt-0.5" />
           <p class="text-[11px] text-amber-800 leading-relaxed">
             <span class="font-bold uppercase block mb-1">Nota sobre teléfonos públicos:</span>

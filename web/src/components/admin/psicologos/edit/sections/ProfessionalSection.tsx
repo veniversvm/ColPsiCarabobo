@@ -20,7 +20,7 @@ export function ProfessionalSection(props: Props) {
 
         {/* Área de Desempeño 1 */}
         <div class="space-y-2">
-          <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">
+          <label class="text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide ml-1">
             Área de Desempeño
           </label>
           <select
@@ -40,7 +40,7 @@ export function ProfessionalSection(props: Props) {
 
         {/* Área de Desempeño 2 */}
         <div class="space-y-2">
-          <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
+          <label class="text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide ml-1">
             Área de Desempeño (Adicional)
           </label>
           <select
@@ -76,12 +76,12 @@ export function ProfessionalSection(props: Props) {
               maxLength={250}
             />
             <div class="flex justify-between mt-1 px-1">
-               <p class="text-[9px] text-gray-400 italic">Este resumen aparece en las tarjetas del directorio público.</p>
+               <p class="text-[9px] text-colpsi-muted italic">Este resumen aparece en las tarjetas del directorio público.</p>
                {/* 
                   FIX: Usamos getBioLength() que ya tiene el fallback || 0 
                   para evitar el error "Cannot read properties of undefined"
                */}
-               <p class={`text-[10px] font-bold ${getBioLength() >= 250 ? 'text-red-500' : 'text-gray-400'}`}>
+               <p class={`text-[11px] font-bold ${getBioLength() >= 250 ? 'text-red-500' : 'text-colpsi-muted'}`}>
                  {getBioLength()}/250
                </p>
             </div>

@@ -47,7 +47,7 @@ export function AuditLogDrawer(props: Props) {
           <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={props.onClose} />
 
           {/* Panel */}
-          <aside class="relative w-full max-w-lg h-full bg-white shadow-2xl overflow-y-auto animate-in slide-in-from-right duration-300">
+          <aside class="relative w-full max-w-lg h-full bg-white shadow-xl overflow-y-auto animate-in slide-in-from-right duration-300">
             {/* Header */}
             <div class="sticky top-0 z-10 bg-white border-b border-colpsi-border px-5 py-3.5 flex items-start justify-between gap-3">
               <div class="min-w-0">

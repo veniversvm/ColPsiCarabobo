@@ -34,23 +34,23 @@ export function SocialNetworksBlock(props: Props) {
         <div class="mb-6 space-y-3">
           <For each={props.profile?.social_networks}>
             {(net: SocialNetwork) => (
-              <div class="flex items-center justify-between bg-colpsi-surface hover:bg-white p-4 rounded-2xl border border-colpsi-border hover:border-blue-100 transition-colors group">
+              <div class="flex items-center justify-between bg-colpsi-bg hover:bg-white p-4 rounded-lg border border-colpsi-border hover:border-blue-100 transition-colors group">
                 <div class="flex items-center gap-3 overflow-hidden">
-                  <span class="bg-white px-3 py-1 rounded-xl text-xs font-black text-blue-800 shadow-sm border border-colpsi-border">
+                  <span class="bg-white px-3 py-1 rounded-xl text-xs font-semibold text-colpsi-blue shadow-sm border border-colpsi-border">
                     {net.name}
                   </span>
                   <a
                     href={net.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="text-sm text-gray-500 hover:text-blue-600 truncate max-w-xs transition-colors"
+                    class="text-sm text-colpsi-muted hover:text-blue-600 truncate max-w-xs transition-colors"
                   >
                     {net.url}
                   </a>
                 </div>
                 <button
                   onClick={() => net.id && props.onDelete(net.id)}
-                  class="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-xl transition-colors"
+                  class="text-colpsi-muted hover:text-red-500 hover:bg-red-50 p-2 rounded-xl transition-colors"
                   title="Eliminar"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -64,11 +64,11 @@ export function SocialNetworksBlock(props: Props) {
       </Show>
 
       <Show when={!props.profile?.social_networks?.length}>
-        <p class="text-sm italic text-gray-400 mb-5">Ninguna red social registrada.</p>
+        <p class="text-sm italic text-colpsi-muted mb-5">Ninguna red social registrada.</p>
       </Show>
 
       {/* Formulario de alta */}
-      <form onSubmit={handleSubmit} class="bg-blue-50/50 p-5 rounded-2xl border border-blue-100">
+      <form onSubmit={handleSubmit} class="bg-blue-50/50 p-5 rounded-lg border border-blue-100">
         <div class="flex flex-col md:flex-row gap-4">
           <input
             type="text"
@@ -76,7 +76,7 @@ export function SocialNetworksBlock(props: Props) {
             required
             value={socialForm.name}
             onInput={(e) => setSocialForm("name", e.currentTarget.value)}
-            class="flex-1 bg-white border-2 border-transparent focus:border-blue-500 rounded-xl px-4 py-3 outline-none text-sm shadow-sm transition-all"
+            class="flex-1 bg-white border-2 border-transparent focus:border-colpsi-blue rounded-xl px-4 py-3 outline-none text-sm shadow-sm transition-all"
           />
           <input
             type="url"
@@ -84,12 +84,12 @@ export function SocialNetworksBlock(props: Props) {
             required
             value={socialForm.url}
             onInput={(e) => setSocialForm("url", e.currentTarget.value)}
-            class="flex-[2] bg-white border-2 border-transparent focus:border-blue-500 rounded-xl px-4 py-3 outline-none text-sm shadow-sm transition-all"
+            class="flex-[2] bg-white border-2 border-transparent focus:border-colpsi-blue rounded-xl px-4 py-3 outline-none text-sm shadow-sm transition-all"
           />
           <button
             type="submit"
             disabled={saving()}
-            class="bg-blue-800 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-900 active:scale-95 transition-all shadow-md disabled:opacity-70"
+            class="bg-colpsi-blue text-white px-8 py-3 rounded-xl font-bold hover:bg-colpsi-blue active:scale-95 transition-all shadow-md disabled:opacity-70"
           >
             {saving() ? "..." : "AÑADIR"}
           </button>

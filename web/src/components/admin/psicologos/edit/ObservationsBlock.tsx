@@ -65,7 +65,7 @@ export function ObservationsBlock(props: Props) {
 
   return (
     <div>
-      <p class="text-xs text-gray-500 mb-6">
+      <p class="text-xs text-colpsi-muted mb-6">
         Notas internas del Colegio. Confidencial: el psicólogo nunca ve estas
         observaciones. Son correcciones históricas: se pueden editar, pero no
         eliminar.
@@ -75,16 +75,16 @@ export function ObservationsBlock(props: Props) {
         <div class="mb-6 space-y-3">
           <For each={props.entries}>
             {(entry: ObservacionesEntry) => (
-              <div class="bg-colpsi-surface hover:bg-white p-4 rounded-2xl border border-colpsi-border hover:border-blue-100 transition-colors group">
+              <div class="bg-colpsi-bg hover:bg-white p-4 rounded-lg border border-colpsi-border hover:border-blue-100 transition-colors group">
                 <Show
                   when={editingId() === entry.id}
                   fallback={
                     <div class="flex items-start justify-between gap-3">
                       <div class="flex-1 overflow-hidden">
-                        <p class="text-sm text-gray-700 whitespace-pre-wrap break-words">
+                        <p class="text-sm text-colpsi-text whitespace-pre-wrap break-words">
                           {entry.content}
                         </p>
-                        <p class="text-xs text-gray-400 mt-2">
+                        <p class="text-xs text-colpsi-muted mt-2">
                           {formatDate(entry.created_at)}
                           <Show when={entry.create_by}>
                             {" · "}
@@ -94,7 +94,7 @@ export function ObservationsBlock(props: Props) {
                       </div>
                       <button
                         onClick={() => startEdit(entry)}
-                        class="text-gray-400 hover:text-blue-600 hover:bg-blue-50 p-2 rounded-xl transition-colors shrink-0"
+                        class="text-colpsi-muted hover:text-blue-600 hover:bg-blue-50 p-2 rounded-xl transition-colors shrink-0"
                         title="Editar"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -121,7 +121,7 @@ export function ObservationsBlock(props: Props) {
                       <button
                         onClick={() => saveEdit(entry)}
                         disabled={savingEdit() || !editContent().trim()}
-                        class="bg-blue-800 text-white px-5 py-2 rounded-xl text-sm font-bold hover:bg-blue-900 active:scale-95 transition-all shadow-md disabled:opacity-70"
+                        class="bg-colpsi-blue text-white px-5 py-2 rounded-xl text-sm font-bold hover:bg-colpsi-blue active:scale-95 transition-all shadow-md disabled:opacity-70"
                       >
                         {savingEdit() ? "..." : "GUARDAR"}
                       </button>
@@ -135,25 +135,25 @@ export function ObservationsBlock(props: Props) {
       </Show>
 
       <Show when={!props.entries?.length}>
-        <p class="text-sm italic text-gray-400 mb-5">
+        <p class="text-sm italic text-colpsi-muted mb-5">
           Sin observaciones internas registradas.
         </p>
       </Show>
 
-      <form onSubmit={handleSubmit} class="bg-blue-50/50 p-5 rounded-2xl border border-blue-100">
+      <form onSubmit={handleSubmit} class="bg-blue-50/50 p-5 rounded-lg border border-blue-100">
         <textarea
           placeholder="Describe la nota interna o seguimiento..."
           required
           value={content()}
           onInput={(e) => setContent(e.currentTarget.value)}
           rows={4}
-          class="w-full bg-white border-2 border-transparent focus:border-blue-500 rounded-xl px-4 py-3 outline-none text-sm shadow-sm transition-all resize-y"
+          class="w-full bg-white border-2 border-transparent focus:border-colpsi-blue rounded-xl px-4 py-3 outline-none text-sm shadow-sm transition-all resize-y"
         />
         <div class="flex justify-end mt-3">
           <button
             type="submit"
             disabled={saving()}
-            class="bg-blue-800 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-900 active:scale-95 transition-all shadow-md disabled:opacity-70"
+            class="bg-colpsi-blue text-white px-8 py-3 rounded-xl font-bold hover:bg-colpsi-blue active:scale-95 transition-all shadow-md disabled:opacity-70"
           >
             {saving() ? "..." : "REGISTRAR NOTA"}
           </button>

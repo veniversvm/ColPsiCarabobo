@@ -154,7 +154,7 @@ export default function AdminPsychologistsList() {
           fallback={
             <div class="p-20 text-center space-y-4">
               <div class="w-12 h-12 border-4 border-colpsi-blue border-t-transparent rounded-full animate-spin mx-auto" />
-              <p class="text-gray-400 font-bold tracking-widest uppercase text-xs">
+              <p class="text-[11px] font-medium uppercase tracking-wide text-colpsi-muted">
                 Sincronizando Base de Datos...
               </p>
             </div>

@@ -24,8 +24,8 @@ export function LocationSection(props: Props) {
 
         {/* ── 1. CARABOBO ────────────────────────────────────────────────── */}
         <div class="space-y-6">
-          <div class="flex items-center gap-2 border-l-4 border-blue-600 pl-3">
-            <h3 class="text-sm font-black text-blue-900 uppercase tracking-widest">
+          <div class="flex items-center gap-2 border-b border-colpsi-border pb-2.5">
+            <h3 class="text-sm font-semibold text-colpsi-blue uppercase tracking-wide">
               <Icon name="mapPin" class="w-3.5 h-3.5 inline-block mr-1.5 align-text-bottom" /> Presencia en Carabobo
             </h3>
           </div>
@@ -58,8 +58,8 @@ export function LocationSection(props: Props) {
             </Field>
           </div>
 
-          <div class="bg-blue-50/50 p-5 rounded-2xl border border-blue-100">
-            <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-3 ml-1">Configuración de Visibilidad (Carabobo)</p>
+          <div class="bg-blue-50/50 p-5 rounded-lg border border-blue-100">
+            <p class="text-[11px] font-semibold text-blue-600 uppercase tracking-wide mb-3 ml-1">Configuración de Visibilidad (Carabobo)</p>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <ToggleSwitch label="Públicar Municipio" 
                 checked={props.form.show_municipality_carabobo}
@@ -76,8 +76,8 @@ export function LocationSection(props: Props) {
 
         {/* ── 2. OTRO ESTADO DE VENEZUELA ────────────────────────────────── */}
         <div class="space-y-6 pt-4 border-t border-colpsi-border">
-          <div class="flex items-center gap-2 border-l-4 border-purple-600 pl-3">
-            <h3 class="text-sm font-black text-purple-900 uppercase tracking-widest">
+          <div class="flex items-center gap-2 border-b border-colpsi-border pb-2.5">
+            <h3 class="text-sm font-semibold text-purple-900 uppercase tracking-wide">
               <Icon name="map" class="w-3.5 h-3.5 inline-block mr-1.5 align-text-bottom" /> Otro Estado de Venezuela
             </h3>
           </div>
@@ -148,8 +148,8 @@ export function LocationSection(props: Props) {
             </div>
           </div>
 
-          <div class="bg-purple-50/50 p-5 rounded-2xl border border-purple-100">
-            <p class="text-[10px] font-black text-purple-600 uppercase tracking-widest mb-3 ml-1">Configuración de Visibilidad (Nacional)</p>
+          <div class="bg-purple-50/50 p-5 rounded-lg border border-purple-100">
+            <p class="text-[11px] font-semibold text-purple-600 uppercase tracking-wide mb-3 ml-1">Configuración de Visibilidad (Nacional)</p>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               <ToggleSwitch label="Mostrar Estado" 
                 checked={props.form.show_state_outside}
@@ -172,8 +172,8 @@ export function LocationSection(props: Props) {
 
         {/* ── 3. EXTERIOR ────────────────────────────────────────────────── */}
         <div class="space-y-6 pt-4 border-t border-colpsi-border">
-          <div class="flex items-center gap-2 border-l-4 border-emerald-600 pl-3">
-            <h3 class="text-sm font-black text-emerald-900 uppercase tracking-widest">
+          <div class="flex items-center gap-2 border-b border-colpsi-border pb-2.5">
+            <h3 class="text-sm font-semibold text-emerald-900 uppercase tracking-wide">
               <Icon name="globe" class="w-3.5 h-3.5 inline-block mr-1.5 align-text-bottom" /> Exterior (Fuera de Venezuela)
             </h3>
           </div>
@@ -200,8 +200,8 @@ export function LocationSection(props: Props) {
             </div>
           </div>
 
-          <div class="bg-emerald-50/50 p-5 rounded-2xl border border-emerald-100">
-            <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-3 ml-1">Configuración de Visibilidad (Exterior)</p>
+          <div class="bg-emerald-50/50 p-5 rounded-lg border border-emerald-100">
+            <p class="text-[11px] font-semibold text-emerald-600 uppercase tracking-wide mb-3 ml-1">Configuración de Visibilidad (Exterior)</p>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <ToggleSwitch label="Publicar Fijo Int." 
                 checked={props.form.show_phone_outside_venezuela}
