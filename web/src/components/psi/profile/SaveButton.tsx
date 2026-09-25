@@ -16,12 +16,11 @@ interface SaveButtonProps {
 
 export function SaveButton(props: SaveButtonProps) {
   return (
-    <div class="sticky bottom-4 z-40">
-      <div class="bg-white rounded-lg border border-colpsi-border overflow-hidden">
-        <div class="p-4 md:p-5">
-          <div class="flex flex-col md:flex-row md:items-end gap-4">
-            <div class="flex-1 min-w-0 md:max-w-sm space-y-1">
-              <label class="text-[11px] font-semibold text-colpsi-red uppercase tracking-wide ml-1 mb-1">
+    <div class="bg-white rounded-lg border border-colpsi-border overflow-hidden">
+      <div class="p-4 md:p-5">
+        <div class="flex flex-col md:flex-row md:items-end gap-4">
+          <div class="flex-1 min-w-0 md:max-w-sm space-y-1">
+            <label class="text-[11px] font-semibold text-colpsi-red uppercase tracking-wide ml-1 mb-1">
                 Contraseña Actual{" "}
                 <span class="lowercase font-medium text-colpsi-muted">
                   (obligatoria para guardar)
@@ -100,6 +99,5 @@ export function SaveButton(props: SaveButtonProps) {
           </div>
         </div>
       </div>
-    </div>
   );
 }
