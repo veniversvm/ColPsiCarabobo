@@ -367,3 +367,28 @@ code; los commits viven en `feat/admin-paneles-pro` y se fusionaron a `main`.
   (`SecuritySection`, eliminado por dead code) — junto al botón "Guardar
   cambios" (check/spinner) y el feedback de éxito/error debajo. Misma lógica:
   `required` + chequeo de `handleSaveProfile` intactos.
+
+### Redes sociales en el perfil público del directorio (tras la fusión 2)
+
+El perfil público (`/directorio/[slug].tsx` + `ProfileHeader.tsx`) mostraba las
+redes como un chip de texto pequeño al final de la tarjeta "Contacto", sin
+encabezado, fácil de pasar por alto. Cambios (solo presentación; la API ya
+devolvía `social_networks` en `GET /psi/:fpv`):
+
+- **Redes debajo del QR**: `ProfileHeader` recibe `socialNetworks` y las pinta
+  en la tarjeta izquierda, justo debajo de la "Ficha Digital" (QR), **sin
+  título ni encabezado**: chips `🔗/icono + nombre` centrados con
+  `target="_blank" rel="noopener noreferrer"`, visibles solo si hay redes.
+- **`ContactCard` sin redes**: se eliminó el mini-bloque del final de la tarjeta
+  y la prop `socialNetworks` (única llamada: `/directorio/[slug]`).
+- **Iconos de marca** (`web/src/components/psi/profile/SocialBrandIcon.tsx`):
+  detecta la red por nombre normalizado (minúsculas, sin acentos) y renderiza
+  su SVG oficial de **Simple Icons** para Instagram, Facebook, LinkedIn,
+  X/Twitter, WhatsApp, YouTube, TikTok, Telegram, Threads, Pinterest y GitHub.
+  Monocromo (`fill="currentColor"` → hereda el azul del chip); aliases cortos
+  (`ig`, `x`, `fb`, `wa`, `yt`) solo matchean por igualdad exacta; redes no
+  listadas caen al icono genérico de enlace. Componente reutilizable para el
+  portal `/psi/perfil` si se desea.
+
+Verificado con `npm run build` y `curl` del SSR (svg del path de Instagram
+presente bajo el QR). Commits: `057e61f`, `ee2bf14`, `4f08814`.
