@@ -24,7 +24,6 @@ import { LocationSection } from "~/components/psi/profile/LocationSection";
 import { ProfessionalSection } from "~/components/psi/profile/ProfessionalSection";
 import { PrivacySection } from "~/components/psi/profile/PrivacySection";
 import { ServicePreferencesSection } from "~/components/psi/profile/ServicePreferencesSection";
-import { SecuritySection } from "~/components/psi/profile/SecuritySection";
 import { AcademicSection } from "~/components/psi/profile/AcademicSection";
 import { SocialNetworksSection } from "~/components/psi/profile/SocialNetworksSection";
 import { SaveButton } from "~/components/psi/profile/SaveButton";
@@ -491,12 +490,6 @@ export default function ProfilePage() {
                   onNewPassword1Change={(v) => setForm("new_password_1", v)}
                   onNewPassword2Change={(v) => setForm("new_password_2", v)}
                 />
-
-                <SecuritySection
-                  password={form.password ?? ""}
-                  onPasswordChange={(v) => setForm("password", v)}
-                  message={message()}
-                />
               </NotebookPage>
 
               <NotebookPage id="contacto">
@@ -705,7 +698,12 @@ export default function ProfilePage() {
 
             </Notebook>
 
-            <SaveButton saving={saving()} message={message()} />
+            <SaveButton
+              saving={saving()}
+              message={message()}
+              password={form.password ?? ""}
+              onPasswordChange={(v) => setForm("password", v)}
+            />
           </form>
 
           {/* Redes Sociales: se guarda con lógica propia (apiPost/apiDelete a
