@@ -434,14 +434,62 @@ export default function ProfilePage() {
           <form onSubmit={handleSaveProfile}>
             <Notebook
               pages={[
-                { id: "cuenta", label: "Cuenta y Seguridad", icon: "user" },
-                { id: "contacto", label: "Información de Contacto", icon: "mail" },
-                { id: "academico", label: "Expediente Académico", icon: "book" },
-                { id: "ubicacion", label: "Ubicación Geográfica", icon: "mapPin" },
-                { id: "profesional", label: "Perfil Profesional", icon: "fileText" },
-                { id: "servicio", label: "Servicio y Preferencias", icon: "sliders" },
-                { id: "privacidad", label: "Privacidad y Visibilidad", icon: "shield" },
-                { id: "redes", label: "Redes Sociales", icon: "link" },
+                {
+                  id: "cuenta",
+                  label: "Cuenta y Seguridad",
+                  icon: "user",
+                  description:
+                    "Gestiona tu correo de acceso y contraseña, y revisa la actividad de sesión. Es la identidad con la que ingresas al portal del colegio.",
+                },
+                {
+                  id: "contacto",
+                  label: "Información de Contacto",
+                  icon: "mail",
+                  description:
+                    "Registra tus teléfonos, correo de atención y disponibilidad para que el colegio pueda comunicarse contigo.",
+                },
+                {
+                  id: "academico",
+                  label: "Expediente Académico",
+                  icon: "book",
+                  description:
+                    "Mantén actualizada tu formación: títulos, postgrados y estudios que respaldan tu ejercicio profesional.",
+                },
+                {
+                  id: "ubicacion",
+                  label: "Ubicación Geográfica",
+                  icon: "mapPin",
+                  description:
+                    "Indica el estado y municipio donde ejerces; se usa para la estadística y el directorio gremial.",
+                },
+                {
+                  id: "profesional",
+                  label: "Perfil Profesional",
+                  icon: "fileText",
+                  description:
+                    "Tu presentación ante el gremio y el público: trayectoria, especialidades y descripción profesional.",
+                },
+                {
+                  id: "servicio",
+                  label: "Servicio y Preferencias",
+                  icon: "sliders",
+                  description:
+                    "Define la modalidad de servicio (presencial, en línea, domicilio) y tus preferencias de atención.",
+                },
+                {
+                  id: "privacidad",
+                  label: "Privacidad y Visibilidad",
+                  icon: "shield",
+                  description:
+                    "Controla qué información se muestra públicamente en el directorio y cuál queda solo para el colegio.",
+                },
+                {
+                  id: "redes",
+                  label: "Redes Sociales",
+                  icon: "link",
+                  description:
+                    "Vincula tus perfiles profesionales para que otros psicólogos y el público puedan encontrarte.",
+                },
               ]}
             >
             <NotebookPage id="cuenta">

@@ -10,6 +10,9 @@
 // las demás se montan al activarse por primera vez; una vez visitadas permanecen
 // en el DOM (ocultas) para conservar estado local (TipTap, flatpickr, selecciones
 // temporales) y evitar que los editores se inicialicen con el contenedor oculto.
+// Bajo la barra de pestañas se muestra un subtítulo con el nombre de la sección
+// activa (+ punto de su color) y, si la página define `description`, un cuadro
+// explicativo de para qué sirve esa área (solo cuando el campo existe).
 import {
   createContext,
   createEffect,
@@ -48,13 +51,14 @@ const HERALDIC_GRADIENT =
   "linear-gradient(135deg, #0a174f 0%, #1e3a8a 52%, #172554 100%)";
 
 export function Notebook(props: {
-  pages: Array<{ id: string; label: string; icon?: IconName }>;
+  pages: Array<{ id: string; label: string; icon?: IconName; description?: string }>;
   children: JSX.Element;
 }) {
   const [active, setActive] = createSignal(props.pages[0]?.id ?? "");
   const activeIdx = () =>
     Math.max(props.pages.findIndex((p) => p.id === active()), 0);
   const activeLabel = () => props.pages[activeIdx()]?.label ?? "";
+  const activeDescription = () => props.pages[activeIdx()]?.description ?? "";
   const activeColor = () => TAB_COLORS[activeIdx() % TAB_COLORS.length]?.bg ?? "#1e3a8a";
 
   return (
@@ -114,7 +118,7 @@ export function Notebook(props: {
           </For>
         </div>
         <div class="p-5">
-          <div class="flex items-center gap-2 mb-4">
+          <div class="flex items-center gap-2 mb-3">
             <span
               class="w-2 h-2 rounded-full shrink-0"
               style={{ backgroundColor: activeColor() }}
@@ -123,6 +127,11 @@ export function Notebook(props: {
               {activeLabel()}
             </h2>
           </div>
+          <Show when={activeDescription()}>
+            <div class="rounded-md border border-colpsi-border bg-colpsi-bg/40 px-4 py-3 mb-4 text-sm text-colpsi-text/80 leading-relaxed">
+              {activeDescription()}
+            </div>
+          </Show>
           {props.children}
         </div>
       </div>
