@@ -141,6 +141,7 @@ src/
 | `bucket.ts` | `bucketUrl()` / `siteUrl()` — único punto para URLs de bucket/sitio |
 | `sanitize-html.ts` | `sanitizeHtml()` — HTML seguro para innerHTML (DOMPurify + fallback SSR) |
 | `sanitizer.ts` | Sanitización de inputs (teléfono, texto, email, contraseña) |
+| `geo.ts` | Catálogos geográficos: estados, `MUNICIPIOS_POR_ESTADO` (335 municipios) y `municipiosDe()` para los selects en cascada (ver `docs/municipios-desplegables.md`) |
 | `errors.ts` | `getUserFacingError()` — mensajes amigables, sin detalle interno |
 | `utils.ts` | Slugs (`createProfileSlug`), helpers de dominio |
 
