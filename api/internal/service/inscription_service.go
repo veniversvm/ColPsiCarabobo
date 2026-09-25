@@ -215,6 +215,10 @@ func (s *InscriptionService) Submit(ctx context.Context, req *SubmitInscriptionR
 	}
 
 	// 1. Validar unicidad de cédula
+	// La cédula nunca puede ser 0 o negativa (defensa: el handler ya la valida).
+	if req.Cedula <= 0 {
+		return nil, errors.New("la cédula debe ser un número positivo")
+	}
 	exists, err := s.repo.CIInPsiUsers(ctx, req.Cedula)
 	if err != nil {
 		return nil, err
@@ -552,6 +556,15 @@ func (s *InscriptionService) Approve(ctx context.Context, admin *domain.UserAdmi
 		return nil, ErrInscriptionNotPending
 	}
 
+	// La ficha debe traer cédula y FPV positivos: un psicólogo nunca se crea
+	// con CI o FPV 0 (ese perfil es inalcanzable en el directorio público).
+	if req.Cedula <= 0 {
+		return nil, errors.New("la ficha debe tener una cédula válida (mayor a 0) para aprobarse")
+	}
+	if req.FPV <= 0 {
+		return nil, errors.New("la ficha debe tener un N° FPV válido (mayor a 0) para aprobarse")
+	}
+
 	// 1. Generar número de control secuencial
 	controlNumber, err := s.repo.NextControlNumber(ctx)
 	if err != nil {
@@ -806,6 +819,10 @@ func (s *InscriptionService) UpdateFicha(ctx context.Context, admin *domain.User
 	}
 
 	// Unicidad (solo si el valor cambió)
+	// La cédula nunca puede ser 0 o negativa.
+	if req.Cedula <= 0 {
+		return nil, errors.New("la cédula debe ser un número positivo")
+	}
 	if req.Cedula != cur.Cedula {
 		exists, err := s.repo.CIInPsiUsers(ctx, req.Cedula)
 		if err != nil {
@@ -823,6 +840,10 @@ func (s *InscriptionService) UpdateFicha(ctx context.Context, admin *domain.User
 		}
 	}
 
+	// El FPV es opcional en la ficha (0 = sin FPV), pero nunca negativo.
+	if req.FPV < 0 {
+		return nil, errors.New("el N° FPV debe ser un número positivo")
+	}
 	if req.FPV > 0 && req.FPV != cur.FPV {
 		exists, err := s.repo.FPVInPsiUsers(ctx, req.FPV)
 		if err != nil {

@@ -361,6 +361,18 @@ func TestInscriptionService_UpdateFicha_UnicidadExcluyente(t *testing.T) {
 			t.Fatalf("error inesperado al editar con correo sin cambios: %v", err)
 		}
 	})
+
+	t.Run("cédula cero → rechazo inmediato (nunca una ficha con cédula 0)", func(t *testing.T) {
+		repo := &mockInscriptionRepo{}
+		svc := NewInscriptionService(repo, nil, nil, nil, &mockMailService{})
+		repo.GetByIDFunc = func(ctx context.Context, i uuid.UUID) (*domain.PsiInscriptionRequest, error) { return req, nil }
+		body := valid("ana@test.com")
+		body.Cedula = 0
+		_, err := svc.UpdateFicha(ctx, admin, id, body)
+		if err == nil || err.Error() != "la cédula debe ser un número positivo" {
+			t.Fatalf("esperaba rechazo por cédula 0, got %v", err)
+		}
+	})
 }
 
 func TestInscriptionService_Approve_MapFichaYMigra(t *testing.T) {
@@ -459,6 +471,43 @@ func TestInscriptionService_Approve_MapFichaYMigra(t *testing.T) {
 	if !deleted {
 		t.Fatal("las filas de la ficha no se limpiaron tras migrar")
 	}
+}
+
+// TestInscriptionService_Approve_RechazaCeroYNegativos garantiza que ninguna
+// ficha con cédula o FPV 0 pueda convertirse en psicólogo (dicho perfil es
+// inalcanzable en el directorio público).
+func TestInscriptionService_Approve_RechazaCeroYNegativos(t *testing.T) {
+	ctx := context.Background()
+	admin := &domain.UserAdmin{ID: uuid.Must(uuid.NewV7()), Credentials: domain.Credentials{Username: "aprobador"}, CanCreatePsi: true}
+	id := uuid.Must(uuid.NewV7())
+
+	t.Run("ficha con FPV cero → rechazo", func(t *testing.T) {
+		repo := &mockInscriptionRepo{}
+		svc := NewInscriptionService(repo, nil, nil, nil, &mockMailService{})
+		bad := &domain.PsiInscriptionRequest{
+			ID: id, Cedula: 100, Nacionalidad: "V", Nombres: "María", Apellidos: "Rojas",
+			Correo: "maria2@test.com", FPV: 0, Status: domain.InscriptionPending,
+		}
+		repo.GetByIDFunc = func(ctx context.Context, i uuid.UUID) (*domain.PsiInscriptionRequest, error) { return bad, nil }
+		_, err := svc.Approve(ctx, admin, id)
+		if err == nil || err.Error() != "la ficha debe tener un N° FPV válido (mayor a 0) para aprobarse" {
+			t.Fatalf("esperaba rechazo al aprobar ficha con FPV 0, got %v", err)
+		}
+	})
+
+	t.Run("ficha con cédula cero → rechazo", func(t *testing.T) {
+		repo := &mockInscriptionRepo{}
+		svc := NewInscriptionService(repo, nil, nil, nil, &mockMailService{})
+		bad := &domain.PsiInscriptionRequest{
+			ID: id, Cedula: 0, Nacionalidad: "V", Nombres: "María", Apellidos: "Rojas",
+			Correo: "maria3@test.com", FPV: 401000, Status: domain.InscriptionPending,
+		}
+		repo.GetByIDFunc = func(ctx context.Context, i uuid.UUID) (*domain.PsiInscriptionRequest, error) { return bad, nil }
+		_, err := svc.Approve(ctx, admin, id)
+		if err == nil || err.Error() != "la ficha debe tener una cédula válida (mayor a 0) para aprobarse" {
+			t.Fatalf("esperaba rechazo al aprobar ficha con cédula 0, got %v", err)
+		}
+	})
 }
 
 // TestValidateFichaObligatoria cubre la regla única de campos obligatorios de

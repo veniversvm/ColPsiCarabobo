@@ -226,6 +226,61 @@ func TestImportFromXLSX_GhostRows(t *testing.T) {
 }
 
 // =========================================================================
+// TEST: ImportFromXLSX — CI y FPV nunca 0
+// =========================================================================
+
+func TestImportFromXLSX_CeroYNegativos(t *testing.T) {
+	t.Run("FPV vacío con CI presente → fila rechazada (no crea FPV 0)", func(t *testing.T) {
+		rows := testRows(testRow{CI: "200", FirstName: "Test", LastName: "User", Genre: "M", Municipio: "Valencia"})
+
+		createCalled := false
+		repo := &mockPsiRepoSvc{
+			CreateWithColDataFunc: func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol []domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error {
+				createCalled = true
+				return nil
+			},
+		}
+		svc := NewPsiService(repo, nil, nil)
+
+		buf := createTestXLSX(t, rows)
+		success, failed := svc.ImportFromXLSX(context.Background(), buf, uuid.Must(uuid.NewV7()))
+
+		require.Equal(t, 0, success)
+		require.Len(t, failed, 1)
+		require.Contains(t, failed[0]["error"], "mayores a 0")
+		require.False(t, createCalled)
+	})
+
+	t.Run("FPV explícito en 0 → fila rechazada", func(t *testing.T) {
+		rows := testRows(testRow{FPV: "0", CI: "200", FirstName: "Test", LastName: "User", Genre: "M", Municipio: "Valencia"})
+
+		repo := &mockPsiRepoSvc{}
+		svc := NewPsiService(repo, nil, nil)
+
+		buf := createTestXLSX(t, rows)
+		success, failed := svc.ImportFromXLSX(context.Background(), buf, uuid.Must(uuid.NewV7()))
+
+		require.Equal(t, 0, success)
+		require.Len(t, failed, 1)
+		require.Contains(t, failed[0]["error"], "mayores a 0")
+	})
+
+	t.Run("CI vacío con FPV presente → fila rechazada (no crea CI 0)", func(t *testing.T) {
+		rows := testRows(testRow{FPV: "100", FirstName: "Test", LastName: "User", Genre: "M", Municipio: "Valencia"})
+
+		repo := &mockPsiRepoSvc{}
+		svc := NewPsiService(repo, nil, nil)
+
+		buf := createTestXLSX(t, rows)
+		success, failed := svc.ImportFromXLSX(context.Background(), buf, uuid.Must(uuid.NewV7()))
+
+		require.Equal(t, 0, success)
+		require.Len(t, failed, 1)
+		require.Contains(t, failed[0]["error"], "mayores a 0")
+	})
+}
+
+// =========================================================================
 // TEST: ImportFromXLSX — Municipality Validation
 // =========================================================================
 

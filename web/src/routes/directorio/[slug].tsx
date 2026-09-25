@@ -44,7 +44,7 @@ export default function PsiProfilePage() {
   const [profile] = createResource(async () => {
     try {
       const fpv = extractFpvFromSlug(params.slug ?? "");
-      if (!fpv) return null;
+      if (fpv === null) return null;
       return await fetchProfile(String(fpv));
     } catch {
       return null;

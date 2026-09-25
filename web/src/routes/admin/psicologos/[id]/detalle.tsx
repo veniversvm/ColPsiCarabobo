@@ -10,6 +10,7 @@ import {
 import { createStore, unwrap } from "solid-js/store";
 import { useParams, action, useAction } from "@solidjs/router";
 import { apiGet } from "~/lib/api";
+import { createProfileSlug } from "~/lib/utils";
 
 import {
   EditPageHeader,
@@ -250,7 +251,13 @@ const runUpdateAction = useAction(updateAdminPsiServer);
   const canonicalUrl = () => {
     const p = profile();
     if (!p) return "";
-    return `${SITE_URL}/directorio/${p.first_name}-${p.last_name}-fpv${p.fpv}`;
+    return `${SITE_URL}/directorio/${createProfileSlug({
+      first_name: p.first_name,
+      second_name: p.second_name,
+      last_name: p.last_name,
+      second_last_name: p.second_last_name,
+      fpv: p.fpv,
+    })}`;
   };
 
   // ── Sync DB → Store (Mapeo completo) ───────────────────────
@@ -349,6 +356,23 @@ const runUpdateAction = useAction(updateAdminPsiServer);
     setMessage(null);
 
     const rawForm = unwrap(form);
+
+    // Identidad legal: CI y FPV siempre positivos (nunca 0).
+    const ciNum = parseInt(String(rawForm.ci ?? ""), 10);
+    if (!String(rawForm.ci ?? "").trim() || !Number.isFinite(ciNum) || ciNum <= 0) {
+      setMessage({ type: "error", text: "La cédula es obligatoria y debe ser un número positivo." });
+      setSaving(false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    const fpvNum = parseInt(String(rawForm.fpv ?? ""), 10);
+    if (!String(rawForm.fpv ?? "").trim() || !Number.isFinite(fpvNum) || fpvNum <= 0) {
+      setMessage({ type: "error", text: "El N° FPV es obligatorio y debe ser un número positivo." });
+      setSaving(false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
     const fd = new FormData(); // 👈 Usamos FormData para soportar imágenes y tipos de Go
 
     // 1. Procesar campos del formulario

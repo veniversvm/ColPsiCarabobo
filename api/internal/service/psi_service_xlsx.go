@@ -81,6 +81,27 @@ func (s *PsiService) ImportFromXLSX(ctx context.Context, reader io.Reader, admin
 			continue
 		}
 
+		// Identidad legal: CI y FPV siempre positivos (nunca 0). Si la columna
+		// viene vacía o con "0", la fila se rechaza y se reporta al usuario.
+		fpvNum := 0
+		if numFPV != "" {
+			fpvNum = parseInt(numFPV)
+		}
+		ciNum := 0
+		if ciStr != "" {
+			ciNum = parseInt(ciStr)
+		}
+		if fpvNum <= 0 || ciNum <= 0 {
+			failedRecords = append(failedRecords, map[string]string{
+				"fila":   excelRow,
+				"nombre": fullName,
+				"ci":     ciStr,
+				"fpv":    numFPV,
+				"error":  "el N° de FPV y la cédula deben ser números mayores a 0",
+			})
+			continue
+		}
+
 		// Contraseña única por usuario.
 		defaultPassword := utils.GenerateSecureRandomString(12)
 		hashedPasswordBytes, _ := bcrypt.GenerateFromPassword([]byte(defaultPassword), bcrypt.DefaultCost)
@@ -158,8 +179,8 @@ func (s *PsiService) ImportFromXLSX(ctx context.Context, reader io.Reader, admin
 			SecondName:     cleanDash(getValorSeguro(row, 8)),
 			LastName:       lastName,
 			SecondLastName: cleanDash(getValorSeguro(row, 10)),
-			FPV:            parseInt(numFPV),
-			CI:             parseInt(ciStr),
+			FPV:            fpvNum,
+			CI:             ciNum,
 			Nationality:    parseNationality(getValorSeguro(row, 5)),
 			ControlNumber:  cleanDash(getValorSeguro(row, 0)),
 			BornDate:       parseDate(getValorSeguro(row, 11)),

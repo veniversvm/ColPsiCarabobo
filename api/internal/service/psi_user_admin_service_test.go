@@ -106,6 +106,8 @@ func TestPsiService_CreateByAdmin(t *testing.T) {
 			Email:    "perez@test.com",
 			Password: "Secure1!password",
 			BornDate: "1990-05-20",
+			CI:       12345678,
+			FPV:      401001,
 		}
 
 		err := svc.CreatePsiByAdmin(ctx, admin, req)
@@ -120,11 +122,44 @@ func TestPsiService_CreateByAdmin(t *testing.T) {
 			Email:    "debil@test.com",
 			Password: "12345",
 			BornDate: "1990-05-20",
+			CI:       12345678,
+			FPV:      401002,
 		}
 
 		err := svc.CreatePsiByAdmin(ctx, admin, req)
 		if err == nil || err.Error() != "la contraseña no cumple con los estándares de seguridad" {
 			t.Errorf("Se esperaba rechazo por contraseña débil, se obtuvo: %v", err)
+		}
+	})
+
+	t.Run("Rechazo: Cédula cero (nunca un perfil con CI 0)", func(t *testing.T) {
+		req := request_structs.CreatePsiAdminRequest{
+			Username: "lic_ci0",
+			Email:    "ci0@test.com",
+			Password: "Secure1!password",
+			BornDate: "1990-05-20",
+			// CI sin setear → 0
+		}
+
+		err := svc.CreatePsiByAdmin(ctx, admin, req)
+		if err == nil || err.Error() != "la cédula debe ser un número positivo" {
+			t.Errorf("Se esperaba rechazo por cédula 0, se obtuvo: %v", err)
+		}
+	})
+
+	t.Run("Rechazo: FPV cero (nunca un perfil con FPV 0)", func(t *testing.T) {
+		req := request_structs.CreatePsiAdminRequest{
+			Username: "lic_fpv0",
+			Email:    "fpv0@test.com",
+			Password: "Secure1!password",
+			BornDate: "1990-05-20",
+			CI:       12345678,
+			// FPV sin setear → 0
+		}
+
+		err := svc.CreatePsiByAdmin(ctx, admin, req)
+		if err == nil || err.Error() != "el N° FPV debe ser un número positivo" {
+			t.Errorf("Se esperaba rechazo por FPV 0, se obtuvo: %v", err)
 		}
 	})
 }
@@ -179,6 +214,44 @@ func TestPsiService_UpdateByAdmin_Patch(t *testing.T) {
 		err := svc.UpdatePsiByAdmin(ctx, admin, targetID, req, nil, nil, nil, nil)
 		if err != nil {
 			t.Errorf("Error en Update: %v", err)
+		}
+	})
+
+	t.Run("Rechazo: Edición con FPV cero", func(t *testing.T) {
+		currentPsi := &domain.PsiUserModel{
+			ID:      targetID,
+			Solvent: true,
+			ColData: domain.PsiUserColData{PsiUserModelID: targetID, RegisterNumber: 12345},
+		}
+		repo.GetByIDFunc = func(ctx context.Context, id uuid.UUID) (*domain.PsiUserModel, error) {
+			return currentPsi, nil
+		}
+
+		zero := 0
+		req := request_structs.UpdatePsiAdminRequest{FPV: &zero}
+
+		err := svc.UpdatePsiByAdmin(ctx, admin, targetID, req, nil, nil, nil, nil)
+		if err == nil || err.Error() != "el N° FPV debe ser un número positivo" {
+			t.Errorf("Se esperaba rechazo por FPV 0 en edición, se obtuvo: %v", err)
+		}
+	})
+
+	t.Run("Rechazo: Edición con cédula cero", func(t *testing.T) {
+		currentPsi := &domain.PsiUserModel{
+			ID:      targetID,
+			Solvent: true,
+			ColData: domain.PsiUserColData{PsiUserModelID: targetID, RegisterNumber: 12345},
+		}
+		repo.GetByIDFunc = func(ctx context.Context, id uuid.UUID) (*domain.PsiUserModel, error) {
+			return currentPsi, nil
+		}
+
+		zero := 0
+		req := request_structs.UpdatePsiAdminRequest{CI: &zero}
+
+		err := svc.UpdatePsiByAdmin(ctx, admin, targetID, req, nil, nil, nil, nil)
+		if err == nil || err.Error() != "la cédula debe ser un número positivo" {
+			t.Errorf("Se esperaba rechazo por CI 0 en edición, se obtuvo: %v", err)
 		}
 	})
 }

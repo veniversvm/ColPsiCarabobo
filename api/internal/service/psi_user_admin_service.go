@@ -72,6 +72,15 @@ func (s *PsiService) CreatePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 		return errors.New("no tienes permiso para registrar psicólogos")
 	}
 
+	// 1.1. Identidad legal: CI y FPV siempre positivos (nunca 0).
+	// Un perfil con CI o FPV 0 es inalcanzable en el directorio público.
+	if req.CI <= 0 {
+		return errors.New("la cédula debe ser un número positivo")
+	}
+	if req.FPV <= 0 {
+		return errors.New("el N° FPV debe ser un número positivo")
+	}
+
 	// 2. Validación de fuerza de contraseña
 	if !utils.IsStrongPassword(req.Password) {
 		return errors.New("la contraseña no cumple con los estándares de seguridad")
@@ -267,9 +276,15 @@ func (s *PsiService) UpdatePsiByAdmin(
 		psi.SecondLastName = *req.SecondLastName
 	}
 	if req.FPV != nil {
+		if *req.FPV <= 0 {
+			return errors.New("el N° FPV debe ser un número positivo")
+		}
 		psi.FPV = *req.FPV
 	}
 	if req.CI != nil {
+		if *req.CI <= 0 {
+			return errors.New("la cédula debe ser un número positivo")
+		}
 		psi.CI = *req.CI
 	}
 	if req.BornDate != nil {

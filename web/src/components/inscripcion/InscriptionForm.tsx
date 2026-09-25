@@ -169,7 +169,14 @@ export function InscriptionForm() {
     if (ciInvalid()) return "La cédula ingresada no está disponible";
     if (fpvInvalid()) return "El número de FPV ingresado no está disponible";
     if (emailInvalid()) return "El correo ingresado no está disponible";
-    if (!cedula().trim()) return "La cédula es obligatoria";
+    const cedulaTxt = cedula().trim();
+    if (!cedulaTxt) return "La cédula es obligatoria";
+    if (!/^\d+$/.test(cedulaTxt) || parseInt(cedulaTxt, 10) <= 0) {
+      return "La cédula debe ser un número positivo";
+    }
+    if (fpv().trim() && (!/^\d+$/.test(fpv().trim()) || parseInt(fpv().trim(), 10) <= 0)) {
+      return "El N° FPV debe ser un número positivo";
+    }
     if (!nombres().trim()) return "Los nombres son obligatorios";
     if (!apellidos().trim()) return "Los apellidos son obligatorios";
     if (!segundoApellido().trim()) return "El segundo apellido es obligatorio";

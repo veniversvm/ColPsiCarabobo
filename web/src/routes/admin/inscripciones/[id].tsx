@@ -106,6 +106,14 @@ export default function AdminInscriptionDetail() {
     if (!s(f.titulo_universidad)) return "La universidad es obligatoria";
     if (!s(f.titulo_fecha_graduacion)) return "La fecha de graduación es obligatoria";
     if (!s(f.titulo_registro_estado)) return "El estado del registro es obligatorio";
+    const cedulaNum = parseInt(s(f.cedula), 10);
+    if (!s(f.cedula) || !Number.isFinite(cedulaNum) || cedulaNum <= 0) {
+      return "La cédula es obligatoria y debe ser un número positivo";
+    }
+    const fpvNum = Number(f.fpv);
+    if (f.fpv !== "" && f.fpv !== null && (Number.isNaN(fpvNum) || fpvNum < 0)) {
+      return "El N° FPV debe ser un número positivo";
+    }
     const carabobo = s(f.municipality_carabobo) !== "" && s(f.service_address) !== "";
     const otroEstado = s(f.state_outside) !== "" && s(f.municipality_outside_carabobo) !== "";
     const exterior = s(f.country) !== "";

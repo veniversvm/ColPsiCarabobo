@@ -108,6 +108,20 @@ export default function CreatePsychologistPage() {
       return;
     }
 
+    // Identidad legal: CI y FPV siempre positivos (nunca 0).
+    const ciNum = parseInt(String(form.ci), 10);
+    if (!String(form.ci).trim() || !Number.isFinite(ciNum) || ciNum <= 0) {
+      setMessage({ type: "error", text: "La cédula es obligatoria y debe ser un número positivo." });
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    const fpvNum = parseInt(String(form.fpv), 10);
+    if (!String(form.fpv).trim() || !Number.isFinite(fpvNum) || fpvNum <= 0) {
+      setMessage({ type: "error", text: "El N° FPV es obligatorio y debe ser un número positivo." });
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
     setSaving(true);
     setMessage(null);
 

@@ -232,9 +232,10 @@ func (h *InscriptionHandler) parseSubmitForm(c *fiber.Ctx) (*service.SubmitInscr
 
 	if fpvRaw := strings.TrimSpace(first(form, "fpv")); fpvRaw != "" {
 		fpv, err := strconv.Atoi(fpvRaw)
-		if err == nil && fpv > 0 {
-			req.FPV = fpv
+		if err != nil || fpv <= 0 {
+			return nil, errors.New("el N° FPV debe ser un número positivo")
 		}
+		req.FPV = fpv
 	}
 
 	if req.Correo == "" || !isValidEmail(req.Correo) {
