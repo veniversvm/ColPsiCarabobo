@@ -18,6 +18,7 @@ import { canEditProject, canManageProject } from "~/types/projects";
 import CardModal from "~/components/admin/proyectos/CardModal";
 import MembersModal from "~/components/admin/proyectos/MembersModal";
 import ConfirmModal from "~/components/admin/proyectos/ConfirmModal";
+import { Icon } from "~/components/admin/ui/icons";
 
 interface BoardChunk {
   columns: BoardColumn[];
@@ -33,7 +34,7 @@ function CardBody(props: { card: BoardCard }) {
       </Show>
       <div class="mt-3 flex items-center gap-2 text-[11px] font-bold text-gray-400">
         <Show when={props.card.notes && props.card.notes!.length > 0}>
-          <span class="flex items-center gap-1 text-amber-600">📝 {props.card.notes!.length}</span>
+          <span class="flex items-center gap-1 text-amber-600"><Icon name="fileText" class="w-3 h-3" /> {props.card.notes!.length}</span>
         </Show>
         <span class="ml-auto text-[10px]">{props.card.create_by || "—"}</span>
       </div>
@@ -47,7 +48,7 @@ function Card(props: { card: BoardCard; canEdit: boolean; onOpen: (c: BoardCard)
     <div
       ref={(el) => draggable(el, () => ({ skipTransform: true }))}
       onClick={() => props.onOpen(props.card)}
-      class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 cursor-grab active:cursor-grabbing select-none hover:shadow-md hover:border-blue-200 transition-shadow duration-150 group"
+      class="bg-white rounded-lg border border-colpsi-border p-3.5 cursor-grab active:cursor-grabbing select-none hover:border-colpsi-blue/40 transition-shadow duration-150 group"
       classList={{ "opacity-40": draggable.isActiveDraggable }}
     >
       <CardBody card={props.card} />
@@ -70,26 +71,26 @@ function Column(props: {
   return (
     <div
       ref={droppable.ref}
-      class="flex flex-col w-[290px] shrink-0 max-h-full rounded-2xl bg-[#eef1f6] border border-gray-200/60 overflow-hidden transition-[border-color,box-shadow] duration-150"
+      class="flex flex-col w-[290px] shrink-0 max-h-full rounded-lg bg-[#f4f6f9] border border-colpsi-border overflow-hidden transition-[border-color,box-shadow] duration-150"
       classList={{ "border-blue-400 shadow-lg ring-2 ring-blue-300/60": droppable.isActiveDroppable }}
     >
-      <div class="flex items-center justify-between px-4 py-3 bg-white border-b border-colpsi-border cursor-grab">
-        <span class="font-black text-sm text-colpsi-blue flex items-center gap-2">
+      <div class="flex items-center justify-between px-3 py-2.5 bg-white border-b border-colpsi-border cursor-grab">
+        <span class="font-semibold text-sm text-colpsi-text flex items-center gap-2">
           {props.column.title}
-          <span class="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+          <span class="text-[10px] font-medium bg-colpsi-bg text-colpsi-muted px-1.5 py-0.5 rounded">
             {props.column.cards?.length ?? 0}
           </span>
         </span>
         <div class="flex items-center gap-1">
           <Show when={props.canEdit}>
-            <button onClick={props.onNewCard} class="w-7 h-7 rounded-lg text-colpsi-blue font-black hover:bg-gray-100" title="Nueva tarjeta">
-              +
+            <button onClick={props.onNewCard} class="inline-flex items-center justify-center w-7 h-7 rounded-md text-colpsi-blue font-bold hover:bg-colpsi-bg" title="Nueva tarjeta">
+              <Icon name="plus" class="w-4 h-4" />
             </button>
-            <button onClick={props.onEditTitle} class="w-7 h-7 rounded-lg text-gray-400 font-black hover:bg-gray-100" title="Editar">
-              ✎
+            <button onClick={props.onEditTitle} class="inline-flex items-center justify-center w-7 h-7 rounded-md text-colpsi-muted hover:bg-colpsi-bg hover:text-colpsi-blue" title="Editar">
+              <Icon name="pencil" class="w-3.5 h-3.5" />
             </button>
-            <button onClick={props.onDeleteCol} class="w-7 h-7 rounded-lg text-red-400 font-black hover:bg-red-50" title="Eliminar columna">
-              ✕
+            <button onClick={props.onDeleteCol} class="inline-flex items-center justify-center w-7 h-7 rounded-md text-colpsi-red/70 hover:bg-red-50 hover:text-colpsi-red" title="Eliminar columna">
+              <Icon name="trash" class="w-3.5 h-3.5" />
             </button>
           </Show>
         </div>
@@ -130,13 +131,13 @@ function AddColumn(props: { canEdit: boolean; onAdd: (title: string) => Promise<
           fallback={
             <button
               onClick={() => setOpen(true)}
-              class="w-full rounded-2xl border-2 border-dashed border-gray-300 text-gray-500 font-black py-3 text-sm hover:border-colpsi-blue hover:text-colpsi-blue transition-colors"
+              class="w-full rounded-lg border border-dashed border-colpsi-border text-colpsi-muted font-medium py-3 text-sm hover:border-colpsi-blue hover:text-colpsi-blue transition-colors"
             >
               + Añadir columna
             </button>
           }
         >
-          <div class="bg-white rounded-2xl border-2 border-gray-200 p-3">
+          <div class="bg-white rounded-lg border border-colpsi-border p-3">
             <input
               value={title()}
               onInput={(e) => setTitle(e.currentTarget.value)}
@@ -144,13 +145,13 @@ function AddColumn(props: { canEdit: boolean; onAdd: (title: string) => Promise<
               placeholder="Nombre de la columna"
               maxLength={120}
               autofocus
-              class="w-full bg-white border-2 border-gray-200 focus:border-blue-500 rounded-xl px-3 py-2 text-sm outline-none"
+              class="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/15 transition-colors"
             />
             <div class="mt-2 flex gap-2">
-              <button onClick={submit} disabled={!title().trim() || busy()} class="bg-blue-800 text-white font-black text-xs px-4 py-2 rounded-xl disabled:opacity-40">
+              <button onClick={submit} disabled={!title().trim() || busy()} class="h-8 px-4 rounded-md bg-colpsi-blue text-white font-semibold text-xs disabled:opacity-40 hover:bg-colpsi-blue-light transition-colors">
                 Añadir
               </button>
-              <button onClick={() => setOpen(false)} class="text-gray-400 font-black text-xs px-3 py-2 rounded-xl hover:bg-gray-100">
+              <button onClick={() => setOpen(false)} class="h-8 px-3 rounded-md text-colpsi-muted text-xs font-medium hover:bg-colpsi-bg transition-colors">
                 Cancelar
               </button>
             </div>
@@ -328,38 +329,45 @@ export default function ProjectBoardPage() {
 
   return (
     <ErrorBoundary fallback={<p class="text-sm text-red-500">No se pudo cargar el tablero.</p>}>
-      <div class="flex items-center justify-between mb-6 gap-4 flex-wrap">
-        <div>
-          <A href="/admin/proyectos" class="text-xs font-bold text-blue-500 hover:text-blue-700">← Volver a proyectos</A>
-          <h1 class="text-2xl md:text-3xl font-black text-colpsi-blue mt-1">{project()?.name ?? (loadErr() ? "Proyecto no encontrado" : "Cargando…")}</h1>
-          <Show when={project()?.description}>
-            <p class="text-sm text-gray-500 mt-1">{project()?.description}</p>
-          </Show>
+      <div class="flex items-center justify-between gap-3 pb-4 border-b border-colpsi-border flex-wrap">
+        <div class="flex items-center gap-3 min-w-0">
+          <A href="/admin/proyectos" class="inline-flex items-center justify-center h-8 w-8 rounded-md border border-colpsi-border bg-white text-colpsi-muted hover:text-colpsi-blue hover:bg-colpsi-bg transition-colors shrink-0" title="Volver a proyectos">
+            <Icon name="chevronRight" class="w-4 h-4 rotate-180" />
+          </A>
+          <div class="min-w-0">
+            <h1 class="text-lg font-semibold text-colpsi-text truncate">{project()?.name ?? (loadErr() ? "Proyecto no encontrado" : "Cargando...")}</h1>
+            <Show when={project()?.description}>
+              <p class="text-sm text-colpsi-muted mt-0.5 truncate">{project()?.description}</p>
+            </Show>
+          </div>
         </div>
 
         <div class="flex items-center gap-2">
           <button
             onClick={() => setShowMembers(true)}
-            class="bg-white border-2 border-gray-200 text-gray-700 font-black px-4 py-2.5 rounded-xl hover:border-colpsi-blue transition-colors"
+            class="inline-flex items-center gap-2 h-9 px-3.5 rounded-md bg-white border border-colpsi-border text-sm font-medium text-colpsi-text hover:border-colpsi-blue/40 hover:bg-colpsi-bg transition-colors"
           >
-            👥 Miembros
+            <Icon name="users" class="w-4 h-4" />
+            Miembros
           </button>
           <div class="relative">
-            <button onClick={() => setMenu(!menu())} class="w-11 h-11 rounded-xl bg-white border-2 border-gray-200 text-gray-600 font-black hover:border-colpsi-blue transition-colors">
-              ⋯
+            <button onClick={() => setMenu(!menu())} class="inline-flex items-center justify-center h-9 w-9 rounded-md bg-white border border-colpsi-border text-colpsi-muted hover:border-colpsi-blue/40 hover:text-colpsi-blue transition-colors">
+              <Icon name="dots" class="w-4 h-4" />
             </button>
             <Show when={menu()}>
-              <div class="absolute right-0 mt-2 w-52 bg-white rounded-2xl border border-colpsi-border shadow-xl z-20 p-2" onClick={() => setMenu(false)}>
+              <div class="absolute right-0 mt-1 w-52 bg-white rounded-md border border-colpsi-border shadow-lg z-20 p-1" onClick={() => setMenu(false)}>
                 <Show when={isManager()}>
                   <button
                     onClick={() => window.confirm("¿Eliminar este proyecto? Esta acción no se puede deshacer.") && deleteProject()}
-                    class="w-full text-left px-3 py-2.5 rounded-xl text-sm font-black text-red-600 hover:bg-red-50"
+                    class="w-full flex items-center gap-2 text-left px-3 py-2 rounded text-sm font-medium text-colpsi-red hover:bg-red-50 transition-colors"
                   >
-                    🗑 Eliminar proyecto
+                    <Icon name="trash" class="w-4 h-4" />
+                    Eliminar proyecto
                   </button>
                 </Show>
-                <button onClick={refresh} class="w-full text-left px-3 py-2.5 rounded-xl text-sm font-black text-gray-600 hover:bg-gray-100">
-                  🔄 Refrescar
+                <button onClick={refresh} class="w-full flex items-center gap-2 text-left px-3 py-2 rounded text-sm font-medium text-colpsi-muted hover:bg-colpsi-bg transition-colors">
+                  <Icon name="refresh" class="w-4 h-4" />
+                  Refrescar
                 </button>
               </div>
             </Show>
@@ -368,7 +376,7 @@ export default function ProjectBoardPage() {
       </div>
 
       <Show when={error()}>
-        <div class="mb-5 p-4 rounded-2xl bg-red-50 text-red-800 font-bold text-sm border-l-4 border-red-500">{error()}</div>
+        <div class="p-3 rounded-md bg-red-50 text-red-700 border border-red-200 text-sm font-medium">{error()}</div>
       </Show>
 
       <Show when={!isServer}>
@@ -396,7 +404,7 @@ export default function ProjectBoardPage() {
           </div>
           <DragOverlay>
             <Show when={activeCard()}>
-              <div class="w-[290px] rotate-2 rounded-2xl bg-white border border-blue-200 shadow-2xl p-4 select-none pointer-events-none">
+              <div class="w-[290px] rotate-2 rounded-lg bg-white border border-colpsi-blue/40 shadow-2xl p-3.5 select-none pointer-events-none">
                 <CardBody card={activeCard()!} />
               </div>
             </Show>
@@ -431,19 +439,19 @@ export default function ProjectBoardPage() {
           class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
           onClick={(e) => e.target === e.currentTarget && !busy() && setRenameOpen(false)}
         >
-          <div class="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-sm">
-            <h3 class="font-black text-colpsi-blue text-lg">Renombrar columna</h3>
+          <div class="bg-white rounded-lg shadow-lg p-5 w-full max-w-sm border border-colpsi-border">
+            <h3 class="text-base font-semibold text-colpsi-text">Renombrar columna</h3>
             <input
               value={renameTitle()}
               onInput={(e) => setRenameTitle(e.currentTarget.value)}
               onKeyDown={(e) => e.key === "Enter" && submitRename()}
               maxLength={120}
               autofocus
-              class="mt-4 w-full bg-white border-2 border-gray-200 focus:border-blue-500 rounded-xl px-4 py-2.5 outline-none"
+              class="mt-3 h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/15 transition-colors"
             />
-            <div class="mt-5 grid grid-cols-2 gap-3">
-              <button onClick={() => setRenameOpen(false)} class="bg-white text-gray-600 border-2 border-gray-200 rounded-xl font-black py-3 hover:bg-colpsi-surface">Cancelar</button>
-              <button onClick={submitRename} class="bg-blue-800 text-white rounded-xl font-black py-3 hover:bg-blue-900 disabled:opacity-60" disabled={busy() || !renameTitle().trim()}>Guardar</button>
+            <div class="mt-4 grid grid-cols-2 gap-2">
+              <button onClick={() => setRenameOpen(false)} class="h-9 rounded-md bg-white text-colpsi-text border border-colpsi-border font-medium hover:bg-colpsi-bg transition-colors text-sm">Cancelar</button>
+              <button onClick={submitRename} class="h-9 rounded-md bg-colpsi-blue text-white font-semibold hover:bg-colpsi-blue-light transition-colors disabled:opacity-60 text-sm" disabled={busy() || !renameTitle().trim()}>Guardar</button>
             </div>
           </div>
         </div>

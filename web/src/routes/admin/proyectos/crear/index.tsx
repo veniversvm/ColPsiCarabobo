@@ -3,9 +3,10 @@ import { Show, createSignal } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import { apiPost } from "~/lib/api";
 import { getUserFacingError } from "~/lib/errors";
+import { Icon } from "~/components/admin/ui/icons";
 
-const IC = "w-full bg-white border-2 border-gray-200 focus:border-blue-500 rounded-xl px-4 py-2.5 outline-none transition-all text-gray-800 text-sm";
-const labelClass = "block text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1";
+const IC = "h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none placeholder:text-slate-400 focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/15 transition-colors text-colpsi-text";
+const labelClass = "block text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide ml-1 mb-1";
 
 export default function CrearProyecto() {
   const navigate = useNavigate();
@@ -35,81 +36,83 @@ export default function CrearProyecto() {
   };
 
   return (
-    <div class="pb-20">
-      <button onClick={() => navigate("/admin/proyectos")} class="text-xs font-bold text-blue-500 hover:text-blue-700 mb-4">
-        ← Volver a proyectos
-      </button>
-
-      <div class="max-w-2xl mx-auto">
-        <div class="flex items-center gap-4 mb-8">
-          <div class="w-14 h-14 bg-blue-800 rounded-2xl flex items-center justify-center text-2xl text-white shadow-xl">
-            📋
-          </div>
-          <div>
-            <h1 class="text-3xl font-black text-colpsi-blue">Nuevo Proyecto</h1>
-            <p class="text-sm text-gray-500 mt-1">Un tablero Kanban para organizar el trabajo del colegio.</p>
-          </div>
-        </div>
-
-        <Show when={error()}>
-          <div class="mb-6 p-4 rounded-2xl bg-red-50 text-red-800 font-bold text-sm border-l-4 border-red-500 shadow-sm">
-            {error()}
-          </div>
-        </Show>
-
-        <div class="bg-white rounded-3xl border border-colpsi-border shadow-premium p-6 md:p-8 space-y-6">
-          <section>
-            <h2 class="text-sm font-black text-colpsi-blue uppercase tracking-widest border-b border-colpsi-border pb-3 mb-5">
-              Información del proyecto
-            </h2>
-
-            <div class="mb-5">
-              <label class={labelClass}>Nombre del proyecto *</label>
-              <input
-                value={name()}
-                onInput={(e) => setName(e.currentTarget.value)}
-                placeholder="Ej. Organización de la Convención 2026"
-                maxLength={120}
-                class={IC}
-              />
-            </div>
-
-            <div class="mb-5">
-              <label class={labelClass}>Descripción</label>
-              <textarea
-                value={description()}
-                onInput={(e) => setDescription(e.currentTarget.value)}
-                placeholder="¿Qué se quiere lograr con este proyecto?"
-                maxLength={500}
-                rows={4}
-                class={`${IC} resize-none`}
-              />
-            </div>
-
-            <div class="rounded-2xl bg-blue-50 border border-blue-100 p-4 text-sm text-blue-800">
-              <p class="font-black mb-1">Al crear el proyecto se añaden 3 columnas por defecto:</p>
-              <p class="text-blue-700">«Por hacer» · «En progreso» · «Hecho»</p>
-              <p class="text-xs text-blue-500 mt-2">Podrás invitar a otros administradores como miembros (Espectador o Editor).</p>
-            </div>
-          </section>
-
-          <div class="flex gap-3 pt-2 border-t border-colpsi-border">
-            <button
-              onClick={() => navigate("/admin/proyectos")}
-              class="bg-white text-gray-600 border-2 border-gray-200 px-8 py-4 rounded-2xl font-black hover:bg-colpsi-surface"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={submit}
-              disabled={!canSubmit()}
-              class="flex-grow bg-blue-800 hover:bg-blue-900 text-white font-black px-10 py-4 rounded-2xl shadow-xl hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-            >
-              {saving() ? "Creando…" : "+ Crear Proyecto"}
-            </button>
-          </div>
+    <main class="space-y-4 pb-12 max-w-2xl mx-auto">
+      <div class="flex items-center gap-3 pb-4 border-b border-colpsi-border">
+        <button
+          onClick={() => navigate("/admin/proyectos")}
+          class="inline-flex items-center justify-center h-8 w-8 rounded-md border border-colpsi-border bg-white text-colpsi-muted hover:text-colpsi-blue hover:bg-colpsi-bg transition-colors"
+          title="Volver"
+        >
+          <Icon name="chevronRight" class="w-4 h-4 rotate-180" />
+        </button>
+        <div>
+          <h1 class="text-lg font-semibold text-colpsi-text">Nuevo Proyecto</h1>
+          <p class="text-sm text-colpsi-muted mt-0.5">Un tablero Kanban para organizar el trabajo del colegio.</p>
         </div>
       </div>
-    </div>
+
+      <Show when={error()}>
+        <div class="p-3 rounded-md bg-red-50 text-red-700 border border-red-200 text-sm font-medium">
+          {error()}
+        </div>
+      </Show>
+
+      <div class="bg-white rounded-lg border border-colpsi-border p-5 space-y-4">
+        <h2 class="text-base font-semibold text-colpsi-text border-b border-colpsi-border pb-3">
+          Información del proyecto
+        </h2>
+
+        <div>
+          <label class={labelClass}>Nombre del proyecto *</label>
+          <input
+            value={name()}
+            onInput={(e) => setName(e.currentTarget.value)}
+            placeholder="Ej. Organización de la Convención 2026"
+            maxLength={120}
+            class={IC}
+          />
+          <p class="text-xs text-colpsi-muted mt-1 text-right">{name().length}/120</p>
+        </div>
+
+        <div>
+          <label class={labelClass}>Descripción</label>
+          <textarea
+            value={description()}
+            onInput={(e) => setDescription(e.currentTarget.value)}
+            placeholder="¿Qué se quiere lograr con este proyecto?"
+            maxLength={500}
+            rows={4}
+            class={`${IC} resize-none min-h-24`}
+          />
+          <p class="text-xs text-colpsi-muted mt-1 text-right">{description().length}/500</p>
+        </div>
+
+        <div class="rounded-md bg-sky-50/50 border border-sky-100 p-3 text-sm text-sky-900 flex items-start gap-2.5">
+          <Icon name="info" class="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
+          <div>
+            <p class="font-semibold mb-0.5">Al crear el proyecto se añaden 3 columnas por defecto:</p>
+            <p class="text-sky-800">«Por hacer» · «En progreso» · «Hecho»</p>
+            <p class="text-xs text-sky-700 mt-1.5">Podrás invitar a otros administradores como miembros (Espectador o Editor).</p>
+          </div>
+        </div>
+
+        <div class="flex gap-2 pt-4 border-t border-colpsi-border">
+          <button
+            onClick={() => navigate("/admin/proyectos")}
+            class="h-10 px-4 rounded-md bg-white text-colpsi-text border border-colpsi-border font-medium hover:bg-colpsi-bg transition-colors text-sm"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={submit}
+            disabled={!canSubmit()}
+            class="flex-grow inline-flex items-center justify-center gap-2 h-10 rounded-md bg-colpsi-blue hover:bg-colpsi-blue-light text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+          >
+            <Icon name="plus" />
+            {saving() ? "Creando..." : "Crear Proyecto"}
+          </button>
+        </div>
+      </div>
+    </main>
   );
 }
