@@ -3,9 +3,10 @@ import { createSignal, Show } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import { apiPost } from "~/lib/api";
 import { getUserFacingError } from "~/lib/errors";
+import { Icon } from "~/components/admin/ui/icons";
 
-const IC = "w-full bg-white border-2 border-colpsi-border focus:border-blue-500 rounded-2xl px-5 py-3.5 outline-none transition-all text-gray-800 text-sm shadow-sm";
-const labelClass = "block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2 mb-2";
+const IC = "h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none placeholder:text-slate-400 focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/15 transition-colors text-colpsi-text";
+const labelClass = "block text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide ml-1 mb-1";
 
 export default function AdminCrearAreaEjercicioPage() {
   const navigate = useNavigate();
@@ -57,44 +58,36 @@ export default function AdminCrearAreaEjercicioPage() {
   };
 
   return (
-    <main class="pb-28 animate-in fade-in duration-500 max-w-3xl mx-auto font-sans">
+    <main class="space-y-4 pb-12 max-w-3xl mx-auto">
 
       {/* ── HEADER ────────────────────────────────────────────────────────── */}
-      <div class="flex items-center gap-6 mb-10 bg-white p-8 rounded-[2.5rem] shadow-premium border border-colpsi-border">
+      <div class="flex items-center gap-3 pb-4 border-b border-colpsi-border">
         <button
           onClick={() => navigate(-1)}
-          class="w-12 h-12 bg-colpsi-surface hover:bg-blue-50 text-blue-900 rounded-2xl font-black flex items-center justify-center transition-all flex-shrink-0 border-2 border-transparent hover:border-blue-100 shadow-sm"
+          class="inline-flex items-center justify-center h-8 w-8 rounded-md border border-colpsi-border bg-white text-colpsi-muted hover:text-colpsi-blue hover:bg-colpsi-bg transition-colors"
           title="Volver"
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
+          <Icon name="chevronRight" class="w-4 h-4 rotate-180" />
         </button>
         <div>
-          <h1 class="text-2xl font-black text-blue-900 uppercase tracking-tight">
-            Nueva Área de Ejercicio
-          </h1>
-          <p class="text-gray-400 text-sm mt-1 font-medium">
-            Define un nuevo campo de desempeño para los agremiados.
-          </p>
+          <h1 class="text-lg font-semibold text-colpsi-text">Nueva Área de Ejercicio</h1>
+          <p class="text-sm text-colpsi-muted mt-0.5">Define un nuevo campo de desempeño para los agremiados.</p>
         </div>
       </div>
 
       {/* ── ERROR ALERT ───────────────────────────────────────────────────── */}
       <Show when={error()}>
-        <div class="mb-8 p-5 rounded-2xl bg-red-50 text-red-800 font-bold text-sm border-2 border-red-100 flex items-center gap-3 animate-in slide-in-from-top-2 duration-300">
-          <span class="text-xl">⚠️</span> {error()}
+        <div class="p-3 rounded-md bg-red-50 text-red-700 border border-red-200 text-sm font-medium">
+          {error()}
         </div>
       </Show>
 
-      <form onSubmit={handleSubmit} class="space-y-8">
+      <form onSubmit={handleSubmit} class="space-y-4">
 
-        <section class="bg-white rounded-[2.5rem] p-8 md:p-10 shadow-premium border border-colpsi-border space-y-8">
-          <div class="border-l-4 border-colpsi-yellow pl-4">
-            <h2 class="text-sm font-black text-blue-900 uppercase tracking-widest">
-              Información del Catálogo
-            </h2>
-          </div>
+        <section class="bg-white rounded-lg p-5 border border-colpsi-border space-y-4">
+          <h2 class="text-base font-semibold text-colpsi-text border-b border-colpsi-border pb-3">
+            Información del Catálogo
+          </h2>
 
           {/* Nombre del Área */}
           <div>
@@ -108,9 +101,9 @@ export default function AdminCrearAreaEjercicioPage() {
               onInput={handleNameInput}
               class={IC}
             />
-            <div class="flex justify-between mt-2 px-1">
-               <p class="text-[9px] text-gray-400 italic">No se admiten símbolos especiales.</p>
-               <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{name().length}/100</p>
+            <div class="flex justify-between mt-1.5 px-1">
+               <p class="text-[11px] text-colpsi-muted italic">No se admiten símbolos especiales.</p>
+               <p class="text-xs text-colpsi-muted font-medium">{name().length}/100</p>
             </div>
           </div>
 
@@ -123,29 +116,29 @@ export default function AdminCrearAreaEjercicioPage() {
               placeholder="Describe brevemente el alcance y naturaleza de esta área de desempeño profesional..."
               value={description()}
               onInput={(e) => setDescription(e.currentTarget.value)}
-              class={`${IC} resize-none leading-relaxed`}
+              class={`${IC} resize-none min-h-32 leading-relaxed`}
             />
-            <div class="flex justify-end mt-2">
-               <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{description().length}/500</p>
+            <div class="flex justify-end mt-1.5">
+               <p class="text-xs text-colpsi-muted font-medium">{description().length}/500</p>
             </div>
           </div>
 
           {/* Nota Informativa */}
-          <div class="bg-blue-50/50 rounded-2xl p-5 border border-blue-100 flex items-start gap-4">
-            <span class="text-xl">ℹ️</span>
-            <p class="text-blue-800 text-xs font-medium leading-relaxed">
-              Al crear esta área, se marcará como <span class="font-black uppercase">activa</span> por defecto. 
+          <div class="bg-sky-50/50 rounded-md p-3 border border-sky-100 flex items-start gap-2.5">
+            <Icon name="info" class="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
+            <p class="text-sky-900 text-xs font-medium leading-relaxed">
+              Al crear esta área, se marcará como <span class="font-semibold uppercase">activa</span> por defecto.
               Estará disponible inmediatamente para que los psicólogos la seleccionen en su perfil y sea visible en el directorio.
             </p>
           </div>
         </section>
 
         {/* ── BOTONES DE ACCIÓN ────────────────────────────────────────────── */}
-        <div class="sticky bottom-10 z-50 flex justify-end gap-4 px-4">
+        <div class="sticky bottom-4 z-50 flex justify-end gap-2">
           <button
             type="button"
             onClick={() => navigate(-1)}
-            class="bg-white text-gray-500 border-2 border-colpsi-border px-8 py-4 rounded-2xl font-black hover:bg-colpsi-surface hover:text-gray-700 transition-all text-xs uppercase tracking-widest shadow-xl"
+            class="h-10 px-4 rounded-md border border-colpsi-border bg-white text-sm font-medium text-colpsi-text hover:bg-colpsi-bg transition-colors"
           >
             Cancelar
           </button>
@@ -153,15 +146,15 @@ export default function AdminCrearAreaEjercicioPage() {
           <button
             type="submit"
             disabled={saving()}
-            class="bg-blue-900 text-white px-10 py-4 rounded-2xl font-black shadow-2xl hover:bg-blue-800 active:scale-95 transition-all disabled:opacity-50 flex items-center gap-3 border-2 border-white/20 text-xs uppercase tracking-widest"
+            class="inline-flex items-center justify-center gap-2 h-10 px-5 rounded-md bg-colpsi-blue text-white text-sm font-semibold transition-colors hover:bg-colpsi-blue-light disabled:opacity-60"
           >
             <Show when={saving()} fallback={
               <>
-                <span class="text-lg">📂</span>
+                <Icon name="check" />
                 <span>Registrar Área</span>
               </>
             }>
-               <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+               <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                <span>Procesando...</span>
             </Show>
           </button>

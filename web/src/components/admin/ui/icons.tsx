@@ -8,7 +8,7 @@ export type IconName =
   | "kanban" | "shield" | "logout" | "refresh" | "chevronRight" | "menu"
   | "panelLeft" | "sliders" | "search" | "plus" | "pencil" | "trash" | "dots"
   | "chevronDown" | "user" | "checkCircle" | "inbox" | "arrowRight" | "check"
-  | "clock" | "mail" | "alertTriangle" | "globe" | "eye" | "send" | "x";
+  | "clock" | "mail" | "alertTriangle" | "globe" | "eye" | "send" | "x" | "info";
 
 const S = {
   rect: (x: number, y: number, w: number, h: number, rx = 2) =>
@@ -150,6 +150,11 @@ const icons: Record<IconName, () => JSX.Element> = {
   x: () => (<>
     {S.line(18, 6, 6, 18)}
     {S.line(6, 6, 18, 18)}
+  </>),
+  info: () => (<>
+    {S.circle(12, 12, 10)}
+    {S.line(12, 16, 12, 12)}
+    {S.line(12, 8, 12.01, 8)}
   </>),
 };
 

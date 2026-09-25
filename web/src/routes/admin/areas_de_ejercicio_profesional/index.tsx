@@ -2,6 +2,11 @@
 import { createResource, createSignal, For, Show, Suspense } from "solid-js";
 import { A } from "@solidjs/router";
 import { apiGet, apiDelete, apiPatch } from "~/lib/api";
+import { PageHeader } from "~/components/admin/ui/PageHeader";
+import { Input } from "~/components/admin/ui/Input";
+import { Button } from "~/components/admin/ui/Button";
+import { Badge } from "~/components/admin/ui/Badge";
+import { Icon } from "~/components/admin/ui/icons";
 
 // ─── INTERFAZ ACTUALIZADA ─────────────────────────────────────────────────────
 interface WorkArea {
@@ -30,7 +35,7 @@ export default function AdminAreasEjercicioPage() {
 
   // Llamada al catálogo maestro (Usamos el endpoint configurado en el backend)
   const [workAreas, { refetch }] = createResource(() =>
-    apiGet<WorkArea[]>("/admin/specialties/all") 
+    apiGet<WorkArea[]>("/admin/specialties/all")
   );
 
   const list = () => {
@@ -76,52 +81,44 @@ export default function AdminAreasEjercicioPage() {
   };
 
   return (
-    <main class="pb-20 animate-in fade-in duration-500 font-sans">
+    <main class="space-y-4 pb-12">
 
       {/* ── HEADER ────────────────────────────────────────────────────────── */}
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 bg-white p-8 rounded-[2.5rem] shadow-premium border border-colpsi-border">
-        <div>
-          <h1 class="text-2xl font-black text-blue-900 uppercase tracking-tight">
-            Áreas de Ejercicio Profesional
-          </h1>
-          <p class="text-gray-400 text-sm mt-1 font-medium">
-            Catálogo maestro para la clasificación del desempeño de los agremiados.
-          </p>
-        </div>
-        <A
-          href="/admin/areas_de_ejercicio_profesional/crear"
-          class="inline-flex items-center gap-2 bg-blue-800 hover:bg-blue-900 text-white font-black px-6 py-4 rounded-2xl shadow-xl hover:scale-105 active:scale-95 transition-all text-sm uppercase tracking-wider"
-        >
-          <span class="text-xl leading-none">＋</span>
-          Nueva Área
-        </A>
-      </div>
+      <PageHeader
+        crumbs={[{ label: "Áreas de Ejercicio" }]}
+        title="Áreas de Ejercicio Profesional"
+        description="Catálogo maestro para la clasificación del desempeño de los agremiados."
+        actions={
+          <A href="/admin/areas_de_ejercicio_profesional/crear">
+            <Button variant="primary" size="md">
+              <Icon name="plus" />
+              Nueva Área
+            </Button>
+          </A>
+        }
+      />
 
       {/* ── FILTROS ───────────────────────────────────────────────────────── */}
-      <div class="flex flex-col md:flex-row gap-4 mb-8">
-        <div class="relative flex-1">
-          <div class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
-            </svg>
-          </div>
-          <input
+      <div class="flex flex-col md:flex-row gap-2">
+        <div class="relative flex-1 min-w-[220px]">
+          <Icon name="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Input
             type="text"
             placeholder="Buscar por nombre o descripción de área..."
             value={search()}
             onInput={(e) => setSearch(e.currentTarget.value)}
-            class="w-full pl-12 pr-6 py-4 bg-white border-2 border-transparent focus:border-blue-500 rounded-2xl outline-none shadow-sm text-sm text-gray-800 transition-all placeholder:text-gray-400"
+            class="pl-9"
           />
         </div>
 
-        <div class="flex bg-gray-100 p-1.5 rounded-2xl border border-gray-200">
+        <div class="inline-flex gap-1 p-1 rounded-md bg-colpsi-bg border border-colpsi-border self-start">
           {(["all", "active", "inactive"] as const).map((s) => (
             <button
               onClick={() => setFilterActive(s)}
-              class={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+              class={`h-8 px-3 rounded-md text-xs font-medium transition-all border ${
                 filterActive() === s
-                  ? "bg-white text-blue-900 shadow-md"
-                  : "text-gray-500 hover:text-gray-700"
+                  ? "bg-white text-colpsi-blue border-colpsi-border shadow-sm"
+                  : "bg-transparent text-colpsi-muted border-transparent hover:text-colpsi-blue hover:bg-white/60"
               }`}
             >
               {s === "all" ? "Todas" : s === "active" ? "Activas" : "Inactivas"}
@@ -132,151 +129,134 @@ export default function AdminAreasEjercicioPage() {
 
       {/* ── LISTADO ───────────────────────────────────────────────────────── */}
       <Suspense fallback={
-        <div class="grid grid-cols-1 gap-4">
+        <div class="space-y-2">
           <For each={[1, 2, 3]}>
-            {() => <div class="h-28 bg-white animate-pulse rounded-3xl border border-colpsi-border" />}
+            {() => <div class="h-24 bg-white animate-pulse rounded-lg border border-colpsi-border" />}
           </For>
         </div>
       }>
         <Show when={!workAreas.loading && list().length === 0}>
-          <div class="text-center py-24 bg-white rounded-[2.5rem] border-2 border-dashed border-gray-200">
-            <p class="text-6xl mb-6">📂</p>
-            <p class="text-gray-400 font-bold text-lg">No hay áreas de ejercicio registradas</p>
-            <A href="/admin/areas_de_ejercicio_profesional/crear" class="mt-4 inline-block text-blue-600 font-black text-sm hover:underline uppercase tracking-widest">
+          <div class="text-center py-16 bg-white rounded-lg border border-dashed border-colpsi-border">
+            <span class="inline-flex h-12 w-12 items-center justify-center rounded-md bg-colpsi-bg text-colpsi-muted mb-4">
+              <Icon name="tag" class="w-6 h-6" />
+            </span>
+            <p class="text-colpsi-muted font-medium">No hay áreas de ejercicio registradas</p>
+            <A href="/admin/areas_de_ejercicio_profesional/crear" class="mt-3 inline-block text-colpsi-blue font-semibold text-sm hover:underline">
               Configurar primera área →
             </A>
           </div>
         </Show>
 
         <Show when={!workAreas.loading && list().length > 0 && filtered().length === 0}>
-          <div class="text-center py-20 bg-white rounded-[2.5rem] border border-colpsi-border">
-            <p class="text-gray-400 font-bold">No se encontraron áreas con esos criterios</p>
+          <div class="text-center py-14 bg-white rounded-lg border border-colpsi-border">
+            <p class="text-colpsi-muted font-medium">No se encontraron áreas con esos criterios</p>
           </div>
         </Show>
 
-        <div class="grid grid-cols-1 gap-4">
+        <div class="space-y-2">
           <For each={filtered()}>
             {(area) => {
               const isBusy = () => busy() === area.id;
               return (
-                <article class={`bg-white rounded-3xl border-2 transition-all duration-300 ${
-                  area.active ? "border-gray-50 shadow-sm hover:shadow-xl hover:border-blue-100" : "border-dashed border-gray-200 opacity-60 bg-colpsi-surface/50"
+                <div class={`bg-white rounded-lg border p-4 flex flex-col md:flex-row md:items-center gap-4 transition-colors ${
+                  area.active ? "border-colpsi-border hover:border-colpsi-blue/40" : "border-dashed border-colpsi-border opacity-60"
                 }`}>
-                  <div class="flex flex-col md:flex-row md:items-center gap-6 p-6 md:p-8">
+                  <div class={`w-10 h-10 rounded-md flex items-center justify-center font-bold text-base shrink-0 ${
+                    area.active ? "bg-colpsi-blue/10 text-colpsi-blue" : "bg-colpsi-bg text-colpsi-muted"
+                  }`}>
+                    {area.name.charAt(0).toUpperCase()}
+                  </div>
 
-                    {/* Icono / Status */}
-                    <div class={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xl border-2 transition-colors ${
-                      area.active ? "bg-blue-50 border-blue-100 text-blue-600" : "bg-gray-100 border-gray-200 text-gray-400"
-                    }`}>
-                      {area.name.charAt(0).toUpperCase()}
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <h3 class="font-semibold text-colpsi-text truncate">{area.name}</h3>
+                      <Badge tone={area.active ? "success" : "neutral"}>
+                        {area.active ? "Activa" : "Inactiva"}
+                      </Badge>
                     </div>
-
-                    {/* Info */}
-                    <div class="flex-1 min-w-0">
-                      <div class="flex items-center gap-3 mb-2">
-                        <h2 class="font-black text-blue-900 text-lg tracking-tight truncate">{area.name}</h2>
-                        <span class={`text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest ${
-                          area.active ? "bg-emerald-100 text-emerald-700" : "bg-gray-200 text-gray-600"
-                        }`}>
-                          {area.active ? "Activa" : "Inactiva"}
-                        </span>
-                      </div>
-                      <p class="text-gray-500 text-sm leading-relaxed mb-4">
-                        {area.description || <span class="italic text-gray-300">Sin descripción cargada en el sistema.</span>}
-                      </p>
-                      
-                      <div class="flex flex-wrap items-center gap-y-2 gap-x-4 text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-                        <span class="flex items-center gap-1.5">
-                          <span class="text-gray-300">ID:</span> #{area.id}
-                        </span>
-                        <span class="w-1 h-1 bg-gray-200 rounded-full" />
-                        <span class="flex items-center gap-1.5">
-                           <span class="text-gray-300">Creada:</span> {formatDate(area.created_at)}
-                        </span>
-                        <Show when={area.update_by}>
-                          <span class="w-1 h-1 bg-gray-200 rounded-full" />
-                          <span class="flex items-center gap-1.5">
-                            <span class="text-gray-300">Gestor:</span> {area.update_by}
-                          </span>
-                        </Show>
-                      </div>
-                    </div>
-
-                    {/* Acciones */}
-                    <div class="flex items-center gap-3 bg-colpsi-surface/80 p-2 rounded-2xl border border-colpsi-border">
-                      <button
-                        onClick={() => handleToggle(area)}
-                        disabled={isBusy()}
-                        class={`w-11 h-11 rounded-xl flex items-center justify-center border-2 transition-all font-black text-sm disabled:opacity-40 ${
-                          area.active
-                            ? "border-emerald-200 bg-white text-emerald-600 hover:bg-emerald-600 hover:text-white"
-                            : "border-gray-300 bg-white text-gray-400 hover:bg-gray-600 hover:text-white"
-                        }`}
-                      >
-                        {isBusy() ? "..." : area.active ? "ON" : "OFF"}
-                      </button>
-
-                      <A
-                        href={`/admin/areas_de_ejercicio_profesional/${area.id}`}
-                        class="w-11 h-11 rounded-xl flex items-center justify-center border-2 border-blue-100 bg-white text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
-                        title="Editar parámetros"
-                      >
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                          <path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                        </svg>
-                      </A>
-
-                      <button
-                        onClick={() => setConfirmDelete(area.id)}
-                        disabled={isBusy()}
-                        class="w-11 h-11 rounded-xl flex items-center justify-center border-2 border-red-100 bg-white text-red-500 hover:bg-red-600 hover:text-white transition-all shadow-sm disabled:opacity-40"
-                      >
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                          <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
+                    <p class="text-sm text-colpsi-muted line-clamp-2 mt-0.5">
+                      {area.description || <span class="italic text-slate-300">Sin descripción cargada en el sistema.</span>}
+                    </p>
+                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-[11px] text-colpsi-muted font-medium">
+                      <span><span class="text-slate-300">ID:</span> #{area.id}</span>
+                      <span class="w-1 h-1 bg-slate-200 rounded-full" />
+                      <span><span class="text-slate-300">Creada:</span> {formatDate(area.created_at)}</span>
+                      <Show when={area.update_by}>
+                        <span class="w-1 h-1 bg-slate-200 rounded-full" />
+                        <span><span class="text-slate-300">Gestor:</span> {area.update_by}</span>
+                      </Show>
                     </div>
                   </div>
-                </article>
+
+                  <div class="flex items-center gap-1 self-start md:self-center">
+                    <button
+                      onClick={() => handleToggle(area)}
+                      disabled={isBusy()}
+                      title={area.active ? "Desactivar" : "Activar"}
+                      class={`h-8 rounded-md px-2.5 text-[10px] font-semibold border transition-colors disabled:opacity-40 ${
+                        area.active
+                          ? "border-emerald-200 bg-white text-emerald-600 hover:bg-emerald-600 hover:text-white"
+                          : "border-colpsi-border bg-white text-colpsi-muted hover:bg-slate-600 hover:text-white"
+                      }`}
+                    >
+                      {isBusy() ? "..." : area.active ? "ON" : "OFF"}
+                    </button>
+
+                    <A
+                      href={`/admin/areas_de_ejercicio_profesional/${area.id}`}
+                      class="h-8 w-8 rounded-md flex items-center justify-center text-colpsi-muted border border-transparent hover:text-colpsi-blue hover:bg-colpsi-bg transition-colors"
+                      title="Editar parámetros"
+                    >
+                      <Icon name="pencil" class="w-4 h-4" />
+                    </A>
+
+                    <button
+                      onClick={() => setConfirmDelete(area.id)}
+                      disabled={isBusy()}
+                      class="h-8 w-8 rounded-md flex items-center justify-center text-colpsi-muted border border-transparent hover:text-colpsi-red hover:bg-red-50 transition-colors disabled:opacity-40"
+                      title="Eliminar"
+                    >
+                      <Icon name="trash" class="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
               );
             }}
           </For>
         </div>
 
         <Show when={list().length > 0}>
-          <div class="mt-10 pt-6 border-t border-colpsi-border text-center">
-             <p class="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em]">
-                Mostrando {filtered().length} de {list().length} áreas configuradas
-             </p>
-          </div>
+          <p class="text-center text-xs text-colpsi-muted font-medium py-1">
+            Mostrando {filtered().length} de {list().length} áreas configuradas
+          </p>
         </Show>
       </Suspense>
 
       {/* ── MODAL CONFIRMACIÓN BORRADO ─────────────────────────────────── */}
       <Show when={confirmDelete()}>
         <div
-          class="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-blue-900/40 backdrop-blur-md"
+          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
           onClick={(e) => { if (e.target === e.currentTarget) setConfirmDelete(null); }}
         >
-          <div class="bg-white rounded-[2.5rem] shadow-2xl p-10 w-full max-w-md border border-colpsi-border text-center animate-in zoom-in-95 duration-200">
-            <div class="w-20 h-20 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center mx-auto mb-6 text-4xl">
-              ⚠️
-            </div>
-            <h2 class="text-xl font-black text-gray-900 mb-2 uppercase tracking-tight">¿Eliminar área de ejercicio?</h2>
-            <p class="text-gray-500 text-sm mb-8 leading-relaxed">
+          <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm border border-colpsi-border">
+            <span class="inline-flex h-10 w-10 items-center justify-center rounded-md bg-red-50 text-colpsi-red mb-3">
+              <Icon name="trash" class="w-5 h-5" />
+            </span>
+            <h2 class="text-base font-semibold text-colpsi-text mb-1">¿Eliminar área de ejercicio?</h2>
+            <p class="text-colpsi-muted text-sm mb-5">
               Esta acción marcará el área como inactiva. Los psicólogos que la tengan asignada dejarán de mostrarla en el directorio público.
             </p>
-            <div class="flex gap-4">
+            <div class="flex gap-2">
               <button
                 onClick={() => setConfirmDelete(null)}
-                class="flex-1 px-6 py-4 rounded-2xl border-2 border-colpsi-border font-black text-gray-400 hover:bg-colpsi-surface transition-all text-xs uppercase tracking-widest"
+                class="flex-1 h-9 rounded-md border border-colpsi-border bg-white font-medium text-colpsi-text hover:bg-colpsi-bg transition-colors text-sm"
               >
                 Cancelar
               </button>
               <button
                 onClick={() => handleDelete(confirmDelete()!)}
                 disabled={busy() === confirmDelete()}
-                class="flex-1 px-6 py-4 rounded-2xl bg-red-600 text-white font-black hover:bg-red-700 active:scale-95 transition-all text-xs uppercase tracking-widest shadow-lg shadow-red-200 disabled:opacity-60"
+                class="flex-1 h-9 rounded-md bg-colpsi-red text-white font-semibold hover:opacity-90 transition-colors text-sm disabled:opacity-60"
               >
                 {busy() === confirmDelete() ? "Procesando..." : "Confirmar"}
               </button>
@@ -284,7 +264,6 @@ export default function AdminAreasEjercicioPage() {
           </div>
         </div>
       </Show>
-
     </main>
   );
 }
