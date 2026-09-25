@@ -4,6 +4,7 @@ import { Show, For, createSignal } from "solid-js";
 import { Portal } from "solid-js/web";
 import QRCodeGenerator from "./profile/QrCode";
 import { bucketUrl } from "~/lib/bucket";
+import type { SocialNetwork } from "~/types/psi";
 
 interface ProfileHeaderProps {
   firstName: string;
@@ -15,6 +16,7 @@ interface ProfileHeaderProps {
   profilePicture?: string;
   specialties: string[];
   url: string;
+  socialNetworks?: SocialNetwork[];
 }
 
 export function ProfileHeader(props: ProfileHeaderProps) {
@@ -97,6 +99,24 @@ export function ProfileHeader(props: ProfileHeaderProps) {
           </p>
           <QRCodeGenerator url={props.url} />
         </div>
+
+        {/* ── REDES SOCIALES (debajo del QR, sin título) ─────────────────── */}
+        <Show when={props.socialNetworks?.length}>
+          <div class="mt-5 flex flex-wrap items-center justify-center gap-2">
+            <For each={props.socialNetworks}>
+              {(net) => (
+                <a
+                  href={net.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center gap-1.5 bg-colpsi-surface hover:bg-colpsi-yellow text-colpsi-blue text-xs md:text-sm font-bold px-3 py-1.5 rounded-xl transition-colors break-all"
+                >
+                  <span class="text-sm">🔗</span> {net.name}
+                </a>
+              )}
+            </For>
+          </div>
+        </Show>
       </div>
 
       {/* ── MODAL DE IMAGEN AMPLIADA ────────────────────────────────────── */}
