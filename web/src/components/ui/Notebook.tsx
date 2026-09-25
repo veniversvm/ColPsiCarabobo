@@ -60,6 +60,8 @@ export function Notebook(props: {
   const activeLabel = () => props.pages[activeIdx()]?.label ?? "";
   const activeDescription = () => props.pages[activeIdx()]?.description ?? "";
   const activeColor = () => TAB_COLORS[activeIdx() % TAB_COLORS.length]?.bg ?? "#1e3a8a";
+  const activeTitleColor = () =>
+    TAB_COLORS[activeIdx() % TAB_COLORS.length]?.title ?? "#1e3a8a";
 
   return (
     <NotebookContext.Provider value={{ active }}>
@@ -123,7 +125,10 @@ export function Notebook(props: {
               class="w-2 h-2 rounded-full shrink-0"
               style={{ backgroundColor: activeColor() }}
             />
-            <h2 class="text-sm font-semibold text-colpsi-blue">
+            <h2
+              class="text-sm font-semibold"
+              style={{ color: activeTitleColor() }}
+            >
               {activeLabel()}
             </h2>
           </div>
