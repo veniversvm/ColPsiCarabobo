@@ -5,7 +5,7 @@ import { useParams, useNavigate } from "@solidjs/router";
 import { apiGet, apiPost, apiPatch, apiDelete, ApiError } from "~/lib/api";
 import { bucketUrl } from "~/lib/bucket";
 import { ImageModal } from "~/components/ui/ImageModal";
-import { Panel, PanelSection } from "~/components/ui/Panel";
+import { Notebook, NotebookPage } from "~/components/ui/Notebook";
 import { Field, IC } from "~/components/admin/psicologos/edit/EditPrimitives";
 import { Icon } from "~/components/admin/ui/icons";
 import { MUNICIPIOS_CARABOBO, ESTADOS_VENEZUELA, municipiosDe } from "~/lib/geo";
@@ -391,8 +391,15 @@ export default function AdminInscriptionDetail() {
             </Show>
 
             {/* ── Ficha de inscripción (editable) ───────────────────────────── */}
-            <Panel>
-              <PanelSection title="Datos Personales" accent="border-colpsi-yellow" defaultOpen>
+            <Notebook
+              pages={[
+                { id: "personales", label: "Datos Personales" },
+                { id: "academicos", label: "Datos Académicos" },
+                { id: "ubicacion", label: "Ubicación y Modalidad" },
+                { id: "documentos", label: "Fotografía y Documentos" },
+              ]}
+            >
+              <NotebookPage id="personales">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                   <Field label="Cédula"><input type="number" value={form.cedula} onInput={(e) => set("cedula", e.currentTarget.value)} class={IC} /></Field>
                   <Field label="Nacionalidad">
@@ -418,9 +425,9 @@ export default function AdminInscriptionDetail() {
                   <Field label="Correo electrónico"><input type="email" value={form.correo} onInput={(e) => set("correo", e.currentTarget.value)} class={IC} /></Field>
                   <Field label="RIF"><input type="text" value={form.rif} onInput={(e) => set("rif", e.currentTarget.value)} class={IC} /></Field>
                 </div>
-              </PanelSection>
+              </NotebookPage>
 
-              <PanelSection title="Datos Académicos y Registro del Título">
+              <NotebookPage id="academicos">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                   <Field label="Universidad"><input type="text" value={form.titulo_universidad} onInput={(e) => set("titulo_universidad", e.currentTarget.value)} class={IC} /></Field>
                   <Field label="Fecha de graduación"><input type="date" value={form.titulo_fecha_graduacion ?? ""} onInput={(e) => set("titulo_fecha_graduacion", e.currentTarget.value)} class={IC} /></Field>
@@ -430,9 +437,9 @@ export default function AdminInscriptionDetail() {
                   <Field label="Tomo del registro"><input type="text" value={form.titulo_registro_tomo} onInput={(e) => set("titulo_registro_tomo", e.currentTarget.value)} class={IC} /></Field>
                   <Field label="Folio del registro"><input type="text" value={form.titulo_registro_folio} onInput={(e) => set("titulo_registro_folio", e.currentTarget.value)} class={IC} /></Field>
                 </div>
-              </PanelSection>
+              </NotebookPage>
 
-              <PanelSection title="Ubicación y Modalidad de Servicio" accent="border-indigo-400">
+              <NotebookPage id="ubicacion">
                 <div class="space-y-8">
                   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     <Field label="Municipio (Carabobo)">
@@ -514,9 +521,9 @@ export default function AdminInscriptionDetail() {
                     </div>
                   </div>
                 </div>
-              </PanelSection>
+              </NotebookPage>
 
-              <PanelSection title="Fotografía y Documentos" accent="border-emerald-400">
+              <NotebookPage id="documentos">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div class="bg-colpsi-bg rounded-lg border border-colpsi-border p-4 space-y-3">
                     <span class="text-sm font-semibold text-colpsi-text">Foto tipo carnet</span>
@@ -577,8 +584,8 @@ export default function AdminInscriptionDetail() {
 
                   <For each={DOC_SPECS}>{(spec) => <DocSlot spec={spec} />}</For>
                 </div>
-              </PanelSection>
-            </Panel>
+              </NotebookPage>
+            </Notebook>
 
             <Show when={fichaMsg()}>
               <div class={`rounded-md p-3 text-sm font-medium ${fichaMsg()!.type === "ok" ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-red-50 text-colpsi-red border border-red-200"}`}>

@@ -30,7 +30,7 @@ import { AcademicSection } from "~/components/psi/profile/AcademicSection";
 import { SocialNetworksSection } from "~/components/psi/profile/SocialNetworksSection";
 import { SaveButton } from "~/components/psi/profile/SaveButton";
 import { AvatarUploader } from "~/components/psi/profile/AvatarUploader";
-import { Panel, PanelSection } from "~/components/ui/Panel";
+import { Notebook, NotebookPage } from "~/components/ui/Notebook";
 import { Icon } from "~/components/admin/ui/icons";
 
 const updateProfileServer = action(async (formData: FormData) => {
@@ -432,8 +432,19 @@ export default function ProfilePage() {
           </Show>
 
           <form onSubmit={handleSaveProfile}>
-            <Panel>
-              <PanelSection title="Cuenta y Seguridad" accent="border-colpsi-yellow" defaultOpen>
+            <Notebook
+              pages={[
+                { id: "cuenta", label: "Cuenta y Seguridad", icon: "user" },
+                { id: "contacto", label: "Información de Contacto", icon: "mail" },
+                { id: "academico", label: "Expediente Académico", icon: "book" },
+                { id: "ubicacion", label: "Ubicación Geográfica", icon: "mapPin" },
+                { id: "profesional", label: "Perfil Profesional", icon: "fileText" },
+                { id: "servicio", label: "Servicio y Preferencias", icon: "sliders" },
+                { id: "privacidad", label: "Privacidad y Visibilidad", icon: "shield" },
+                { id: "redes", label: "Redes Sociales", icon: "link" },
+              ]}
+            >
+            <NotebookPage id="cuenta">
                 <AccountSection
                   username={form.username}
                   email={form.email}
@@ -450,9 +461,9 @@ export default function ProfilePage() {
                   onPasswordChange={(v) => setForm("password", v)}
                   message={message()}
                 />
-              </PanelSection>
+              </NotebookPage>
 
-              <PanelSection title="Información de Contacto" accent="border-colpsi-blue">
+              <NotebookPage id="contacto">
                 <ContactSection
                   contactEmail={form.contact_email ?? ""}
                   contactPhone={form.contact_phone ?? ""}
@@ -461,9 +472,9 @@ export default function ProfilePage() {
                   onContactPhoneChange={(v) => setForm("contact_phone", v)}
                   onContactCellPhoneChange={(v) => setForm("contact_cell_phone", v)}
                 />
-              </PanelSection>
+              </NotebookPage>
 
-              <PanelSection title="Expediente Académico" accent="border-colpsi-blue">
+              <NotebookPage id="academico">
                 <AcademicSection
                   undergraduateData={{
                     university_undergraduate:
@@ -487,9 +498,9 @@ export default function ProfilePage() {
                   files={files()}
                   setFiles={setFiles}
                 />
-              </PanelSection>
+              </NotebookPage>
 
-              <PanelSection title="Ubicación Geográfica" accent="border-indigo-400">
+              <NotebookPage id="ubicacion">
                 <LocationSection
                   serviceAddress={form.service_address ?? ""}
                   municipalityCarabobo={form.municipality_carabobo ?? ""}
@@ -538,9 +549,9 @@ export default function ProfilePage() {
                     setForm("service_address_outside_venezuela", v)
                   }
                 />
-              </PanelSection>
+              </NotebookPage>
 
-              <PanelSection title="Perfil Profesional">
+              <NotebookPage id="profesional">
                 <ProfessionalSection
                   primaryWorkArea={form.primary_work_area ?? ""}
                   secondaryWorkArea={form.secondary_work_area ?? ""}
@@ -554,9 +565,9 @@ export default function ProfilePage() {
                   }
                   onMiniBioChange={(v) => setForm("mini_bio", v)}
                 />
-              </PanelSection>
+              </NotebookPage>
 
-              <PanelSection title="Servicio y Preferencias" accent="border-teal-400">
+              <NotebookPage id="servicio">
                 <ServicePreferencesSection
                   serviceModalityPresencial={
                     form.service_modality_presencial ?? false
@@ -583,9 +594,9 @@ export default function ProfilePage() {
                     setForm("birthday_notification", v)
                   }
                 />
-              </PanelSection>
+              </NotebookPage>
 
-              <PanelSection title="Privacidad y Visibilidad" accent="border-colpsi-yellow">
+              <NotebookPage id="privacidad">
                 <PrivacySection
                   showContactEmail={form.show_contact_email}
                   showServiceAddress={form.show_public_service_address}
@@ -654,9 +665,9 @@ export default function ProfilePage() {
                     setForm("show_mention_undergraduate", v)
                   }
                 />
-              </PanelSection>
+              </NotebookPage>
 
-              <PanelSection title="Redes Sociales">
+              <NotebookPage id="redes">
                 <SocialNetworksSection
                   networks={profile()?.social_networks}
                   newNetworkName={socialForm.name}
@@ -667,8 +678,8 @@ export default function ProfilePage() {
                   onAddNetwork={handleAddSocial}
                   onDeleteNetwork={handleDeleteSocial}
                 />
-              </PanelSection>
-            </Panel>
+              </NotebookPage>
+            </Notebook>
 
             <SaveButton saving={saving()} />
           </form>

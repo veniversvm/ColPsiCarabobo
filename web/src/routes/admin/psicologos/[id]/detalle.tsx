@@ -31,7 +31,7 @@ import {
 import type { EditFormState, DeontologiaEntry, ObservacionesEntry } from "~/components/admin/psicologos/edit";
 import type { PsiUserDocument } from "~/types/psi";
 import { SolvenciesSection } from "~/components/admin/psicologos/edit/SolvenciesSection";
-import { Panel, PanelSection } from "~/components/ui/Panel";
+import { Notebook, NotebookPage } from "~/components/ui/Notebook";
 import { Icon } from "~/components/admin/ui/icons";
 
 // ─── Server Actions ───────────────────────────────────────────────────────────
@@ -538,9 +538,20 @@ const runUpdateAction = useAction(updateAdminPsiServer);
         <EditAlert message={message()} />
 
         <form onSubmit={handleSave}>
-          <Panel>
+          <Notebook
+            pages={[
+              { id: "cuenta", label: "Cuenta" },
+              { id: "estatus", label: "Estatus" },
+              { id: "solvencias", label: "Solvencias" },
+              { id: "identidad", label: "Identidad" },
+              { id: "contacto", label: "Contacto" },
+              { id: "ubicacion", label: "Ubicación" },
+              { id: "perfil", label: "Perfil" },
+              { id: "academico", label: "Académico" },
+            ]}
+          >
             {/* Se pasa avatarFile y onFileChange para que AccountSection pueda capturar la foto */}
-            <PanelSection title="Cuenta y Perfil Visual" accent="border-colpsi-yellow" defaultOpen>
+            <NotebookPage id="cuenta">
               <AccountSection
                 form={form}
                 setForm={set}
@@ -554,12 +565,12 @@ const runUpdateAction = useAction(updateAdminPsiServer);
                 onSyncAbs={handleSyncAbs}
                 syncingAbs={syncingAbs()}
               />
-            </PanelSection>
-            <PanelSection title="Estatus Administrativo" accent="border-yellow-400">
+            </NotebookPage>
+            <NotebookPage id="estatus">
               <AdminStatusSection form={form} setForm={set} />
-            </PanelSection>
+            </NotebookPage>
 
-            <PanelSection title="Historial de Solvencias" accent="border-emerald-400">
+            <NotebookPage id="solvencias">
               <SolvenciesSection
                 solvencies={form.solvencies}
                 onAddLocalSolvency={(year) => {
@@ -567,35 +578,35 @@ const runUpdateAction = useAction(updateAdminPsiServer);
                   set("solvencies", [...form.solvencies, newSolv]);
                 }}
               />
-            </PanelSection>
+            </NotebookPage>
 
-            <PanelSection title="Identidad Legal">
+            <NotebookPage id="identidad">
               <LegalIdentitySection form={form} setForm={set} age={calculateAge(form.born_date)} />
-            </PanelSection>
-            <PanelSection title="Gestión de Contacto y Privacidad" accent="border-colpsi-blue">
+            </NotebookPage>
+            <NotebookPage id="contacto">
               <ContactVisibilitySection form={form} setForm={set} />
-            </PanelSection>
-            <PanelSection title="Ubicación Geográfica y Privacidad" accent="border-indigo-400">
+            </NotebookPage>
+            <NotebookPage id="ubicacion">
               <LocationSection form={form} setForm={set} />
-            </PanelSection>
-            <PanelSection title="Perfil Profesional">
+            </NotebookPage>
+            <NotebookPage id="perfil">
               <ProfessionalSection
                 form={form}
                 setForm={set}
                 workAreas={workAreas()}
               />
-            </PanelSection>
+            </NotebookPage>
 
             {/* Se pasan los estados de archivos a AcademicSection */}
-            <PanelSection title="Expediente Académico y Gremial" accent="border-colpsi-blue">
+            <NotebookPage id="academico">
               <AcademicSection
                 form={form}
                 setForm={set}
                 files={files()}
                 setFiles={setFiles}
               />
-            </PanelSection>
-          </Panel>
+            </NotebookPage>
+          </Notebook>
 
           <div class="sticky bottom-4 z-50 flex justify-end max-w-5xl mx-auto px-4">
             <button
@@ -615,8 +626,16 @@ const runUpdateAction = useAction(updateAdminPsiServer);
         </form>
 
         <div class="mt-8">
-          <Panel>
-            <PanelSection title="Presencia Digital / Redes Sociales" accent="border-gray-300">
+          <Notebook
+            pages={[
+              { id: "redes", label: "Redes" },
+              { id: "deontologico", label: "Deontológico" },
+              { id: "observaciones", label: "Observaciones" },
+              { id: "documentos", label: "Documentos" },
+              { id: "auditoria", label: "Auditoría" },
+            ]}
+          >
+            <NotebookPage id="redes">
               <SocialNetworksBlock
                 profile={profile()}
                 onAdd={async (p) => {
@@ -632,9 +651,9 @@ const runUpdateAction = useAction(updateAdminPsiServer);
                   refetch();
                 }}
               />
-            </PanelSection>
+            </NotebookPage>
 
-            <PanelSection title="Expediente Deontológico" accent="border-gray-300">
+            <NotebookPage id="deontologico">
               <DeontologiaBlock
                 entries={deontologia()}
                 onAdd={async (content) => {
@@ -650,9 +669,9 @@ const runUpdateAction = useAction(updateAdminPsiServer);
                   refetchDeontologia();
                 }}
               />
-            </PanelSection>
+            </NotebookPage>
 
-            <PanelSection title="Observaciones Internas" accent="border-gray-300">
+            <NotebookPage id="observaciones">
               <ObservationsBlock
                 entries={observaciones()}
                 onAdd={async (content) => {
@@ -668,9 +687,9 @@ const runUpdateAction = useAction(updateAdminPsiServer);
                   refetchObservaciones();
                 }}
               />
-            </PanelSection>
+            </NotebookPage>
 
-            <PanelSection title="Registro Digital de Documentos" accent="border-gray-300">
+            <NotebookPage id="documentos">
               <DocumentsBlock
                 entries={documentos()}
                 onAdd={async (payload) => {
@@ -692,14 +711,14 @@ const runUpdateAction = useAction(updateAdminPsiServer);
                   refetchDocumentos();
                 }}
               />
-            </PanelSection>
+            </NotebookPage>
 
-            <PanelSection title="Información de Auditoría (Solo Lectura)" accent="border-gray-400">
+            <NotebookPage id="auditoria">
               <AuditBlock profile={profile()} />
-            </PanelSection>
-          </Panel>
-        </div>
-      </Suspense>
+            </NotebookPage>
+            </Notebook>
+          </div>
+        </Suspense>
     </main>
   );
 }
