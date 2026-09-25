@@ -3,6 +3,7 @@ import { For, Show, createResource, createSignal } from "solid-js";
 import { apiGet, apiPost, apiPatch, apiDelete } from "~/lib/api";
 import { getUserFacingError } from "~/lib/errors";
 import { Project, ProjectMember, ProjectMemberRole } from "~/types/projects";
+import { Icon } from "~/components/admin/ui/icons";
 
 interface StaffAdmin {
   id: string;
@@ -91,32 +92,32 @@ export default function MembersModal(props: {
       class="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4 bg-black/60 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && !busy() && props.onClose()}
     >
-      <div class="bg-white w-full md:max-w-lg md:rounded-3xl rounded-t-3xl max-h-[88vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <div class="flex items-center justify-between px-6 py-4 border-b border-colpsi-border">
+      <div class="bg-white w-full md:max-w-lg md:rounded-lg rounded-t-lg max-h-[88vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div class="flex items-center justify-between px-5 py-3.5 border-b border-colpsi-border">
           <div>
-            <h3 class="font-black text-colpsi-blue text-lg">Miembros del proyecto</h3>
-            <p class="text-xs text-gray-400">Los miembros son administradores del colegio.</p>
+            <h3 class="font-semibold text-colpsi-text">Miembros del proyecto</h3>
+            <p class="text-xs text-colpsi-muted mt-0.5">Los miembros son administradores del colegio.</p>
           </div>
-          <button onClick={props.onClose} class="w-9 h-9 rounded-full bg-gray-100 text-gray-500 font-black hover:bg-gray-200">
-            ✕
+          <button onClick={props.onClose} class="inline-flex items-center justify-center h-8 w-8 rounded-md bg-colpsi-bg text-colpsi-muted hover:text-colpsi-blue hover:bg-colpsi-border/60 transition-colors">
+            <Icon name="x" class="w-4 h-4" />
           </button>
         </div>
 
-        <div class="p-6 space-y-4">
+        <div class="p-5 space-y-4">
           <Show when={error()}>
-            <div class="p-3 rounded-xl bg-red-50 text-red-700 text-sm font-bold border-l-4 border-red-500">{error()}</div>
+            <div class="p-3 rounded-md bg-red-50 text-red-700 text-sm font-medium border border-red-200">{error()}</div>
           </Show>
 
-          <div class="rounded-2xl border-2 border-colpsi-border divide-y divide-gray-100">
+          <div class="rounded-md border border-colpsi-border divide-y divide-colpsi-border">
             <div class="flex items-center justify-between px-4 py-3">
               <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-black">Ψ</div>
+                <div class="w-9 h-9 rounded-md bg-colpsi-blue/10 text-colpsi-blue flex items-center justify-center font-semibold">Ψ</div>
                 <div>
-                  <span class="font-black text-sm text-gray-800 flex items-center gap-2">
+                  <span class="font-medium text-sm text-colpsi-text flex items-center gap-2">
                     {props.project.owner?.username ?? props.project.create_by}
-                    <span class="text-[10px] font-black uppercase text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">Dueño</span>
+                    <span class="text-[10px] font-medium uppercase text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">Dueño</span>
                   </span>
-                  <span class="text-xs text-gray-400">{props.project.owner?.email}</span>
+                  <span class="text-xs text-colpsi-muted">{props.project.owner?.email}</span>
                 </div>
               </div>
             </div>
@@ -125,12 +126,12 @@ export default function MembersModal(props: {
               {(m) => (
                 <div class="flex items-center justify-between gap-3 px-4 py-3">
                   <div class="flex items-center gap-3 min-w-0">
-                    <div class="w-9 h-9 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center font-black shrink-0">
+                    <div class="w-9 h-9 rounded-md bg-colpsi-bg text-colpsi-muted flex items-center justify-center font-medium shrink-0">
                       {(m.user?.username ?? "?").slice(0, 2).toUpperCase()}
                     </div>
                     <div class="min-w-0">
-                      <span class="font-black text-sm text-gray-800 block truncate">{m.user?.username}</span>
-                      <span class="text-xs text-gray-400 truncate block">{m.user?.email}</span>
+                      <span class="font-medium text-sm text-colpsi-text block truncate">{m.user?.username}</span>
+                      <span class="text-xs text-colpsi-muted truncate block">{m.user?.email}</span>
                     </div>
                   </div>
                   <div class="flex items-center gap-2 shrink-0">
@@ -138,10 +139,10 @@ export default function MembersModal(props: {
                       <button
                         disabled={busy()}
                         onClick={() => changeRole(m, m.role === "editor" ? "viewer" : "editor")}
-                        class={`text-[11px] font-black uppercase tracking-wide px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-60 ${
+                        class={`text-[11px] font-medium uppercase tracking-wide px-2.5 py-1 rounded-md border transition-colors disabled:opacity-60 ${
                           m.role === "editor"
-                            ? "bg-amber-100 text-amber-700 border-amber-300"
-                            : "bg-gray-100 text-gray-500 border-gray-200 hover:bg-gray-200"
+                            ? "bg-amber-50 text-amber-700 border-amber-200"
+                            : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200"
                         }`}
                         title="Cambiar rol"
                       >
@@ -150,14 +151,14 @@ export default function MembersModal(props: {
                       <button
                         disabled={busy()}
                         onClick={() => remove(m)}
-                        class="w-8 h-8 rounded-lg bg-red-50 text-red-500 font-black hover:bg-red-100 disabled:opacity-60"
+                        class="inline-flex items-center justify-center h-8 w-8 rounded-md bg-white text-colpsi-red border border-red-200 hover:bg-red-50 disabled:opacity-60 transition-colors"
                         title="Quitar miembro"
                       >
-                        ✕
+                        <Icon name="x" class="w-3.5 h-3.5" />
                       </button>
                     </Show>
                     <Show when={!props.canManage}>
-                      <span class="text-[11px] font-black uppercase tracking-wide px-3 py-1.5 rounded-lg bg-gray-100 text-gray-500 border border-gray-200">
+                      <span class="text-[11px] font-medium uppercase tracking-wide px-2.5 py-1 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
                         {ROLE_LABELS[m.role]}
                       </span>
                     </Show>
@@ -168,15 +169,15 @@ export default function MembersModal(props: {
           </div>
 
           <Show when={props.canManage}>
-            <div class="rounded-2xl border-2 border-dashed border-gray-200 p-4">
-              <p class="text-xs font-black uppercase tracking-widest text-gray-400 mb-3">Invitar administrador</p>
+            <div class="rounded-md border border-dashed border-colpsi-border p-3.5">
+              <p class="text-[11px] font-semibold uppercase tracking-wide text-colpsi-muted mb-2.5">Invitar administrador</p>
               <div class="flex flex-col sm:flex-row gap-2">
                 <select
                   value={selected()}
                   onChange={(e) => setSelected(e.currentTarget.value)}
-                  class="flex-grow bg-white border-2 border-gray-200 focus:border-blue-500 rounded-xl px-3 py-2.5 text-sm outline-none"
+                  class="flex-grow h-9 rounded-md border border-slate-300 bg-white px-3 text-sm outline-none focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/15 transition-colors"
                 >
-                  <option value="">Selecciona un admin…</option>
+                  <option value="">Selecciona un admin...</option>
                   <For each={available()}>
                     {(a) => <option value={a.id}>{a.username} — {a.email}</option>}
                   </For>
@@ -184,7 +185,7 @@ export default function MembersModal(props: {
                 <select
                   value={role()}
                   onChange={(e) => setRole(e.currentTarget.value as ProjectMemberRole)}
-                  class="bg-white border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none"
+                  class="h-9 rounded-md border border-slate-300 bg-white px-3 text-sm outline-none focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/15 transition-colors"
                 >
                   <option value="editor">Editor</option>
                   <option value="viewer">Espectador</option>
@@ -192,7 +193,7 @@ export default function MembersModal(props: {
                 <button
                   disabled={!selected() || busy()}
                   onClick={invite}
-                  class="bg-blue-800 hover:bg-blue-900 text-white font-black px-5 py-2.5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="h-9 px-5 rounded-md bg-colpsi-blue hover:bg-colpsi-blue-light text-white font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {busy() ? "..." : "Invitar"}
                 </button>

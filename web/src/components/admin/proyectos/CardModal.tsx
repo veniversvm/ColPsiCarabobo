@@ -4,6 +4,7 @@ import { apiPost, apiPatch, apiDelete } from "~/lib/api";
 import { getUserFacingError } from "~/lib/errors";
 import { useAuth } from "~/lib/auth";
 import { MAX_NOTE_LENGTH_CHARS, MAX_NOTES_PER_CARD, ProjectCard } from "~/types/projects";
+import { Icon } from "~/components/admin/ui/icons";
 
 export default function CardModal(props: {
   projectId: string;
@@ -127,64 +128,65 @@ export default function CardModal(props: {
       class="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4 bg-black/60 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && !busy() && props.onClose()}
     >
-      <div class="bg-white w-full md:max-w-xl md:rounded-3xl rounded-t-3xl max-h-[92vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <div class="flex items-center justify-between px-6 py-4 border-b border-colpsi-border sticky top-0 bg-white/95 backdrop-blur">
-          <h3 class="font-black text-colpsi-blue text-lg">{isEditing() ? "Detalles de la tarjeta" : "Nueva tarjeta"}</h3>
+      <div class="bg-white w-full md:max-w-xl md:rounded-lg rounded-t-lg max-h-[92vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div class="flex items-center justify-between px-5 py-3.5 border-b border-colpsi-border sticky top-0 bg-white/95 backdrop-blur">
+          <h3 class="font-semibold text-colpsi-text">{isEditing() ? "Detalles de la tarjeta" : "Nueva tarjeta"}</h3>
           <div class="flex items-center gap-2">
             <Show when={saved()}>
-              <span class="text-xs font-black text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full">Guardado ✓</span>
+              <span class="text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded inline-flex items-center gap-1"><Icon name="check" class="w-3 h-3" /> Guardado</span>
             </Show>
-            <button onClick={props.onClose} class="w-9 h-9 rounded-full bg-gray-100 text-gray-500 font-black hover:bg-gray-200">
-              ✕
+            <button onClick={props.onClose} class="inline-flex items-center justify-center h-8 w-8 rounded-md bg-colpsi-bg text-colpsi-muted hover:text-colpsi-blue hover:bg-colpsi-border/60 transition-colors">
+              <Icon name="x" class="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        <div class="p-6 space-y-5">
+        <div class="p-5 space-y-4">
           <Show when={error()}>
-            <div class="p-3 rounded-xl bg-red-50 text-red-700 text-sm font-bold border-l-4 border-red-500">{error()}</div>
+            <div class="p-3 rounded-md bg-red-50 text-red-700 text-sm font-medium border border-red-200">{error()}</div>
           </Show>
 
-          <div class="space-y-2">
-            <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1">Título</label>
+          <div class="space-y-1.5">
+            <label class="block text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide ml-1 mb-1">Título</label>
             <input
               value={title()}
               disabled={!props.canEdit}
               maxLength={200}
               onInput={(e) => setTitle(e.currentTarget.value)}
               placeholder="Título de la tarjeta"
-              class="w-full bg-white border-2 border-gray-200 focus:border-blue-500 rounded-xl px-4 py-2.5 outline-none transition-all text-gray-800 text-sm disabled:bg-colpsi-surface"
+              class="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none placeholder:text-slate-400 focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/15 transition-colors disabled:bg-colpsi-bg"
             />
           </div>
 
-          <div class="space-y-2">
-            <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1">Descripción</label>
+          <div class="space-y-1.5">
+            <label class="block text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide ml-1 mb-1">Descripción</label>
             <textarea
               value={description()}
               disabled={!props.canEdit}
               maxLength={2000}
               rows={4}
               onInput={(e) => setDescription(e.currentTarget.value)}
-              placeholder="Detalles de la tarea…"
-              class="w-full bg-white border-2 border-gray-200 focus:border-blue-500 rounded-xl px-4 py-2.5 outline-none transition-all text-gray-800 text-sm resize-none disabled:bg-colpsi-surface"
+              placeholder="Detalles de la tarea..."
+              class="w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none placeholder:text-slate-400 focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/15 transition-colors resize-none py-2 disabled:bg-colpsi-bg"
             />
           </div>
 
           <Show when={props.canEdit}>
-            <div class="flex gap-3">
+            <div class="flex gap-2">
               <button
                 onClick={save}
                 disabled={busy()}
-                class="flex-grow bg-blue-800 hover:bg-blue-900 text-white font-black py-3 rounded-xl transition-all disabled:opacity-60"
+                class="flex-grow h-10 rounded-md bg-colpsi-blue hover:bg-colpsi-blue-light text-white font-semibold transition-colors disabled:opacity-60 text-sm"
               >
-                {busy() ? "Guardando…" : isEditing() ? "Guardar cambios" : "Crear tarjeta"}
+                {busy() ? "Guardando..." : isEditing() ? "Guardar cambios" : "Crear tarjeta"}
               </button>
               <Show when={isEditing()}>
                 <button
                   onClick={removeCard}
                   disabled={busy()}
-                  class="bg-red-50 text-red-600 font-black px-5 py-3 rounded-xl border-2 border-red-200 hover:bg-red-100 disabled:opacity-60"
+                  class="inline-flex items-center gap-1.5 h-10 px-4 rounded-md bg-white text-colpsi-red font-medium border border-red-200 hover:bg-red-50 disabled:opacity-60 transition-colors text-sm"
                 >
+                  <Icon name="trash" class="w-4 h-4" />
                   Eliminar
                 </button>
               </Show>
@@ -192,27 +194,27 @@ export default function CardModal(props: {
           </Show>
 
           <Show when={isEditing()}>
-            <div class="border-t border-colpsi-border pt-5">
-              <div class="flex items-center justify-between mb-3">
-                <h4 class="font-black text-sm text-gray-700 uppercase tracking-widest text-[11px]">Notas</h4>
-                <span class={`text-[11px] font-black ${notes().length >= MAX_NOTES_PER_CARD ? "text-red-500" : "text-gray-400"}`}>
+            <div class="border-t border-colpsi-border pt-4">
+              <div class="flex items-center justify-between mb-2.5">
+                <h4 class="text-xs font-semibold text-colpsi-muted uppercase tracking-wide">Notas</h4>
+                <span class={`text-[11px] font-medium ${notes().length >= MAX_NOTES_PER_CARD ? "text-colpsi-red" : "text-colpsi-muted"}`}>
                   {notes().length}/{MAX_NOTES_PER_CARD}
                 </span>
               </div>
 
-              <div class="space-y-2.5">
+              <div class="space-y-2">
                 <For each={notes()}>
                   {(n) => (
-                    <div class="group p-3.5 rounded-2xl bg-colpsi-surface border border-colpsi-border">
-                      <p class="text-sm text-gray-700 whitespace-pre-wrap break-words">{n.content}</p>
+                    <div class="group p-3 rounded-md bg-colpsi-bg border border-colpsi-border">
+                      <p class="text-sm text-colpsi-text whitespace-pre-wrap break-words">{n.content}</p>
                       <div class="mt-2 flex items-center justify-between">
-                        <span class="text-[10px] text-gray-400">
+                        <span class="text-[11px] text-colpsi-muted">
                           {n.create_by || "—"} · {new Date(n.created_at).toLocaleString("es-VE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
                         </span>
                         <Show when={props.canEdit && (props.canManage || n.create_by_id === currentUserId())}>
                           <button
                             onClick={() => deleteNote(n.id)}
-                            class="text-[11px] font-black text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                            class="text-[11px] font-medium text-colpsi-red/70 hover:text-colpsi-red opacity-0 group-hover:opacity-100 transition-opacity"
                           >
                             Eliminar
                           </button>
@@ -222,29 +224,29 @@ export default function CardModal(props: {
                   )}
                 </For>
                 <Show when={notes().length === 0}>
-                  <p class="text-center text-xs text-gray-400 py-3">Sin notas todavía.</p>
+                  <p class="text-center text-xs text-colpsi-muted py-2.5">Sin notas todavía.</p>
                 </Show>
               </div>
 
               <Show when={props.canEdit}>
-                <div class="mt-4 rounded-2xl border-2 border-dashed border-gray-200 p-3">
+                <div class="mt-3 rounded-md border border-dashed border-colpsi-border p-3">
                   <textarea
                     value={noteDraft()}
                     disabled={notes().length >= MAX_NOTES_PER_CARD || busy()}
                     rows={2}
                     maxLength={MAX_NOTE_LENGTH_CHARS}
                     onInput={(e) => setNoteDraft(e.currentTarget.value)}
-                    placeholder={notes().length >= MAX_NOTES_PER_CARD ? "Límite de 10 notas alcanzado" : `Añadir nota (máx. ${MAX_NOTE_LENGTH_CHARS} caracteres)…`}
-                    class="w-full bg-white border-2 border-gray-200 focus:border-blue-500 rounded-xl px-4 py-2.5 outline-none text-sm resize-none"
+                    placeholder={notes().length >= MAX_NOTES_PER_CARD ? "Límite de 10 notas alcanzado" : `Añadir nota (máx. ${MAX_NOTE_LENGTH_CHARS} caracteres)...`}
+                    class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none placeholder:text-slate-400 focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/15 transition-colors resize-none"
                   />
                   <div class="mt-2 flex items-center justify-between">
-                    <span class={`text-[10px] font-black ${noteDraft().length > MAX_NOTE_LENGTH_CHARS - 20 ? "text-red-500" : "text-gray-300"}`}>
+                    <span class={`text-[10px] font-medium ${noteDraft().length > MAX_NOTE_LENGTH_CHARS - 20 ? "text-colpsi-red" : "text-colpsi-muted"}`}>
                       {noteDraft().length}/{MAX_NOTE_LENGTH_CHARS}
                     </span>
                     <button
                       onClick={addNote}
                       disabled={!noteDraft().trim() || notes().length >= MAX_NOTES_PER_CARD || busy()}
-                      class="bg-colpsi-yellow text-colpsi-blue font-black px-4 py-2 rounded-xl text-xs disabled:opacity-40 hover:opacity-90"
+                      class="h-8 px-4 rounded-md bg-colpsi-blue text-white font-semibold text-xs disabled:opacity-40 hover:bg-colpsi-blue-light transition-colors"
                     >
                       Añadir nota
                     </button>
