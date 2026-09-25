@@ -75,8 +75,8 @@ export function Notebook(props: {
                     backgroundImage: isActive() ? HERALDIC_GRADIENT : undefined,
                     color: isActive() ? undefined : t.title,
                   }}
-                  class={`relative px-4 text-sm whitespace-nowrap -mb-px overflow-hidden transition-colors hover:brightness-95 ${
-                    isActive() ? "py-1.5 font-semibold" : "py-2.5 font-medium"
+                  class={`relative text-sm whitespace-nowrap -mb-px overflow-hidden transition-colors hover:brightness-95 ${
+                    isActive() ? "px-2 py-1.5 font-semibold" : "px-4 py-2.5 font-medium"
                   }`}
                 >
                   <Show
@@ -92,7 +92,7 @@ export function Notebook(props: {
                   >
                     <span class="flex flex-col items-center gap-1">
                       <span
-                        class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5"
+                        class="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5"
                         style={{ backgroundColor: t.light, color: t.title }}
                       >
                         {page.icon && <Icon name={page.icon} class="w-3.5 h-3.5" />}
