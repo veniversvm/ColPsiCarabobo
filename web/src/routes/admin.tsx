@@ -79,15 +79,15 @@ export default function AdminLayout(props: { children: JSX.Element }) {
 
   // Visibilidad del menú por permisos (el backend sigue siendo la barrera real).
   const menuItems = [
-    { title: "Dashboard", path: "/admin", always: true, perms: [] as (keyof PermissionState)[] },
-    { title: "Psicólogos", path: "/admin/psicologos", always: false, perms: ["can_read_psi", "can_create_psi", "can_update_psi", "can_delete_psi"] },
-    { title: "Inscripciones", path: "/admin/inscripciones", always: false, perms: ["can_read_psi", "can_create_psi", "can_update_psi", "can_delete_psi"] },
-    { title: "Areas de Ejercicio Psi", path: "/admin/areas_de_ejercicio_profesional", always: false, perms: ["can_create_tags", "can_edit_tags", "can_delete_tags"] },
-    { title: "Noticias", path: "/admin/noticias", always: false, perms: ["can_publish", "can_update_publish", "can_delete_publish"] },
-    { title: "Notificaciones", path: "/admin/notificaciones", always: false, perms: ["can_send_notifications", "can_manage_notifications", "can_read_notifications"] },
-    { title: "Tickets", path: "/admin/tickets", always: false, perms: ["can_manage_tickets"] },
-    { title: "Proyectos", path: "/admin/proyectos", always: false, perms: ["can_manage_projects"] },
-    { title: "Staff", path: "/admin/staff", always: false, perms: ["can_create_admin", "can_update_admin", "can_delete_admin"] },
+    { title: "Dashboard", path: "/admin", always: true, perms: [] as (keyof PermissionState)[], chip: "bg-colpsi-blue/10 text-colpsi-blue", label: "text-colpsi-blue" },
+    { title: "Psicólogos", path: "/admin/psicologos", always: false, perms: ["can_read_psi", "can_create_psi", "can_update_psi", "can_delete_psi"], chip: "bg-indigo-100 text-indigo-600", label: "text-indigo-600" },
+    { title: "Inscripciones", path: "/admin/inscripciones", always: false, perms: ["can_read_psi", "can_create_psi", "can_update_psi", "can_delete_psi"], chip: "bg-emerald-100 text-emerald-600", label: "text-emerald-600" },
+    { title: "Areas de Ejercicio Psi", path: "/admin/areas_de_ejercicio_profesional", always: false, perms: ["can_create_tags", "can_edit_tags", "can_delete_tags"], chip: "bg-amber-100 text-amber-600", label: "text-amber-600" },
+    { title: "Noticias", path: "/admin/noticias", always: false, perms: ["can_publish", "can_update_publish", "can_delete_publish"], chip: "bg-rose-100 text-rose-600", label: "text-rose-600" },
+    { title: "Notificaciones", path: "/admin/notificaciones", always: false, perms: ["can_send_notifications", "can_manage_notifications", "can_read_notifications"], chip: "bg-violet-100 text-violet-600", label: "text-violet-600" },
+    { title: "Tickets", path: "/admin/tickets", always: false, perms: ["can_manage_tickets"], chip: "bg-orange-100 text-orange-600", label: "text-orange-600" },
+    { title: "Proyectos", path: "/admin/proyectos", always: false, perms: ["can_manage_projects"], chip: "bg-cyan-100 text-cyan-600", label: "text-cyan-600" },
+    { title: "Staff", path: "/admin/staff", always: false, perms: ["can_create_admin", "can_update_admin", "can_delete_admin"], chip: "bg-teal-100 text-teal-600", label: "text-teal-600" },
   ];
 
   const visibleMenu = () =>
@@ -101,6 +101,10 @@ export default function AdminLayout(props: { children: JSX.Element }) {
     );
     return item?.title ?? "";
   };
+
+  // ¿El item coincide con la ruta actual? (para colorear la etiqueta activa)
+  const isMenuActive = (path: string) =>
+    location.pathname === path || location.pathname.startsWith(`${path}/`);
 
   return (
     <Show
@@ -116,7 +120,7 @@ export default function AdminLayout(props: { children: JSX.Element }) {
           <div class="h-14 flex items-center gap-2.5 px-4 border-b border-colpsi-border shrink-0">
             <img src="/emblema.png" alt="Emblema" class="w-8 h-8 rounded-full object-cover" />
             <Show when={!isCollapsed()}>
-              <span class="text-sm font-bold text-colpsi-blue truncate">Panel de gestión</span>
+              <span class="text-[15px] font-bold text-colpsi-blue truncate">Panel de gestión</span>
             </Show>
           </div>
 
@@ -126,12 +130,14 @@ export default function AdminLayout(props: { children: JSX.Element }) {
                 <A
                   href={item.path}
                   end={item.path === "/admin"}
-                  class={`flex items-center gap-3 h-9 rounded-md border-l-2 border-transparent text-sm font-medium text-slate-600 transition-colors hover:bg-white hover:text-colpsi-blue ${isCollapsed() ? "justify-center px-0" : "px-2"}`}
-                  activeClass="bg-white border-l-colpsi-yellow text-colpsi-blue font-semibold"
+                  class={`flex items-center gap-3 h-10 rounded-md border-l-2 border-transparent text-[15px] font-medium text-slate-600 transition-colors hover:bg-white ${isCollapsed() ? "justify-center px-0" : "px-2"}`}
+                  activeClass="bg-white border-l-colpsi-yellow font-semibold"
                 >
-                  <Icon name={menuIcons[item.path] ?? "grid"} />
+                  <span class={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${item.chip}`}>
+                    <Icon name={menuIcons[item.path] ?? "grid"} class="w-5 h-5" />
+                  </span>
                   <Show when={!isCollapsed()}>
-                    <span class="truncate flex-1">{item.title}</span>
+                    <span class={`truncate flex-1 ${isMenuActive(item.path) ? item.label : ""}`}>{item.title}</span>
                     <Show when={item.path === "/admin/tickets" && ticketsPendientes() > 0}>
                       <span class="min-w-4 h-4 px-1 rounded-full bg-colpsi-red text-white text-[10px] font-semibold flex items-center justify-center">
                         {ticketsPendientes() > 99 ? "99+" : ticketsPendientes()}
@@ -146,9 +152,9 @@ export default function AdminLayout(props: { children: JSX.Element }) {
           <div class="shrink-0 border-t border-colpsi-border p-2">
             <button
               onClick={logout}
-              class={`flex items-center gap-3 h-9 w-full rounded-md text-sm font-medium text-slate-600 transition-colors hover:bg-white hover:text-colpsi-red ${isCollapsed() ? "justify-center px-0" : "px-2"}`}
+              class={`flex items-center gap-3 h-10 w-full rounded-md text-[15px] font-medium text-slate-600 transition-colors hover:bg-white hover:text-colpsi-red ${isCollapsed() ? "justify-center px-0" : "px-2"}`}
             >
-              <Icon name="logout" />
+              <Icon name="logout" class="w-5 h-5" />
               <Show when={!isCollapsed()}>
                 <span>Salir de sesión</span>
               </Show>
