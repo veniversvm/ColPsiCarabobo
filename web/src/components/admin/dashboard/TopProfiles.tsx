@@ -1,5 +1,7 @@
 // web/src/components/admin/dashboard/TopProfiles.tsx
+// Perfiles más visitados: grilla con líneas divisorias (no tarjetas sueltas).
 import { For, Show } from "solid-js";
+import { Panel } from "~/components/admin/ui/Panel";
 
 interface TopProfile {
   psi_id:     string;
@@ -18,27 +20,27 @@ const fmt = (n?: number) => (n ?? 0).toLocaleString("es-VE");
 export function TopProfiles(props: TopProfilesProps) {
   return (
     <Show when={props.profiles?.length > 0}>
-      <div>
-        <h2 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-3 pl-1">
-          Perfiles más Visitados (últimos 30 días)
+      <section class="space-y-2">
+        <h2 class="text-[11px] font-semibold uppercase tracking-wide text-colpsi-muted">
+          Perfiles más visitados — últimos 30 días
         </h2>
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-colpsi-border">
-          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+        <Panel flush>
+          <div class="grid grid-cols-2 md:grid-cols-5 border-t border-l border-colpsi-border">
             <For each={props.profiles?.slice(0, 10)}>
               {(p, i) => (
-                <div class="bg-colpsi-surface rounded-xl p-3 border border-colpsi-border flex flex-col gap-1">
-                  <span class="text-[9px] font-black text-gray-300 uppercase">#{i() + 1}</span>
-                  <span class="text-lg font-black text-colpsi-blue tabular-nums">{fmt(p.count)}</span>
-                  <span class="text-xs font-bold text-gray-700 truncate">
+                <div class="border-b border-r border-colpsi-border p-3 bg-white flex flex-col gap-0.5">
+                  <span class="text-[10px] font-medium text-slate-400">#{i() + 1}</span>
+                  <span class="text-lg font-semibold text-colpsi-text tabular-nums">{fmt(p.count)}</span>
+                  <span class="text-sm font-medium text-colpsi-text truncate">
                     {p.first_name} {p.last_name}
                   </span>
-                  <span class="text-[9px] text-gray-400">FPV {p.fpv} · {fmt(p.count)} visitas</span>
+                  <span class="text-[11px] text-colpsi-muted">FPV {p.fpv}</span>
                 </div>
               )}
             </For>
           </div>
-        </div>
-      </div>
+        </Panel>
+      </section>
     </Show>
   );
 }

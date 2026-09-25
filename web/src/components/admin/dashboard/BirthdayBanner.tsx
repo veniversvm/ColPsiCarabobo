@@ -3,6 +3,7 @@
 import { Show, For } from "solid-js";
 import { createResource } from "solid-js";
 import { apiGet } from "~/lib/api";
+import { Badge } from "~/components/admin/ui/Badge";
 
 export interface BirthdayPerson {
   id: string;
@@ -45,38 +46,32 @@ export function BirthdayBanner() {
 
   return (
     <Show when={(birthdays()?.data?.length ?? 0) > 0}>
-      <div class="bg-gradient-to-r from-pink-500 to-rose-500 rounded-3xl p-6 shadow-lg">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-pink-100 text-xs font-black uppercase tracking-widest">
-              🎂 Cumpleaños del agremiado
-            </p>
-            <div class="mt-3 space-y-1">
-              <Show when={todays().length > 0}>
-                <p class="text-white text-sm font-black">
-                  Hoy cumplen años:
-                </p>
-                <For each={todays()}>
-                  {(b) => (
-                    <p class="text-white text-base font-black">
-                      {b.first_name} {b.last_name} · FPV {b.fpv}
-                    </p>
-                  )}
-                </For>
-              </Show>
-              <Show when={upcoming().length > 0}>
-                <p class="text-pink-100 text-xs mt-2">
-                  Próximos {upcoming().length} en la semana:
-                  {upcoming()
-                    .slice(0, 6)
-                    .map((b) => `${b.first_name} ${b.last_name}`)
-                    .join(", ")}
-                </p>
-              </Show>
-            </div>
-          </div>
-          <div class="text-7xl opacity-20">🎈</div>
+      <div class="border border-colpsi-border rounded-lg bg-white p-4">
+        <div class="flex items-center gap-2 mb-3">
+          <Badge tone="info">Cumpleaños de la semana</Badge>
+          <span class="text-[11px] text-colpsi-muted">{birthdays()?.range}</span>
         </div>
+        <Show when={todays().length > 0}>
+          <p class="text-sm font-semibold text-colpsi-text">Hoy cumplen años:</p>
+          <div class="flex flex-wrap gap-2 mt-2">
+            <For each={todays()}>
+              {(b) => (
+                <Badge tone="info">
+                  {b.first_name} {b.last_name} · FPV {b.fpv}
+                </Badge>
+              )}
+            </For>
+          </div>
+        </Show>
+        <Show when={upcoming().length > 0}>
+          <p class="text-sm text-colpsi-muted mt-2">
+            Próximos {upcoming().length} en la semana:{" "}
+            {upcoming()
+              .slice(0, 6)
+              .map((b) => `${b.first_name} ${b.last_name}`)
+              .join(", ")}
+          </p>
+        </Show>
       </div>
     </Show>
   );

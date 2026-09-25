@@ -1,4 +1,6 @@
 // web/src/components/admin/dashboard/Sparkline.tsx
+// Gráfica lineal compacta. Contenido puro (sin caja propia): el contenedor
+// con bordes/divisiones lo provee el Panel padre del dashboard.
 import { Show } from "solid-js";
 
 interface DailyCount { date: string; count: number }
@@ -35,14 +37,14 @@ export function Sparkline(props: SparklineProps) {
   };
 
   return (
-    <div class="bg-white rounded-2xl p-5 shadow-sm border border-colpsi-border">
-      <p class="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">
+    <div class="p-4">
+      <p class="text-[11px] font-semibold uppercase tracking-wide text-colpsi-muted mb-3">
         {props.label} — últimos 14 días
       </p>
       <Show
         when={props.data.length > 0}
         fallback={
-          <div class="h-16 flex items-center justify-center text-xs text-gray-300 italic">
+          <div class="h-16 flex items-center justify-center text-xs text-slate-400 italic">
             Sin datos aún
           </div>
         }
@@ -74,8 +76,8 @@ export function Sparkline(props: SparklineProps) {
           </Show>
         </svg>
         <div class="flex justify-between mt-1">
-          <span class="text-[9px] text-gray-300">{props.data[0]?.date}</span>
-          <span class="text-[9px] text-gray-300">{props.data[props.data.length - 1]?.date}</span>
+          <span class="text-[10px] text-slate-400">{props.data[0]?.date}</span>
+          <span class="text-[10px] text-slate-400">{props.data[props.data.length - 1]?.date}</span>
         </div>
       </Show>
     </div>

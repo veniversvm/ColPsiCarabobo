@@ -93,6 +93,17 @@
   animation: route-fade 0.25s ease-out;
 }
 
+/* Celda de cabecera de tabla del panel admin (no incluye alineación:
+   cada uso decide text-left / text-right por columna) */
+@utility th-cell {
+  @apply px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-colpsi-muted bg-colpsi-bg border-b border-colpsi-border whitespace-nowrap;
+}
+
+/* Celda de cuerpo de tabla del panel admin */
+@utility td-cell {
+  @apply px-3 py-2 text-sm text-colpsi-text align-middle;
+}
+
 @keyframes route-fade {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }

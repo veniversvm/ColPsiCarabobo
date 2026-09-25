@@ -3,13 +3,18 @@ import { createResource, createSignal, For, Show, onMount, onCleanup, createEffe
 import { apiGet } from "~/lib/api";
 
 import { AdminLoadingSkeleton } from "~/components/admin/dashboard/AdminLoadingSkeleton";
-import { StatCard }             from "~/components/admin/dashboard/StatCard";
 import { Sparkline }            from "~/components/admin/dashboard/Sparkline";
 import { RankingList }          from "~/components/admin/dashboard/RankingList";
 import { TopProfiles }          from "~/components/admin/dashboard/TopProfiles";
 import { ActiveSessionsBanner } from "~/components/admin/dashboard/ActiveSessionsBanner";
 import { BirthdayBanner } from "~/components/admin/dashboard/BirthdayBanner";
 import { ReceptionSwitchesCard } from "~/components/admin/settings/ReceptionSwitchesCard";
+
+import { Panel }     from "~/components/admin/ui/Panel";
+import { KpiStrip }  from "~/components/admin/ui/KpiStrip";
+import { PageHeader } from "~/components/admin/ui/PageHeader";
+import { Button }    from "~/components/admin/ui/Button";
+import { Icon }      from "~/components/admin/ui/icons";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 interface TopItem     { value: string; count: number; name: string }
@@ -67,40 +72,37 @@ export default function AdminDashboard() {
   // Loading SOLO en carga inicial
   const initialLoading = () => stats.loading && !cachedStats();
 
+  const fmt = (n?: number) => (n ?? 0).toLocaleString("es-VE");
+
+  const sectionTitle = (t: string) => (
+    <h2 class="text-[11px] font-semibold uppercase tracking-wide text-colpsi-muted">{t}</h2>
+  );
+
   return (
-    <div class="space-y-8 animate-in fade-in duration-500 pb-24">
+    <div class="space-y-5">
 
       {/* ── HEADER ──────────────────────────────────────────────────────── */}
-      <div class="flex items-start justify-between">
-        <div>
-          <h1 class="text-2xl font-black text-colpsi-blue">Panel de Control</h1>
-          <div class="flex items-center gap-2 mt-1">
-            <p class="text-gray-400 text-sm">
-              Métricas del portal en tiempo real
-              <span class="ml-2 text-[10px] font-bold text-gray-300 uppercase tracking-widest">
-                · Actualiza cada 15 min
-              </span>
-            </p>
-            <Show when={cachedStats()}>
-              <p class="text-[10px] text-gray-300">
-                · Última actualización: {lastRefresh().toLocaleTimeString("es-VE")}
-              </p>
-            </Show>
-          </div>
-        </div>
-        <button
-          onClick={() => { refetch(); }}
-          disabled={stats.loading}
-          class="bg-white border-2 border-colpsi-border text-gray-500 px-4 py-2 rounded-xl font-bold text-sm hover:border-colpsi-blue hover:text-colpsi-blue transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <span class={stats.loading ? "animate-spin inline-block" : ""}>↻</span>
-          <span>{stats.loading && cachedStats() ? "Actualizando..." : "Actualizar"}</span>
-        </button>
-      </div>
+      <PageHeader
+        title="Panel de Control"
+        description={(() => {
+          const d = lastRefresh();
+          return `Métricas del portal en tiempo real · Actualiza cada 15 min · Última actualización: ${d.toLocaleTimeString("es-VE")}`;
+        })()}
+        actions={
+          <Button
+            variant="secondary"
+            onClick={() => { refetch(); }}
+            disabled={stats.loading}
+          >
+            <Icon name="refresh" class={stats.loading ? "animate-spin" : ""} />
+            {stats.loading && cachedStats() ? "Actualizando..." : "Actualizar"}
+          </Button>
+        }
+      />
 
       {/* ── ERROR ───────────────────────────────────────────────────────── */}
       <Show when={stats.error}>
-        <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-2xl text-sm text-red-700 font-bold">
+        <div class="border border-red-200 bg-red-50 rounded-md p-3 text-sm text-red-700 font-medium">
           ⚠️ Error al cargar estadísticas — verifica que el servidor esté activo.
         </div>
       </Show>
@@ -120,92 +122,81 @@ export default function AdminDashboard() {
       <ReceptionSwitchesCard />
 
       {/* ── SECCIÓN: LOGINS ──────────────────────────────────────────────── */}
-      <section>
-        <h2 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-3 pl-1">
-          Inicios de Sesión
-        </h2>
+      <section class="space-y-2">
+        {sectionTitle("Inicios de sesión")}
         <Show when={initialLoading()}>
-          <AdminLoadingSkeleton variant="cards" count={4} />
+          <AdminLoadingSkeleton variant="kpi" count={4} />
         </Show>
         <Show when={cachedStats()}>
           {(s) => (
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <StatCard
-                icon="🔑" label="Hoy"
-                value={s().logins_today}
-                accent="border-colpsi-yellow"
-                sub={[{ label: "Únicos", value: s().unique_users_today }]}
+            <Panel flush>
+              <KpiStrip
+                columns={4}
+                cells={[
+                  { label: "Hoy", value: s().logins_today, sub: `Únicos: ${fmt(s().unique_users_today)}`, dot: "bg-colpsi-yellow" },
+                  { label: "Esta semana", value: s().logins_this_week, dot: "bg-blue-400" },
+                  { label: "Este mes", value: s().logins_this_month, dot: "bg-blue-400" },
+                  { label: "Total histórico", value: s().logins_total, dot: "bg-slate-300" },
+                ]}
               />
-              <StatCard icon="📅" label="Esta semana"     value={s().logins_this_week}  accent="border-blue-300" />
-              <StatCard icon="🗓️" label="Este mes"        value={s().logins_this_month} accent="border-blue-300" />
-              <StatCard icon="📊" label="Total histórico" value={s().logins_total}       accent="border-gray-200" />
-            </div>
+            </Panel>
           )}
         </Show>
       </section>
 
       {/* ── SECCIÓN: VISITAS ─────────────────────────────────────────────── */}
-      <section>
-        <h2 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-3 pl-1">
-          Visitas al Portal
-        </h2>
+      <section class="space-y-2">
+        {sectionTitle("Visitas al portal")}
         <Show when={initialLoading()}>
-          <AdminLoadingSkeleton variant="cards" count={4} />
+          <AdminLoadingSkeleton variant="kpi" count={4} />
         </Show>
         <Show when={cachedStats()}>
           {(s) => (
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <StatCard
-                icon="👁️" label="Hoy"
-                value={s().page_views_today}
-                accent="border-green-400"
-                sub={[{ label: "Visitantes únicos", value: s().unique_visitors_today }]}
-              />
-              <StatCard
-                icon="📈" label="Esta semana"
-                value={s().page_views_this_week}
-                accent="border-green-300"
-                sub={[{ label: "Únicos semana", value: s().unique_visitors_week }]}
-              />
-              <StatCard icon="🌐" label="Total páginas vistas" value={s().page_views_total} accent="border-gray-200" />
-              <StatCard
-                icon="🔍" label="Búsquedas hoy"
-                value={s().searches_today}
-                accent="border-purple-300"
-                sub={[
-                  { label: "Esta semana", value: s().searches_this_week },
-                  { label: "Total",       value: s().searches_total },
+            <Panel flush>
+              <KpiStrip
+                columns={4}
+                cells={[
+                  {
+                    label: "Hoy",
+                    value: s().page_views_today,
+                    sub: `Visitantes únicos: ${fmt(s().unique_visitors_today)}`,
+                    dot: "bg-emerald-500",
+                  },
+                  { label: "Esta semana", value: s().page_views_this_week, sub: `Únicos: ${fmt(s().unique_visitors_week)}`, dot: "bg-emerald-400" },
+                  { label: "Total páginas vistas", value: s().page_views_total, dot: "bg-slate-300" },
+                  { label: "Búsquedas hoy", value: s().searches_today, sub: `Semana: ${fmt(s().searches_this_week)} · Total: ${fmt(s().searches_total)}`, dot: "bg-blue-400" },
                 ]}
               />
-            </div>
+            </Panel>
           )}
         </Show>
       </section>
 
       {/* ── SECCIÓN: PERFILES ────────────────────────────────────────────── */}
-      <section>
-        <h2 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-3 pl-1">
-          Visitas a Perfiles
-        </h2>
+      <section class="space-y-2">
+        {sectionTitle("Visitas a perfiles")}
         <Show when={initialLoading()}>
-          <AdminLoadingSkeleton variant="cards" count={3} />
+          <AdminLoadingSkeleton variant="kpi" count={3} />
         </Show>
         <Show when={cachedStats()}>
           {(s) => (
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <StatCard icon="👤" label="Hoy"          value={s().profile_views_today} accent="border-orange-300" />
-              <StatCard icon="📆" label="Esta semana"  value={s().profile_views_week}  accent="border-orange-300" />
-              <StatCard icon="🏆" label="Total"        value={s().profile_views_total} accent="border-gray-200"   />
-            </div>
+            <Panel flush>
+              <KpiStrip
+                columns={3}
+                cells={[
+                  { label: "Hoy", value: s().profile_views_today, dot: "bg-amber-400" },
+                  { label: "Esta semana", value: s().profile_views_week, dot: "bg-amber-400" },
+                  { label: "Total", value: s().profile_views_total, dot: "bg-slate-300" },
+                ]}
+              />
+            </Panel>
           )}
         </Show>
       </section>
 
       {/* ── SECCIÓN: TENDENCIAS ──────────────────────────────────────────── */}
-      <section>
-        <h2 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-3 pl-1">
-          Tendencia Diaria
-        </h2>
+      <section class="space-y-2">
+        {sectionTitle("Tendencia diaria")}
         <Show when={initialLoading()}>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <AdminLoadingSkeleton variant="chart" />
@@ -214,19 +205,19 @@ export default function AdminDashboard() {
         </Show>
         <Show when={cachedStats()}>
           {(s) => (
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Sparkline data={s().login_trend ?? []} color="#1e40af" label="Logins" />
-              <Sparkline data={s().view_trend  ?? []} color="#16a34a" label="Visitas al portal" />
-            </div>
+            <Panel flush>
+              <div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-colpsi-border">
+                <Sparkline data={s().login_trend ?? []} color="#1e40af" label="Logins" />
+                <Sparkline data={s().view_trend  ?? []} color="#16a34a" label="Visitas al portal" />
+              </div>
+            </Panel>
           )}
         </Show>
       </section>
 
       {/* ── SECCIÓN: RANKINGS ────────────────────────────────────────────── */}
-      <section>
-        <h2 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-3 pl-1">
-          Análisis de Búsquedas
-        </h2>
+      <section class="space-y-2">
+        {sectionTitle("Análisis de búsquedas")}
         <Show when={initialLoading()}>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <AdminLoadingSkeleton variant="list" rows={6} />
@@ -236,31 +227,31 @@ export default function AdminDashboard() {
         </Show>
         <Show when={cachedStats()}>
           {(s) => (
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <RankingList title="Especialidades más buscadas" icon="🧠" items={s().top_specialties  ?? []} />
-              <RankingList title="Municipios más buscados"     icon="📍" items={s().top_municipios   ?? []} />
-              <RankingList title="Términos de búsqueda"        icon="🔤" items={s().top_search_terms ?? []} />
-            </div>
+            <Panel flush>
+              <div class="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-colpsi-border">
+                <RankingList title="Especialidades más buscadas" items={s().top_specialties  ?? []} />
+                <RankingList title="Municipios más buscados"     items={s().top_municipios   ?? []} />
+                <RankingList title="Términos de búsqueda"        items={s().top_search_terms ?? []} />
+              </div>
+            </Panel>
           )}
         </Show>
       </section>
 
       {/* ── SECCIÓN: TOP PERFILES ────────────────────────────────────────── */}
-      <section>
-        <Show when={initialLoading()}>
-          <div class="space-y-3">
-            <div class="w-64 h-3 bg-gray-100 rounded animate-pulse" />
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
-              <For each={Array(5).fill(0)}>
-                {() => <div class="h-24 bg-white rounded-xl border border-colpsi-border animate-pulse" />}
-              </For>
-            </div>
+      <Show when={initialLoading()}>
+        <div class="space-y-2">
+          <div class="w-64 h-2.5 bg-slate-100 rounded animate-pulse" />
+          <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <For each={Array(5).fill(0)}>
+              {() => <div class="h-24 bg-white rounded-lg border border-colpsi-border animate-pulse" />}
+            </For>
           </div>
-        </Show>
-        <Show when={cachedStats()}>
-          {(s) => <TopProfiles profiles={s().top_profiles ?? []} />}
-        </Show>
-      </section>
+        </div>
+      </Show>
+      <Show when={cachedStats()}>
+        {(s) => <TopProfiles profiles={s().top_profiles ?? []} />}
+      </Show>
 
     </div>
   );
