@@ -12,6 +12,7 @@ import {
 } from "~/types/notifications";
 import { getUserFacingError } from "~/lib/errors";
 import { MUNICIPIOS_CARABOBO, ESTADOS_VENEZUELA_INCL_CARABOBO } from "~/lib/geo";
+import { Icon, IconName } from "~/components/admin/ui/icons";
 
 const createNotification = action(async (payload: { body: CreateNotificationRequest; idem: string }) => {
   "use server";
@@ -25,10 +26,10 @@ const previewNotifications = action(async (body: { target_type: NotificationTarg
   return await apiPost<PreviewResponse>("/notifications/admin/preview", body);
 });
 
-const TARGET_OPTIONS: { value: NotificationTargetType; label: string; icon: string; desc: string }[] = [
-  { value: "global", label: "Global", icon: "🌎", desc: "Todos los agremiados activos" },
-  { value: "individual", label: "Individual", icon: "👤", desc: "Psicólogos específicos" },
-  { value: "group", label: "Por grupo", icon: "🎯", desc: "Según filtros (zona, género, etc.)" },
+const TARGET_OPTIONS: { value: NotificationTargetType; label: string; icon: IconName; desc: string }[] = [
+  { value: "global", label: "Global", icon: "globe", desc: "Todos los agremiados activos" },
+  { value: "individual", label: "Individual", icon: "user", desc: "Psicólogos específicos" },
+  { value: "group", label: "Por grupo", icon: "sliders", desc: "Según filtros (zona, género, etc.)" },
 ];
 
 interface Specialty { id: number; name: string; }
@@ -177,39 +178,42 @@ export default function CrearNotificacionPage() {
     }
   };
 
-  const inputCls = "w-full bg-white border-2 border-gray-200 focus:border-blue-500 rounded-xl px-4 py-2.5 outline-none transition-all text-gray-800 text-sm";
-  const labelCls = "text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 block";
+  const inputCls = "h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none placeholder:text-slate-400 focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/15 transition-colors text-colpsi-text";
+  const labelCls = "text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide mb-1.5 block";
 
   return (
-    <main class="pb-20 animate-in fade-in duration-500 max-w-3xl">
-      <A href="/admin/notificaciones" class="inline-flex items-center gap-1 text-sm font-bold text-blue-600 hover:text-blue-800 mb-4">
-        ← Volver a Notificaciones
-      </A>
-
-      <h1 class="text-2xl md:text-3xl font-black text-gray-800 uppercase tracking-tight mb-1">Nueva Notificación</h1>
-      <p class="text-sm text-gray-500 font-medium mb-8">Configura el destino y el contenido del aviso</p>
+    <main class="space-y-4 pb-12 max-w-3xl">
+      <div class="flex items-center gap-3 pb-4 border-b border-colpsi-border">
+        <A href="/admin/notificaciones" class="inline-flex items-center justify-center h-8 w-8 rounded-md border border-colpsi-border bg-white text-colpsi-muted hover:text-colpsi-blue hover:bg-colpsi-bg transition-colors" title="Volver">
+          <Icon name="chevronRight" class="w-4 h-4 rotate-180" />
+        </A>
+        <div>
+          <h1 class="text-lg font-semibold text-colpsi-text">Nueva Notificación</h1>
+          <p class="text-sm text-colpsi-muted mt-0.5">Configura el destino y el contenido del aviso</p>
+        </div>
+      </div>
 
       <Show when={error()}>
-        <div class="bg-red-50 border border-red-200 text-red-700 text-sm font-semibold px-4 py-3 rounded-2xl mb-4">{error()}</div>
+        <div class="bg-red-50 border border-red-200 text-red-700 text-sm font-medium px-3 py-2.5 rounded-md">{error()}</div>
       </Show>
 
       <Show when={successId()}>
-        <div class="bg-green-50 border border-green-200 text-green-700 text-sm font-semibold px-4 py-3 rounded-2xl mb-4">
-          ✅ Notificación creada. Redirigiendo...
+        <div class="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-medium px-3 py-2.5 rounded-md">
+          Notificación creada. Redirigiendo...
         </div>
       </Show>
 
-      <form onSubmit={handleSubmit} class="space-y-6">
+      <form onSubmit={handleSubmit} class="space-y-4">
         {/* Contenido */}
-        <section class="bg-white rounded-3xl border border-colpsi-border shadow-sm p-6 space-y-4">
-          <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest">Contenido</h2>
+        <section class="bg-white rounded-lg border border-colpsi-border p-5 space-y-4">
+          <h2 class="text-base font-semibold text-colpsi-text border-b border-colpsi-border pb-3">Contenido</h2>
           <div>
             <label class={labelCls}>Título *</label>
             <input value={title()} onInput={(e) => setTitle(e.currentTarget.value)} maxlength={255} class={inputCls} placeholder="Ej: Asamblea general ordinaria" />
           </div>
           <div>
             <label class={labelCls}>Mensaje *</label>
-            <textarea value={message()} onInput={(e) => setMessage(e.currentTarget.value)} rows={4} class={inputCls} placeholder="Redacta el comunicado..." />
+            <textarea value={message()} onInput={(e) => setMessage(e.currentTarget.value)} rows={4} class={`${inputCls} resize-none min-h-28`} placeholder="Redacta el comunicado..." />
           </div>
           {/* ⚠️ COMPONENTE DESACTIVADO TEMPORALMENTE (aviso a otras IA: NO ELIMINAR).
               El envío de correos se pidió desactivar (no usar Resend para notificaciones).
@@ -222,23 +226,23 @@ export default function CrearNotificacionPage() {
         </section>
 
         {/* Destino */}
-        <section class="bg-white rounded-3xl border border-colpsi-border shadow-sm p-6 space-y-4">
-          <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest">Destino</h2>
-          <div class="grid grid-cols-3 gap-3">
+        <section class="bg-white rounded-lg border border-colpsi-border p-5 space-y-4">
+          <h2 class="text-base font-semibold text-colpsi-text border-b border-colpsi-border pb-3">Destino</h2>
+          <div class="grid grid-cols-3 gap-2">
             <For each={TARGET_OPTIONS}>
               {(opt) => (
                 <button
                   type="button"
                   onClick={() => setTargetType(opt.value)}
-                  class={`rounded-2xl border-2 p-3 text-center transition-all ${
+                  class={`rounded-md border p-3 text-center transition-colors ${
                     targetType() === opt.value
-                      ? "border-blue-700 bg-blue-50"
-                      : "border-gray-200 hover:border-blue-300 bg-white"
+                      ? "border-colpsi-blue bg-colpsi-blue/5"
+                      : "border-colpsi-border hover:border-colpsi-blue/40 bg-white"
                   }`}
                 >
-                  <span class="text-2xl block mb-1">{opt.icon}</span>
-                  <span class="block text-sm font-black text-gray-800">{opt.label}</span>
-                  <span class="block text-[10px] text-gray-400 font-medium mt-0.5">{opt.desc}</span>
+                  <Icon name={opt.icon} class={`w-5 h-5 mx-auto block mb-1.5 ${targetType() === opt.value ? "text-colpsi-blue" : "text-colpsi-muted"}`} />
+                  <span class={`block text-sm font-semibold ${targetType() === opt.value ? "text-colpsi-blue" : "text-colpsi-text"}`}>{opt.label}</span>
+                  <span class="block text-[10px] text-colpsi-muted font-medium mt-0.5">{opt.desc}</span>
                 </button>
               )}
             </For>
@@ -246,32 +250,35 @@ export default function CrearNotificacionPage() {
 
           <Show when={targetType() === "individual"}>
             <div class="space-y-3">
-              <input
-                type="search"
-                value={search()}
-                onInput={onSearchInput}
-                placeholder="🔎 Buscar por nombre, CI o FPV..."
-                class={inputCls}
-              />
-              <Suspense fallback={<div class="h-24 bg-colpsi-surface animate-pulse rounded-2xl" />}>
-                <div class="bg-colpsi-surface rounded-2xl p-4 max-h-72 overflow-y-auto space-y-1.5">
+              <div class="relative">
+                <Icon name="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="search"
+                  value={search()}
+                  onInput={onSearchInput}
+                  placeholder="Buscar por nombre, CI o FPV..."
+                  class={`${inputCls} pl-9`}
+                />
+              </div>
+              <Suspense fallback={<div class="h-24 bg-white animate-pulse rounded-md border border-colpsi-border" />}>
+                <div class="bg-colpsi-bg rounded-md border border-colpsi-border p-3 max-h-72 overflow-y-auto space-y-1.5">
                   <Show when={(psiUsers()?.data ?? []).length === 0}>
-                    <p class="text-sm text-gray-500 p-3">
+                    <p class="text-sm text-colpsi-muted p-3">
                       {debouncedSearch() ? "No hay psicólogos que coincidan con la búsqueda." : "No hay psicólogos registrados."}
                     </p>
                   </Show>
                   <For each={psiUsers()?.data ?? []}>
                     {(u) => (
-                      <label class="flex items-center gap-3 bg-white rounded-xl px-3 py-2 cursor-pointer border border-colpsi-border">
+                      <label class="flex items-center gap-3 bg-white rounded-md px-3 py-2 cursor-pointer border border-colpsi-border">
                         <input
                           type="checkbox"
                           checked={selected().has(u.id)}
                           onChange={() => toggleUser(u)}
-                          class="w-4 h-4 accent-blue-700 shrink-0"
+                          class="w-4 h-4 accent-colpsi-blue shrink-0"
                         />
-                        <span class="text-sm font-semibold text-gray-700 truncate">{u.first_name} {u.last_name}</span>
-                        <span class="text-xs text-gray-400 whitespace-nowrap">CI {u.ci} · FPV {u.fpv}</span>
-                        <span class="ml-auto text-xs text-gray-400 truncate max-w-[160px]">{u.email}</span>
+                        <span class="text-sm font-medium text-colpsi-text truncate">{u.first_name} {u.last_name}</span>
+                        <span class="text-xs text-colpsi-muted whitespace-nowrap">CI {u.ci} · FPV {u.fpv}</span>
+                        <span class="ml-auto text-xs text-colpsi-muted truncate max-w-[160px]">{u.email}</span>
                       </label>
                     )}
                   </For>
@@ -283,18 +290,18 @@ export default function CrearNotificacionPage() {
                       type="button"
                       disabled={page() <= 1}
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      class="px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold text-xs disabled:opacity-40 transition-colors"
+                      class="h-7 px-3 rounded-md bg-white border border-colpsi-border text-xs font-medium text-colpsi-muted hover:text-colpsi-blue hover:bg-colpsi-bg disabled:opacity-40 transition-colors"
                     >
                       ← Anterior
                     </button>
-                    <span class="text-xs text-gray-500 font-semibold">
+                    <span class="text-xs text-colpsi-muted font-medium">
                       Página {psiUsers()?.page ?? 1} de {psiUsers()?.total_pages ?? 1} · {psiUsers()?.total ?? 0} psicólogos
                     </span>
                     <button
                       type="button"
                       disabled={page() >= (psiUsers()?.total_pages ?? 1)}
                       onClick={() => setPage((p) => p + 1)}
-                      class="px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold text-xs disabled:opacity-40 transition-colors"
+                      class="h-7 px-3 rounded-md bg-white border border-colpsi-border text-xs font-medium text-colpsi-muted hover:text-colpsi-blue hover:bg-colpsi-bg disabled:opacity-40 transition-colors"
                     >
                       Siguiente →
                     </button>
@@ -302,21 +309,21 @@ export default function CrearNotificacionPage() {
                 </Show>
               </Suspense>
 
-              <p class="text-xs text-gray-400 font-semibold">{selected().size} seleccionado(s)</p>
+              <p class="text-xs text-colpsi-muted font-medium">{selected().size} seleccionado(s)</p>
 
               <Show when={selected().size > 0}>
                 <div class="flex flex-wrap gap-1.5">
                   <For each={Object.entries(selectedDetails())}>
                     {([id, d]) => (
-                      <span class="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-100 text-blue-700 text-xs font-bold px-2.5 py-1 rounded-full">
+                      <span class="inline-flex items-center gap-1.5 bg-colpsi-blue/5 border border-colpsi-blue/20 text-colpsi-blue text-xs font-medium px-2 py-1 rounded-md">
                         {d.name}
                         <button
                           type="button"
                           onClick={() => removeSelected(id)}
-                          class="text-blue-400 hover:text-blue-700 font-black"
+                          class="text-colpsi-blue/60 hover:text-colpsi-blue"
                           aria-label={`Quitar a ${d.name}`}
                         >
-                          ✕
+                          <Icon name="x" class="w-3 h-3" />
                         </button>
                       </span>
                     )}
@@ -380,12 +387,13 @@ export default function CrearNotificacionPage() {
               type="button"
               onClick={handlePreview}
               disabled={busy()}
-              class="inline-flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-black px-4 py-2.5 rounded-xl text-sm transition-colors disabled:opacity-50"
+              class="inline-flex items-center gap-1.5 h-9 px-3 bg-colpsi-blue/5 hover:bg-colpsi-blue/10 text-colpsi-blue font-semibold rounded-md text-xs transition-colors disabled:opacity-50"
             >
-              👁️ Previsualizar destinatarios
+              <Icon name="eye" class="w-3.5 h-3.5" />
+              Previsualizar destinatarios
             </button>
             <Show when={preview()}>
-              <div class="bg-blue-50 border border-blue-100 text-blue-800 text-sm font-semibold px-4 py-3 rounded-2xl">
+              <div class="bg-colpsi-blue/5 border border-colpsi-blue/20 text-colpsi-blue text-sm font-medium px-3 py-2.5 rounded-md">
                 {preview()?.total_recipients ?? 0} destinatario(s) potencial(es)
               </div>
             </Show>
@@ -393,25 +401,26 @@ export default function CrearNotificacionPage() {
         </section>
 
         {/* Programación */}
-        <section class="bg-white rounded-3xl border border-colpsi-border shadow-sm p-6">
-          <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest mb-4">Programación</h2>
+        <section class="bg-white rounded-lg border border-colpsi-border p-5">
+          <h2 class="text-base font-semibold text-colpsi-text border-b border-colpsi-border pb-3 mb-4">Programación</h2>
           <div>
             <label class={labelCls}>Enviar en fecha/hora (opcional)</label>
             <input type="datetime-local" value={scheduledAt()} onInput={(e) => setScheduledAt(e.currentTarget.value)} class={inputCls} />
-            <p class="text-xs text-gray-400 font-medium mt-1.5">Vacío = se envía de inmediato.</p>
+            <p class="text-xs text-colpsi-muted font-medium mt-1.5">Vacío = se envía de inmediato.</p>
           </div>
         </section>
 
-        <div class="flex gap-3 justify-end">
-          <A href="/admin/notificaciones" class="px-6 py-3 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-black transition-colors text-sm">
+        <div class="flex justify-end gap-2">
+          <A href="/admin/notificaciones" class="h-10 px-4 rounded-md bg-white border border-colpsi-border hover:bg-colpsi-bg text-colpsi-text font-medium transition-colors text-sm inline-flex items-center">
             Cancelar
           </A>
           <button
             type="submit"
             disabled={busy()}
-            class="px-6 py-3 rounded-2xl bg-blue-800 hover:bg-blue-900 text-white font-black transition-all active:scale-95 disabled:opacity-50 text-sm shadow-sm"
+            class="inline-flex items-center justify-center gap-2 h-10 px-5 rounded-md bg-colpsi-blue hover:bg-colpsi-blue-light text-white font-semibold transition-colors disabled:opacity-50 text-sm"
           >
-            {busy() ? "Enviando..." : targetType() === "global" ? "📨 Enviar" : "Crear notificación"}
+            <Icon name="send" class="w-4 h-4" />
+            {busy() ? "Enviando..." : targetType() === "global" ? "Enviar" : "Crear notificación"}
           </button>
         </div>
       </form>

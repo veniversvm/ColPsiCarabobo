@@ -3,12 +3,12 @@
 // → el color lo hereda el texto (activo/inactivo) sin depender de emojis.
 import { JSX } from "solid-js";
 
-type IconName =
+export type IconName =
   | "grid" | "users" | "fileText" | "tag" | "newspaper" | "bell" | "ticket"
   | "kanban" | "shield" | "logout" | "refresh" | "chevronRight" | "menu"
   | "panelLeft" | "sliders" | "search" | "plus" | "pencil" | "trash" | "dots"
   | "chevronDown" | "user" | "checkCircle" | "inbox" | "arrowRight" | "check"
-  | "clock" | "mail" | "alertTriangle";
+  | "clock" | "mail" | "alertTriangle" | "globe" | "eye" | "send" | "x";
 
 const S = {
   rect: (x: number, y: number, w: number, h: number, rx = 2) =>
@@ -133,6 +133,23 @@ const icons: Record<IconName, () => JSX.Element> = {
     {S.path("M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z")}
     {S.line(12, 9, 12, 13)}
     {S.line(12, 17, 12.01, 17)}
+  </>),
+  globe: () => (<>
+    {S.circle(12, 12, 10)}
+    {S.path("M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20")}
+    {S.line(2, 12, 22, 12)}
+  </>),
+  eye: () => (<>
+    {S.path("M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z")}
+    {S.circle(12, 12, 3)}
+  </>),
+  send: () => (<>
+    {S.path("m22 2-7 20-4-9-9-4Z")}
+    {S.path("M22 2 11 13")}
+  </>),
+  x: () => (<>
+    {S.line(18, 6, 6, 18)}
+    {S.line(6, 6, 18, 18)}
   </>),
 };
 
