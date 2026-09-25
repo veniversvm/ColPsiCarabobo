@@ -2,6 +2,13 @@
 
 // Helpers para construir eventos de auditoría y snapshots de diff
 // (usados por la instrumentación de los servicios).
+//
+// Contrato de las claves del diff (Changes/metadata): SIEMPRE snake_case y
+// deben coincidir con los tags JSON reales del modelo afectado (p. ej.
+// cell_phone_outside_venezuela, no phone_out_side), porque la UI las traduce
+// con FIELD_LABELS y las agrupa por clave (web/src/types/audit.ts).
+// El patrón por mutación es: snapshot del estado previo → aplicar el cambio →
+// diff {campo:{from,to}} → RecordAudit (solo tras persistencia exitosa).
 package service
 
 import (

@@ -1,7 +1,8 @@
 # Bitácora de cambios en API — audit logs (`feat/audit-logs`)
 
-> Plan aprobado para implementar. Destino en repo: `docs/plan-audit-logs.md`
-> (copiar/cumpleaños al pasar a implementación, un commit por fix en `docs`).
+> **IMPLEMENTADO** (merge a `main`). Guía de referencia del sistema en
+> producción: [`docs/audit-logs.md`](./audit-logs.md). Este archivo conserva el
+> plan original y el alcance acordado.
 
 Registro de cambios a nivel de API para que el staff (`/admin`) pueda auditar
 **qué cambió, quién lo cambió y cuándo**, con búsqueda por suceso, rango de
