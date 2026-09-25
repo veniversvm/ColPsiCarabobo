@@ -330,6 +330,8 @@ export function InscriptionForm() {
                 endpoint="/inscripcion/check-ci"
                 param="ci"
                 initialValue={cedula()}
+                positiveInteger
+                invalidMessage="La cédula debe ser un número mayor a 0"
                 onChange={(v) => { setCedula(v); setCiInvalid(""); }}
                 onValid={(v) => { setCedula(v); setCiInvalid(""); }}
                 onInvalid={(m) => { if (m) setCiInvalid(m); }}
@@ -366,6 +368,8 @@ export function InscriptionForm() {
                 endpoint="/inscripcion/check-fpv"
                 param="fpv"
                 initialValue={fpv()}
+                positiveInteger
+                invalidMessage="El N° FPV debe ser un número mayor a 0"
                 onChange={(v) => { setFpv(v); setFpvInvalid(""); }}
                 onValid={(v) => { setFpv(v); setFpvInvalid(""); }}
                 onInvalid={(m) => { if (m) setFpvInvalid(m); }}

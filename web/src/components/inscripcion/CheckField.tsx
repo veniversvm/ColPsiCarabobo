@@ -18,6 +18,11 @@ interface Props {
   onValid: (value: string) => void;
   onInvalid: (message: string) => void;
   onChange?: (raw: string) => void;
+  // Validación local (antes del API): el valor no vacío debe ser un entero > 0.
+  // Útil para CI/FPV: "0" o texto no numérico marca el campo en rojo al instante,
+  // sin depender de que la API rechace con 400 (que hoy se silencia).
+  positiveInteger?: boolean;
+  invalidMessage?: string;
 }
 
 export function CheckField(props: Props) {
@@ -38,6 +43,14 @@ export function CheckField(props: Props) {
       setState("idle");
       setMessage("");
       props.onInvalid("");
+      return;
+    }
+
+    // Validación local "positivo": mismo estado visual que un CI/FPV usado
+    // (borde rojo + ✗ + mensaje debajo), sin llamar a la API de unicidad.
+    if (props.positiveInteger && (!/^\d+$/.test(trimmed) || parseInt(trimmed, 10) <= 0)) {
+      setState("invalid");
+      setMessage(props.invalidMessage || "Debe ser un número mayor a 0");
       return;
     }
 
