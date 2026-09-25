@@ -33,6 +33,9 @@ export default function PsiNotificaciones() {
   const [openError, setOpenError] = createSignal("");
   // Notificaciones marcadas como leídas en esta sesión (reemplaza el auto-marcar al abrir).
   const [readIds, setReadIds] = createSignal<Set<string>>(new Set());
+  // Marcas "leer" en vuelo (optimista): el contador descuenta al instante y se
+  // restaura si la petición falla (mismo patrón de revert que readIds).
+  const [readInFlight, setReadInFlight] = createSignal(0);
 
   // Abrir/cerrar (toggle) sin petición: leer la notificación NO la marca como leída.
   // El psicólogo debe pulsar "Marcar como leída" dentro del panel abierto.
@@ -49,10 +52,12 @@ export default function PsiNotificaciones() {
       next.add(n.id);
       return next;
     });
+    setReadInFlight((p) => p + 1);
     try {
       await apiPatch(`/notifications/psi-user/${n.id}/read`, {});
     } catch (e) {
       // Revertir el estado local si el servidor no lo confirmó.
+      setReadInFlight((p) => p - 1);
       setReadIds((prev) => {
         const next = new Set(prev);
         next.delete(n.id);
@@ -62,6 +67,9 @@ export default function PsiNotificaciones() {
       return;
     }
     try { await refetchUnread(); } catch (e) { /* eslint-disable-next-line no-console */ console.error(e); }
+    // La confirmación llegó: el contador ya viene del server (refetchUnread),
+    // se libera la marca en vuelo para no descontar dos veces.
+    setReadInFlight((p) => p - 1);
   };
 
   const loadMore = async () => {
@@ -87,6 +95,10 @@ export default function PsiNotificaciones() {
 
   const isRead = (n: Notification) => readIds().has(n.id) || n.targets?.[0]?.is_read === true;
 
+  // Contador con descuento optimista: baja al instante al marcar y se restaura
+  // si la petición falla (el server confirma el estado final con refetchUnread).
+  const unreadCount = () => Math.max(0, (unread()?.unread_count ?? 0) - readInFlight());
+
   return (
     <main class="bg-colpsi-bg min-h-screen pb-24">
       <div class="bg-heraldic pt-12 pb-20 px-6 shadow-inner">
@@ -94,8 +106,8 @@ export default function PsiNotificaciones() {
           <A href="/psi" class="inline-flex items-center gap-1 text-blue-200 text-sm font-bold mb-4 hover:text-white">← Volver al Panel</A>
           <h1 class="text-white text-2xl font-bold flex items-center gap-3">
             🔔 Notificaciones
-            <Show when={(unread()?.unread_count ?? 0) > 0}>
-              <span class="bg-colpsi-yellow text-colpsi-blue text-xs font-black px-3 py-1 rounded-full">{unread()?.unread_count} nuevas</span>
+            <Show when={unreadCount() > 0}>
+              <span class="bg-colpsi-yellow text-colpsi-blue text-xs font-black px-3 py-1 rounded-full">{unreadCount()} nuevas</span>
             </Show>
           </h1>
           <p class="text-blue-200 text-sm mt-1">Comunicados y avisos del colegio</p>
