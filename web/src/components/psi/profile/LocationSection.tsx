@@ -1,5 +1,7 @@
 // web/src/components/psi/profile/LocationSection.tsx
+import { For, Show } from "solid-js";
 import { InputField } from "./InputField";
+import { MUNICIPIOS_CARABOBO, ESTADOS_VENEZUELA, municipiosDe } from "~/lib/geo";
 
 interface LocationSectionProps {
   // ── Carabobo ──
@@ -39,7 +41,54 @@ interface LocationSectionProps {
   onServiceAddressOutsideVenezuelaChange: (value: string) => void;
 }
 
+// Select con el mismo estilo visual de InputField, más opción legacy "(no estándar)".
+interface SelectFieldProps {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+  placeholder?: string;
+  disabled?: boolean;
+  legacy?: string;
+}
+
+function SelectField(props: SelectFieldProps) {
+  return (
+    <div class="space-y-1">
+      <div class="flex items-center justify-between">
+        <label class="text-xs font-bold text-colpsi-muted uppercase ml-2">
+          {props.label}
+        </label>
+      </div>
+      <select
+        value={props.value}
+        onChange={(e) => props.onChange(e.currentTarget.value)}
+        disabled={props.disabled}
+        class={`w-full bg-colpsi-surface border-2 rounded-xl px-5 py-3 outline-none transition-all ${
+          props.disabled
+            ? "border-transparent opacity-50 cursor-not-allowed"
+            : "border-transparent focus:border-colpsi-yellow"
+        }`}
+      >
+        <option value="">{props.placeholder ?? "Seleccionar…"}</option>
+        <For each={props.options}>{(opt) => <option value={opt}>{opt}</option>}</For>
+        <Show when={props.legacy}>
+          <option value={props.legacy}>{props.legacy} (no estándar)</option>
+        </Show>
+      </select>
+    </div>
+  );
+}
+
 export function LocationSection(props: LocationSectionProps) {
+  // Valores persistidos fuera del catálogo se conservan como opción "(no estándar)".
+  const legacyMunicipioCarabobo = () =>
+    props.municipalityCarabobo !== "" && !MUNICIPIOS_CARABOBO.includes(props.municipalityCarabobo);
+  const legacyEstado = () => props.stateOutside !== "" && !ESTADOS_VENEZUELA.includes(props.stateOutside);
+  const munisFuera = () => municipiosDe(props.stateOutside);
+  const legacyMunicipioFuera = () =>
+    props.municipalityOutside !== "" && !munisFuera().includes(props.municipalityOutside);
+
   return (
     <section class="space-y-10">
 
@@ -62,10 +111,13 @@ export function LocationSection(props: LocationSectionProps) {
           📍 Presencia en Carabobo
         </h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <InputField
+          <SelectField
             label="Municipio"
             value={props.municipalityCarabobo}
-            onInput={props.onMunicipalityCaraboboChange}
+            onChange={props.onMunicipalityCaraboboChange}
+            options={MUNICIPIOS_CARABOBO}
+            placeholder="Seleccionar municipio…"
+            legacy={legacyMunicipioCarabobo() ? props.municipalityCarabobo : ""}
           />
           <InputField
             label="Teléfono Fijo de Consulta"
@@ -96,15 +148,32 @@ export function LocationSection(props: LocationSectionProps) {
           🗺️ Otro Estado de Venezuela
         </h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <InputField
+          <SelectField
             label="Estado"
             value={props.stateOutside}
-            onInput={props.onStateOutsideChange}
+            onChange={(v) => {
+              props.onStateOutsideChange(v);
+              const cur = props.municipalityOutside;
+              if (cur && !municipiosDe(v).includes(cur)) props.onMunicipalityOutsideChange("");
+            }}
+            options={ESTADOS_VENEZUELA}
+            placeholder="Seleccionar estado…"
+            legacy={legacyEstado() ? props.stateOutside : ""}
           />
-          <InputField
+          <SelectField
             label="Ciudad / Municipio"
             value={props.municipalityOutside}
-            onInput={props.onMunicipalityOutsideChange}
+            onChange={props.onMunicipalityOutsideChange}
+            options={munisFuera()}
+            placeholder={
+              !props.stateOutside
+                ? "Primero selecciona un estado"
+                : munisFuera().length === 0
+                  ? "Este estado no tiene municipios"
+                  : "Seleccionar municipio…"
+            }
+            disabled={!props.stateOutside}
+            legacy={legacyMunicipioFuera() ? props.municipalityOutside : ""}
           />
           <InputField
             label="Teléfono Fijo"

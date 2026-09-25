@@ -11,6 +11,7 @@ import {
   NotificationFilterDTO,
 } from "~/types/notifications";
 import { getUserFacingError } from "~/lib/errors";
+import { MUNICIPIOS_CARABOBO, ESTADOS_VENEZUELA_INCL_CARABOBO } from "~/lib/geo";
 
 const createNotification = action(async (payload: { body: CreateNotificationRequest; idem: string }) => {
   "use server";
@@ -329,11 +330,21 @@ export default function CrearNotificacionPage() {
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label class={labelCls}>Municipio</label>
-                <input value={municipality()} onInput={(e) => setMunicipality(e.currentTarget.value)} class={inputCls} placeholder="Valencia, Naguanagua..." />
+                <select value={municipality()} onChange={(e) => setMunicipality(e.currentTarget.value)} class={inputCls}>
+                  <option value="">Todos</option>
+                  {MUNICIPIOS_CARABOBO.map((m) => (
+                    <option value={m}>{m}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label class={labelCls}>Estado</label>
-                <input value={state()} onInput={(e) => setState(e.currentTarget.value)} class={inputCls} placeholder="Carabobo, Miranda..." />
+                <select value={state()} onChange={(e) => setState(e.currentTarget.value)} class={inputCls}>
+                  <option value="">Todos</option>
+                  {ESTADOS_VENEZUELA_INCL_CARABOBO.map((s) => (
+                    <option value={s}>{s}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label class={labelCls}>Género</label>

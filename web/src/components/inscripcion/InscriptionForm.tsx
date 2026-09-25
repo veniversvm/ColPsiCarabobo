@@ -5,7 +5,7 @@ import { apiGet, apiPost, ApiError } from "~/lib/api";
 import { CheckField } from "~/components/inscripcion/CheckField";
 import { FileUpload } from "~/components/inscripcion/FileUpload";
 import { SuccessMessage } from "~/components/inscripcion/SuccessMessage";
-import { MUNICIPIOS_CARABOBO, ESTADOS_VENEZUELA } from "~/lib/geo";
+import { MUNICIPIOS_CARABOBO, ESTADOS_VENEZUELA, municipiosDe } from "~/lib/geo";
 import type { WorkArea } from "~/types/inscription";
 
 const STORAGE_KEY = "inscripcion_draft";
@@ -275,6 +275,14 @@ export function InscriptionForm() {
     }
   };
 
+  // (geo) Valores persistidos fuera del catálogo se conservan como opción "(no estándar)".
+  const caraboboMunLegacy = () =>
+    municipalityCarabobo() !== "" && !MUNICIPIOS_CARABOBO.includes(municipalityCarabobo());
+  const estadoLegacy = () => stateOutside() !== "" && !ESTADOS_VENEZUELA.includes(stateOutside());
+  const munisFuera = () => municipiosDe(stateOutside());
+  const munisFueraLegacy = () =>
+    municipalityOutside() !== "" && !munisFuera().includes(municipalityOutside());
+
   const Field = (props: { label: string; required?: boolean; value: () => string; onChange: (v: string) => void; type?: string; placeholder?: string }) => {
     return (
       <label class="block">
@@ -416,6 +424,9 @@ export function InscriptionForm() {
                   >
                     <option value="">Seleccionar municipio…</option>
                     <For each={MUNICIPIOS_CARABOBO}>{(m) => <option value={m}>{m}</option>}</For>
+                    <Show when={caraboboMunLegacy()}>
+                      <option value={municipalityCarabobo()}>{municipalityCarabobo()} (no estándar)</option>
+                    </Show>
                   </select>
                 </div>
                 <Field label="Dirección del consultorio" value={serviceAddress} onChange={setServiceAddress} />
@@ -423,14 +434,42 @@ export function InscriptionForm() {
                   <span class="block text-sm font-bold text-gray-700 mb-1.5">Otro estado (fuera de Carabobo)</span>
                   <select
                     value={stateOutside()}
-                    onChange={(e) => setStateOutside(e.currentTarget.value)}
+                    onChange={(e) => {
+                      const v = e.currentTarget.value;
+                      setStateOutside(v);
+                      const cur = municipalityOutside();
+                      if (cur && !municipiosDe(v).includes(cur)) setMunicipalityOutside("");
+                    }}
                     class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-100 transition-all"
                   >
                     <option value="">Seleccionar estado…</option>
                     <For each={ESTADOS_VENEZUELA}>{(e) => <option value={e}>{e}</option>}</For>
+                    <Show when={estadoLegacy()}>
+                      <option value={stateOutside()}>{stateOutside()} (no estándar)</option>
+                    </Show>
                   </select>
                 </div>
-                <Field label="Municipio / ciudad (fuera de Carabobo)" value={municipalityOutside} onChange={setMunicipalityOutside} />
+                <div>
+                  <span class="block text-sm font-bold text-gray-700 mb-1.5">Municipio / ciudad (fuera de Carabobo)</span>
+                  <select
+                    value={municipalityOutside()}
+                    onChange={(e) => setMunicipalityOutside(e.currentTarget.value)}
+                    disabled={!stateOutside()}
+                    class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-100 transition-all disabled:bg-gray-50 disabled:opacity-60"
+                  >
+                    <option value="">
+                      {!stateOutside()
+                        ? "Primero selecciona un estado"
+                        : munisFuera().length === 0
+                          ? "Este estado no tiene municipios"
+                          : "Seleccionar municipio…"}
+                    </option>
+                    <For each={munisFuera()}>{(m) => <option value={m}>{m}</option>}</For>
+                    <Show when={munisFueraLegacy()}>
+                      <option value={municipalityOutside()}>{municipalityOutside()} (no estándar)</option>
+                    </Show>
+                  </select>
+                </div>
                 <Field label="País (fuera de Venezuela)" value={country} onChange={setCountry} placeholder="Ej: España" />
               </div>
 

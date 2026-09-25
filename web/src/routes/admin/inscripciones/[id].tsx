@@ -7,7 +7,7 @@ import { bucketUrl } from "~/lib/bucket";
 import { ImageModal } from "~/components/ui/ImageModal";
 import { Panel, PanelSection } from "~/components/ui/Panel";
 import { Field, IC } from "~/components/admin/psicologos/edit/EditPrimitives";
-import { MUNICIPIOS_CARABOBO, ESTADOS_VENEZUELA } from "~/lib/geo";
+import { MUNICIPIOS_CARABOBO, ESTADOS_VENEZUELA, municipiosDe } from "~/lib/geo";
 import type {
   InscriptionDetail,
   InscriptionDocument,
@@ -437,16 +437,53 @@ export default function AdminInscriptionDetail() {
                       <select value={form.municipality_carabobo} onChange={(e) => set("municipality_carabobo", e.currentTarget.value)} class={IC}>
                         <option value="">Seleccionar municipio…</option>
                         <For each={MUNICIPIOS_CARABOBO}>{(m) => <option value={m}>{m}</option>}</For>
+                        {form.municipality_carabobo && !MUNICIPIOS_CARABOBO.includes(form.municipality_carabobo) && (
+                          <option value={form.municipality_carabobo}>{form.municipality_carabobo} (no estándar)</option>
+                        )}
                       </select>
                     </Field>
                     <Field label="Dirección del consultorio"><input type="text" value={form.service_address} onInput={(e) => set("service_address", e.currentTarget.value)} class={IC} placeholder="Av. Principal, edificio…" /></Field>
                     <Field label="Otro estado (fuera de Carabobo)">
-                      <select value={form.state_outside} onChange={(e) => set("state_outside", e.currentTarget.value)} class={IC}>
+                      <select
+                        value={form.state_outside}
+                        onChange={(e) => {
+                          const v = e.currentTarget.value;
+                          set("state_outside", v);
+                          const cur = form.municipality_outside_carabobo;
+                          if (cur && !municipiosDe(v).includes(cur)) set("municipality_outside_carabobo", "");
+                        }}
+                        class={IC}
+                      >
                         <option value="">Seleccionar estado…</option>
                         <For each={ESTADOS_VENEZUELA}>{(s) => <option value={s}>{s}</option>}</For>
+                        {form.state_outside && !ESTADOS_VENEZUELA.includes(form.state_outside) && (
+                          <option value={form.state_outside}>{form.state_outside} (no estándar)</option>
+                        )}
                       </select>
                     </Field>
-                    <Field label="Municipio / ciudad (fuera de Carabobo)"><input type="text" value={form.municipality_outside_carabobo} onInput={(e) => set("municipality_outside_carabobo", e.currentTarget.value)} class={IC} /></Field>
+                    <Field label="Municipio / ciudad (fuera de Carabobo)">
+                      <select
+                        value={form.municipality_outside_carabobo}
+                        onChange={(e) => set("municipality_outside_carabobo", e.currentTarget.value)}
+                        disabled={!form.state_outside}
+                        class={IC}
+                      >
+                        <option value="">
+                          {!form.state_outside
+                            ? "Primero selecciona un estado"
+                            : municipiosDe(form.state_outside).length === 0
+                              ? "Este estado no tiene municipios"
+                              : "Seleccionar municipio…"}
+                        </option>
+                        <For each={municipiosDe(form.state_outside)}>{(m) => <option value={m}>{m}</option>}</For>
+                        {form.municipality_outside_carabobo &&
+                          !municipiosDe(form.state_outside).includes(form.municipality_outside_carabobo) && (
+                            <option value={form.municipality_outside_carabobo}>
+                              {form.municipality_outside_carabobo} (no estándar)
+                            </option>
+                          )}
+                      </select>
+                    </Field>
                     <Field label="País (fuera de Venezuela)"><input type="text" value={form.country} onInput={(e) => set("country", e.currentTarget.value)} class={IC} placeholder="Ej: España" /></Field>
                     <Field label="Área de trabajo principal">
                       <select value={form.primary_specialty_id ?? ""} onChange={(e) => set("primary_specialty_id", e.currentTarget.value)} class={IC}>

@@ -2,7 +2,7 @@
 
 import { Show } from "solid-js";
 import { ToggleSwitch } from "~/components/ui/ToggleSwitch";
-import { MUNICIPIOS_CARABOBO, ESTADOS_VENEZUELA } from "~/lib/geo";
+import { MUNICIPIOS_CARABOBO, ESTADOS_VENEZUELA, municipiosDe } from "~/lib/geo";
 import { Field, IC } from "../EditPrimitives";
 import type { EditFormState } from "../types";
 
@@ -85,7 +85,14 @@ export function LocationSection(props: Props) {
             <Field label="Estado">
               <select
                 value={props.form.state_outside}
-                onChange={(e) => props.setForm("state_outside", e.currentTarget.value)}
+                onChange={(e) => {
+                  const v = e.currentTarget.value;
+                  props.setForm("state_outside", v);
+                  const cur = props.form.municipality_outside_carabobo;
+                  if (cur && !municipiosDe(v).includes(cur)) {
+                    props.setForm("municipality_outside_carabobo", "");
+                  }
+                }}
                 class={IC}
               >
                 <option value="">Seleccionar estado…</option>
@@ -100,8 +107,29 @@ export function LocationSection(props: Props) {
               </select>
             </Field>
             <Field label="Ciudad / Municipio">
-              <input type="text" value={props.form.municipality_outside_carabobo}
-                onInput={(e) => props.setForm("municipality_outside_carabobo", e.currentTarget.value)} class={IC} />
+              <select
+                value={props.form.municipality_outside_carabobo}
+                onChange={(e) => props.setForm("municipality_outside_carabobo", e.currentTarget.value)}
+                disabled={!props.form.state_outside}
+                class={IC}
+              >
+                <option value="">
+                  {!props.form.state_outside
+                    ? "Primero selecciona un estado"
+                    : municipiosDe(props.form.state_outside).length === 0
+                      ? "Este estado no tiene municipios"
+                      : "Seleccionar municipio…"}
+                </option>
+                {municipiosDe(props.form.state_outside).map((m) => (
+                  <option value={m}>{m}</option>
+                ))}
+                {props.form.municipality_outside_carabobo &&
+                  !municipiosDe(props.form.state_outside).includes(props.form.municipality_outside_carabobo) && (
+                    <option value={props.form.municipality_outside_carabobo}>
+                      {props.form.municipality_outside_carabobo} (no estándar)
+                    </option>
+                  )}
+              </select>
             </Field>
             <Field label="Teléfono Fijo">
               <input type="tel" value={props.form.phone_outside_carabobo}
