@@ -14,21 +14,21 @@ interface Props {
 
 export function NoticiaCard(props: Props) {
   const cardClass = () => {
-    const base = "bg-white rounded-2xl border-2 transition-all duration-200 overflow-hidden";
+    const base = "bg-white rounded-lg border transition-colors duration-200 overflow-hidden";
     if (props.post.status === "published") {
-      return `${base} border-colpsi-border hover:border-blue-100`;
+      return `${base} border-colpsi-border hover:border-colpsi-blue/30`;
     }
     if (props.post.status === "archived") {
-      return `${base} border-dashed border-gray-200 opacity-50`;
+      return `${base} border-dashed border-slate-300 opacity-50`;
     }
-    return `${base} border-dashed border-gray-200 opacity-70`;
+    return `${base} border-dashed border-slate-300 opacity-70`;
   };
 
   return (
     <article class={cardClass()}>
-      <div class="flex items-start gap-4 p-4 md:p-5">
+      <div class="flex items-start gap-4 p-4">
         <NoticiaImage imageUrl={props.post.image_url} alt={props.post.title} />
-        
+
         <div class="flex-1 min-w-0">
           <NoticiaMetadata post={props.post} />
         </div>

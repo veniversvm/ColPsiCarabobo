@@ -1,5 +1,6 @@
 // web/src/components/admin/noticias/EmptyState.tsx
 import { A } from "@solidjs/router";
+import { Icon } from "~/components/admin/ui/icons";
 
 interface Props {
   type: "no-posts" | "no-results";
@@ -9,10 +10,12 @@ interface Props {
 export function EmptyState(props: Props) {
   if (props.type === "no-posts") {
     return (
-      <div class="text-center py-20 bg-white rounded-3xl border border-colpsi-border">
-        <p class="text-5xl mb-4">📰</p>
-        <p class="text-gray-400 font-bold">No hay publicaciones aún</p>
-        <A href="/admin/noticias/crear" class="mt-4 inline-block text-blue-600 font-black text-sm hover:underline">
+      <div class="text-center py-16 bg-white rounded-lg border border-colpsi-border">
+        <span class="inline-flex h-12 w-12 items-center justify-center rounded-md bg-colpsi-bg text-colpsi-muted mb-4">
+          <Icon name="newspaper" class="w-6 h-6" />
+        </span>
+        <p class="text-colpsi-muted font-medium">No hay publicaciones aún</p>
+        <A href="/admin/noticias/crear" class="mt-3 inline-block text-colpsi-blue font-semibold text-sm hover:underline">
           Crear la primera →
         </A>
       </div>
@@ -20,8 +23,8 @@ export function EmptyState(props: Props) {
   }
 
   return (
-    <div class="text-center py-16 bg-white rounded-3xl border border-colpsi-border">
-      <p class="text-gray-400 font-bold">Ningún resultado para los filtros aplicados</p>
+    <div class="text-center py-14 bg-white rounded-lg border border-colpsi-border">
+      <p class="text-colpsi-muted font-medium">Ningún resultado para los filtros aplicados</p>
     </div>
   );
 }

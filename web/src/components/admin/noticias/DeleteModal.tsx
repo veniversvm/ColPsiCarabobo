@@ -1,5 +1,6 @@
 // web/src/components/admin/noticias/DeleteModal.tsx
 import { Show } from "solid-js";
+import { Icon } from "~/components/admin/ui/icons";
 
 interface Props {
   isOpen: boolean;
@@ -15,21 +16,23 @@ export function DeleteModal(props: Props) {
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
         onClick={(e) => { if (e.target === e.currentTarget) props.onCancel(); }}
       >
-        <div class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm border border-colpsi-border text-center animate-in zoom-in-95 duration-200">
-          <p class="text-4xl mb-4">🗑️</p>
-          <h2 class="text-lg font-black text-gray-900 mb-2">¿Archivar publicación?</h2>
-          <p class="text-gray-500 text-sm mb-6">El post quedará oculto. Puedes restaurarlo desde el editor.</p>
-          <div class="flex gap-3">
+        <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm border border-colpsi-border">
+          <span class="inline-flex h-10 w-10 items-center justify-center rounded-md bg-red-50 text-colpsi-red mb-3">
+            <Icon name="trash" class="w-5 h-5" />
+          </span>
+          <h2 class="text-base font-semibold text-colpsi-text mb-1">¿Archivar publicación?</h2>
+          <p class="text-colpsi-muted text-sm mb-5">El post quedará oculto. Puedes restaurarlo desde el editor.</p>
+          <div class="flex gap-2">
             <button
               onClick={props.onCancel}
-              class="flex-1 px-4 py-3 rounded-2xl border-2 border-gray-200 font-black text-gray-600 hover:bg-colpsi-surface transition-all text-sm"
+              class="flex-1 h-9 px-4 rounded-md border border-colpsi-border bg-white font-medium text-colpsi-text hover:bg-colpsi-bg transition-colors text-sm"
             >
               Cancelar
             </button>
             <button
               onClick={props.onConfirm}
               disabled={props.isBusy}
-              class="flex-1 px-4 py-3 rounded-2xl bg-red-600 text-white font-black hover:bg-red-700 active:scale-95 transition-all text-sm disabled:opacity-60"
+              class="flex-1 h-9 px-4 rounded-md bg-colpsi-red text-white font-semibold hover:opacity-90 transition-colors text-sm disabled:opacity-60"
             >
               {props.isBusy ? "Eliminando..." : "Sí, archivar"}
             </button>

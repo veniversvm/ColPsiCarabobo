@@ -1,6 +1,7 @@
 // web/src/components/admin/psicologos/PsychologistSearchBar.tsx
 import { Show } from "solid-js";
 import { DropdownSelect } from "~/components/ui/DropdownSelect";
+import { Icon } from "~/components/admin/ui/icons";
 
 interface WorkArea {
   id: number;
@@ -25,27 +26,27 @@ interface Props {
 }
 
 const selectButtonClass =
-  "w-full bg-colpsi-surface rounded-xl px-4 py-2.5 text-sm text-colpsi-text font-bold border border-colpsi-border hover:bg-gray-100";
+  "w-full h-9 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-colpsi-text hover:bg-colpsi-bg focus:border-colpsi-blue";
 
 export function PsychologistSearchBar(props: Props) {
   return (
-    <div class="bg-white p-4 rounded-2xl shadow-premium border-2 border-colpsi-blue/20 space-y-3">
-      <div class="flex items-center gap-2 bg-colpsi-surface border-2 border-gray-200 rounded-xl px-3 py-2.5 focus-within:border-colpsi-blue focus-within:ring-2 focus-within:ring-colpsi-blue/30 transition-all">
-        <span class="text-xl">🔍</span>
+    <div class="border border-colpsi-border rounded-lg bg-white p-3 space-y-3">
+      <div class="relative">
+        <Icon name="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
         <input
           type="text"
           value={props.value}
           onInput={props.onInput}
           placeholder={props.placeholder || "Buscar por nombre, apellido, cédula o FPV..."}
-          class="flex-grow bg-transparent outline-none text-colpsi-text font-medium"
+          class="h-9 w-full rounded-md border border-slate-300 bg-white pl-9 pr-9 text-sm text-colpsi-text outline-none transition-colors placeholder:text-slate-400 focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/15"
         />
         <Show when={props.loading}>
-          <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-colpsi-yellow mr-2 flex-shrink-0" />
+          <div class="absolute right-9 top-1/2 -translate-y-1/2 animate-spin rounded-full h-4 w-4 border-2 border-colpsi-yellow border-t-transparent" />
         </Show>
         <Show when={props.value}>
           <button
             onClick={props.onClear}
-            class="text-gray-400 hover:text-gray-600 font-black text-lg leading-none flex-shrink-0 mr-1"
+            class="absolute right-2.5 top-1/2 -translate-y-1/2 h-6 w-6 rounded-md text-slate-400 hover:text-slate-600 hover:bg-colpsi-bg flex items-center justify-center text-base leading-none"
             title="Limpiar búsqueda"
           >
             ×
@@ -53,7 +54,7 @@ export function PsychologistSearchBar(props: Props) {
         </Show>
       </div>
 
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
         <DropdownSelect
           value={props.solvent}
           onChange={props.onSolventChange}

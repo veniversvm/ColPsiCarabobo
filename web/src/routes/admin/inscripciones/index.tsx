@@ -4,6 +4,11 @@ import { useNavigate } from "@solidjs/router";
 import { apiGet } from "~/lib/api";
 import { PaginationBar } from "~/components/ui/PaginationBar";
 import type { InscriptionListResponse, InscriptionListItem } from "~/types/inscription";
+import { PageHeader } from "~/components/admin/ui/PageHeader";
+import { Input } from "~/components/admin/ui/Input";
+import { Badge } from "~/components/admin/ui/Badge";
+import { Button } from "~/components/admin/ui/Button";
+import { Icon } from "~/components/admin/ui/icons";
 
 const STATUS_TABS = [
   { value: "pending", label: "Pendientes" },
@@ -11,6 +16,18 @@ const STATUS_TABS = [
   { value: "rejected", label: "Rechazadas" },
   { value: "all", label: "Todas" },
 ];
+
+const STATUS_TONE: Record<string, "warning" | "success" | "danger"> = {
+  pending: "warning",
+  approved: "success",
+  rejected: "danger",
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  pending: "Pendiente",
+  approved: "Aprobada",
+  rejected: "Rechazada",
+};
 
 export default function AdminInscripcionesList() {
   const navigate = useNavigate();
@@ -47,22 +64,23 @@ export default function AdminInscripcionesList() {
   const display = () => cached() ?? data();
 
   return (
-    <div class="space-y-6 font-sans">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 class="text-2xl font-black text-colpsi-blue">Solicitudes de Inscripción</h1>
-          <p class="text-sm text-gray-500 font-medium">Revisa y procesa las pre-inscripciones de nuevos profesionales.</p>
-        </div>
-      </div>
+    <div class="space-y-5">
+      <PageHeader
+        crumbs={[{ label: "Inscripciones" }]}
+        title="Solicitudes de Inscripción"
+        description="Revisa y procesa las pre-inscripciones de nuevos profesionales."
+      />
 
       {/* Tabs de estado */}
-      <div class="flex flex-wrap gap-2 bg-white p-2 rounded-2xl border border-colpsi-border shadow-sm">
+      <div class="inline-flex flex-wrap gap-1 p-1 rounded-md bg-colpsi-bg border border-colpsi-border">
         <For each={STATUS_TABS}>
           {(tab) => (
             <button
               onClick={() => { setStatus(tab.value); setPage(1); }}
-              class={`px-4 py-2 rounded-xl text-sm font-black transition-all ${
-                status() === tab.value ? "bg-colpsi-blue text-white shadow" : "text-gray-500 hover:bg-gray-100"
+              class={`h-8 px-3 rounded-md text-sm font-medium transition-all ${
+                status() === tab.value
+                  ? "bg-white text-colpsi-blue border border-colpsi-border shadow-sm"
+                  : "text-colpsi-muted hover:text-colpsi-blue hover:bg-white/60 border border-transparent"
               }`}
             >
               {tab.label}
@@ -72,16 +90,17 @@ export default function AdminInscripcionesList() {
       </div>
 
       {/* Búsqueda */}
-      <div class="relative">
-        <input
+      <div class="relative max-w-md">
+        <Icon name="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <Input
           value={inputValue()}
           onInput={handleSearch}
           placeholder="Buscar por nombre o cédula..."
-          class="w-full px-5 py-3 bg-white border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+          class="pl-9"
         />
       </div>
 
-      <div class="bg-white rounded-3xl shadow-premium border border-colpsi-border overflow-hidden">
+      <div class="border border-colpsi-border rounded-lg bg-white overflow-hidden">
         <PaginationBar
           page={page()}
           totalPages={display()?.total_pages ?? 1}
@@ -94,48 +113,52 @@ export default function AdminInscripcionesList() {
         />
 
         <div class="overflow-x-auto">
-          <table class="w-full text-left">
-            <thead class="bg-colpsi-surface border-b border-colpsi-border">
+          <table class="w-full border-collapse">
+            <thead>
               <tr>
-                <th class="px-5 py-3 text-xs font-black text-gray-400 uppercase tracking-widest">Cédula</th>
-                <th class="px-5 py-3 text-xs font-black text-gray-400 uppercase tracking-widest">Nombre completo</th>
-                <th class="px-5 py-3 text-xs font-black text-gray-400 uppercase tracking-widest">FPV</th>
-                <th class="px-5 py-3 text-xs font-black text-gray-400 uppercase tracking-widest">Fecha</th>
-                <th class="px-5 py-3 text-xs font-black text-gray-400 uppercase tracking-widest">Estado</th>
-                <th class="px-5 py-3 text-xs font-black text-gray-400 uppercase tracking-widest">Acciones</th>
+                <th class="th-cell">Cédula</th>
+                <th class="th-cell">Nombre completo</th>
+                <th class="th-cell">FPV</th>
+                <th class="th-cell">Fecha</th>
+                <th class="th-cell">Estado</th>
+                <th class="th-cell text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody class="divide-y divide-colpsi-border">
               <Show
                 when={!data.loading || cached()}
                 fallback={
-                  <tr><td colspan="6" class="p-16 text-center">
-                    <div class="w-10 h-10 border-4 border-colpsi-blue border-t-transparent rounded-full animate-spin mx-auto" />
+                  <tr><td colspan="6" class="py-16 text-center">
+                    <div class="w-8 h-8 border-2 border-colpsi-blue border-t-transparent rounded-full animate-spin mx-auto" />
                   </td></tr>
                 }
               >
                 <For
                   each={display()?.items ?? []}
                   fallback={
-                    <tr><td colspan="6" class="p-12 text-center text-sm font-bold text-gray-400">No hay solicitudes</td></tr>
+                    <tr><td colspan="6" class="py-12 text-center text-sm font-medium text-colpsi-muted">No hay solicitudes</td></tr>
                   }
                 >
                   {(item: InscriptionListItem) => (
-                    <tr class="border-b border-gray-50 hover:bg-colpsi-surface/60 transition-colors">
-                      <td class="px-5 py-4 font-black text-gray-700">{item.cedula}</td>
-                      <td class="px-5 py-4 font-bold text-gray-800">{item.nombres} {item.apellidos}</td>
-                      <td class="px-5 py-4 text-gray-500">{item.fpv || "—"}</td>
-                      <td class="px-5 py-4 text-xs text-gray-500">{new Date(item.created_at).toLocaleDateString()}</td>
-                      <td class="px-5 py-4">
-                        <StatusBadge status={item.status} />
+                    <tr class="hover:bg-colpsi-bg/60 transition-colors group">
+                      <td class="td-cell whitespace-nowrap font-medium">{item.cedula}</td>
+                      <td class="td-cell min-w-[200px] font-medium">{item.nombres} {item.apellidos}</td>
+                      <td class="td-cell text-colpsi-muted whitespace-nowrap">{item.fpv || "—"}</td>
+                      <td class="td-cell text-colpsi-muted whitespace-nowrap">{new Date(item.created_at).toLocaleDateString()}</td>
+                      <td class="td-cell">
+                        <Badge tone={STATUS_TONE[item.status] ?? "neutral"}>
+                          {STATUS_LABEL[item.status] ?? item.status}
+                        </Badge>
                       </td>
-                      <td class="px-5 py-4">
-                        <button
+                      <td class="td-cell text-right whitespace-nowrap">
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => navigate(`/admin/inscripciones/${item.id}`)}
-                          class="px-4 py-1.5 bg-colpsi-blue text-white rounded-lg text-xs font-black hover:opacity-90 transition-opacity"
+                          class="opacity-0 group-hover:opacity-100 focus:opacity-100"
                         >
                           Ver
-                        </button>
+                        </Button>
                       </td>
                     </tr>
                   )}
@@ -157,23 +180,5 @@ export default function AdminInscripcionesList() {
         />
       </div>
     </div>
-  );
-}
-
-function StatusBadge(props: { status: string }) {
-  const map: Record<string, string> = {
-    pending: "bg-amber-50 text-amber-700 border-amber-200",
-    approved: "bg-green-50 text-green-700 border-green-200",
-    rejected: "bg-red-50 text-red-700 border-red-200",
-  };
-  const label: Record<string, string> = {
-    pending: "Pendiente",
-    approved: "Aprobada",
-    rejected: "Rechazada",
-  };
-  return (
-    <span class={`px-3 py-1 rounded-full text-[11px] font-black border ${map[props.status] || "bg-gray-100 text-gray-700 border-gray-200"}`}>
-      {label[props.status] || props.status}
-    </span>
   );
 }

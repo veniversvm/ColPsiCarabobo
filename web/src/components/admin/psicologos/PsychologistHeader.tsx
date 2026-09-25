@@ -1,32 +1,38 @@
 // web/src/components/admin/psicologos/PsychologistHeader.tsx
 import { A } from "@solidjs/router";
+import { PageHeader } from "~/components/admin/ui/PageHeader";
+import { Button } from "~/components/admin/ui/Button";
+import { Icon } from "~/components/admin/ui/icons";
 
 interface Props {
   title?: string;
   onImportClick: () => void;
 }
 
+const btnLinkBase =
+  "inline-flex items-center justify-center gap-2 h-9 px-3.5 rounded-md text-sm font-semibold transition-colors outline-none focus:ring-2";
+
 export function PsychologistHeader(props: Props) {
   return (
-    <div class="flex flex-col md:flex-row justify-between md:items-end gap-4">
-      <div>
-        <h1 class="text-2xl font-black text-colpsi-blue">Gestión de Agremiados</h1>
-        <p class="text-gray-500 text-sm mt-1">Base de datos maestra de profesionales colegiados.</p>
-      </div>
-      <div class="flex gap-3">
-        <button
-          onClick={props.onImportClick}
-          class="bg-white border-2 border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl font-bold hover:bg-colpsi-surface transition-colors text-sm"
-        >
-          📥 Importar CSV
-        </button>
-        <A
-          href="/admin/psicologos/crear"
-          class="bg-colpsi-blue text-white px-4 py-2.5 rounded-xl font-bold hover:bg-blue-800 transition-colors text-sm shadow-md"
-        >
-          ➕ Nuevo Registro
-        </A>
-      </div>
-    </div>
+    <PageHeader
+      crumbs={[{ label: "Psicólogos" }]}
+      title={props.title ?? "Gestión de Agremiados"}
+      description="Base de datos maestra de profesionales colegiados."
+      actions={
+        <>
+          <Button variant="secondary" onClick={props.onImportClick}>
+            <Icon name="fileText" />
+            Importar CSV
+          </Button>
+          <A
+            href="/admin/psicologos/crear"
+            class={`${btnLinkBase} bg-colpsi-blue text-white hover:bg-colpsi-blue-light focus:ring-colpsi-blue/30`}
+          >
+            <Icon name="plus" />
+            Nuevo Registro
+          </A>
+        </>
+      }
+    />
   );
 }

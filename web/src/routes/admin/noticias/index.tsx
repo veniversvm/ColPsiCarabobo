@@ -11,6 +11,7 @@ import {
   EmptyState,
   DeleteModal,
 } from "~/components/admin/noticias";
+import { Icon } from "~/components/admin/ui/icons";
 
 // ── Acciones de servidor ──────────────────────────────────────────────────────
 const togglePostStatus = action(async (params: { id: string; currentStatus: Post["status"] }) => {
@@ -88,18 +89,20 @@ export default function AdminNoticiasPage() {
       />
 
       <ErrorBoundary fallback={(err, reset) => (
-        <div class="bg-red-50 border border-red-200 p-8 rounded-3xl text-center">
-          <p class="text-4xl mb-4">🚨</p>
-          <h2 class="text-xl font-black text-red-800 mb-2">Error de Conexión</h2>
-          <p class="text-red-600 text-sm mb-6 max-w-lg mx-auto">{err.toString()}</p>
-          <button onClick={reset} class="bg-red-600 text-white font-black px-6 py-2.5 rounded-xl hover:bg-red-700 active:scale-95 transition-all text-sm">
-            ↻ Intentar de nuevo
+        <div class="bg-white border border-colpsi-border p-8 rounded-lg text-center">
+          <span class="inline-flex h-12 w-12 items-center justify-center rounded-md bg-red-50 text-colpsi-red mb-4">
+            <Icon name="bell" class="w-6 h-6" />
+          </span>
+          <h2 class="text-lg font-semibold text-colpsi-text mb-2">Error de Conexión</h2>
+          <p class="text-colpsi-muted text-sm mb-6 max-w-lg mx-auto">{err.toString()}</p>
+          <button onClick={reset} class="inline-flex items-center gap-2 h-9 px-4 rounded-md bg-colpsi-red text-white font-semibold hover:opacity-90 transition-all text-sm">
+            <Icon name="refresh" /> Intentar de nuevo
           </button>
         </div>
       )}>
         <Suspense fallback={
-          <div class="space-y-4">
-            <For each={[1, 2, 3, 4]}>{() => <div class="h-28 bg-white animate-pulse rounded-2xl border border-colpsi-border" />}</For>
+          <div class="space-y-3">
+            <For each={[1, 2, 3, 4]}>{() => <div class="h-24 bg-white animate-pulse rounded-lg border border-colpsi-border" />}</For>
           </div>
         }>
           <Show when={!posts.loading && posts.state === "ready" && postList().length === 0}>
