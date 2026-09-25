@@ -25,7 +25,6 @@ import { ProfessionalSection } from "~/components/psi/profile/ProfessionalSectio
 import { PrivacySection } from "~/components/psi/profile/PrivacySection";
 import { ServicePreferencesSection } from "~/components/psi/profile/ServicePreferencesSection";
 import { SecuritySection } from "~/components/psi/profile/SecuritySection";
-import { MessageAlert } from "~/components/psi/profile/MessageAlert";
 import { AcademicSection } from "~/components/psi/profile/AcademicSection";
 import { SocialNetworksSection } from "~/components/psi/profile/SocialNetworksSection";
 import { SaveButton } from "~/components/psi/profile/SaveButton";
@@ -427,10 +426,6 @@ export default function ProfilePage() {
             CI={profile()?.ci || 0}
           />
 
-          <Show when={message()}>
-            <MessageAlert type={message()!.type} text={message()!.text} />
-          </Show>
-
           <form onSubmit={handleSaveProfile}>
             <Notebook
               pages={[
@@ -710,7 +705,7 @@ export default function ProfilePage() {
 
             </Notebook>
 
-            <SaveButton saving={saving()} />
+            <SaveButton saving={saving()} message={message()} />
           </form>
 
           {/* Redes Sociales: se guarda con lógica propia (apiPost/apiDelete a
