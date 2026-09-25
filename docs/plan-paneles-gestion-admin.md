@@ -344,10 +344,26 @@ e `/admin/inscripciones/[id]`.
 
 | Ruta | Notebooks / pestañas |
 |---|---|
-| `/psi/perfil` | 8 pestañas con iconos (user, mail, book, mapPin, fileText, sliders, shield, link) y descripciones |
+| `/psi/perfil` | 7 pestañas con iconos (user, mail, book, mapPin, fileText, sliders, shield) y descripciones. **Redes Sociales vive aparte** (tarjeta independiente, guardado propio) |
 | `/admin/psicologos/[id]/detalle` | 2 notebooks: 8 (expediente, dentro del form) + 5 (gestión, fuera del form) |
 | `/admin/inscripciones/[id]` | 4 pestañas |
 
 La lógica, los RBAC y las server actions quedaron **intactos** (cambios solo de
 presentación). Notas: `Panel.tsx` (primitiva anterior) se eliminó por ser dead
 code; los commits viven en `feat/admin-paneles-pro` y se fusionaron a `main`.
+
+### Refinamientos del perfil psi (tras la fusión 1)
+
+- **Redes Sociales fuera del notebook**: se guarda con lógica propia
+  (`apiPost`/`apiDelete` a `/psi/me/social`) y con su propio `<form>`, así que
+  salió del notebook y del `<form>` del perfil (evita el form anidado, HTML
+  inválido). Tarjeta independiente debajo del notebook, con el mismo lenguaje
+  visual (subtítulo con punto + cuadro explicativo, color amarillo de su
+  antigua posición en el ciclo).
+- **Sección de guardado como tarjeta** (`SaveButton.tsx`): del **mismo ancho
+  del notebook** (caja blanca `rounded-lg border`, sin sticky, fija justo
+  debajo de las pestañas). Incluye el campo **"Contraseña Actual (obligatoria
+  para guardar)"** — antes vivía en la pestaña Cuenta y Seguridad
+  (`SecuritySection`, eliminado por dead code) — junto al botón "Guardar
+  cambios" (check/spinner) y el feedback de éxito/error debajo. Misma lógica:
+  `required` + chequeo de `handleSaveProfile` intactos.
