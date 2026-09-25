@@ -52,6 +52,10 @@ export function Notebook(props: {
   children: JSX.Element;
 }) {
   const [active, setActive] = createSignal(props.pages[0]?.id ?? "");
+  const activeIdx = () =>
+    Math.max(props.pages.findIndex((p) => p.id === active()), 0);
+  const activeLabel = () => props.pages[activeIdx()]?.label ?? "";
+  const activeColor = () => TAB_COLORS[activeIdx() % TAB_COLORS.length]?.bg ?? "#1e3a8a";
 
   return (
     <NotebookContext.Provider value={{ active }}>
@@ -109,7 +113,18 @@ export function Notebook(props: {
             }}
           </For>
         </div>
-        <div class="p-5">{props.children}</div>
+        <div class="p-5">
+          <div class="flex items-center gap-2 mb-4">
+            <span
+              class="w-2 h-2 rounded-full shrink-0"
+              style={{ backgroundColor: activeColor() }}
+            />
+            <h2 class="text-sm font-semibold text-colpsi-blue">
+              {activeLabel()}
+            </h2>
+          </div>
+          {props.children}
+        </div>
       </div>
     </NotebookContext.Provider>
   );
