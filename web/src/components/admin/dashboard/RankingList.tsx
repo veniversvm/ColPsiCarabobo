@@ -7,12 +7,15 @@ interface TopItem { value: string; count: number; name: string }
 interface RankingListProps {
   title: string;
   items: TopItem[];
+  /** Clase Tailwind de la barra de progreso (default: azul institucional) */
+  accent?: string;
 }
 
 const fmt = (n?: number) => (n ?? 0).toLocaleString("es-VE");
 
 export function RankingList(props: RankingListProps) {
   const max = () => Math.max(...(props.items ?? []).map(i => i.count), 1);
+  const bar = props.accent ?? "bg-colpsi-blue/50";
   return (
     <div class="p-4">
       <div class="flex items-center justify-between gap-2 mb-3">
@@ -39,7 +42,7 @@ export function RankingList(props: RankingListProps) {
                   </div>
                   <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                     <div
-                      class="h-full bg-colpsi-blue/50 rounded-full transition-all duration-700"
+                      class={`h-full rounded-full transition-all duration-700 ${bar}`}
                       style={{ width: `${(item.count / max()) * 100}%` }}
                     />
                   </div>

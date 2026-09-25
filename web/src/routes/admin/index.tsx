@@ -74,8 +74,11 @@ export default function AdminDashboard() {
 
   const fmt = (n?: number) => (n ?? 0).toLocaleString("es-VE");
 
-  const sectionTitle = (t: string) => (
-    <h2 class="text-[11px] font-semibold uppercase tracking-wide text-colpsi-muted">{t}</h2>
+  const sectionTitle = (t: string, accent = "bg-colpsi-blue") => (
+    <h2 class="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-colpsi-muted">
+      <span class={`w-1 h-3.5 rounded-full shrink-0 ${accent}`} />
+      {t}
+    </h2>
   );
 
   return (
@@ -100,6 +103,9 @@ export default function AdminDashboard() {
         }
       />
 
+      {/* ── ACENTO INSTITUCIONAL (decorativo) ───────────────────────────── */}
+      <div class="-mt-4 w-16 h-1 rounded-full bg-gradient-to-r from-colpsi-blue to-colpsi-yellow" />
+
       {/* ── ERROR ───────────────────────────────────────────────────────── */}
       <Show when={stats.error}>
         <div class="border border-red-200 bg-red-50 rounded-md p-3 text-sm text-red-700 font-medium">
@@ -123,7 +129,7 @@ export default function AdminDashboard() {
 
       {/* ── SECCIÓN: LOGINS ──────────────────────────────────────────────── */}
       <section class="space-y-2">
-        {sectionTitle("Inicios de sesión")}
+        {sectionTitle("Inicios de sesión", "bg-colpsi-yellow")}
         <Show when={initialLoading()}>
           <AdminLoadingSkeleton variant="kpi" count={4} />
         </Show>
@@ -230,8 +236,8 @@ export default function AdminDashboard() {
             <Panel flush>
               <div class="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-colpsi-border">
                 <RankingList title="Especialidades más buscadas" items={s().top_specialties  ?? []} />
-                <RankingList title="Municipios más buscados"     items={s().top_municipios   ?? []} />
-                <RankingList title="Términos de búsqueda"        items={s().top_search_terms ?? []} />
+                <RankingList title="Municipios más buscados"     items={s().top_municipios   ?? []} accent="bg-indigo-400/50" />
+                <RankingList title="Términos de búsqueda"        items={s().top_search_terms ?? []} accent="bg-amber-400/50" />
               </div>
             </Panel>
           )}

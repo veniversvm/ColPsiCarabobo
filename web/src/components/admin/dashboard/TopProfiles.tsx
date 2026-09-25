@@ -29,8 +29,16 @@ export function TopProfiles(props: TopProfilesProps) {
             <For each={props.profiles?.slice(0, 10)}>
               {(p, i) => (
                 <div class="border-b border-r border-colpsi-border p-3 bg-white flex flex-col gap-0.5">
-                  <span class="text-[10px] font-medium text-slate-400">#{i() + 1}</span>
-                  <span class="text-lg font-semibold text-colpsi-text tabular-nums">{fmt(p.count)}</span>
+                  <span class={
+                    i() === 0
+                      ? "text-[10px] font-semibold text-colpsi-yellow-dark"
+                      : i() < 3
+                        ? "text-[10px] font-medium text-colpsi-blue/80"
+                        : "text-[10px] font-medium text-slate-400"
+                  }>
+                    #{i() + 1}
+                  </span>
+                  <span class="text-lg font-semibold text-colpsi-blue tabular-nums">{fmt(p.count)}</span>
                   <span class="text-sm font-medium text-colpsi-text truncate">
                     {p.first_name} {p.last_name}
                   </span>
