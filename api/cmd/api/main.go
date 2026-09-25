@@ -159,6 +159,35 @@ func main() {
 	bgCtx, bgCancel := context.WithCancel(context.Background())
 	defer bgCancel()
 
+	// ── AuditService: bitácora de cambios diferida (cola + worker) ───────────
+	auditSvc := service.NewAuditService(postgres.NewAuditRepository(db))
+	service.InitAuditLogs(auditSvc)
+	auditSvc.Start(bgCtx)
+
+	// Retención de la bitácora: purga diaria de api_change_logs más antiguas
+	// que AUDIT_LOG_RETENTION_DAYS (<=0 desactiva el purge).
+	if config.Envs.AuditLogRetentionDays > 0 {
+		go func() {
+			ticker := time.NewTicker(24 * time.Hour)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-bgCtx.Done():
+					return
+				case <-ticker.C:
+					purgeCtx, purgeCancel := context.WithTimeout(bgCtx, 30*time.Second)
+					before := time.Now().AddDate(0, 0, -config.Envs.AuditLogRetentionDays)
+					if n, perr := auditSvc.PurgeOlderThan(purgeCtx, before); perr != nil {
+						log.Warn().Err(perr).Str("component", "audit").Msg("Error al purgar audit logs antiguos")
+					} else if n > 0 {
+						log.Info().Int64("count", n).Str("component", "audit").Msg("Audit logs antiguos purgados por retención")
+					}
+					purgeCancel()
+				}
+			}
+		}()
+	}
+
 	// ── Limpieza periódica de sesiones expiradas ──────────────────────────────
 	// Corre cada hora en background — elimina ActiveSession con expires_at < now.
 	// Cada ejecución lleva su propio timeout para no dejar una conexión colgada.
@@ -272,7 +301,7 @@ func main() {
 	// 8. RUTAS
 	// =========================================================================
 
-	router.SetupRouter(app, db, s3Client, appCache, mailSvc, notificationSvc)
+	router.SetupRouter(app, db, s3Client, appCache, mailSvc, notificationSvc, auditSvc)
 
 	app.Use(func(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -310,6 +339,9 @@ func main() {
 
 	// Detener goroutines de background
 	bgCancel()
+
+	// Detener la captura de nuevos eventos de auditoría y drenar la cola.
+	auditSvc.Close()
 
 	// Cerrar Fiber (espera conexiones activas)
 	if err := app.ShutdownWithContext(shutdownCtx); err != nil {

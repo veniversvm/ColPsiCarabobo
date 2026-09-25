@@ -75,7 +75,27 @@ func (s *PsiService) AddPostGrade(ctx context.Context, psi *domain.PsiUserModel,
 		return err
 	}
 
-	return s.repo.CreatePostGrade(ctx, postGrade)
+	if err := s.repo.CreatePostGrade(ctx, postGrade); err != nil {
+		return err
+	}
+
+	// Bitácora de cambios: alta de un título académico (auto-gestión).
+	evt := auditPsiSelfEvent(psi, domain.AuditActionCreate)
+	changes := map[string]domain.AuditChange{
+		"post_grade_title": {To: postGrade.Title},
+	}
+	if postGrade.University != "" {
+		changes["post_grade_university"] = domain.AuditChange{To: postGrade.University}
+	}
+	if postGrade.GraduationYear != 0 {
+		changes["post_grade_graduation_year"] = domain.AuditChange{To: postGrade.GraduationYear}
+	}
+	if postGrade.Description != "" {
+		changes["post_grade_description"] = domain.AuditChange{To: postGrade.Description}
+	}
+	evt.Changes = changes
+	RecordAudit(ctx, evt)
+	return nil
 }
 
 // UpdatePostGrade updates an existing academic post-grade record, replacing any provided certificate images.
@@ -89,6 +109,10 @@ func (s *PsiService) UpdatePostGrade(ctx context.Context, psi *domain.PsiUserMod
 	if pg.PsiUserID != psi.ID {
 		return domain.ErrPermissionDenied
 	}
+
+	// Snapshot previo para el diff por campo de la bitácora.
+	beforeSnapshot := postGradeSnapshot(pg)
+	imageReplaced := false
 
 	pg.UpdateBy = psi.Username
 	pg.UpdateById = &psi.ID
@@ -136,19 +160,65 @@ func (s *PsiService) UpdatePostGrade(ctx context.Context, psi *domain.PsiUserMod
 		if err != nil {
 			return err
 		}
+		imageReplaced = true
 	}
 	if file, ok := fileMap["pic_two"]; ok {
 		pg.PicTwoS3Key, err = replaceImage(file, pg.PicTwoS3Key)
 		if err != nil {
 			return err
 		}
+		imageReplaced = true
 	}
 	if file, ok := fileMap["pic_three"]; ok {
 		pg.PicThreeS3Key, err = replaceImage(file, pg.PicThreeS3Key)
 		if err != nil {
 			return err
 		}
+		imageReplaced = true
 	}
 
-	return s.repo.UpdatePostGrade(ctx, pg)
+	if err := s.repo.UpdatePostGrade(ctx, pg); err != nil {
+		return err
+	}
+
+	// Bitácora de cambios: edición de título académico (auto-gestión).
+	evt := auditPsiSelfEvent(psi, domain.AuditActionUpdate)
+	evt.Changes = BuildDiff(beforeSnapshot, postGradeSnapshot(pg))
+	if imageReplaced {
+		evt.Metadata = map[string]any{"certificate_images_updated": true}
+	}
+	RecordAudit(ctx, evt)
+	return nil
+}
+
+// DeletePostGrade elimina un título académico del propio expediente del
+// psicólogo (auto-gestión) con chequeo de propiedad (IDOR), limpia los soportes
+// (certificados) del bucket y registra la baja en la bitácora de cambios.
+func (s *PsiService) DeletePostGrade(ctx context.Context, psi *domain.PsiUserModel, pgID uuid.UUID) error {
+	pg, err := s.repo.GetPostGradeByID(ctx, pgID)
+	if err != nil {
+		return errors.New("título académico no encontrado")
+	}
+	if pg.PsiUserID != psi.ID {
+		return domain.ErrPermissionDenied
+	}
+
+	if err := s.repo.DeletePostGrade(ctx, pgID); err != nil {
+		return fmt.Errorf("error al eliminar el título académico: %w", err)
+	}
+
+	// Limpieza best-effort de los soportes (certificados) subidos al bucket.
+	if s.s3Client != nil {
+		for _, key := range []string{pg.PicOneS3Key, pg.PicTwoS3Key, pg.PicThreeS3Key} {
+			if key != "" {
+				_ = s.s3Client.DeleteFile(ctx, key)
+			}
+		}
+	}
+
+	// Bitácora de cambios: baja de título académico (auto-gestión).
+	evt := auditPsiSelfEvent(psi, domain.AuditActionDelete)
+	evt.Changes = postGradeRemovalChanges(pg)
+	RecordAudit(ctx, evt)
+	return nil
 }

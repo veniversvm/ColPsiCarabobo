@@ -15,6 +15,242 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/admin/audit-logs": {
+            "get": {
+                "description": "Lista paginada de eventos con filtros combinables (q, suceso, entidad, actor_id, desde, hasta).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Auditoría"
+                ],
+                "summary": "Buscar en la bitácora de cambios",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Texto libre (entity_label)",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Acción (create, update, delete, login, ...)",
+                        "name": "suceso",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Entidad (psi, staff, notificacion, ...)",
+                        "name": "entidad",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "UUID del actor",
+                        "name": "actor_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Fecha desde (YYYY-MM-DD)",
+                        "name": "desde",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Fecha hasta (YYYY-MM-DD)",
+                        "name": "hasta",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Página (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Por página (default 20, máx 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/audit-logs/export": {
+            "get": {
+                "description": "Descarga en CSV los eventos que coinciden con los filtros (requiere can_export_logs o sudo).",
+                "produces": [
+                    "text/csv"
+                ],
+                "tags": [
+                    "Administración - Auditoría"
+                ],
+                "summary": "Exportar bitácora (CSV)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Texto libre",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Acción",
+                        "name": "suceso",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Entidad",
+                        "name": "entidad",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "UUID del actor",
+                        "name": "actor_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Fecha desde (YYYY-MM-DD)",
+                        "name": "desde",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Fecha hasta (YYYY-MM-DD)",
+                        "name": "hasta",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/audit-logs/psi/{id}": {
+            "get": {
+                "description": "Historial completo de lo que le pasó a un agremiado (quién y qué cambió).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Auditoría"
+                ],
+                "summary": "Bitácora de cambios de un psicólogo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del psicólogo",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Página (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Por página (default 20, máx 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/audit-logs/stats": {
+            "get": {
+                "description": "Agrega los sucesos por (entidad, acción) desde una fecha.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Auditoría"
+                ],
+                "summary": "Estadísticas de la bitácora",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Desde (YYYY-MM-DD); default 30 días atrás",
+                        "name": "desde",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/admin/create": {
             "post": {
                 "security": [
@@ -2677,6 +2913,231 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "error: Registro no encontrado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/psi/{id}/social": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Vincula una nueva red social al perfil público de un psicólogo desde el panel de moderación. La auditoría registra al operador administrativo.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Psicólogos"
+                ],
+                "summary": "Agregar red social (Admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del Psicólogo",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Datos de la red",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.CreateSocialNetworkRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "message: Red social agregada",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "error: ID inválido o JSON inválido",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "error: Permisos insuficientes",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "error: Psicólogo no encontrado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/psi/{id}/social/{socialId}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Elimina lógicamente una red social de un psicólogo desde el panel de moderación.",
+                "tags": [
+                    "Administración - Psicólogos"
+                ],
+                "summary": "Eliminar red social (Admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del Psicólogo",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "UUID de la red social",
+                        "name": "socialId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "message: Red social eliminada correctamente",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "error: ID inválido",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "error: Permisos insuficientes",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "error: Red social no encontrada",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Edita los datos de una red social de un psicólogo desde el panel de moderación. Verifica que la red pertenezca a la ficha indicada.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Psicólogos"
+                ],
+                "summary": "Actualizar red social (Admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del Psicólogo",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "UUID de la red social",
+                        "name": "socialId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Campos parciales",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.UpdateSocialNetworkRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "message: Red social actualizada",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "error: ID inválido o JSON inválido",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "error: Permisos insuficientes",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "error: Red social no encontrada",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -5373,6 +5834,61 @@ const docTemplate = `{
             }
         },
         "/psi/me/postgrades/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Psicólogos - Académico"
+                ],
+                "summary": "Eliminar postgrado",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID del Postgrado",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
             "patch": {
                 "security": [
                     {
@@ -7774,6 +8290,9 @@ const docTemplate = `{
                 "can_edit_tags": {
                     "type": "boolean"
                 },
+                "can_export_logs": {
+                    "type": "boolean"
+                },
                 "can_manage_notifications": {
                     "type": "boolean"
                 },
@@ -7806,6 +8325,10 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "can_update_publish": {
+                    "type": "boolean"
+                },
+                "can_view_logs": {
+                    "description": "── Permisos: Auditoría (bitácora de cambios a nivel de API) ──────────\ncan_view_logs: ver la bitácora (búsqueda por suceso/fecha/entidad/actor).\ncan_export_logs: además exportar la bitácora (CSV).\nNingún preset los incluye: solo Sudo o asignación manual. Sin can_view_logs\n(y sin Sudo) los endpoints de auditoría responden 404 enmascarado.",
                     "type": "boolean"
                 },
                 "create_by": {
@@ -7934,6 +8457,10 @@ const docTemplate = `{
                     "type": "boolean",
                     "example": false
                 },
+                "can_export_logs": {
+                    "type": "boolean",
+                    "example": false
+                },
                 "can_manage_notifications": {
                     "type": "boolean",
                     "example": false
@@ -7978,6 +8505,11 @@ const docTemplate = `{
                 "can_update_publish": {
                     "type": "boolean",
                     "example": true
+                },
+                "can_view_logs": {
+                    "description": "Auditoría (bitácora de cambios a nivel de API)",
+                    "type": "boolean",
+                    "example": false
                 }
             }
         },
@@ -9404,6 +9936,9 @@ const docTemplate = `{
                 "can_edit_tags": {
                     "type": "boolean"
                 },
+                "can_export_logs": {
+                    "type": "boolean"
+                },
                 "can_manage_notifications": {
                     "type": "boolean"
                 },
@@ -9432,6 +9967,9 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "can_update_publish": {
+                    "type": "boolean"
+                },
+                "can_view_logs": {
                     "type": "boolean"
                 }
             }

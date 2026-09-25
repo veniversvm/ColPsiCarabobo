@@ -619,6 +619,38 @@ func (h *PsiHandler) UpdatePostGrade(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"message": "Título actualizado correctamente"})
 }
 
+// DeletePostGrade godoc
+// @Summary      Eliminar postgrado
+// @Security     BearerAuth
+// @Tags         Psicólogos - Académico
+// @Accept       json
+// @Produce      json
+// @Param        id   path     string true "ID del Postgrado"
+// @Success      200  {object} map[string]string
+// @Failure      403  {object} map[string]string
+// @Failure      404  {object} map[string]string
+// @Router       /psi/me/postgrades/{id} [delete]
+func (h *PsiHandler) DeletePostGrade(c *fiber.Ctx) error {
+	psi, err := middleware.GetAuthenticatedPsi(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	pgID, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ID inválido"})
+	}
+
+	if err := h.service.DeletePostGrade(c.UserContext(), psi, pgID); err != nil {
+		if errors.Is(err, domain.ErrPermissionDenied) {
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": err.Error()})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"message": "Título eliminado correctamente"})
+}
+
 // AddSocialNetwork godoc
 // @Summary      Agregar red social
 // @Security     BearerAuth

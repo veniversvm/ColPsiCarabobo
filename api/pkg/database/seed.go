@@ -71,6 +71,8 @@ func SeedAdmin(db *gorm.DB) {
 			CanDeleteTags:          true,
 			CanManageProjects:      true,
 			CanManageTickets:       true,
+			CanViewLogs:            true,
+			CanExportLogs:          true,
 		}
 
 		if err := db.Create(admin).Error; err != nil {
@@ -117,6 +119,8 @@ func SeedSudoPermissions(db *gorm.DB) {
 			"can_delete_tags":          true,
 			"can_manage_projects":      true,
 			"can_manage_tickets":       true,
+			"can_view_logs":            true,
+			"can_export_logs":          true,
 		})
 	if res.Error != nil {
 		log.Error().Err(res.Error).Str("component", "seed").Msg("Error al sincronizar permisos de SUDO")

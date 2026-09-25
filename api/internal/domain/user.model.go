@@ -61,6 +61,14 @@ type UserAdmin struct {
 	// Otorga acceso a la cola FIFO de tickets y a la configuración del módulo
 	// (áreas, motivos y estados). Sin este flag (y sin Sudo) el admin no ve el menú.
 	CanManageTickets bool `gorm:"default:false" json:"can_manage_tickets"`
+
+	// ── Permisos: Auditoría (bitácora de cambios a nivel de API) ──────────
+	// can_view_logs: ver la bitácora (búsqueda por suceso/fecha/entidad/actor).
+	// can_export_logs: además exportar la bitácora (CSV).
+	// Ningún preset los incluye: solo Sudo o asignación manual. Sin can_view_logs
+	// (y sin Sudo) los endpoints de auditoría responden 404 enmascarado.
+	CanViewLogs   bool `gorm:"default:false" json:"can_view_logs"`
+	CanExportLogs bool `gorm:"default:false" json:"can_export_logs"`
 }
 
 func (UserAdmin) TableName() string { return "user_admins" }

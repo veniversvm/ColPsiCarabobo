@@ -88,6 +88,7 @@ func SetupPsiRoutes(router fiber.Router, psiRepo domain.PsiUserRepository, admin
 	meGroup.Patch("/", h.UpdateOwnProfile)
 	meGroup.Post("/postgrades", h.AddPostGrade)
 	meGroup.Patch("/postgrades/:id", h.UpdatePostGrade)
+	meGroup.Delete("/postgrades/:id", h.DeletePostGrade)
 	meGroup.Post("/social", h.AddSocialNetwork)
 	meGroup.Patch("/social/:id", h.UpdateSocialNetwork)
 	meGroup.Delete("/social/:id", h.DeleteSocialNetwork)

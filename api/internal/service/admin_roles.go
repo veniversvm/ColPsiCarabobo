@@ -40,6 +40,8 @@ type PermissionSet struct {
 	CanDeleteTags        bool `json:"can_delete_tags"`
 	CanManageProjects    bool `json:"can_manage_projects"`
 	CanManageTickets     bool `json:"can_manage_tickets"`
+	CanViewLogs          bool `json:"can_view_logs"`
+	CanExportLogs        bool `json:"can_export_logs"`
 }
 
 // RolePreset define un perfil de permisos predeterminado que la UI puede aplicar.
@@ -131,6 +133,8 @@ func AdminPermissionSet(a *domain.UserAdmin) PermissionSet {
 		CanDeleteTags:         a.CanDeleteTags,
 		CanManageProjects:     a.CanManageProjects,
 		CanManageTickets:      a.CanManageTickets,
+		CanViewLogs:           a.CanViewLogs,
+		CanExportLogs:         a.CanExportLogs,
 	}
 }
 

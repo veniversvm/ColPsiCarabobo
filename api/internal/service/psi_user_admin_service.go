@@ -155,6 +155,8 @@ func (s *PsiService) CreatePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 		s.EnsureAudiobookshelf(ctx, psi)
 	}
 
+	// Bitácora de cambios: alta de un agremiado (qué y quién).
+	RecordAudit(ctx, auditAdminEvent(admin, domain.AuditEntityPsi, psi.ID.String(), psiAuditLabel(psi), domain.AuditActionCreate))
 	return nil
 }
 
@@ -185,6 +187,9 @@ func (s *PsiService) UpdatePsiByAdmin(
 	if err != nil {
 		return fmt.Errorf("error al recuperar el psicólogo: %w", err)
 	}
+
+	// Snapshot previo para el diff por campo de la bitácora.
+	beforeSnapshot := psiCoreSnapshot(psi)
 
 	// Helper local para parsear fechas
 	parseDate := func(dateStr *string) time.Time {
@@ -751,6 +756,15 @@ func (s *PsiService) UpdatePsiByAdmin(
 		_ = s.s3Client.DeleteFile(context.Background(), oldKey)
 	}
 
+	// ── Bitácora de cambios: actualización del expediente con diff por campo ──
+	evt := auditAdminEvent(admin, domain.AuditEntityPsi, psi.ID.String(), psiAuditLabel(psi), domain.AuditActionUpdate)
+	evt.Changes = BuildDiff(beforeSnapshot, psiCoreSnapshot(psi))
+	// Los datos gremiales/académicos (colData) NO viven en PsiUserModel: si hubo
+	// actualizaciones y el diff identitario quedó vacío, se anota en Metadata.
+	if len(evt.Changes) == 0 && (colDataToUpdate != nil || bioTextToUpdate != nil || len(solvenciesToCreate) > 0) {
+		evt.Metadata = map[string]any{"detalle": "datos gremiales/académicos u observaciones actualizadas"}
+	}
+	RecordAudit(ctx, evt)
 	return nil
 }
 
@@ -791,7 +805,13 @@ func (s *PsiService) DeleteProfilePictureByAdmin(ctx context.Context, admin *dom
 	psi.UpdateBy = admin.Username
 	psi.UpdateById = &admin.ID
 
-	return s.repo.Update(ctx, psi, nil, nil, nil)
+	if err := s.repo.Update(ctx, psi, nil, nil, nil); err != nil {
+		return err
+	}
+
+	// Bitácora de cambios: eliminación de la foto de perfil (admin).
+	RecordAudit(ctx, auditAdminEvent(admin, domain.AuditEntityPsi, psi.ID.String(), psiAuditLabel(psi), domain.AuditActionUpdate))
+	return nil
 }
 
 // =========================================================================
@@ -807,11 +827,19 @@ func (s *PsiService) DeletePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 		return errors.New("no tienes permiso para eliminar psicólogos")
 	}
 
+	// 1b. Etiqueta del expediente para la bitácora (best-effort antes del borrado).
+	label := targetID.String()
+	if psi, err := s.repo.GetByID(ctx, targetID); err == nil && psi != nil {
+		label = psiAuditLabel(psi)
+	}
+
 	// 2. Ejecutar borrado
 	if err := s.repo.Delete(ctx, targetID); err != nil {
 		return fmt.Errorf("error al eliminar el registro: %w", err)
 	}
 
+	// Bitácora de cambios: baja lógica de un agremiado.
+	RecordAudit(ctx, auditAdminEvent(admin, domain.AuditEntityPsi, targetID.String(), label, domain.AuditActionDelete))
 	return nil
 }
 
@@ -871,6 +899,10 @@ func (s *PsiService) ResetPsiPasswordByAdmin(ctx context.Context, admin *domain.
 		}
 	}
 
+	// Bitácora de cambios: reinicio de clave (admin), sin exponer el valor.
+	evt := auditAdminEvent(admin, domain.AuditEntityPsi, psi.ID.String(), psiAuditLabel(psi), domain.AuditActionResetPassword)
+	evt.Metadata = map[string]any{"must_change_password": true}
+	RecordAudit(ctx, evt)
 	return nil
 }
 

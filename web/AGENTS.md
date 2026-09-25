@@ -103,6 +103,20 @@ deno task build      # igual que npm run build (lo usa el dockerfile)
       fallaba → el drag no movía ni persistía (return silencioso en `onDragEnd`).
       Derivar la lista plana de `(local()?.columns ?? board()?.columns ?? []).flatMap(c => c.cards ?? [])`.
 
+11. **Módulo Auditoría (`/admin/auditoria`)** — La API persiste `changes` y
+    `metadata` como jsonb, así que **llegan como objeto**, pero historias viejas
+    (previas al fix) pueden traerlos como string serializado: usar SIEMPRE
+    `parseAuditJson()` de `src/types/audit.ts`, nunca `JSON.parse` directo
+    (revienta con un objeto).
+    - Las tarjetas resumen los cambios con `auditChangesKeys()` (máx 4 campos) y
+      `fieldLabel()` traduce cada clave snake_case; los rótulos de
+      acciones/entidades viven en `ACTION_LABELS`/`ENTITY_LABELS` del mismo
+      archivo (una acción nueva del backend sin rótulo cae al crudo, no rompe).
+    - La paginación (`PaginationBar` de `admin/auditoria/index.tsx`) se renderiza
+      **arriba y abajo** del listado y comparte el estado `page` (20 por página,
+      visible solo con `total > 20`); cualquier cambio de filtro resetea a la
+      página 1.
+
 ## Estructura
 
 ```

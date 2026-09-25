@@ -126,6 +126,22 @@ swag init -g cmd/api/main.go -o docs/   # regenerar Swagger
     (rompe el contrato "solo áreas reales"); el detalle completo (`GET /psi/:fpv`)
     sí conserva el `work_area` para el perfil.
 
+12. **Bitácora de auditoría (audit logs)** — `api_change_logs` se escribe de
+    forma **diferida y best-effort** (ver `docs/audit-logs.md`): `Record()`
+    encola en memoria (buffer 5000) y un worker persiste en lotes de 50 cada 1s;
+    un fallo o cola llena jamás revierte la operación principal. `Record` se
+    invoca SOLO tras persistencia exitosa (0 llamadas si el UPDATE falla).
+    - **Contrato de claves**: las claves del diff son snake_case y coinciden con
+      los tags JSON reales del modelo (ver `service/audit_helpers.go`). La UI las
+      traduce con `FIELD_LABELS`; una clave fuera de contrato cae al crudo.
+    - **Gates**: lectura con `Sudo || CanViewLogs`, exportación CSV con
+      `Sudo || CanExportLogs`, siempre 404 enmascarado (nunca 403). No existe
+      `can_purge_logs`: la purga por antigüedad es exclusiva de Sudo (cron diario
+      en `main.go`, `AUDIT_LOG_RETENTION_DAYS` default 90, `<=0` desactiva).
+    - **`DeletePostGrade` (`DELETE /psi/me/postgrades/:id`) es SOFT delete** vía
+      `gorm.DeletedAt` (embebido en `PsiUserPostGrade`): respeta IDOR y limpia el
+      certificado en S3 best-effort. No lo cambies a borrado físico.
+
 ## Estructura
 
 ```

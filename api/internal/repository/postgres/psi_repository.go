@@ -753,6 +753,14 @@ func (r *psiRepo) UpdatePostGrade(ctx context.Context, pg *domain.PsiUserPostGra
 	}).Error
 }
 
+// DeletePostGrade da de baja un registro académico mediante Soft Delete
+// (marca `deleted_at` gracias al AuditModel embebido); las consultas estándar
+// de GORM ignorarán la fila en adelante. El servicio limpia los soportes
+// (certificados) del bucket previamente.
+func (r *psiRepo) DeletePostGrade(ctx context.Context, id uuid.UUID) error {
+	return r.db.WithContext(ctx).Delete(&domain.PsiUserPostGrade{}, "id = ?", id).Error
+}
+
 // =========================================================================
 // GESTION DE SOLVENCIAS
 // =========================================================================

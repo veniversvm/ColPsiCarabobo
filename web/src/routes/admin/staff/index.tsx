@@ -8,6 +8,7 @@ import { roleLabel } from "~/lib/staff-permissions";
 interface AdminMe {
   id: string;
   sudo: boolean;
+  can_view_logs?: boolean;
 }
 
 interface Admin {
@@ -37,6 +38,8 @@ interface Admin {
   can_delete_tags: boolean;
   can_manage_projects: boolean;
   can_manage_tickets: boolean;
+  can_view_logs?: boolean;
+  can_export_logs?: boolean;
 }
 
 interface AdminListResponse {
@@ -60,6 +63,7 @@ const countPerms = (a: Admin) =>
     a.can_send_notifications, a.can_manage_notifications, a.can_read_notifications,
     a.can_create_tags, a.can_edit_tags, a.can_delete_tags,
     a.can_manage_projects, a.can_manage_tickets,
+    a.can_view_logs ?? false, a.can_export_logs ?? false,
   ].filter(Boolean).length;
 
 export default function AdminStaffPage() {
@@ -80,6 +84,7 @@ export default function AdminStaffPage() {
     }
   });
   const isSudo = () => me()?.sudo ?? false;
+  const canViewLogs = () => isSudo() || (me()?.can_view_logs ?? false);
 
   // Estado del modal de sucesión de SUDO.
   const [showSudo, setShowSudo] = createSignal(false);
@@ -267,7 +272,7 @@ export default function AdminStaffPage() {
                           {admin.is_active ? "Activo" : "Inactivo"}
                         </span>
                         <span class="text-[10px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider bg-blue-50 text-blue-600">
-                          {permsCount}/18 permisos
+                          {permsCount}/20 permisos
                         </span>
                         <span class={`text-[10px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider ${
                           admin.role ? "bg-indigo-50 text-indigo-600" : "bg-gray-100 text-gray-400"
@@ -287,6 +292,15 @@ export default function AdminStaffPage() {
 
                     {/* Acciones */}
                     <div class="flex-shrink-0 flex items-center gap-2">
+                      <Show when={canViewLogs()}>
+                        <A
+                          href={`/admin/auditoria?actor_id=${admin.id}`}
+                          class="w-9 h-9 rounded-xl flex items-center justify-center border-2 border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 transition-all"
+                          title="Ver actividad (bitácora)"
+                        >
+                          🧾
+                        </A>
+                      </Show>
                       <A
                         href={`/admin/staff/${admin.id}`}
                         class="w-9 h-9 rounded-xl flex items-center justify-center border-2 border-blue-100 bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all"

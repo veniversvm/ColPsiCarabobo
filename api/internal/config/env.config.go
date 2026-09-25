@@ -79,6 +79,10 @@ type Config struct {
 	// Valkey (rate limiting store)
 	ValkeyAddr string // Valkey/Redis address (e.g. "colpsi_valkey:6379"). Empty = in-memory fallback.
 
+	// Retención de la bitácora de cambios (api_change_logs), en días.
+	// <= 0 desactiva el purge automático.
+	AuditLogRetentionDays int
+
 	// Audiobookshelf (biblioteca digital de los agremiados solventes)
 	AbsBaseURL         string // URL interna que usa la API para hablar con ABS (SDK)
 	AbsPublicURL       string // URL pública que abre el navegador (auto-login)
@@ -177,6 +181,9 @@ func InitConfig() {
 
 		// Valkey
 		ValkeyAddr: getEnv("VALKEY_ADDR", ""),
+
+		// Retención de la bitácora de cambios (audit logs)
+		AuditLogRetentionDays: getEnvInt("AUDIT_LOG_RETENTION_DAYS", 90),
 
 		// Audiobookshelf
 		AbsBaseURL:        getEnv("ABS_BASE_URL", "http://localhost:21337"),
