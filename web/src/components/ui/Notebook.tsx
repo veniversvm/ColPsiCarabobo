@@ -1,9 +1,9 @@
 // web/src/components/ui/Notebook.tsx
 // Pestañas horizontales estilo Odoo con color único por posición: cada pestaña
-// toma un color institucional del gremio (ciclo de 6: azul, amarillo, navy, oro,
-// azul-claro, amarillo-oscuro) en su TÍTULO y su FONDO para diferenciarse de un
-// vistazo. La activa se pinta de lleno (fondo sólido + título blanco/navy según
-// luminancia); las inactivas quedan tintadas al 12% con título del color propio.
+// toma un color institucional del gremio (ciclo de 6: azul, amarillo fuerte,
+// navy, vinotinto, verde, azul-claro) en su TÍTULO y su FONDO para diferenciarse
+// de un vistazo. La activa se pinta de lleno (fondo sólido + título blanco/navy
+// según luminancia); las inactivas quedan tintadas al 12% con título del color.
 // Cada NotebookPage hace lazy-mount: la pestaña inicial se hidrata desde el SSR y
 // las demás se montan al activarse por primera vez; una vez visitadas permanecen
 // en el DOM (ocultas) para conservar estado local (TipTap, flatpickr, selecciones
@@ -25,17 +25,17 @@ interface NotebookContextValue {
 
 const NotebookContext = createContext<NotebookContextValue>();
 
-// Pares (fondo sólido, título sobre sólido) de los colores institucionales del
-// gremio (paleta @theme de app.css) intercalados por posición de pestaña.
-// Orden: azul, amarillo, navy, oro, azul-claro, amarillo-oscuro. El título "on"
-// se elige por luminancia para leerse sobre el fondo sólido de la activa.
+// Pares (fondo sólido, título sobre sólido) intercalados por posición de pestaña.
+// Institucionales de @theme (azul, amarillo fuerte, navy, azul-claro) + vinotinto
+// y verde complementario. El título "on" se elige por luminancia para leerse
+// sobre el fondo sólido de la activa.
 const TAB_COLORS = [
-  { bg: "#1e3a8a", on: "#ffffff" },
-  { bg: "#facc15", on: "#172554" },
-  { bg: "#0a174f", on: "#ffffff" },
-  { bg: "#dfcc87", on: "#172554" },
-  { bg: "#1e40af", on: "#ffffff" },
-  { bg: "#eab308", on: "#172554" },
+  { bg: "#1e3a8a", on: "#ffffff" },  // azul
+  { bg: "#facc15", on: "#172554" },  // amarillo fuerte
+  { bg: "#0a174f", on: "#ffffff" },  // navy
+  { bg: "#722f37", on: "#ffffff" },  // vinotinto
+  { bg: "#166534", on: "#ffffff" },  // verde complementario
+  { bg: "#1e40af", on: "#ffffff" },  // azul-claro
 ];
 
 export function Notebook(props: {
