@@ -483,13 +483,6 @@ export default function ProfilePage() {
                   description:
                     "Controla qué información se muestra públicamente en el directorio y cuál queda solo para el colegio.",
                 },
-                {
-                  id: "redes",
-                  label: "Redes Sociales",
-                  icon: "link",
-                  description:
-                    "Vincula tus perfiles profesionales para que otros psicólogos y el público puedan encontrarte.",
-                },
               ]}
             >
             <NotebookPage id="cuenta">
@@ -715,22 +708,40 @@ export default function ProfilePage() {
                 />
               </NotebookPage>
 
-              <NotebookPage id="redes">
-                <SocialNetworksSection
-                  networks={profile()?.social_networks}
-                  newNetworkName={socialForm.name}
-                  newNetworkUrl={socialForm.url}
-                  saving={savingSocial()}
-                  onNetworkNameChange={(v) => setSocialForm("name", v)}
-                  onNetworkUrlChange={(v) => setSocialForm("url", v)}
-                  onAddNetwork={handleAddSocial}
-                  onDeleteNetwork={handleDeleteSocial}
-                />
-              </NotebookPage>
             </Notebook>
 
             <SaveButton saving={saving()} />
           </form>
+
+          {/* Redes Sociales: se guarda con lógica propia (apiPost/apiDelete a
+              /psi/me/social), por eso vive fuera del notebook y del form del perfil. */}
+          <div class="bg-white rounded-lg border border-colpsi-border overflow-hidden">
+            <div class="p-5">
+              <div class="flex items-center gap-2 mb-3">
+                <span
+                  class="w-2 h-2 rounded-full shrink-0"
+                  style={{ backgroundColor: "#facc15" }}
+                />
+                <h2 class="text-sm font-semibold" style={{ color: "#a16207" }}>
+                  Redes Sociales
+                </h2>
+              </div>
+              <div class="rounded-md border border-colpsi-border bg-colpsi-bg/40 px-4 py-3 mb-4 text-sm text-colpsi-text/80 leading-relaxed">
+                Vincula tus perfiles profesionales para que otros psicólogos y
+                el público puedan encontrarte.
+              </div>
+              <SocialNetworksSection
+                networks={profile()?.social_networks}
+                newNetworkName={socialForm.name}
+                newNetworkUrl={socialForm.url}
+                saving={savingSocial()}
+                onNetworkNameChange={(v) => setSocialForm("name", v)}
+                onNetworkUrlChange={(v) => setSocialForm("url", v)}
+                onAddNetwork={handleAddSocial}
+                onDeleteNetwork={handleDeleteSocial}
+              />
+            </div>
+          </div>
         </Suspense>
       </div>
     </main>
