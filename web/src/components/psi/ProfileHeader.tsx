@@ -3,6 +3,7 @@
 import { Show, For, createSignal } from "solid-js";
 import { Portal } from "solid-js/web";
 import QRCodeGenerator from "./profile/QrCode";
+import { SocialBrandIcon } from "./profile/SocialBrandIcon";
 import { bucketUrl } from "~/lib/bucket";
 import type { SocialNetwork } from "~/types/psi";
 
@@ -111,7 +112,8 @@ export function ProfileHeader(props: ProfileHeaderProps) {
                   rel="noopener noreferrer"
                   class="inline-flex items-center gap-1.5 bg-colpsi-surface hover:bg-colpsi-yellow text-colpsi-blue text-xs md:text-sm font-bold px-3 py-1.5 rounded-xl transition-colors break-all"
                 >
-                  <span class="text-sm">🔗</span> {net.name}
+                  <SocialBrandIcon name={net.name} />
+                  {net.name}
                 </a>
               )}
             </For>
