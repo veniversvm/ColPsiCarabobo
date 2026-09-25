@@ -2,6 +2,7 @@
 import { Show } from "solid-js";
 import { RichTextEditor } from "~/components/ui/RichTextEditor";
 import { DropdownSelect } from "~/components/ui/DropdownSelect";
+import { Icon } from "~/components/admin/ui/icons";
 
 const FULL_BIO_WORD_LIMIT = 5000;
 
@@ -36,20 +37,20 @@ export function ProfessionalSection(props: ProfessionalSectionProps) {
     props.onFullBioChange(v);
   };
 
-  const selectClass = "w-full bg-colpsi-surface border-2 border-transparent focus:border-colpsi-yellow rounded-xl px-5 py-3 text-colpsi-text";
+  const selectClass = "h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-colpsi-text outline-none transition-colors focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/15";
 
   return (
     <section>
 
 
-      <div class="space-y-6">
+      <div class="space-y-5">
 
         {/* ── ÁREAS DE TRABAJO (Antes Especialidades) ────────────────────── */}
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
           {/* Área Principal */}
-          <div class="space-y-2">
-            <label class="text-xs font-bold text-colpsi-muted uppercase ml-2">
+          <div class="space-y-1">
+            <label class="text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide ml-1 mb-1">
               Área de Trabajo Principal
             </label>
             <DropdownSelect
@@ -75,8 +76,8 @@ export function ProfessionalSection(props: ProfessionalSectionProps) {
           </div>
 
           {/* Área Secundaria */}
-          <div class="space-y-2">
-            <label class="text-xs font-bold text-colpsi-muted uppercase ml-2">
+          <div class="space-y-1">
+            <label class="text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide ml-1 mb-1">
               Área de Trabajo Secundaria
             </label>
             <DropdownSelect
@@ -101,26 +102,27 @@ export function ProfessionalSection(props: ProfessionalSectionProps) {
               onChange={props.onSecondaryWorkAreaChange}
             />
             <Show when={props.secondaryWorkArea && props.secondaryWorkArea === props.primaryWorkArea}>
-              <p class="text-xs text-amber-500 font-bold ml-2">
-                ⚠️ El área secundaria no puede ser igual a la principal.
+              <p class="flex items-center gap-1.5 text-xs text-amber-600 font-medium ml-1 mt-1">
+                <Icon name="alertTriangle" class="w-3.5 h-3.5" />
+                El área secundaria no puede ser igual a la principal.
               </p>
             </Show>
           </div>
         </div>
 
         {/* ── MINI BIO ──────────────────────────────────────────────────── */}
-        <div class="space-y-2">
-          <label class="text-xs font-bold text-colpsi-muted uppercase ml-2">
-            Mini Biografía <span class="text-gray-400 font-medium normal-case">(máx. 250 caracteres)</span>
+        <div class="space-y-1">
+          <label class="text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide ml-1 mb-1">
+            Mini Biografía <span class="text-colpsi-muted font-normal normal-case">(máx. 250 caracteres)</span>
           </label>
           <textarea
             value={props.miniBio}
             onInput={(e) => props.onMiniBioChange(e.currentTarget.value)}
             maxlength="250"
-            class="w-full bg-colpsi-surface border-2 border-transparent focus:border-colpsi-yellow rounded-2xl px-5 py-4 outline-none text-colpsi-text transition-all min-h-[100px] resize-y"
+            class="w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-sm text-colpsi-text placeholder:text-slate-400 outline-none transition-colors focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/15 min-h-[100px] resize-y"
             placeholder="Escribe un breve resumen de tu práctica profesional..."
           />
-          <p class="text-[11px] text-gray-400 text-right mr-2">
+          <p class="text-[11px] text-colpsi-muted text-right">
             {props.miniBio?.length || 0}/250
           </p>
         </div>
@@ -128,10 +130,10 @@ export function ProfessionalSection(props: ProfessionalSectionProps) {
         {/* ── FULL BIO ──────────────────────────────────────────────────── */}
         <div class="pt-4 border-t border-colpsi-border">
           <div class="flex justify-between items-center mb-2">
-            <label class="text-xs font-bold text-colpsi-muted uppercase ml-2">
-              Biografía Extensa <span class="text-gray-400 font-medium normal-case">(Perfil Detallado)</span>
+            <label class="text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide ml-1">
+              Biografía Extensa <span class="text-colpsi-muted font-normal normal-case">(Perfil Detallado)</span>
             </label>
-            <span class={`text-xs font-semibold mr-2 ${isOverLimit() ? "text-red-500" : "text-gray-400"}`}>
+            <span class={`text-xs font-medium ${isOverLimit() ? "text-red-500" : "text-colpsi-muted"}`}>
               {wordCount()} / {FULL_BIO_WORD_LIMIT} palabras
             </span>
           </div>
@@ -141,8 +143,9 @@ export function ProfessionalSection(props: ProfessionalSectionProps) {
             onUpdate={handleFullBioChange}
           />
           <Show when={isOverLimit()}>
-            <p class="text-xs text-red-500 mt-1 ml-2 font-bold">
-              ⚠️ Has superado el límite de {FULL_BIO_WORD_LIMIT} palabras. Por favor, resume tu contenido.
+            <p class="flex items-center gap-1.5 text-xs text-red-500 mt-1 ml-1 font-medium">
+              <Icon name="alertTriangle" class="w-3.5 h-3.5" />
+              Has superado el límite de {FULL_BIO_WORD_LIMIT} palabras. Por favor, resume tu contenido.
             </p>
           </Show>
         </div>

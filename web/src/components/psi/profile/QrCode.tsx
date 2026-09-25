@@ -1,6 +1,7 @@
 // web/src/components/psi/profile/QrCode.tsx
 import { createEffect } from "solid-js";
 import QRCode from "qrcode";
+import { Icon } from "~/components/admin/ui/icons";
 
 interface QrProps {
   url: string;
@@ -20,7 +21,7 @@ function QRCodeGenerator(props: QrProps) {
           margin: 1,
           errorCorrectionLevel: 'H', // Alta corrección para que sea más robusto al imprimir
           color: {
-            dark: "#1e3a8a", 
+            dark: "#1e3a8a",
             light: "#ffffff",
           },
         },
@@ -33,15 +34,15 @@ function QRCodeGenerator(props: QrProps) {
 
   const downloadQR = () => {
     if (!canvasRef) return;
-    
+
     // Convertir el canvas a imagen
     const guiUrl = canvasRef.toDataURL("image/png");
-    
+
     // Crear un link temporal para la descarga
     const link = document.createElement("a");
     link.href = guiUrl;
     link.download = props.filename || `qr-perfil-${Date.now()}.png`;
-    
+
     // Disparar el click y remover el elemento
     document.body.appendChild(link);
     link.click();
@@ -49,23 +50,23 @@ function QRCodeGenerator(props: QrProps) {
   };
 
   return (
-    <div class="flex flex-col max-w-sm items-center justify-center p-1 bg-colpsi-surface rounded-2xl border border-colpsi-border">
-      <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">
+    <div class="flex flex-col max-w-sm items-center justify-center p-1">
+      <p class="text-[10px] font-semibold text-colpsi-muted uppercase tracking-wide mb-3">
         Código QR del Perfil
       </p>
-      
-      <div class="bg-white p-2 rounded-xl shadow-inner border border-colpsi-border mb-3">
-        <canvas 
-          ref={canvasRef} 
-          class="max-w-full h-auto rounded-lg"
+
+      <div class="bg-white p-2 rounded-md border border-colpsi-border mb-3">
+        <canvas
+          ref={canvasRef}
+          class="max-w-full h-auto rounded-md"
         ></canvas>
       </div>
-      
+
       <button
         onClick={downloadQR}
-        class="flex items-center gap-2 text-[10px] font-bold text-colpsi-blue bg-white border border-gray-200 px-3 py-1.5 rounded-full hover:bg-colpsi-blue hover:text-white transition-all shadow-sm active:scale-95"
+        class="inline-flex items-center gap-1.5 h-8 text-xs font-medium text-colpsi-blue bg-white border border-colpsi-border px-3 rounded-md hover:bg-colpsi-bg transition-colors"
       >
-        <span>📥</span>
+        <Icon name="download" class="w-3.5 h-3.5" />
         Descargar QR
       </button>
     </div>

@@ -1,6 +1,7 @@
 // web/src/components/psi/profile/AccountSection.tsx
 import { createMemo, Show } from "solid-js";
 import { InputField, PasswordField } from "./InputField";
+import { Icon } from "~/components/admin/ui/icons";
 
 interface AccountSectionProps {
   username: string;
@@ -115,15 +116,15 @@ export function AccountSection(props: AccountSectionProps) {
           />
           
           <Show when={hasPasswordError()}>
-            <div class="flex items-center gap-1 text-xs text-red-500 mt-1 animate-in fade-in slide-in-from-top-1">
-              <span class="text-red-500">⚠️</span>
+            <div class="flex items-center gap-1.5 text-xs text-red-500 mt-1 animate-in fade-in slide-in-from-top-1">
+              <Icon name="alertTriangle" class="w-3.5 h-3.5" />
               <span>Las contraseñas no coinciden</span>
             </div>
           </Show>
 
           <Show when={passwordsMatch() && props.newPassword1 && props.newPassword2}>
-            <div class="flex items-center gap-1 text-xs text-green-500 mt-1 animate-in fade-in slide-in-from-top-1">
-              <span class="text-green-500">✅</span>
+            <div class="flex items-center gap-1.5 text-xs text-emerald-600 mt-1 animate-in fade-in slide-in-from-top-1">
+              <Icon name="check" class="w-3.5 h-3.5" />
               <span>Las contraseñas coinciden</span>
             </div>
           </Show>
@@ -132,8 +133,8 @@ export function AccountSection(props: AccountSectionProps) {
 
       {/* Requisitos de seguridad */}
       <Show when={props.newPassword1}>
-        <div class="mt-6 p-4 bg-colpsi-surface rounded-xl border border-colpsi-border">
-          <p class="text-xs font-bold text-colpsi-muted uppercase tracking-wider mb-3">
+        <div class="mt-6 p-4 bg-colpsi-bg/60 rounded-md border border-colpsi-border">
+          <p class="text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide mb-3">
             Requisitos de seguridad
           </p>
           <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -168,11 +169,12 @@ export function AccountSection(props: AccountSectionProps) {
 function RequirementCheck(props: { label: string; met: boolean }) {
   return (
     <div class={`flex items-center gap-1.5 text-xs ${
-      props.met ? 'text-green-600' : 'text-gray-400'
+      props.met ? 'text-emerald-600' : 'text-slate-400'
     }`}>
-      <span class="text-sm">
-        {props.met ? '✅' : '◻️'}
-      </span>
+      <Icon
+        name={props.met ? 'check' : 'x'}
+        class={`w-3.5 h-3.5 ${props.met ? '' : 'text-slate-300'}`}
+      />
       <span class={props.met ? 'font-medium' : ''}>
         {props.label}
       </span>

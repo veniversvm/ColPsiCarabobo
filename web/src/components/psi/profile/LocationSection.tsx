@@ -2,6 +2,7 @@
 import { For, Show } from "solid-js";
 import { InputField } from "./InputField";
 import { MUNICIPIOS_CARABOBO, ESTADOS_VENEZUELA, municipiosDe } from "~/lib/geo";
+import { Icon } from "~/components/admin/ui/icons";
 
 interface LocationSectionProps {
   // ── Carabobo ──
@@ -56,7 +57,7 @@ function SelectField(props: SelectFieldProps) {
   return (
     <div class="space-y-1">
       <div class="flex items-center justify-between">
-        <label class="text-xs font-bold text-colpsi-muted uppercase ml-2">
+        <label class="text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide ml-1 mb-1">
           {props.label}
         </label>
       </div>
@@ -64,10 +65,10 @@ function SelectField(props: SelectFieldProps) {
         value={props.value}
         onChange={(e) => props.onChange(e.currentTarget.value)}
         disabled={props.disabled}
-        class={`w-full bg-colpsi-surface border-2 rounded-xl px-5 py-3 outline-none transition-all ${
+        class={`h-9 w-full rounded-md border bg-white px-3 text-sm text-colpsi-text outline-none transition-colors ${
           props.disabled
-            ? "border-transparent opacity-50 cursor-not-allowed"
-            : "border-transparent focus:border-colpsi-yellow"
+            ? "border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed"
+            : "border-slate-300 focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/15"
         }`}
       >
         <option value="">{props.placeholder ?? "Seleccionar…"}</option>
@@ -93,24 +94,25 @@ export function LocationSection(props: LocationSectionProps) {
     <section class="space-y-10">
 
       {/* ── MENSAJE GLOBAL SOBRE PRIVACIDAD ────────────────────────────── */}
-      <div class="bg-blue-50/80 p-5 rounded-3xl border border-blue-100 flex items-start gap-4">
-        <span class="text-3xl mt-1">🛡️</span>
+      <div class="bg-colpsi-bg/60 p-4 rounded-md border border-colpsi-border flex items-start gap-3">
+        <Icon name="shield" class="w-5 h-5 text-colpsi-blue mt-0.5 shrink-0" />
         <div>
-          <p class="text-xs font-black text-blue-900 uppercase tracking-widest mb-1">
+          <p class="text-[11px] font-semibold text-colpsi-text uppercase tracking-wide mb-1">
             Sobre tu Privacidad
           </p>
-          <p class="text-xs text-blue-800 leading-relaxed font-medium">
-            Completa aquí tus datos de ubicación y consulta por zona. Podrás elegir exactamente qué información ocultar o mostrar al público utilizando el <strong>Centro de Privacidad</strong> ubicado en la siguiente sección.
+          <p class="text-xs text-colpsi-muted leading-relaxed">
+            Completa aquí tus datos de ubicación y consulta por zona. Podrás elegir exactamente qué información ocultar o mostrar al público utilizando el <strong class="font-semibold text-colpsi-text">Centro de Privacidad</strong> ubicado en la siguiente sección.
           </p>
         </div>
       </div>
 
       {/* ── CARABOBO ───────────────────────────────────────────────────── */}
       <div>
-        <h2 class="text-lg font-black text-colpsi-blue mb-5 border-l-4 border-colpsi-yellow pl-3 uppercase tracking-tight">
-          📍 Presencia en Carabobo
+        <h2 class="text-sm font-semibold text-colpsi-text uppercase tracking-wide mb-4 flex items-center gap-2">
+          <Icon name="mapPin" class="w-4 h-4 text-colpsi-blue" />
+          Presencia en Carabobo
         </h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <SelectField
             label="Municipio"
             value={props.municipalityCarabobo}
@@ -143,11 +145,12 @@ export function LocationSection(props: LocationSectionProps) {
       </div>
 
       {/* ── FUERA DE CARABOBO (VENEZUELA) ──────────────────────────────── */}
-      <div class="pt-6 border-t border-colpsi-border">
-        <h2 class="text-lg font-black text-colpsi-blue mb-5 border-l-4 border-gray-300 pl-3 uppercase tracking-tight">
-          🗺️ Otro Estado de Venezuela
+      <div class="pt-5 border-t border-colpsi-border">
+        <h2 class="text-sm font-semibold text-colpsi-text uppercase tracking-wide mb-4 flex items-center gap-2">
+          <Icon name="map" class="w-4 h-4 text-colpsi-blue" />
+          Otro Estado de Venezuela
         </h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <SelectField
             label="Estado"
             value={props.stateOutside}
@@ -198,11 +201,12 @@ export function LocationSection(props: LocationSectionProps) {
       </div>
 
       {/* ── EXTERIOR (FUERA DE VENEZUELA) ──────────────────────────────── */}
-      <div class="pt-6 border-t border-colpsi-border">
-        <h2 class="text-lg font-black text-colpsi-blue mb-5 border-l-4 border-gray-300 pl-3 uppercase tracking-tight">
-          🌐 Exterior (Fuera de Venezuela)
+      <div class="pt-5 border-t border-colpsi-border">
+        <h2 class="text-sm font-semibold text-colpsi-text uppercase tracking-wide mb-4 flex items-center gap-2">
+          <Icon name="globe" class="w-4 h-4 text-colpsi-blue" />
+          Exterior (Fuera de Venezuela)
         </h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <InputField
             label="País"
             value={props.country}

@@ -3,6 +3,7 @@ import { Show, createSignal } from "solid-js";
 import { bucketUrl } from "~/lib/bucket";
 import { FileUploader } from "~/components/ui/fileUploader";
 import { ImageModal } from "~/components/ui/ImageModal";
+import { Icon } from "~/components/admin/ui/icons";
 
 interface AcademicSectionProps {
   undergraduateData: {
@@ -92,12 +93,12 @@ export function AcademicSection(props: AcademicSectionProps) {
     return (
       <div class="space-y-3">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-medium text-gray-600">{p.label}</span>
+          <span class="text-xs font-medium text-colpsi-text">{p.label}</span>
           <Show when={showExisting()}>
-            <span class="text-[10px] text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Subida</span>
+            <span class="text-[10px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">Subida</span>
           </Show>
           <Show when={isPendingDelete() && !newFile()}>
-            <span class="text-[10px] text-red-500 bg-red-50 px-2 py-0.5 rounded-full">Se eliminará al guardar</span>
+            <span class="text-[10px] font-medium text-red-500 bg-red-50 border border-red-200 px-2 py-0.5 rounded-md">Se eliminará al guardar</span>
           </Show>
         </div>
 
@@ -111,34 +112,34 @@ export function AcademicSection(props: AcademicSectionProps) {
               <img
                 src={getImageUrl(p.existingUrl)}
                 alt={p.label}
-                class="w-full h-32 object-cover rounded-lg border-2 border-gray-200 group-hover:border-colpsi-yellow transition-all"
+                class="w-full h-32 object-cover rounded-md border border-colpsi-border transition-colors"
               />
-              <div class="absolute inset-0 bg-black/0 group-hover:bg-black/30 rounded-lg transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
-                <span class="bg-white text-colpsi-blue p-2 rounded-full shadow-lg transform scale-90 group-hover:scale-100 transition-transform">
-                  🔍
+              <div class="absolute inset-0 bg-black/0 group-hover:bg-black/30 rounded-md transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                <span class="bg-white text-colpsi-blue p-2 rounded-full shadow-sm">
+                  <Icon name="search" class="w-4 h-4" />
                 </span>
               </div>
             </div>
             <button
               type="button"
               onClick={() => markForDelete(p.fileKey)}
-              class="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-7 h-7 flex items-center justify-center shadow transition-colors"
+              class="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-7 h-7 flex items-center justify-center shadow-sm transition-colors"
               title="Eliminar imagen"
             >
-              🗑
+              <Icon name="trash" class="w-3.5 h-3.5" />
             </button>
           </div>
         </Show>
 
         {/* Estado: borrado pendiente */}
         <Show when={isPendingDelete() && !newFile()}>
-          <div class="w-full h-32 bg-red-50 rounded-lg border-2 border-dashed border-red-200 flex flex-col items-center justify-center gap-2">
-            <span class="text-2xl opacity-40">🗑️</span>
-            <p class="text-[10px] text-red-400 font-bold text-center">Se eliminará al guardar</p>
+          <div class="w-full h-32 bg-red-50 rounded-md border border-dashed border-red-200 flex flex-col items-center justify-center gap-2">
+            <Icon name="trash" class="w-5 h-5 text-red-300" />
+            <p class="text-[11px] text-red-400 font-medium text-center">Se eliminará al guardar</p>
             <button
               type="button"
               onClick={() => cancelDelete(p.fileKey)}
-              class="text-[10px] underline text-gray-400 hover:text-colpsi-blue"
+              class="text-[11px] underline text-colpsi-muted hover:text-colpsi-blue"
             >
               Cancelar
             </button>
@@ -149,27 +150,28 @@ export function AcademicSection(props: AcademicSectionProps) {
         <Show when={newFile()}>
           <div class="relative">
             <div
-              class="w-full h-32 bg-blue-50 rounded-lg border-2 border-colpsi-blue flex flex-col items-center justify-center cursor-pointer hover:bg-blue-100 transition-colors"
+              class="w-full h-32 bg-colpsi-bg rounded-md border border-colpsi-border flex flex-col items-center justify-center cursor-pointer hover:bg-colpsi-bg/70 transition-colors"
               onClick={() => {
                 const file = newFile();
                 const url = URL.createObjectURL(file);
                 setModalImage({ src: url, alt: file.name });
               }}
             >
-              <span class="text-3xl mb-2">📄</span>
-              <span class="text-[10px] font-medium text-colpsi-blue text-center px-2 truncate max-w-full">
+              <Icon name="fileText" class="w-6 h-6 text-colpsi-blue/50 mb-1.5" />
+              <span class="text-[11px] font-medium text-colpsi-blue text-center px-2 truncate max-w-full">
                 {newFile()?.name}
               </span>
-              <span class="text-[8px] text-colpsi-muted">
+              <span class="text-[10px] text-colpsi-muted">
                 {(newFile()!.size / 1024).toFixed(1)}KB
               </span>
             </div>
             <button
               type="button"
               onClick={() => handleRemoveFile(p.fileKey)}
-              class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600 transition-colors"
+              class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition-colors"
+              title="Quitar archivo"
             >
-              ✕
+              <Icon name="x" class="w-3.5 h-3.5" />
             </button>
           </div>
         </Show>
@@ -194,14 +196,14 @@ export function AcademicSection(props: AcademicSectionProps) {
 
 
 
-      <div class="space-y-6">
-        <div class="bg-colpsi-surface p-6 rounded-2xl border border-colpsi-border">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <div class="space-y-5">
+        <div class="bg-colpsi-bg/50 p-5 rounded-md border border-colpsi-border">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
 
             <Show when={props.showUniversity}>
               <div>
-                <label class="text-[10px] font-black text-gray-400 uppercase block mb-1">Universidad</label>
-                <p class="font-bold text-colpsi-blue text-lg">
+                <label class="text-[10px] font-semibold text-colpsi-muted uppercase block mb-1">Universidad</label>
+                <p class="text-base font-semibold text-colpsi-text">
                   {props.undergraduateData.university_undergraduate || "No especificada"}
                 </p>
               </div>
@@ -209,8 +211,8 @@ export function AcademicSection(props: AcademicSectionProps) {
 
             <Show when={props.showGraduateDate}>
               <div>
-                <label class="text-[10px] font-black text-gray-400 uppercase block mb-1">Fecha de Egreso</label>
-                <p class="font-bold text-colpsi-blue">
+                <label class="text-[10px] font-semibold text-colpsi-muted uppercase block mb-1">Fecha de Egreso</label>
+                <p class="text-sm font-semibold text-colpsi-text">
                   {formatDate(props.undergraduateData.graduate_date) || "No especificada"}
                 </p>
               </div>
@@ -218,8 +220,8 @@ export function AcademicSection(props: AcademicSectionProps) {
 
             <Show when={props.showMention}>
               <div>
-                <label class="text-[10px] font-black text-gray-400 uppercase block mb-1">Mención</label>
-                <p class="font-bold text-colpsi-blue">
+                <label class="text-[10px] font-semibold text-colpsi-muted uppercase block mb-1">Mención</label>
+                <p class="text-sm font-semibold text-colpsi-text">
                   {props.undergraduateData.mention_undergraduate || "No especificada"}
                 </p>
               </div>
@@ -227,15 +229,15 @@ export function AcademicSection(props: AcademicSectionProps) {
 
             <Show when={props.undergraduateData.register_number}>
               <div>
-                <label class="text-[10px] font-black text-gray-400 uppercase block mb-1">N° Registro</label>
-                <p class="font-bold text-colpsi-blue">{props.undergraduateData.register_number}</p>
+                <label class="text-[10px] font-semibold text-colpsi-muted uppercase block mb-1">N° Registro</label>
+                <p class="text-sm font-semibold text-colpsi-text">{props.undergraduateData.register_number}</p>
               </div>
             </Show>
 
             <Show when={props.undergraduateData.register_folio || props.undergraduateData.register_tome}>
               <div class="md:col-span-2">
-                <label class="text-[10px] font-black text-gray-400 uppercase block mb-1">Folio / Tomo</label>
-                <p class="font-bold text-colpsi-blue">
+                <label class="text-[10px] font-semibold text-colpsi-muted uppercase block mb-1">Folio / Tomo</label>
+                <p class="text-sm font-semibold text-colpsi-text">
                   {props.undergraduateData.register_folio && `Folio: ${props.undergraduateData.register_folio}`}
                   {props.undergraduateData.register_folio && props.undergraduateData.register_tome && " • "}
                   {props.undergraduateData.register_tome && `Tomo: ${props.undergraduateData.register_tome}`}
@@ -245,8 +247,8 @@ export function AcademicSection(props: AcademicSectionProps) {
           </div>
 
           <div class="space-y-4">
-            <label class="text-[10px] font-black text-gray-400 uppercase">Documentos del Título</label>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <label class="text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide">Documentos del Título</label>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <ImageSlot
                 label="Imagen del Título"
                 fileKey="title_image_one"
@@ -263,9 +265,9 @@ export function AcademicSection(props: AcademicSectionProps) {
                 existingUrl={props.undergraduateData.title_image_three_url}
               />
             </div>
-            <p class="text-[9px] text-gray-400 mt-4">
-              ✓ Haz clic en cualquier imagen para verla en tamaño completo.
-              Para eliminar una imagen existente usa el botón 🗑 — el cambio se aplica al guardar.
+            <p class="text-[11px] text-colpsi-muted mt-4 leading-relaxed">
+              Haz clic en cualquier imagen para verla en tamaño completo.
+              Para eliminar una imagen existente usa el botón de eliminar — el cambio se aplica al guardar.
             </p>
           </div>
         </div>

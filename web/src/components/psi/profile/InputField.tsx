@@ -16,12 +16,12 @@ export function InputField(props: InputFieldProps) {
   return (
     <div class="space-y-1">
       <div class="flex items-center justify-between">
-        <label class="text-xs font-bold text-colpsi-muted uppercase ml-2">
+        <label class="text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide ml-1 mb-1">
           {props.label}
           {props.required && <span class="text-red-500 ml-1">*</span>}
         </label>
         <Show when={props.helper}>
-          <span class="text-[10px] text-gray-400">{props.helper}</span>
+          <span class="text-[10px] text-colpsi-muted">{props.helper}</span>
         </Show>
       </div>
       <input
@@ -29,14 +29,14 @@ export function InputField(props: InputFieldProps) {
         value={props.value}
         onInput={(e) => props.onInput(e.currentTarget.value)}
         placeholder={props.placeholder}
-        class={`w-full bg-colpsi-surface border-2 rounded-xl px-5 py-3 outline-none transition-all ${
+        class={`h-9 w-full rounded-md border bg-white px-3 text-sm text-colpsi-text placeholder:text-slate-400 outline-none transition-colors ${
           props.error
-            ? "border-red-300 focus:border-red-500"
-            : "border-transparent focus:border-colpsi-yellow"
+            ? "border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-500/15"
+            : "border-slate-300 focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/15"
         }`}
       />
       <Show when={props.error}>
-        <p class="text-xs text-red-500 mt-1 ml-2">{props.error}</p>
+        <p class="text-xs text-red-500 mt-1 ml-1">{props.error}</p>
       </Show>
     </div>
   );
@@ -57,8 +57,8 @@ function IconEyeOpen() {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width="20"
-      height="20"
+      width="16"
+      height="16"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -77,8 +77,8 @@ function IconEyeOff() {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width="20"
-      height="20"
+      width="16"
+      height="16"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -99,10 +99,15 @@ export function PasswordField(props: PasswordFieldProps) {
 
   return (
     <div class="space-y-1">
-      <label class="text-xs font-bold text-colpsi-muted uppercase ml-2">
-        {props.label}
-        {props.required && <span class="text-red-500 ml-1">*</span>}
-      </label>
+      <div class="flex items-center justify-between">
+        <label class="text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide ml-1 mb-1">
+          {props.label}
+          {props.required && <span class="text-red-500 ml-1">*</span>}
+        </label>
+        <Show when={props.showStrength}>
+          <span class="text-[10px] text-colpsi-muted">Mínimo 8 caracteres</span>
+        </Show>
+      </div>
 
       <div class="relative">
         <input
@@ -110,10 +115,10 @@ export function PasswordField(props: PasswordFieldProps) {
           value={props.value}
           onInput={(e) => props.onInput(e.currentTarget.value)}
           placeholder={props.placeholder}
-          class={`w-full bg-colpsi-surface border-2 rounded-xl px-5 py-3 outline-none transition-all font-mono pr-12 ${
+          class={`h-9 w-full rounded-md border bg-white px-3 pr-10 text-sm text-colpsi-text placeholder:text-slate-400 outline-none transition-colors font-mono ${
             props.error
-              ? "border-red-300 focus:border-red-500"
-              : "border-transparent focus:border-colpsi-yellow"
+              ? "border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-500/15"
+              : "border-slate-300 focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/15"
           }`}
         />
 
@@ -121,7 +126,7 @@ export function PasswordField(props: PasswordFieldProps) {
         <button
           type="button"
           onClick={() => setShowPassword(!showPassword())}
-          class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-colpsi-blue transition-colors p-1"
+          class="absolute right-2 top-1/2 -translate-y-1/2 text-colpsi-muted hover:text-colpsi-blue transition-colors p-1"
           tabIndex={-1}
           title={showPassword() ? "Ocultar contraseña" : "Mostrar contraseña"}
         >
@@ -130,7 +135,7 @@ export function PasswordField(props: PasswordFieldProps) {
       </div>
 
       <Show when={props.error}>
-        <p class="text-xs text-red-500 mt-1 ml-2">{props.error}</p>
+        <p class="text-xs text-red-500 mt-1 ml-1">{props.error}</p>
       </Show>
     </div>
   );

@@ -50,16 +50,21 @@ interface PrivacySectionProps {
   onShowUniversity: (value: boolean) => void;
 }
 
+const boxClass =
+  "space-y-3 bg-colpsi-bg/50 p-4 rounded-lg border border-colpsi-border";
+const boxTitleClass =
+  "text-[11px] font-semibold text-colpsi-text uppercase tracking-wide border-b border-colpsi-border pb-2";
+
 export function PrivacySection(props: PrivacySectionProps) {
   return (
     <section>
 
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
         {/* ── Contacto Principal ──────────────────────────────────────── */}
-        <div class="space-y-4 bg-blue-50/50 p-6 rounded-3xl border border-blue-100">
-          <h3 class="text-sm font-bold text-colpsi-blue uppercase tracking-widest border-b border-blue-100 pb-2">
+        <div class={boxClass}>
+          <h3 class={boxTitleClass}>
             Privacidad General
           </h3>
           <ToggleSwitch
@@ -75,8 +80,8 @@ export function PrivacySection(props: PrivacySectionProps) {
         </div>
 
         {/* ── Carabobo ────────────────────────────────────────────────── */}
-        <div class="space-y-4 bg-indigo-50/40 p-6 rounded-3xl border border-indigo-100">
-          <h3 class="text-sm font-bold text-indigo-900 uppercase tracking-widest border-b border-indigo-100 pb-2">
+        <div class={boxClass}>
+          <h3 class={boxTitleClass}>
             Presencia en Carabobo
           </h3>
           <ToggleSwitch
@@ -97,8 +102,8 @@ export function PrivacySection(props: PrivacySectionProps) {
         </div>
 
         {/* ── Otro Estado Venezuela ───────────────────────────────────── */}
-        <div class="space-y-4 bg-yellow-50/40 p-6 rounded-3xl border border-yellow-100">
-          <h3 class="text-sm font-bold text-colpsi-blue uppercase tracking-widest border-b border-yellow-100 pb-2">
+        <div class={boxClass}>
+          <h3 class={boxTitleClass}>
             Fuera de Carabobo
           </h3>
           <ToggleSwitch
@@ -129,8 +134,8 @@ export function PrivacySection(props: PrivacySectionProps) {
         </div>
 
         {/* ── Exterior ────────────────────────────────────────────────── */}
-        <div class="space-y-4 bg-green-50/40 p-6 rounded-3xl border border-green-100">
-          <h3 class="text-sm font-bold text-colpsi-blue uppercase tracking-widest border-b border-green-100 pb-2">
+        <div class={boxClass}>
+          <h3 class={boxTitleClass}>
             Exterior (Internacional)
           </h3>
           <ToggleSwitch
@@ -151,8 +156,8 @@ export function PrivacySection(props: PrivacySectionProps) {
         </div>
 
         {/* ── Datos Académicos ────────────────────────────────────────── */}
-        <div class="space-y-4 bg-colpsi-surface p-6 rounded-3xl border border-colpsi-border md:col-span-2">
-          <h3 class="text-sm font-bold text-colpsi-text uppercase tracking-widest border-b border-gray-200 pb-2">
+        <div class={`${boxClass} md:col-span-2`}>
+          <h3 class={boxTitleClass}>
             Formación Académica
           </h3>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">

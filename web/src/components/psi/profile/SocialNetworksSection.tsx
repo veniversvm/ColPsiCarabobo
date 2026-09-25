@@ -1,6 +1,7 @@
 // web/src/components/psi/profile/SocialNetworksSection.tsx
 import { Show, For, createSignal } from "solid-js";
 import { SocialNetwork } from "~/types/psi";
+import { Icon } from "~/components/admin/ui/icons";
 
 interface SocialNetworksSectionProps {
   networks?: SocialNetwork[];
@@ -29,23 +30,27 @@ export function SocialNetworksSection(props: SocialNetworksSectionProps) {
 
       {/* ── Modal de confirmación ────────────────────────────────────────── */}
       <Show when={pendingId()}>
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div class="bg-white rounded-3xl p-8 shadow-2xl max-w-sm w-full mx-4 border border-colpsi-border">
-            <div class="text-center mb-6">
-              <span class="text-4xl">🔗</span>
-              <h3 class="text-lg font-black text-gray-800 mt-3">¿Eliminar esta red social?</h3>
-              <p class="text-sm text-colpsi-muted mt-1">Se quitará de tu perfil público.</p>
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div class="bg-white rounded-lg p-5 shadow-lg max-w-sm w-full mx-4 border border-colpsi-border">
+            <div class="flex items-center gap-3 mb-4">
+              <span class="w-9 h-9 rounded-full bg-colpsi-bg flex items-center justify-center text-colpsi-blue">
+                <Icon name="link" class="w-4 h-4" />
+              </span>
+              <div>
+                <h3 class="text-base font-semibold text-colpsi-text">¿Eliminar esta red social?</h3>
+                <p class="text-sm text-colpsi-muted">Se quitará de tu perfil público.</p>
+              </div>
             </div>
             <div class="flex gap-3">
               <button
                 onClick={() => setPendingId(null)}
-                class="flex-1 bg-gray-100 text-gray-700 py-3 rounded-2xl font-black hover:bg-gray-200 transition-colors"
+                class="h-9 flex-1 rounded-md bg-colpsi-bg text-colpsi-text text-sm font-medium hover:bg-slate-100 transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleConfirmDelete}
-                class="flex-1 bg-red-500 text-white py-3 rounded-2xl font-black hover:bg-red-600 active:scale-95 transition-all"
+                class="h-9 flex-1 rounded-md bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors"
               >
                 Eliminar
               </button>
@@ -54,15 +59,13 @@ export function SocialNetworksSection(props: SocialNetworksSectionProps) {
         </div>
       </Show>
 
-
-
       <Show when={props.networks && props.networks.length > 0}>
-        <div class="mb-8 space-y-3">
+        <div class="mb-6 space-y-2">
           <For each={props.networks}>
             {(net) => (
-              <div class="flex items-center justify-between bg-colpsi-surface hover:bg-white p-4 rounded-2xl border border-colpsi-border hover:border-blue-100 transition-colors group">
+              <div class="flex items-center justify-between p-3 rounded-md border border-colpsi-border hover:bg-colpsi-bg/50 transition-colors group">
                 <div class="flex items-center gap-3 overflow-hidden">
-                  <span class="bg-white px-3 py-1 rounded-xl text-xs font-black text-colpsi-blue shadow-sm border border-colpsi-border">
+                  <span class="bg-colpsi-bg px-2.5 py-1 rounded-md text-xs font-semibold text-colpsi-blue border border-colpsi-border">
                     {net.name}
                   </span>
                   <a
@@ -76,11 +79,10 @@ export function SocialNetworksSection(props: SocialNetworksSectionProps) {
                 </div>
                 <button
                   onClick={() => net.id && setPendingId(net.id)}
-                  class="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-xl transition-colors"
+                  class="text-slate-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-md transition-colors"
+                  title="Eliminar red social"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                  </svg>
+                  <Icon name="trash" class="w-4 h-4" />
                 </button>
               </div>
             )}
@@ -88,15 +90,15 @@ export function SocialNetworksSection(props: SocialNetworksSectionProps) {
         </div>
       </Show>
 
-      <form onSubmit={props.onAddNetwork} class="bg-blue-50/50 p-6 md:p-8 rounded-3xl border border-blue-100 shadow-inner">
-        <div class="flex flex-col md:flex-row gap-4">
+      <form onSubmit={props.onAddNetwork} class="bg-colpsi-bg/50 p-4 rounded-md border border-colpsi-border">
+        <div class="flex flex-col md:flex-row gap-3">
           <input
             type="text"
             placeholder="Red (Ej: Instagram)"
             required
             value={props.newNetworkName}
             onInput={(e) => props.onNetworkNameChange(e.currentTarget.value)}
-            class="flex-1 bg-white border-2 border-transparent focus:border-colpsi-blue rounded-xl px-5 py-3 outline-none text-sm text-colpsi-text shadow-sm transition-all"
+            class="h-9 flex-1 rounded-md border border-slate-300 bg-white px-3 text-sm text-colpsi-text placeholder:text-slate-400 outline-none transition-colors focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/15"
           />
           <input
             type="url"
@@ -104,14 +106,14 @@ export function SocialNetworksSection(props: SocialNetworksSectionProps) {
             required
             value={props.newNetworkUrl}
             onInput={(e) => props.onNetworkUrlChange(e.currentTarget.value)}
-            class="flex-[2] bg-white border-2 border-transparent focus:border-colpsi-blue rounded-xl px-5 py-3 outline-none text-sm text-colpsi-text shadow-sm transition-all"
+            class="h-9 flex-[2] rounded-md border border-slate-300 bg-white px-3 text-sm text-colpsi-text placeholder:text-slate-400 outline-none transition-colors focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/15"
           />
           <button
             type="submit"
             disabled={props.saving}
-            class="bg-colpsi-blue text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-800 active:scale-95 transition-all shadow-md disabled:opacity-70"
+            class="h-9 px-4 rounded-md bg-colpsi-blue text-white text-sm font-semibold hover:bg-colpsi-blue-light transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            {props.saving ? "..." : "AÑADIR"}
+            {props.saving ? "..." : "Agregar"}
           </button>
         </div>
       </form>

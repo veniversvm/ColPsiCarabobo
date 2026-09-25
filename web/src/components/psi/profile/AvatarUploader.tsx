@@ -3,6 +3,7 @@ import { Show, createSignal } from "solid-js";
 import { Portal } from "solid-js/web"; // Importante para renderizar el modal sobre todo el DOM
 import QRCodeGenerator from "./QrCode";
 import { bucketUrl } from "~/lib/bucket";
+import { Icon } from "~/components/admin/ui/icons";
 
 interface AvatarUploaderProps {
   url: string;
@@ -56,7 +57,7 @@ export function AvatarUploader(props: AvatarUploaderProps) {
       return "Formato no permitido. Usa JPG, PNG o GIF.";
     if (file.size > MAX_FILE_SIZE) {
       const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-      return `La imagen es demasiado grande (${sizeMB}MB). Máximo 5MB.`;
+      return `El archivo pesa ${sizeMB} MB. El máximo es 5 MB.`;
     }
     return null;
   };
@@ -79,14 +80,14 @@ export function AvatarUploader(props: AvatarUploaderProps) {
 
   return (
     <>
-      <section class="bg-white rounded-[2.5rem] p-8 shadow-premium border border-colpsi-border">
-        <div class="flex flex-col md:flex-row items-center gap-8">
+      <section class="bg-white rounded-lg border border-colpsi-border p-5">
+        <div class="flex flex-col md:flex-row items-center gap-6">
           {/* Columna izquierda: Avatar */}
           <div class="flex flex-col items-center">
             <div class="relative group">
               {/* Contenedor de la imagen */}
               <div
-                class="w-32 h-32 rounded-full overflow-hidden border-4 border-colpsi-yellow bg-gradient-to-br from-blue-50 to-gray-50 shadow-xl cursor-pointer"
+                class="w-32 h-32 rounded-full overflow-hidden border-4 border-white ring-1 ring-colpsi-border bg-colpsi-bg shadow-sm cursor-pointer"
                 onClick={() => {
                   if (previewUrl()) setIsModalOpen(true);
                 }}
@@ -95,8 +96,8 @@ export function AvatarUploader(props: AvatarUploaderProps) {
                 <Show
                   when={previewUrl()}
                   fallback={
-                    <div class="w-full h-full flex items-center justify-center text-5xl bg-gradient-to-br from-blue-50 to-gray-100 text-colpsi-blue/50">
-                      👤
+                    <div class="w-full h-full flex items-center justify-center text-colpsi-blue/40">
+                      <Icon name="user" class="w-12 h-12" />
                     </div>
                   }
                 >
@@ -112,7 +113,7 @@ export function AvatarUploader(props: AvatarUploaderProps) {
 
               {/* Botón flotante para subir foto */}
               <label
-                class="absolute bottom-0 right-0 bg-colpsi-blue text-white p-3 rounded-full cursor-pointer shadow-lg hover:bg-colpsi-yellow hover:text-colpsi-blue transition-all group-hover:scale-110 border-2 border-white"
+                class="absolute bottom-0 right-0 bg-colpsi-blue text-white p-2.5 rounded-full cursor-pointer shadow-sm hover:bg-colpsi-blue-light transition-colors border-2 border-white"
                 title="Cambiar foto de perfil (máx 5MB)"
               >
                 <input
@@ -125,15 +126,15 @@ export function AvatarUploader(props: AvatarUploaderProps) {
                     e.currentTarget.value = "";
                   }}
                 />
-                <span class="text-sm">📷</span>
+                <Icon name="camera" class="w-4 h-4" />
               </label>
             </div>
 
-            <div class="mt-4 text-center">
-              <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">
-                Foto de Perfil
+            <div class="mt-3 text-center">
+              <p class="text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide">
+                Foto de perfil
               </p>
-              <p class="text-[10px] text-gray-400 mt-1 bg-colpsi-surface px-3 py-1 rounded-full">
+              <p class="text-[10px] text-colpsi-muted mt-0.5">
                 JPG, PNG, GIF • Máx 5MB
               </p>
             </div>
@@ -143,45 +144,44 @@ export function AvatarUploader(props: AvatarUploaderProps) {
           <div class="flex-1 text-center md:text-left">
             <div class="space-y-3">
               <div>
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-                  Nombre Completo
+                <p class="text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide mb-1">
+                  Nombre completo
                 </p>
-                <h2 class="text-xl md:text-2xl font-black text-colpsi-blue leading-tight">
+                <h2 class="text-xl font-semibold text-colpsi-text leading-tight">
                   {fullName()}
                 </h2>
               </div>
 
               <div class="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
-                <div class="bg-gradient-to-br from-colpsi-blue/5 to-blue-50 px-4 py-2 rounded-xl border border-blue-100">
-                  <p class="text-[10px] font-bold text-colpsi-blue uppercase tracking-wider">
+                <div class="rounded-md border border-colpsi-border bg-colpsi-bg px-3 py-2">
+                  <p class="text-[10px] font-semibold text-colpsi-muted uppercase tracking-wide">
                     FPV
                   </p>
-                  <p class="text-lg font-black text-colpsi-blue">{props.FPV}</p>
+                  <p class="text-base font-semibold text-colpsi-text">{props.FPV}</p>
                 </div>
 
-                <div class="bg-gradient-to-br from-gray-50 to-gray-100 px-4 py-2 rounded-xl border border-gray-200">
-                  <p class="text-[10px] font-bold text-colpsi-muted uppercase tracking-wider">
+                <div class="rounded-md border border-colpsi-border bg-colpsi-bg px-3 py-2">
+                  <p class="text-[10px] font-semibold text-colpsi-muted uppercase tracking-wide">
                     Cédula
                   </p>
-                  <p class="text-lg font-black text-gray-700">{props.CI}</p>
+                  <p class="text-base font-semibold text-colpsi-text">{props.CI}</p>
                 </div>
               </div>
 
               <Show when={props.avatarFile}>
-                <div class="mt-2 text-xs text-green-600 bg-green-50 px-3 py-2 rounded-lg inline-flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
-                  <span class="text-lg">✅</span>
-                  <div>
-                    <p class="font-bold">Nueva foto lista para guardar</p>
-                  </div>
+                <div class="mt-2 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-2 rounded-md inline-flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
+                  <Icon name="check" class="w-3.5 h-3.5" />
+                  <span class="font-medium">Nueva foto lista para guardar</span>
                   <button
                     type="button"
                     onClick={() => {
                       cleanupPreview();
                       props.onFileChange(null);
                     }}
-                    class="ml-2 text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded-full"
+                    class="ml-1 text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded-md"
+                    title="Descartar foto"
                   >
-                    ✕
+                    <Icon name="x" class="w-3.5 h-3.5" />
                   </button>
                 </div>
               </Show>
@@ -189,7 +189,7 @@ export function AvatarUploader(props: AvatarUploaderProps) {
           </div>
 
           {/* Columna derecha: QR Code */}
-          <div class="w-full md:w-auto flex justify-center border-t md:border-t-0 md:border-l border-colpsi-border pt-6 md:pt-0 md:pl-8">
+          <div class="w-full md:w-auto flex justify-center border-t md:border-t-0 md:border-l border-colpsi-border pt-4 md:pt-0 md:pl-6">
             <QRCodeGenerator url={props.url} />
           </div>
         </div>
@@ -199,17 +199,17 @@ export function AvatarUploader(props: AvatarUploaderProps) {
       <Show when={isModalOpen() && previewUrl()}>
         <Portal>
           <div
-            class="fixed inset-0 z-[9999] flex items-center justify-center bg-blue-900/90 backdrop-blur-sm p-4 animate-in fade-in duration-200 cursor-zoom-out"
+            class="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 animate-in fade-in duration-200 cursor-zoom-out"
             onClick={() => setIsModalOpen(false)}
           >
             <div class="relative w-full max-w-2xl flex justify-center items-center">
               {/* Botón de cerrar */}
               <button
                 onClick={() => setIsModalOpen(false)}
-                class="absolute -top-12 right-0 md:-right-12 w-10 h-10 bg-white/20 text-white hover:bg-colpsi-yellow hover:text-colpsi-blue rounded-full flex items-center justify-center font-black text-xl backdrop-blur-md transition-all z-10 border border-white/30"
+                class="absolute -top-12 right-0 md:-right-12 w-9 h-9 bg-white/20 text-white hover:bg-white/30 rounded-full flex items-center justify-center backdrop-blur-md transition-all z-10 border border-white/30"
                 title="Cerrar imagen"
               >
-                ✕
+                <Icon name="x" class="w-4 h-4" />
               </button>
 
               {/* Imagen en detalle (Forzada a ser grande) */}
@@ -217,7 +217,7 @@ export function AvatarUploader(props: AvatarUploaderProps) {
                 src={previewUrl()!}
                 alt={`Foto de perfil ampliada`}
                 // Clases CLAVE: w-full fuerza a la imagen a ocupar el ancho del max-w-2xl
-                class="w-full max-h-[85vh] min-h-[300px] object-contain rounded-2xl shadow-2xl bg-colpsi-surface cursor-default"
+                class="w-full max-h-[85vh] min-h-[300px] object-contain rounded-lg shadow-2xl bg-white cursor-default"
                 onClick={(e) => e.stopPropagation()}
               />
             </div>

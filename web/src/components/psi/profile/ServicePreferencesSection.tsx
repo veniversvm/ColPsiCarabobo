@@ -18,13 +18,18 @@ interface ServicePreferencesSectionProps {
   onBirthdayNotificationChange: (value: boolean) => void;
 }
 
+const boxClass =
+  "space-y-3 bg-colpsi-bg/50 p-4 rounded-lg border border-colpsi-border";
+const boxTitleClass =
+  "text-[11px] font-semibold text-colpsi-text uppercase tracking-wide border-b border-colpsi-border pb-2";
+
 export function ServicePreferencesSection(props: ServicePreferencesSectionProps) {
   return (
     <section>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* ── Modalidad de servicio ────────────────────────────────────── */}
-        <div class="space-y-4 bg-teal-50/40 p-6 rounded-3xl border border-teal-100">
-          <h3 class="text-sm font-bold text-teal-900 uppercase tracking-widest border-b border-teal-100 pb-2">
+        <div class={boxClass}>
+          <h3 class={boxTitleClass}>
             Modalidad de Servicio
           </h3>
           <p class="text-xs text-colpsi-muted">
@@ -50,8 +55,8 @@ export function ServicePreferencesSection(props: ServicePreferencesSectionProps)
         </div>
 
         {/* ── Preferencias ─────────────────────────────────────────────── */}
-        <div class="space-y-4 bg-colpsi-surface p-6 rounded-3xl border border-colpsi-border">
-          <h3 class="text-sm font-bold text-colpsi-blue uppercase tracking-widest border-b border-gray-200 pb-2">
+        <div class={boxClass}>
+          <h3 class={boxTitleClass}>
             Preferencias
           </h3>
           <p class="text-xs text-colpsi-muted">

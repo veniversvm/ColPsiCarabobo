@@ -26,23 +26,23 @@ export function SecuritySection(props: SecuritySectionProps) {
 
 
       
-      <div class="grid grid-cols-1 gap-6">
+      <div class="grid grid-cols-1 gap-4">
         <div class="space-y-1 w-full md:max-w-md">
-          <label class="text-[10px] font-black text-colpsi-red uppercase ml-2 tracking-wider">
-            Contraseña Actual <span class="lowercase font-medium text-red-400">(obligatoria para guardar)</span>
+          <label class="text-[11px] font-semibold text-colpsi-red uppercase tracking-wide ml-1 mb-1">
+            Contraseña Actual <span class="lowercase font-medium text-colpsi-muted">(obligatoria para guardar)</span>
           </label>
-          
-          <PasswordInputComponent 
-            required 
-            value={props.password} 
+
+          <PasswordInputComponent
+            required
+            value={props.password}
             // Pasamos el valor directamente al handler como esperan los otros componentes
-            onInput={(e) => props.onPasswordChange(e.currentTarget.value)} 
-            class="w-full bg-red-50/20 border-2 border-red-50 focus:border-colpsi-red focus:bg-white rounded-xl px-5 py-3 outline-none text-colpsi-text transition-all placeholder:text-red-200"
-            placeholder="Introduce tu contraseña para confirmar" 
+            onInput={(e) => props.onPasswordChange(e.currentTarget.value)}
+            class="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-colpsi-text placeholder:text-slate-400 outline-none transition-colors focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/15"
+            placeholder="Introduce tu contraseña para confirmar"
           />
-          
-          <div class="flex items-start gap-2 mt-2 ml-2">
-            <span class="text-[10px] text-gray-400 leading-tight">
+
+          <div class="flex items-start gap-2 mt-2 ml-1">
+            <span class="text-[11px] text-colpsi-muted leading-tight">
               Esta medida protege tu cuenta. Ningún cambio será procesado por el servidor sin esta validación.
             </span>
           </div>

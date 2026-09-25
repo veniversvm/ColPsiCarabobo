@@ -31,6 +31,7 @@ import { SocialNetworksSection } from "~/components/psi/profile/SocialNetworksSe
 import { SaveButton } from "~/components/psi/profile/SaveButton";
 import { AvatarUploader } from "~/components/psi/profile/AvatarUploader";
 import { Panel, PanelSection } from "~/components/ui/Panel";
+import { Icon } from "~/components/admin/ui/icons";
 
 const updateProfileServer = action(async (formData: FormData) => {
   "use server";
@@ -382,33 +383,35 @@ export default function ProfilePage() {
 
   return (
     <main class="bg-colpsi-bg min-h-screen pb-24 font-sans">
-      <div class="bg-heraldic pt-12 pb-20 px-4 md:px-8 shadow-inner">
-        <div class="max-w-6xl mx-auto flex items-center justify-between">
+      <header class="bg-white border-b border-colpsi-border">
+        <div class="max-w-6xl mx-auto px-4 md:px-8 py-4 flex items-center justify-between gap-4">
           <A
             href="/psi"
-            class="bg-colpsi-yellow text-colpsi-blue px-5 py-2.5 rounded-full font-black text-sm shadow-lg hover:bg-colpsi-yellow/90 active:scale-95 transition-all inline-flex items-center gap-2"
+            class="inline-flex items-center gap-1.5 text-sm font-medium text-colpsi-muted hover:text-colpsi-blue transition-colors"
           >
-            <span>←</span> Volver al Panel
+            <Icon name="chevronLeft" class="w-4 h-4" />
+            Volver al Panel
           </A>
-          <span class="text-blue-200 text-sm font-black tracking-widest uppercase hidden sm:block">
+          <span class="text-sm font-semibold text-colpsi-text uppercase tracking-wide hidden sm:block">
             Ajustes de Perfil
           </span>
         </div>
-        <div class="max-w-6xl mx-auto mt-8">
-          <h1 class="text-white text-3xl md:text-4xl font-black">
+      </header>
+
+      <div class="max-w-6xl mx-auto px-4 md:px-8 py-6 space-y-4">
+        <div>
+          <h1 class="text-lg font-semibold text-colpsi-text">
             Tu Identidad Digital
           </h1>
-          <p class="text-blue-200 mt-2 text-sm md:text-base">
+          <p class="text-sm text-colpsi-muted mt-0.5">
             Actualiza tus datos, fotografía y gestiona qué información pueden
             ver los pacientes.
           </p>
         </div>
-      </div>
 
-      <div class="max-w-6xl mx-auto px-4 md:px-8 -mt-16 relative z-10 space-y-8">
         <Suspense
           fallback={
-            <div class="h-96 bg-white animate-pulse rounded-[2.5rem] shadow-premium border border-colpsi-border" />
+            <div class="h-96 bg-white animate-pulse rounded-lg border border-colpsi-border" />
           }
         >
           <AvatarUploader
