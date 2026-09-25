@@ -14,9 +14,11 @@ import {
   type PermissionState,
   type RolePreset,
 } from "~/lib/staff-permissions";
+import { Icon } from "~/components/admin/ui/icons";
+import { Badge } from "~/components/admin/ui/Badge";
 
-const IC = "w-full bg-white border-2 border-gray-200 focus:border-blue-500 rounded-xl px-4 py-2.5 outline-none transition-all text-gray-800 text-sm";
-const labelClass = "block text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1";
+const IC = "h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none placeholder:text-slate-400 focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/15 transition-colors text-colpsi-text";
+const labelClass = "block text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide ml-1 mb-1";
 
 interface Admin {
   id: string;
@@ -155,58 +157,60 @@ export default function AdminEditarStaffPage() {
   };
 
   return (
-    <main class="pb-28 animate-in fade-in duration-500 max-w-3xl mx-auto">
+    <main class="space-y-4 pb-12 max-w-3xl mx-auto">
 
       {/* ── HEADER ────────────────────────────────────────────────────────── */}
-      <div class="flex items-center gap-4 mb-8 bg-white p-6 rounded-3xl shadow-sm border border-colpsi-border">
+      <div class="flex items-center gap-3 pb-4 border-b border-colpsi-border">
         <button
           onClick={() => navigate(-1)}
-          class="w-10 h-10 bg-colpsi-surface hover:bg-gray-100 text-gray-600 rounded-full font-bold flex items-center justify-center transition-colors flex-shrink-0"
+          class="inline-flex items-center justify-center h-8 w-8 rounded-md border border-colpsi-border bg-white text-colpsi-muted hover:text-colpsi-blue hover:bg-colpsi-bg transition-colors"
+          title="Volver"
         >
-          ←
+          <Icon name="chevronRight" class="w-4 h-4 rotate-180" />
         </button>
         <div class="flex-1 min-w-0">
-          <h1 class="text-2xl font-black text-blue-900 uppercase tracking-tight">Editar Administrador</h1>
-          <p class="text-gray-400 text-sm mt-0.5 font-medium truncate">
+          <h1 class="text-lg font-semibold text-colpsi-text">Editar Administrador</h1>
+          <p class="text-sm text-colpsi-muted mt-0.5 truncate">
             {admin.loading ? "Cargando..." : admin()?.username ?? ""}
           </p>
         </div>
         <Show when={admin()}>
           {(a) => (
-            <span class={`text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest flex-shrink-0 ${
-              a().is_active ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"
-            }`}>
+            <Badge tone={a().is_active ? "success" : "neutral"} class="shrink-0">
               {a().is_active ? "Activo" : "Inactivo"}
-            </span>
+            </Badge>
           )}
         </Show>
       </div>
 
       {/* ── FEEDBACK ──────────────────────────────────────────────────────── */}
       <Show when={error()}>
-        <div class="mb-6 p-4 rounded-2xl bg-red-50 text-red-800 font-bold text-sm border-l-4 border-red-500 shadow-sm">{error()}</div>
+        <div class="p-3 rounded-md bg-red-50 text-red-700 border border-red-200 text-sm font-medium">{error()}</div>
       </Show>
       <Show when={success()}>
-        <div class="mb-6 p-4 rounded-2xl bg-emerald-50 text-emerald-800 font-bold text-sm border-l-4 border-emerald-500 shadow-sm">
-          ✓ Administrador actualizado. Redirigiendo...
+        <div class="p-3 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-sm font-medium">
+          Administrador actualizado. Redirigiendo...
         </div>
       </Show>
 
       {/* ── SKELETON ──────────────────────────────────────────────────────── */}
       <Show when={admin.loading}>
-        <div class="space-y-6 animate-pulse">
-          <div class="bg-white rounded-3xl h-48 border border-colpsi-border" />
-          <div class="bg-white rounded-3xl h-96 border border-colpsi-border" />
+        <div class="space-y-4 animate-pulse">
+          <div class="bg-white rounded-lg h-48 border border-colpsi-border" />
+          <div class="bg-white rounded-lg h-96 border border-colpsi-border" />
         </div>
       </Show>
 
       {/* ── NO ENCONTRADO ─────────────────────────────────────────────────── */}
       <Show when={!admin.loading && admin() === null}>
-        <div class="text-center py-24 bg-white rounded-3xl border border-colpsi-border">
-          <p class="text-5xl mb-4">😕</p>
-          <h2 class="text-lg font-black text-gray-700 mb-2">Administrador no encontrado</h2>
-          <button onClick={() => navigate("/admin/staff")} class="mt-4 text-blue-700 font-black text-sm hover:underline">
-            ← Volver al listado
+        <div class="text-center py-16 bg-white rounded-lg border border-colpsi-border">
+          <span class="inline-flex h-12 w-12 items-center justify-center rounded-md bg-colpsi-bg text-colpsi-muted mb-4">
+            <Icon name="user" class="w-6 h-6" />
+          </span>
+          <h2 class="text-base font-semibold text-colpsi-text mb-1">Administrador no encontrado</h2>
+          <button onClick={() => navigate("/admin/staff")} class="mt-4 inline-flex items-center gap-1.5 text-colpsi-blue font-semibold text-sm hover:underline">
+            <Icon name="chevronRight" class="w-3.5 h-3.5 rotate-180" />
+            Volver al listado
           </button>
         </div>
       </Show>
@@ -216,15 +220,15 @@ export default function AdminEditarStaffPage() {
         {(a) => {
           initForm(a());
           return (
-            <form onSubmit={handleSubmit} class="space-y-6">
+            <form onSubmit={handleSubmit} class="space-y-4">
 
               {/* ══ DATOS DE ACCESO ════════════════════════════════════════ */}
-              <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-colpsi-border space-y-5">
-                <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest border-b border-colpsi-border pb-3">
+              <section class="bg-white rounded-lg p-5 border border-colpsi-border space-y-4">
+                <h2 class="text-base font-semibold text-colpsi-text border-b border-colpsi-border pb-3">
                   Datos de Acceso
                 </h2>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label class={labelClass}>Usuario</label>
                     <input
@@ -233,7 +237,7 @@ export default function AdminEditarStaffPage() {
                       onInput={(e) => setUsername(e.currentTarget.value)}
                       class={IC}
                     />
-                    <p class="text-[10px] text-gray-400 mt-1 text-right">{username().length}/25</p>
+                    <p class="text-xs text-colpsi-muted mt-1 text-right">{username().length}/25</p>
                   </div>
                   <div>
                     <label class={labelClass}>Email</label>
@@ -247,19 +251,19 @@ export default function AdminEditarStaffPage() {
                 </div>
 
                 <div>
-                  <label class={labelClass}>Nueva Contraseña <span class="text-gray-400 font-medium normal-case">(dejar vacío para no cambiar)</span></label>
+                  <label class={labelClass}>Nueva Contraseña <span class="text-colpsi-muted font-medium normal-case">(dejar vacío para no cambiar)</span></label>
                   <div class="relative">
                     <input
                       type={showPassword() ? "text" : "password"}
                       placeholder="Nueva contraseña..."
                       value={password()}
                       onInput={(e) => setPassword(e.currentTarget.value)}
-                      class={`${IC} pr-12`}
+                      class={`${IC} pr-14`}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword((v) => !v)}
-                      class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs font-bold px-1"
+                      class="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-semibold text-colpsi-muted hover:text-colpsi-blue px-2 py-1"
                     >
                       {showPassword() ? "Ocultar" : "Ver"}
                     </button>
@@ -269,18 +273,18 @@ export default function AdminEditarStaffPage() {
                 {/* Estado */}
                 <div>
                   <label class={labelClass}>Estado de la Cuenta</label>
-                  <div class="flex gap-3 mt-1">
+                  <div class="flex gap-2 mt-1">
                     {([true, false] as const).map((val) => (
                       <button
                         type="button"
                         onClick={() => setIsActive(val)}
-                        class={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wide border-2 transition-all ${
+                        class={`flex-1 h-10 rounded-md text-xs font-semibold uppercase tracking-wide border transition-all ${
                           isActive() === val
-                            ? val ? "bg-emerald-600 text-white border-emerald-600" : "bg-gray-500 text-white border-gray-500"
-                            : "bg-white text-gray-500 border-gray-200 hover:border-gray-300"
+                            ? val ? "bg-emerald-600 text-white border-emerald-600" : "bg-slate-600 text-white border-slate-600"
+                            : "bg-white text-colpsi-muted border-colpsi-border hover:border-slate-300"
                         }`}
                       >
-                        {val ? "✓ Activo" : "○ Inactivo"}
+                        {val ? "Activo" : "Inactivo"}
                       </button>
                     ))}
                   </div>
@@ -288,56 +292,53 @@ export default function AdminEditarStaffPage() {
               </section>
 
               {/* ══ PERFIL DE ROL ══════════════════════════════════════ */}
-              <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-colpsi-border">
-                <div class="flex items-center justify-between border-b border-colpsi-border pb-3 mb-6">
-                  <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest">Perfil de Rol</h2>
-                  <span class="text-xs font-black text-gray-500">Atajo: aplica un conjunto de permisos</span>
+              <section class="bg-white rounded-lg p-5 border border-colpsi-border">
+                <div class="flex items-center justify-between border-b border-colpsi-border pb-3 mb-4">
+                  <h2 class="text-base font-semibold text-colpsi-text">Perfil de Rol</h2>
+                  <span class="text-xs font-medium text-colpsi-muted">Atajo: aplica un conjunto de permisos</span>
                 </div>
                 <RoleSelector perms={perms()} storedRole={role()} onSelect={applyRole} onClear={clearRole} />
               </section>
 
               {/* ══ PERMISOS ══════════════════════════════════════════════ */}
-              <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-colpsi-border">
-                <div class="flex items-center justify-between border-b border-colpsi-border pb-3 mb-6">
-                  <h2 class="text-sm font-black text-blue-800 uppercase tracking-widest">Permisos</h2>
-                  <span class="text-xs font-black text-gray-500">{totalEnabled()}/{TOTAL_PERMS} activos</span>
+              <section class="bg-white rounded-lg p-5 border border-colpsi-border">
+                <div class="flex items-center justify-between border-b border-colpsi-border pb-3 mb-4">
+                  <h2 class="text-base font-semibold text-colpsi-text">Permisos</h2>
+                  <span class="text-xs font-medium text-colpsi-muted">{totalEnabled()}/{TOTAL_PERMS} activos</span>
                 </div>
 
-                <div class="space-y-4">
+                <div class="space-y-3">
                   {PERM_GROUPS.map((group) => {
-                    const allOn = () => group.perms.every((p) => perms()[p.key as keyof PermissionsState]);
+                    const allOn = () => group.perms.every((p) => perms()[p.key as keyof PermissionState]);
                     return (
-                      <div class={`rounded-2xl border-2 overflow-hidden ${COLOR_MAP[group.color].split(" ").slice(0, 2).join(" ")}`}>
+                      <div class="rounded-md border border-colpsi-border overflow-hidden">
                         <button
                           type="button"
                           onClick={() => toggleGroup(group.perms.map((p) => p.key))}
-                          class={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors ${
+                          class={`w-full flex items-center justify-between px-4 py-2.5 text-left transition-colors ${
                             allOn() ? ACTIVE_MAP[group.color] : `${COLOR_MAP[group.color]} hover:opacity-90`
                           }`}
                         >
-                          <span class="font-black text-sm flex items-center gap-2">
-                            <span>{group.icon}</span>
-                            {group.label}
-                          </span>
-                          <span class="text-[11px] font-black opacity-80">
+                          <span class="font-semibold text-sm">{group.label}</span>
+                          <span class="text-[11px] font-medium opacity-80">
                             {allOn() ? "Quitar todos" : "Dar todos"}
                           </span>
                         </button>
-                        <div class="grid grid-cols-3 gap-px bg-gray-100">
+                        <div class="grid grid-cols-3 gap-px bg-colpsi-border">
                           {group.perms.map((perm) => {
-                            const active = () => perms()[perm.key as keyof PermissionsState];
+                            const active = () => perms()[perm.key as keyof PermissionState];
                             return (
                               <button
                                 type="button"
-                                onClick={() => togglePerm(perm.key as keyof PermissionsState)}
-                                class={`flex items-center justify-between px-4 py-3 text-sm font-bold transition-all ${
+                                onClick={() => togglePerm(perm.key as keyof PermissionState)}
+                                class={`flex items-center justify-between px-4 py-2.5 text-sm font-medium transition-all ${
                                   active()
                                     ? `${ACTIVE_MAP[group.color]} opacity-90`
-                                    : "bg-white text-gray-400 hover:bg-colpsi-surface"
+                                    : "bg-white text-colpsi-muted hover:bg-colpsi-bg"
                                 }`}
                               >
                                 <span>{perm.label}</span>
-                                <span class="text-base">{active() ? "✓" : "○"}</span>
+                                <span class="text-sm">{active() ? "✓" : "○"}</span>
                               </button>
                             );
                           })}
@@ -349,20 +350,23 @@ export default function AdminEditarStaffPage() {
               </section>
 
               {/* ── BOTONES ─────────────────────────────────────────────── */}
-              <div class="sticky bottom-6 z-50 flex justify-end gap-3">
+              <div class="sticky bottom-4 z-50 flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => navigate(-1)}
-                  class="bg-white text-gray-600 border-2 border-gray-200 px-6 py-4 rounded-2xl font-black hover:bg-colpsi-surface transition-all text-sm"
+                  class="h-10 px-4 rounded-md border border-colpsi-border bg-white text-sm font-medium text-colpsi-text hover:bg-colpsi-bg transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={saving()}
-                  class="bg-blue-800 text-white px-10 py-4 rounded-2xl font-black shadow-2xl hover:scale-105 active:scale-95 transition-all disabled:opacity-70 flex items-center gap-3 border-2 border-white text-sm"
+                  class="inline-flex items-center justify-center gap-2 h-10 px-5 rounded-md bg-colpsi-blue text-white text-sm font-semibold transition-colors hover:bg-colpsi-blue-light disabled:opacity-70"
                 >
-                  {saving() ? "GUARDANDO..." : "💾 GUARDAR CAMBIOS"}
+                  <Show when={saving()} fallback={<Icon name="check" />}>
+                    <span class="animate-spin h-4 w-4 border-2 border-white/40 border-t-white rounded-full" />
+                  </Show>
+                  {saving() ? "Guardando..." : "Guardar Cambios"}
                 </button>
               </div>
 
