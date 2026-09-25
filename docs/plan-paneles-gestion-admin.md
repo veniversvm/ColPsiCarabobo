@@ -392,3 +392,31 @@ devolvía `social_networks` en `GET /psi/:fpv`):
 
 Verificado con `npm run build` y `curl` del SSR (svg del path de Instagram
 presente bajo el QR). Commits: `057e61f`, `ee2bf14`, `4f08814`.
+
+### Perfil público del directorio — orden, teléfonos y menú de correo (tras la fusión 3)
+
+Ajustes de UX en `/directorio/[slug]` + `ContactCard` (solo presentación;
+datos, API y lógica intactos):
+
+- **Orden de la columna derecha**: el bloque **"Perfil Profesional"** pasa
+  antes de la tarjeta **"Contacto"** (carnet | perfil → contacto → formación),
+  para presentar primero al profesional.
+- **Teléfonos sin enlace**: el teléfono principal y los teléfonos/celulares de
+  cada ubicación ya **no** son enlaces `tel:` — quedan como texto plano con el
+  mismo estilo de chip (se quitó el `href="tel:..."` de la `ContactCard`).
+- **Menú de acciones del correo** (`ContactCard`): el correo conserva
+  `mailto:` como acción principal (gestor predeterminado del dispositivo) y
+  agrega un botón `▾` con menú desplegable:
+  - **"Abrir en Gmail"** → compose web (`mail.google.com/mail/?view=cm&fs=1`)
+    en nueva pestaña con `rel="noopener noreferrer"`. Oferta, no imposición:
+    Gmail está bloqueado por ISP (CANTV) en Venezuela, por lo que **no** es la
+    única opción.
+  - **"Copiar correo"** → Clipboard API con fallback `execCommand` y
+    confirmación visual "¡Correo copiado!" (~2.5 s).
+  - El menú cierra al hacer clic fuera o al seleccionar; `ref` en el contenedor
+    completo (botón + menú) para no cerrar en el clic del botón; accesible con
+    `role="menu"`/`aria-haspopup`/`focus-visible`. Solo cliente y SSR-seguro.
+
+Verificado con `npm run build` y `curl` del SSR: `mailto:` presente, **0**
+`href="tel:"` y orden perfil < contacto < formación. Commits: `f5adfd7`,
+`29bedf2`.
