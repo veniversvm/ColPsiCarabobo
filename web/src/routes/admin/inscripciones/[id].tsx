@@ -7,6 +7,7 @@ import { bucketUrl } from "~/lib/bucket";
 import { ImageModal } from "~/components/ui/ImageModal";
 import { Panel, PanelSection } from "~/components/ui/Panel";
 import { Field, IC } from "~/components/admin/psicologos/edit/EditPrimitives";
+import { Icon } from "~/components/admin/ui/icons";
 import { MUNICIPIOS_CARABOBO, ESTADOS_VENEZUELA, municipiosDe } from "~/lib/geo";
 import type {
   InscriptionDetail,
@@ -282,7 +283,7 @@ export default function AdminInscriptionDetail() {
   };
 
   const ModalityChip = (props: { label: string; on: boolean; onChange: (v: boolean) => void }) => (
-    <label class="inline-flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
+    <label class="inline-flex items-center gap-2 text-sm font-medium text-colpsi-text cursor-pointer">
       <input type="checkbox" checked={props.on} onChange={(e) => props.onChange(e.currentTarget.checked)} class="accent-colpsi-blue" />
       {props.label}
     </label>
@@ -291,28 +292,28 @@ export default function AdminInscriptionDetail() {
   const DocSlot = (props: { spec: { type: InscriptionDocumentType; label: string; required: boolean } }) => {
     const doc = docByType(props.spec.type);
     return (
-      <div class="bg-colpsi-surface rounded-2xl border border-colpsi-border p-4 space-y-3">
+      <div class="bg-colpsi-bg rounded-lg border border-colpsi-border p-4 space-y-3">
         <div class="flex items-center justify-between gap-2">
-          <span class="text-sm font-bold text-gray-700">
-            {props.spec.label} {props.spec.required && <span class="text-red-500">*</span>}
+          <span class="text-sm font-semibold text-colpsi-text">
+            {props.spec.label} {props.spec.required && <span class="text-colpsi-red">*</span>}
           </span>
           <Show when={doc && doc.original_filename}>
-            <span class="text-[10px] text-gray-400 font-semibold max-w-[40%] truncate">{doc!.original_filename}</span>
+            <span class="text-[10px] text-colpsi-muted font-medium max-w-[40%] truncate">{doc!.original_filename}</span>
           </Show>
         </div>
 
         <Show
           when={doc}
           fallback={
-            <div class="border-2 border-dashed border-gray-200 rounded-xl p-5 flex items-center justify-center">
-              <span class="text-[11px] font-black text-gray-400 uppercase">Sin documento</span>
+            <div class="border border-dashed border-colpsi-border rounded-md p-5 flex items-center justify-center">
+              <span class="text-[11px] font-medium text-colpsi-muted uppercase">Sin documento</span>
             </div>
           }
         >
           <Show
             when={isImageUrl(doc!.url)}
             fallback={
-              <a href={doc!.url} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-3 py-2 bg-white rounded-lg text-xs font-black text-colpsi-blue border border-gray-200 hover:bg-gray-100 transition-colors">
+              <a href={doc!.url} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 h-8 px-3 rounded-md bg-white text-xs font-semibold text-colpsi-blue border border-colpsi-border hover:bg-colpsi-bg transition-colors">
                 Ver documento ↗
               </a>
             }
@@ -324,14 +325,14 @@ export default function AdminInscriptionDetail() {
             >
               <img src={doc!.url} alt={props.spec.label} class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
               <span class="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                <span class="bg-white text-colpsi-blue p-2 rounded-full shadow-lg">🔍</span>
+                <span class="bg-white text-colpsi-blue p-2 rounded-full shadow-lg"><Icon name="search" class="w-4 h-4" /></span>
               </span>
             </button>
           </Show>
         </Show>
 
         <div class="flex flex-wrap gap-2">
-          <label class="inline-flex items-center gap-2 px-3 py-2 bg-colpsi-blue text-white rounded-lg text-xs font-black cursor-pointer hover:bg-colpsi-blue/90 transition-colors">
+          <label class="inline-flex items-center gap-2 h-9 px-3.5 rounded-md bg-colpsi-blue text-white text-xs font-semibold cursor-pointer hover:bg-colpsi-blue-light transition-colors">
             <input type="file" accept="image/*,application/pdf" class="sr-only" onChange={(e) => {
               const f = e.currentTarget.files?.[0];
               if (f) addDoc(props.spec.type, f);
@@ -342,7 +343,7 @@ export default function AdminInscriptionDetail() {
           <Show when={doc}>
             <button
               onClick={() => deleteDoc(doc!)}
-              class="px-3 py-2 bg-red-50 text-red-600 rounded-lg text-xs font-black hover:bg-red-100 transition-colors"
+              class="h-9 px-3.5 rounded-md border border-red-200 bg-white text-colpsi-red text-xs font-semibold hover:bg-red-50 transition-colors"
             >
               Eliminar
             </button>
@@ -353,18 +354,19 @@ export default function AdminInscriptionDetail() {
   };
 
   return (
-    <div class="space-y-6 font-sans">
-      <button onClick={() => navigate("/admin/inscripciones")} class="text-sm font-bold text-gray-400 hover:text-colpsi-blue transition-colors">
-        ← Volver a solicitudes
+    <main class="space-y-4 pb-12">
+      <button onClick={() => navigate("/admin/inscripciones")} class="inline-flex items-center gap-1.5 text-xs font-semibold text-colpsi-muted uppercase tracking-wide hover:text-colpsi-blue transition-colors">
+        <Icon name="chevronRight" class="w-3.5 h-3.5 rotate-180" />
+        Volver a solicitudes
       </button>
 
       <Show when={detail()} fallback={<div class="p-20 text-center"><div class="w-10 h-10 border-4 border-colpsi-blue border-t-transparent rounded-full animate-spin mx-auto" /></div>}>
         {(d) => (
           <>
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-colpsi-border">
               <div>
-                <h1 class="text-2xl font-black text-colpsi-blue">{d().nombres} {d().apellidos}</h1>
-                <p class="text-sm text-gray-500 font-medium">
+                <h1 class="text-lg font-semibold text-colpsi-text">{d().nombres} {d().apellidos}</h1>
+                <p class="text-sm text-colpsi-muted font-medium mt-0.5">
                   C.I. {d().cedula} {d().nacionalidad} · Solicitada el {new Date(d().created_at).toLocaleDateString()}
                 </p>
               </div>
@@ -372,18 +374,18 @@ export default function AdminInscriptionDetail() {
             </div>
 
             <Show when={d().control_number}>
-              <div class="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex flex-wrap items-center gap-x-6 gap-y-1">
-                <span class="text-sm font-black text-colpsi-blue">
+              <div class="bg-blue-50 border border-blue-200 rounded-md p-4 flex flex-wrap items-center gap-x-6 gap-y-1">
+                <span class="text-sm font-semibold text-colpsi-blue">
                   N° de control asignado: {d().control_number}
                 </span>
-                <span class="text-xs font-bold text-blue-600/70">
+                <span class="text-xs font-medium text-colpsi-blue/70">
                   Solvencias pagadas: {d().solvency_count}
                 </span>
               </div>
             </Show>
 
             <Show when={feedback()}>
-              <div class={`rounded-2xl p-4 text-sm font-bold ${feedback()!.type === "ok" ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
+              <div class={`rounded-md p-3 text-sm font-medium ${feedback()!.type === "ok" ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-red-50 text-colpsi-red border border-red-200"}`}>
                 {feedback()!.text}
               </div>
             </Show>
@@ -503,8 +505,8 @@ export default function AdminInscriptionDetail() {
                     </Field>
                   </div>
 
-                  <div class="bg-colpsi-surface p-5 rounded-2xl border border-colpsi-border">
-                    <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3 ml-1">Modalidad de servicio</p>
+                  <div class="bg-colpsi-bg p-5 rounded-lg border border-colpsi-border">
+                    <p class="text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide mb-3 ml-1">Modalidad de servicio</p>
                     <div class="flex flex-wrap gap-6">
                       <ModalityChip label="Presencial" on={form.service_modality_presencial} onChange={(v) => set("service_modality_presencial", v)} />
                       <ModalityChip label="A distancia" on={form.service_modality_distance} onChange={(v) => set("service_modality_distance", v)} />
@@ -516,9 +518,9 @@ export default function AdminInscriptionDetail() {
 
               <PanelSection title="Fotografía y Documentos" accent="border-emerald-400">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div class="bg-colpsi-surface rounded-2xl border border-colpsi-border p-4 space-y-3">
-                    <span class="text-sm font-bold text-gray-700">Foto tipo carnet</span>
-                    <Show when={d().foto_url} fallback={<p class="text-sm text-gray-400">Sin foto</p>}>
+                  <div class="bg-colpsi-bg rounded-lg border border-colpsi-border p-4 space-y-3">
+                    <span class="text-sm font-semibold text-colpsi-text">Foto tipo carnet</span>
+                    <Show when={d().foto_url} fallback={<p class="text-sm text-colpsi-muted">Sin foto</p>}>
                       <button
                         onClick={() => setModalImage({ src: bucketUrl(d().foto_url), alt: "Foto tipo carnet del solicitante" })}
                         class="block group relative w-full h-44 overflow-hidden rounded-xl border border-gray-200 cursor-pointer hover:border-colpsi-blue transition-all"
@@ -526,11 +528,11 @@ export default function AdminInscriptionDetail() {
                       >
                         <img src={bucketUrl(d().foto_url)} alt="Foto del solicitante" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                         <span class="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                          <span class="bg-white text-colpsi-blue p-2 rounded-full shadow-lg">🔍</span>
+                          <span class="bg-white text-colpsi-blue p-2 rounded-full shadow-lg"><Icon name="search" class="w-4 h-4" /></span>
                         </span>
                       </button>
                     </Show>
-                    <label class="inline-flex items-center gap-2 px-3 py-2 bg-colpsi-blue text-white rounded-lg text-xs font-black cursor-pointer hover:bg-colpsi-blue/90 transition-colors">
+                    <label class="inline-flex items-center gap-2 h-9 px-3.5 rounded-md bg-colpsi-blue text-white text-xs font-semibold cursor-pointer hover:bg-colpsi-blue-light transition-colors">
                       <input type="file" accept="image/*" class="sr-only" onChange={(e) => {
                         const f = e.currentTarget.files?.[0];
                         if (f) replacePhoto("foto", f);
@@ -540,13 +542,13 @@ export default function AdminInscriptionDetail() {
                     </label>
                   </div>
 
-                  <div class="bg-colpsi-surface rounded-2xl border border-colpsi-border p-4 space-y-3">
-                    <span class="text-sm font-bold text-gray-700">Comprobante de pago</span>
-                    <Show when={d().comprobante_url} fallback={<p class="text-sm text-gray-400">Sin comprobante</p>}>
+                  <div class="bg-colpsi-bg rounded-lg border border-colpsi-border p-4 space-y-3">
+                    <span class="text-sm font-semibold text-colpsi-text">Comprobante de pago</span>
+                    <Show when={d().comprobante_url} fallback={<p class="text-sm text-colpsi-muted">Sin comprobante</p>}>
                       <Show
                         when={isImageUrl(d().comprobante_url)}
                         fallback={
-                          <a href={d().comprobante_url} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-100 rounded-xl text-xs font-black text-colpsi-blue hover:bg-gray-200 transition-colors">
+                          <a href={d().comprobante_url} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 h-8 px-3 rounded-md bg-white text-xs font-semibold text-colpsi-blue border border-colpsi-border hover:bg-colpsi-bg transition-colors">
                             Ver comprobante ↗
                           </a>
                         }
@@ -558,12 +560,12 @@ export default function AdminInscriptionDetail() {
                         >
                           <img src={bucketUrl(d().comprobante_url)} alt="Comprobante de pago" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                           <span class="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                            <span class="bg-white text-colpsi-blue p-2 rounded-full shadow-lg">🔍</span>
+                            <span class="bg-white text-colpsi-blue p-2 rounded-full shadow-lg"><Icon name="search" class="w-4 h-4" /></span>
                           </span>
                         </button>
                       </Show>
                     </Show>
-                    <label class="inline-flex items-center gap-2 px-3 py-2 bg-colpsi-blue text-white rounded-lg text-xs font-black cursor-pointer hover:bg-colpsi-blue/90 transition-colors">
+                    <label class="inline-flex items-center gap-2 h-9 px-3.5 rounded-md bg-colpsi-blue text-white text-xs font-semibold cursor-pointer hover:bg-colpsi-blue-light transition-colors">
                       <input type="file" accept="image/*,application/pdf" class="sr-only" onChange={(e) => {
                         const f = e.currentTarget.files?.[0];
                         if (f) replacePhoto("comprobante", f);
@@ -579,7 +581,7 @@ export default function AdminInscriptionDetail() {
             </Panel>
 
             <Show when={fichaMsg()}>
-              <div class={`rounded-2xl p-4 text-sm font-bold ${fichaMsg()!.type === "ok" ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
+              <div class={`rounded-md p-3 text-sm font-medium ${fichaMsg()!.type === "ok" ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-red-50 text-colpsi-red border border-red-200"}`}>
                 {fichaMsg()!.text}
               </div>
             </Show>
@@ -588,27 +590,27 @@ export default function AdminInscriptionDetail() {
               <button
                 onClick={saveFicha}
                 disabled={savingFicha()}
-                class="bg-colpsi-blue text-white px-10 py-4 rounded-2xl font-black hover:bg-colpsi-blue/90 active:scale-95 transition-all disabled:opacity-50 flex items-center gap-3"
+                class="inline-flex items-center gap-2 h-11 px-6 rounded-md bg-colpsi-blue hover:bg-colpsi-blue-light text-white font-semibold transition-all disabled:opacity-50"
               >
-                <Show when={savingFicha()} fallback={<span>💾 Guardar ficha</span>}>
-                  <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <Show when={savingFicha()} fallback={<><Icon name="check" /><span>Guardar ficha</span></>}>
+                  <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   <span>Guardando...</span>
                 </Show>
               </button>
             </div>
 
             {/* Notas administrativas */}
-            <div class="bg-white rounded-3xl shadow-sm border border-colpsi-border p-6 space-y-4">
-              <h2 class="text-sm font-black text-gray-400 uppercase tracking-widest">Notas administrativas</h2>
+            <div class="bg-white rounded-lg border border-colpsi-border p-5 space-y-3">
+              <h2 class="text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide">Notas administrativas</h2>
               <textarea
                 value={notesDraft()}
                 onInput={(e) => setNotesDraft(e.currentTarget.value)}
                 rows={4}
                 placeholder="Escribe notas internas sobre esta solicitud..."
-                class="w-full rounded-2xl border border-gray-200 p-3 text-sm text-gray-700 focus:outline-none focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/20 resize-y"
+                class="w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-sm text-colpsi-text outline-none placeholder:text-slate-400 focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/15 transition-colors resize-y"
               />
               <Show when={notesFeedback()}>
-                <div class={`rounded-xl p-3 text-sm font-bold ${notesFeedback()!.type === "ok" ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
+                <div class={`rounded-md p-3 text-sm font-medium ${notesFeedback()!.type === "ok" ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-red-50 text-colpsi-red border border-red-200"}`}>
                   {notesFeedback()!.text}
                 </div>
               </Show>
@@ -616,7 +618,7 @@ export default function AdminInscriptionDetail() {
                 <button
                   onClick={saveNotes}
                   disabled={savingNotes()}
-                  class="px-5 py-2.5 rounded-xl bg-colpsi-blue text-white font-black text-sm hover:bg-colpsi-blue/90 transition-colors disabled:opacity-50"
+                  class="h-9 px-4 rounded-md bg-colpsi-blue text-white font-semibold text-sm hover:bg-colpsi-blue-light transition-colors disabled:opacity-50"
                 >
                   {savingNotes() ? "Guardando..." : "Guardar notas"}
                 </button>
@@ -624,26 +626,26 @@ export default function AdminInscriptionDetail() {
             </div>
 
             {/* Enviar correo al solicitante */}
-            <div class="bg-white rounded-3xl shadow-sm border border-colpsi-border p-6 space-y-4">
-              <h2 class="text-sm font-black text-gray-400 uppercase tracking-widest">Enviar correo al solicitante</h2>
-              <p class="text-sm text-gray-500">
-                Para: <span class="font-bold text-gray-700">{d().correo}</span>
+            <div class="bg-white rounded-lg border border-colpsi-border p-5 space-y-3">
+              <h2 class="text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide">Enviar correo al solicitante</h2>
+              <p class="text-sm text-colpsi-muted">
+                Para: <span class="font-semibold text-colpsi-text">{d().correo}</span>
               </p>
               <input
                 value={emailSubject()}
                 onInput={(e) => setEmailSubject(e.currentTarget.value)}
                 placeholder="Asunto"
-                class="w-full rounded-2xl border border-gray-200 p-3 text-sm text-gray-700 focus:outline-none focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/20"
+                class="w-full h-9 rounded-md border border-slate-300 bg-white px-3 text-sm text-colpsi-text outline-none placeholder:text-slate-400 focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/15 transition-colors"
               />
               <textarea
                 value={emailMessage()}
                 onInput={(e) => setEmailMessage(e.currentTarget.value)}
                 rows={4}
                 placeholder="Mensaje para el solicitante..."
-                class="w-full rounded-2xl border border-gray-200 p-3 text-sm text-gray-700 focus:outline-none focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/20 resize-y"
+                class="w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-sm text-colpsi-text outline-none placeholder:text-slate-400 focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/15 transition-colors resize-y"
               />
               <Show when={emailFeedback()}>
-                <div class={`rounded-xl p-3 text-sm font-bold ${emailFeedback()!.type === "ok" ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
+                <div class={`rounded-md p-3 text-sm font-medium ${emailFeedback()!.type === "ok" ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-red-50 text-colpsi-red border border-red-200"}`}>
                   {emailFeedback()!.text}
                 </div>
               </Show>
@@ -651,7 +653,7 @@ export default function AdminInscriptionDetail() {
                 <button
                   onClick={sendEmail}
                   disabled={sendingEmail() || !emailSubject().trim() || !emailMessage().trim()}
-                  class="px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-black text-sm hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                  class="h-9 px-4 rounded-md bg-colpsi-blue text-white font-semibold text-sm hover:bg-colpsi-blue-light transition-colors disabled:opacity-50"
                 >
                   {sendingEmail() ? "Enviando..." : "Enviar correo"}
                 </button>
@@ -663,14 +665,14 @@ export default function AdminInscriptionDetail() {
                 <button
                   onClick={() => setConfirmApprove(true)}
                   disabled={busy()}
-                  class="flex-1 bg-green-600 text-white py-3.5 px-6 rounded-2xl font-black hover:bg-green-700 transition-colors disabled:opacity-50"
+                  class="flex-1 h-11 rounded-md bg-emerald-600 text-white px-6 font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50"
                 >
                   Aprobar inscripción
                 </button>
                 <button
                   onClick={() => setConfirmReject(true)}
                   disabled={busy()}
-                  class="flex-1 bg-red-500 text-white py-3.5 px-6 rounded-2xl font-black hover:bg-red-600 transition-colors disabled:opacity-50"
+                  class="flex-1 h-11 rounded-md bg-colpsi-red text-white px-6 font-semibold hover:opacity-90 transition-colors disabled:opacity-50"
                 >
                   Rechazar solicitud
                 </button>
@@ -710,7 +712,7 @@ export default function AdminInscriptionDetail() {
         isOpen={!!modalImage()}
         onClose={closeModal}
       />
-    </div>
+    </main>
   );
 }
 
@@ -721,14 +723,14 @@ function StatusPill(props: { status: string }) {
     rejected: "bg-red-50 text-red-700 border-red-200",
   };
   const label: Record<string, string> = { pending: "Pendiente", approved: "Aprobada", rejected: "Rechazada" };
-  return <span class={`px-3 py-1 rounded-full text-xs font-black border ${map[props.status] || ""}`}>{label[props.status] || props.status}</span>;
+  return <span class={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold border ${map[props.status] || ""}`}>{label[props.status] || props.status}</span>;
 }
 
 function Modal(props: { title: string; onClose: () => void; children: any }) {
   return (
     <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={props.onClose}>
-      <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
-        <h3 class="text-lg font-black text-colpsi-blue mb-4">{props.title}</h3>
+      <div class="bg-white rounded-lg shadow-lg border border-colpsi-border max-w-md w-full p-5" onClick={(e) => e.stopPropagation()}>
+        <h3 class="text-base font-semibold text-colpsi-text mb-4">{props.title}</h3>
         {props.children}
       </div>
     </div>
@@ -737,12 +739,12 @@ function Modal(props: { title: string; onClose: () => void; children: any }) {
 
 function ModalActions(props: { onCancel: () => void; onConfirm: () => void; busy: boolean; confirmLabel: string; danger?: boolean }) {
   return (
-    <div class="flex gap-3 mt-6">
-      <button onClick={props.onCancel} disabled={props.busy} class="flex-1 py-2.5 rounded-xl font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50">Cancelar</button>
+    <div class="flex gap-2 mt-5">
+      <button onClick={props.onCancel} disabled={props.busy} class="flex-1 h-9 rounded-md border border-colpsi-border bg-white font-medium text-colpsi-text hover:bg-colpsi-bg transition-colors disabled:opacity-50 text-sm">Cancelar</button>
       <button
         onClick={props.onConfirm}
         disabled={props.busy}
-        class={`flex-1 py-2.5 rounded-xl font-black text-white transition-colors disabled:opacity-50 ${props.danger ? "bg-red-500 hover:bg-red-600" : "bg-green-600 hover:bg-green-700"}`}
+        class={`flex-1 h-9 rounded-md font-semibold text-white transition-colors disabled:opacity-50 text-sm ${props.danger ? "bg-colpsi-red hover:opacity-90" : "bg-emerald-600 hover:bg-emerald-700"}`}
       >
         {props.busy ? "Procesando..." : props.confirmLabel}
       </button>
