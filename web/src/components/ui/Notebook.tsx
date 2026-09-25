@@ -90,12 +90,18 @@ export function Notebook(props: {
                       </>
                     }
                   >
-                    <span
-                      class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5"
-                      style={{ backgroundColor: t.light, color: t.title }}
-                    >
-                      {page.icon && <Icon name={page.icon} class="w-3.5 h-3.5" />}
-                      {page.label}
+                    <span class="flex flex-col items-center gap-1">
+                      <span
+                        class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5"
+                        style={{ backgroundColor: t.light, color: t.title }}
+                      >
+                        {page.icon && <Icon name={page.icon} class="w-3.5 h-3.5" />}
+                        {page.label}
+                      </span>
+                      <span
+                        class="h-[3px] w-8 rounded-full"
+                        style={{ backgroundColor: t.title }}
+                      />
                     </span>
                   </Show>
                 </button>
