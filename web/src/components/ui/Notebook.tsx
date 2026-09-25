@@ -3,9 +3,9 @@
 // toma un color institucional del gremio (ciclo de 6: azul, amarillo fuerte,
 // navy, vinotinto, verde, azul-claro) en su TÍTULO y su FONDO para diferenciarse
 // de un vistazo. El título conserva SIEMPRE su color (legible, con la versión
-// oscurecida para el amarillo); la pestaña seleccionada se marca con una franja
-// inferior en el degradado azul heráldico del escudo (navy → azul → azul-oscuro)
-// y título en negrita, sin cambiarle el color.
+// oscurecida para el amarillo); la pestaña seleccionada se eleva en BLANCO
+// (patrón Odoo clásico) con franja inferior en el degradado azul heráldico del
+// escudo (navy → azul → azul-oscuro) y título en negrita, sin cambiarle el color.
 // Cada NotebookPage hace lazy-mount: la pestaña inicial se hidrata desde el SSR y
 // las demás se montan al activarse por primera vez; una vez visitadas permanecen
 // en el DOM (ocultas) para conservar estado local (TipTap, flatpickr, selecciones
@@ -70,7 +70,7 @@ export function Notebook(props: {
                   aria-selected={isActive()}
                   onClick={() => setActive(page.id)}
                   style={{
-                    backgroundColor: `${t.bg}${isActive() ? "38" : "1f"}`,
+                    backgroundColor: isActive() ? "#ffffff" : `${t.bg}1f`,
                     color: t.title,
                   }}
                   class={`relative px-4 py-2.5 text-sm whitespace-nowrap -mb-px overflow-hidden transition-colors hover:brightness-95 ${
@@ -83,7 +83,7 @@ export function Notebook(props: {
                   {page.label}
                   <Show when={isActive()}>
                     <span
-                      class="absolute inset-x-0 bottom-0 h-[3px]"
+                      class="absolute inset-x-0 bottom-0 h-1"
                       style={{ backgroundImage: HERALDIC_GRADIENT }}
                     />
                   </Show>
