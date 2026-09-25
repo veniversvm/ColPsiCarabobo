@@ -75,7 +75,7 @@ export function Notebook(props: {
                     backgroundImage: isActive() ? HERALDIC_GRADIENT : undefined,
                     color: isActive() ? undefined : t.title,
                   }}
-                  class={`relative text-sm whitespace-nowrap -mb-px overflow-hidden transition-colors hover:brightness-95 ${
+                  class={`relative shrink-0 text-sm whitespace-nowrap -mb-px overflow-hidden transition-colors hover:brightness-95 ${
                     isActive() ? "px-2 py-1.5 font-semibold" : "px-4 py-2.5 font-medium"
                   }`}
                 >
