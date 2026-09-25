@@ -102,12 +102,9 @@ export function ContactCard(props: ContactCardProps) {
             </a>
           </Show>
           <Show when={props.phone}>
-            <a
-              href={`tel:${props.phone}`}
-              class="inline-flex items-center gap-2 bg-colpsi-surface hover:bg-colpsi-blue/5 text-gray-700 text-sm md:text-base font-bold px-3 py-2 rounded-xl transition-colors"
-            >
+            <span class="inline-flex items-center gap-2 bg-colpsi-surface text-gray-700 text-sm md:text-base font-bold px-3 py-2 rounded-xl">
               <span class="text-xl">📞</span> {props.phone}
-            </a>
+            </span>
           </Show>
           <Show when={props.address}>
             <span class="inline-flex items-center gap-2 bg-colpsi-surface text-gray-700 text-sm md:text-base font-bold px-3 py-2 rounded-xl">
@@ -142,20 +139,14 @@ export function ContactCard(props: ContactCardProps) {
                   {(block.phone || block.cell) && (
                     <div class="flex flex-wrap gap-1.5 mt-auto pt-2">
                       <Show when={block.phone}>
-                        <a
-                          href={`tel:${block.phone}`}
-                          class="inline-flex items-center gap-1 text-xs md:text-sm bg-white text-colpsi-blue font-bold px-2 py-1 rounded-lg border border-blue-100 hover:bg-colpsi-blue hover:text-white transition-colors"
-                        >
+                        <span class="inline-flex items-center gap-1 text-xs md:text-sm bg-white text-colpsi-blue font-bold px-2 py-1 rounded-lg border border-blue-100">
                           📞 {block.phone}
-                        </a>
+                        </span>
                       </Show>
                       <Show when={block.cell}>
-                        <a
-                          href={`tel:${block.cell}`}
-                          class="inline-flex items-center gap-1 text-xs md:text-sm bg-white text-colpsi-blue font-bold px-2 py-1 rounded-lg border border-blue-100 hover:bg-colpsi-blue hover:text-white transition-colors"
-                        >
+                        <span class="inline-flex items-center gap-1 text-xs md:text-sm bg-white text-colpsi-blue font-bold px-2 py-1 rounded-lg border border-blue-100">
                           📱 {block.cell}
-                        </a>
+                        </span>
                       </Show>
                     </div>
                   )}

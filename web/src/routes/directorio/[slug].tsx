@@ -169,10 +169,6 @@ export default function PsiProfilePage() {
                   </div>
 
                   <div class="lg:col-span-2 space-y-4">
-                    <ContactCard
-                      email={psi().email}
-                      location={psi().location}
-                    />
                     <Show when={psi().mini_bio || psi().full_bio_content}>
                       <div class="bg-white rounded-3xl p-6 md:p-8 shadow-premium border border-colpsi-border">
                         <h3 class="text-xs font-black text-colpsi-blue uppercase tracking-widest mb-3 border-l-4 border-colpsi-yellow pl-3">
@@ -196,6 +192,11 @@ export default function PsiProfilePage() {
                         </Show>
                       </div>
                     </Show>
+
+                    <ContactCard
+                      email={psi().email}
+                      location={psi().location}
+                    />
 
                     <AcademicSection
                       undergraduate={psi().undergraduate}
