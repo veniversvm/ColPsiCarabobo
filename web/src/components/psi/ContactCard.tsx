@@ -1,5 +1,5 @@
 // web/src/components/psi/ContactCard.tsx
-import { Show, For } from "solid-js";
+import { Show, For, createSignal, onMount, onCleanup } from "solid-js";
 import { PsiLocation } from "~/types/psi";
 
 interface ContactCardProps {
@@ -84,6 +84,51 @@ export function ContactCard(props: ContactCardProps) {
     return result;
   };
 
+  // ── Menú de acciones del correo ──────────────────────────────────
+  const [emailMenuOpen, setEmailMenuOpen] = createSignal(false);
+  const [emailCopied, setEmailCopied] = createSignal(false);
+  let emailMenuRef: HTMLDivElement | undefined;
+
+  const gmailUrl = () =>
+    props.email
+      ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(props.email)}`
+      : "#";
+
+  // Cierra el menú al hacer clic fuera (solo cliente)
+  onMount(() => {
+    const closeOnOutside = (e: MouseEvent) => {
+      if (emailMenuRef && !emailMenuRef.contains(e.target as Node)) {
+        setEmailMenuOpen(false);
+      }
+    };
+    document.addEventListener("click", closeOnOutside);
+    onCleanup(() => document.removeEventListener("click", closeOnOutside));
+  });
+
+  const copyEmail = async () => {
+    if (!props.email) return;
+    try {
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(props.email);
+      } else {
+        // Fallback para navegadores sin Clipboard API
+        const ta = document.createElement("textarea");
+        ta.value = props.email;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      setEmailCopied(true);
+      setEmailMenuOpen(false);
+      setTimeout(() => setEmailCopied(false), 2500);
+    } catch {
+      setEmailMenuOpen(false);
+    }
+  };
+
   return (
     <Show when={hasContactInfo()}>
       <div class="bg-white rounded-3xl p-6 md:p-8 shadow-premium border border-colpsi-border">
@@ -94,12 +139,54 @@ export function ContactCard(props: ContactCardProps) {
         {/* ── Contactos principales ──────────────────────────────────── */}
         <div class="flex flex-wrap gap-2.5 mb-6">
           <Show when={props.email}>
-            <a
-              href={`mailto:${props.email}`}
-              class="inline-flex items-center gap-2 bg-colpsi-surface hover:bg-colpsi-blue/5 text-gray-700 text-sm md:text-base font-bold px-3 py-2 rounded-xl transition-colors break-all"
-            >
-              <span class="text-xl">✉️</span> {props.email}
-            </a>
+            <div class="relative inline-flex" ref={emailMenuRef}>
+              <a
+                href={`mailto:${props.email}`}
+                class="inline-flex items-center gap-2 bg-colpsi-surface hover:bg-colpsi-blue/5 text-gray-700 text-sm md:text-base font-bold pl-3 py-2 rounded-l-xl transition-colors break-all"
+              >
+                <span class="text-xl">✉️</span> {props.email}
+              </a>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  setEmailMenuOpen(!emailMenuOpen());
+                }}
+                aria-haspopup="true"
+                aria-expanded={emailMenuOpen()}
+                aria-label="Más opciones para enviar correo"
+                class="inline-flex items-center justify-center w-10 shrink-0 bg-colpsi-surface hover:bg-colpsi-blue/5 text-colpsi-blue text-sm font-black rounded-r-xl border-l border-colpsi-border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-colpsi-blue/40"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {/* Menú desplegable */}
+              <Show when={emailMenuOpen()}>
+                <div
+                  role="menu"
+                  class="absolute left-0 top-full mt-2 z-30 w-56 bg-white rounded-2xl shadow-xl border border-colpsi-border p-1.5"
+                >
+                  <a
+                    href={gmailUrl()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    role="menuitem"
+                    onClick={() => setEmailMenuOpen(false)}
+                    class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-gray-700 hover:bg-blue-50 hover:text-colpsi-blue transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-colpsi-blue/40"
+                  >
+                    <span aria-hidden="true">✉️</span> Abrir en Gmail
+                  </a>
+                  <button
+                    onClick={copyEmail}
+                    role="menuitem"
+                    class="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-sm font-bold text-gray-700 hover:bg-blue-50 hover:text-colpsi-blue transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-colpsi-blue/40"
+                  >
+                    <span aria-hidden="true">{emailCopied() ? "✅" : "📋"}</span> {emailCopied() ? "¡Correo copiado!" : "Copiar correo"}
+                  </button>
+                </div>
+              </Show>
+            </div>
           </Show>
           <Show when={props.phone}>
             <span class="inline-flex items-center gap-2 bg-colpsi-surface text-gray-700 text-sm md:text-base font-bold px-3 py-2 rounded-xl">
