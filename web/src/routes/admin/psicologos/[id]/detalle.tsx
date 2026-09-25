@@ -32,6 +32,7 @@ import type { EditFormState, DeontologiaEntry, ObservacionesEntry } from "~/comp
 import type { PsiUserDocument } from "~/types/psi";
 import { SolvenciesSection } from "~/components/admin/psicologos/edit/SolvenciesSection";
 import { Panel, PanelSection } from "~/components/ui/Panel";
+import { Icon } from "~/components/admin/ui/icons";
 
 // ─── Server Actions ───────────────────────────────────────────────────────────
 
@@ -527,11 +528,11 @@ const runUpdateAction = useAction(updateAdminPsiServer);
   };
 
   return (
-    <main class="pb-28 animate-in fade-in duration-500 font-sans">
+    <main class="pb-12 space-y-4 animate-in fade-in duration-500">
       <EditPageHeader profile={profile()} />
       <Suspense
         fallback={
-          <div class="h-96 bg-white animate-pulse rounded-[2.5rem] border border-colpsi-border" />
+          <div class="h-96 bg-white animate-pulse rounded-lg border border-colpsi-border" />
         }
       >
         <EditAlert message={message()} />
@@ -596,17 +597,17 @@ const runUpdateAction = useAction(updateAdminPsiServer);
             </PanelSection>
           </Panel>
 
-          <div class="sticky bottom-10 z-50 flex justify-end max-w-5xl mx-auto px-4">
+          <div class="sticky bottom-4 z-50 flex justify-end max-w-5xl mx-auto px-4">
             <button
               type="submit"
               disabled={saving()}
-              class="bg-blue-900 text-white px-12 py-5 rounded-2xl font-black shadow-2xl hover:bg-blue-800 active:scale-95 transition-all disabled:opacity-50 flex items-center gap-3 border-2 border-white/20 uppercase tracking-tight"
+              class="inline-flex items-center gap-2 h-11 px-6 rounded-md bg-colpsi-blue hover:bg-colpsi-blue-light text-white font-semibold shadow-lg transition-all disabled:opacity-50"
             >
               <Show
                 when={saving()}
-                fallback={<span>💾 Guardar Expediente Maestro</span>}
+                fallback={<><Icon name="check" /> <span>Guardar Expediente</span></>}
               >
-                <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 <span>Procesando...</span>
               </Show>
             </button>
