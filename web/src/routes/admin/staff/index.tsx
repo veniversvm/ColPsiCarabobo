@@ -4,6 +4,11 @@ import { A, useNavigate } from "@solidjs/router";
 import { apiGet, apiDelete, apiPost } from "~/lib/api";
 import { getUserFacingError } from "~/lib/errors";
 import { roleLabel } from "~/lib/staff-permissions";
+import { PageHeader } from "~/components/admin/ui/PageHeader";
+import { Input } from "~/components/admin/ui/Input";
+import { Badge } from "~/components/admin/ui/Badge";
+import { Button } from "~/components/admin/ui/Button";
+import { Icon } from "~/components/admin/ui/icons";
 
 interface AdminMe {
   id: string;
@@ -65,6 +70,9 @@ const countPerms = (a: Admin) =>
     a.can_manage_projects, a.can_manage_tickets,
     a.can_view_logs ?? false, a.can_export_logs ?? false,
   ].filter(Boolean).length;
+
+const btnLinkBase =
+  "inline-flex items-center justify-center gap-2 h-9 px-3.5 rounded-md text-sm font-semibold transition-colors outline-none focus:ring-2";
 
 export default function AdminStaffPage() {
   const navigate = useNavigate();
@@ -165,55 +173,56 @@ export default function AdminStaffPage() {
   };
 
   return (
-    <main class="pb-20 animate-in fade-in duration-500">
+    <main class="space-y-5">
 
       {/* ── HEADER ────────────────────────────────────────────────────────── */}
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 bg-white p-6 rounded-3xl shadow-sm border border-colpsi-border">
-        <div>
-          <h1 class="text-2xl font-black text-blue-900 uppercase tracking-tight">Staff</h1>
-          <p class="text-gray-400 text-sm mt-0.5 font-medium">Personal administrativo del sistema</p>
-        </div>
-        <A
-          href="/admin/staff/crear"
-          class="inline-flex items-center gap-2 bg-blue-800 hover:bg-blue-900 text-white font-black px-6 py-3 rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-all text-sm"
-        >
-          <span class="text-lg leading-none">＋</span>
-          Nuevo Administrador
-        </A>
-        <Show when={isSudo()}>
-          <button
-            onClick={openSudoModal}
-            class="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-black px-6 py-3 rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-all text-sm"
-            title="Ceder el rol de Super Usuario a otro administrador"
-          >
-            <span class="text-lg leading-none">👑</span>
-            Ceder SUDO
-          </button>
-        </Show>
-      </div>
+      <PageHeader
+        crumbs={[{ label: "Staff" }]}
+        title="Staff"
+        description="Personal administrativo del sistema"
+        actions={
+          <div class="flex items-center gap-2">
+            <Show when={isSudo()}>
+              <button
+                onClick={openSudoModal}
+                class={`${btnLinkBase} bg-amber-500 text-white hover:bg-amber-600 focus:ring-amber-500/30`}
+                title="Ceder el rol de Super Usuario a otro administrador"
+              >
+                <Icon name="shield" />
+                Ceder SUDO
+              </button>
+            </Show>
+            <A
+              href="/admin/staff/crear"
+              class={`${btnLinkBase} bg-colpsi-blue text-white hover:bg-colpsi-blue-light focus:ring-colpsi-blue/30`}
+            >
+              <Icon name="plus" />
+              Nuevo Administrador
+            </A>
+          </div>
+        }
+      />
 
       {/* ── FILTROS ───────────────────────────────────────────────────────── */}
-      <div class="flex flex-col md:flex-row gap-3 mb-6">
-        <div class="relative flex-1">
-          <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
-          </svg>
-          <input
+      <div class="flex flex-col md:flex-row gap-2">
+        <div class="relative flex-1 min-w-[220px]">
+          <Icon name="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Input
             type="text"
             placeholder="Buscar por usuario o email..."
             value={search()}
             onInput={(e) => setSearch(e.currentTarget.value)}
-            class="w-full pl-10 pr-4 py-2.5 bg-white border-2 border-gray-200 focus:border-blue-500 rounded-xl outline-none text-sm text-gray-800 transition-all"
+            class="pl-9"
           />
         </div>
-        <div class="flex gap-2">
+        <div class="inline-flex gap-1 p-1 rounded-md bg-colpsi-bg border border-colpsi-border">
           {(["all", "active", "inactive"] as const).map((s) => (
             <button
               onClick={() => setFilterActive(s)}
-              class={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wide transition-all border-2 ${
+              class={`h-8 px-3 rounded-md text-xs font-medium transition-all border ${
                 filterActive() === s
-                  ? "bg-blue-800 text-white border-blue-800"
-                  : "bg-white text-gray-500 border-gray-200 hover:border-gray-300"
+                  ? "bg-white text-colpsi-blue border-colpsi-border shadow-sm"
+                  : "bg-transparent text-colpsi-muted border-transparent hover:text-colpsi-blue hover:bg-white/60"
               }`}
             >
               {s === "all" ? "Todos" : s === "active" ? "Activos" : "Inactivos"}
@@ -223,113 +232,123 @@ export default function AdminStaffPage() {
       </div>
 
       {/* ── LISTADO ───────────────────────────────────────────────────────── */}
-      <Suspense fallback={
-        <div class="space-y-3">
-          <For each={[1, 2, 3]}>{() => <div class="h-24 bg-white animate-pulse rounded-2xl border border-colpsi-border" />}</For>
-        </div>
-      }>
-        <Show when={!result.loading && list().length === 0}>
-          <div class="text-center py-20 bg-white rounded-3xl border border-colpsi-border">
-            <p class="text-5xl mb-4">👤</p>
-            <p class="text-gray-400 font-bold">No hay administradores registrados</p>
-            <A href="/admin/staff/crear" class="mt-4 inline-block text-blue-600 font-black text-sm hover:underline">
-              Crear el primero →
-            </A>
+      <div class="border border-colpsi-border rounded-lg bg-white overflow-hidden">
+        <Suspense fallback={
+          <div class="space-y-3 p-4">
+            <For each={[1, 2, 3]}>{() => <div class="h-14 bg-white animate-pulse rounded-md border border-colpsi-border" />}</For>
           </div>
-        </Show>
+        }>
+          <Show when={!result.loading && list().length === 0}>
+            <div class="text-center py-16">
+              <p class="text-colpsi-muted font-medium">No hay administradores registrados</p>
+              <A href="/admin/staff/crear" class="mt-3 inline-block text-colpsi-blue font-semibold text-sm hover:underline">
+                Crear el primero →
+              </A>
+            </div>
+          </Show>
 
-        <Show when={!result.loading && list().length > 0 && filtered().length === 0}>
-          <div class="text-center py-16 bg-white rounded-3xl border border-colpsi-border">
-            <p class="text-gray-400 font-bold">Ningún resultado para los filtros aplicados</p>
+          <Show when={!result.loading && list().length > 0 && filtered().length === 0}>
+            <div class="text-center py-14">
+              <p class="text-colpsi-muted font-medium">Ningún resultado para los filtros aplicados</p>
+            </div>
+          </Show>
+
+          <div class="overflow-x-auto">
+            <table class="w-full border-collapse">
+              <thead>
+                <tr>
+                  <th class="th-cell">Usuario</th>
+                  <th class="th-cell">Rol</th>
+                  <th class="th-cell">Permisos</th>
+                  <th class="th-cell">Estatus</th>
+                  <th class="th-cell">Creado</th>
+                  <th class="th-cell text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-colpsi-border">
+                <For each={filtered()}>
+                  {(admin) => {
+                    const isBusy = () => busy() === admin.id;
+                    const permsCount = countPerms(admin);
+                    return (
+                      <tr class={`transition-colors hover:bg-colpsi-bg/60 ${admin.is_active ? "" : "opacity-60"}`}>
+                        <td class="td-cell min-w-[220px]">
+                          <div class="flex items-center gap-2.5">
+                            <div class={`w-8 h-8 rounded-md flex items-center justify-center font-bold text-xs uppercase shrink-0 ${
+                              admin.is_active ? "bg-colpsi-blue/10 text-colpsi-blue" : "bg-colpsi-bg text-colpsi-muted"
+                            }`}>
+                              {admin.username.charAt(0)}
+                            </div>
+                            <div class="min-w-0">
+                              <A href={`/admin/staff/${admin.id}`} class="font-medium text-colpsi-text hover:text-colpsi-blue hover:underline truncate block">
+                                {admin.username}
+                              </A>
+                              <p class="text-xs text-colpsi-muted truncate">{admin.email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="td-cell">
+                          <Badge tone={admin.role ? "info" : "neutral"}>
+                            {roleLabel(admin.role)}
+                          </Badge>
+                        </td>
+                        <td class="td-cell whitespace-nowrap">
+                          <Badge tone="neutral" dot={false}>{permsCount}/20 permisos</Badge>
+                        </td>
+                        <td class="td-cell">
+                          <Badge tone={admin.is_active ? "success" : "neutral"}>
+                            {admin.is_active ? "Activo" : "Inactivo"}
+                          </Badge>
+                        </td>
+                        <td class="td-cell text-colpsi-muted whitespace-nowrap">
+                          <span class="block text-sm font-medium text-colpsi-text">{formatDate(admin.created_at)}</span>
+                          <Show when={admin.create_by}>
+                            <span class="text-xs text-colpsi-muted">Por {admin.create_by}</span>
+                          </Show>
+                        </td>
+                        <td class="td-cell text-right whitespace-nowrap">
+                          <div class="inline-flex items-center gap-1">
+                            <Show when={canViewLogs()}>
+                              <A
+                                href={`/admin/auditoria?actor_id=${admin.id}`}
+                                class="h-8 w-8 rounded-md flex items-center justify-center text-colpsi-muted border border-transparent hover:text-colpsi-blue hover:bg-colpsi-bg transition-colors"
+                                title="Ver actividad (bitácora)"
+                              >
+                                <Icon name="fileText" class="w-4 h-4" />
+                              </A>
+                            </Show>
+                            <A
+                              href={`/admin/staff/${admin.id}`}
+                              class="h-8 w-8 rounded-md flex items-center justify-center text-colpsi-muted border border-transparent hover:text-colpsi-blue hover:bg-colpsi-bg transition-colors"
+                              title="Editar"
+                            >
+                              <Icon name="pencil" class="w-4 h-4" />
+                            </A>
+                            <button
+                              onClick={() => { setDeleteError(null); setConfirmDelete(admin); }}
+                              disabled={isBusy()}
+                              title="Eliminar"
+                              class="h-8 w-8 rounded-md flex items-center justify-center text-colpsi-muted border border-transparent hover:text-colpsi-red hover:bg-red-50 transition-colors disabled:opacity-40"
+                            >
+                              <Icon name="trash" class="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  }}
+                </For>
+              </tbody>
+            </table>
           </div>
-        </Show>
 
-        <div class="space-y-3">
-          <For each={filtered()}>
-            {(admin) => {
-              const isBusy = () => busy() === admin.id;
-              const permsCount = countPerms(admin);
-              return (
-                <article class={`bg-white rounded-2xl border-2 transition-all duration-200 overflow-hidden ${
-                  admin.is_active ? "border-colpsi-border hover:border-blue-100" : "border-dashed border-gray-200 opacity-70"
-                }`}>
-                  <div class="flex items-center gap-4 p-4 md:p-5">
-
-                    {/* Avatar */}
-                    <div class={`flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg uppercase border-2 ${
-                      admin.is_active ? "bg-blue-50 border-blue-100 text-blue-700" : "bg-colpsi-surface border-gray-200 text-gray-400"
-                    }`}>
-                      {admin.username.charAt(0)}
-                    </div>
-
-                    {/* Info */}
-                    <div class="flex-1 min-w-0">
-                      <div class="flex flex-wrap items-center gap-2 mb-1">
-                        <h2 class="font-black text-gray-900 text-base">{admin.username}</h2>
-                        <span class={`text-[10px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider ${
-                          admin.is_active ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"
-                        }`}>
-                          {admin.is_active ? "Activo" : "Inactivo"}
-                        </span>
-                        <span class="text-[10px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider bg-blue-50 text-blue-600">
-                          {permsCount}/20 permisos
-                        </span>
-                        <span class={`text-[10px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider ${
-                          admin.role ? "bg-indigo-50 text-indigo-600" : "bg-gray-100 text-gray-400"
-                        }`}>
-                          {roleLabel(admin.role)}
-                        </span>
-                      </div>
-                      <p class="text-gray-500 text-sm truncate">{admin.email}</p>
-                      <div class="flex items-center gap-3 mt-1.5 text-[11px] text-gray-400 font-medium">
-                        <Show when={admin.create_by}>
-                          <span>Creado por <span class="font-bold text-gray-600">{admin.create_by}</span></span>
-                          <span>·</span>
-                        </Show>
-                        <span>{formatDate(admin.created_at)}</span>
-                      </div>
-                    </div>
-
-                    {/* Acciones */}
-                    <div class="flex-shrink-0 flex items-center gap-2">
-                      <Show when={canViewLogs()}>
-                        <A
-                          href={`/admin/auditoria?actor_id=${admin.id}`}
-                          class="w-9 h-9 rounded-xl flex items-center justify-center border-2 border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 transition-all"
-                          title="Ver actividad (bitácora)"
-                        >
-                          🧾
-                        </A>
-                      </Show>
-                      <A
-                        href={`/admin/staff/${admin.id}`}
-                        class="w-9 h-9 rounded-xl flex items-center justify-center border-2 border-blue-100 bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all"
-                        title="Editar"
-                      >
-                        ✏
-                      </A>
-                      <button
-                        onClick={() => { setDeleteError(null); setConfirmDelete(admin); }}
-                        disabled={isBusy()}
-                        title="Eliminar"
-                        class="w-9 h-9 rounded-xl flex items-center justify-center border-2 border-red-100 bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-all disabled:opacity-40"
-                      >
-                        🗑
-                      </button>
-                    </div>
-                  </div>
-                </article>
-              );
-            }}
-          </For>
-        </div>
-
-        <Show when={list().length > 0}>
-          <p class="text-center text-xs text-gray-400 font-bold mt-6">
-            Mostrando {filtered().length} de {result()?.total ?? list().length} administradores
-          </p>
-        </Show>
-      </Suspense>
+          <Show when={list().length > 0}>
+            <p class="text-center text-xs text-colpsi-muted font-medium py-3 border-t border-colpsi-border bg-colpsi-bg">
+              Mostrando {filtered().length} de {result()?.total ?? list().length} administradores
+            </p>
+          </Show>
+        </Suspense>
+      </div>
 
       {/* ── MODAL CONFIRMACIÓN BORRADO ─────────────────────────────────── */}
       <Show when={confirmDelete()}>
@@ -338,27 +357,29 @@ export default function AdminStaffPage() {
             class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
             onClick={(e) => { if (e.target === e.currentTarget) setConfirmDelete(null); }}
           >
-            <div class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm border border-colpsi-border text-center animate-in zoom-in-95 duration-200">
-              <p class="text-4xl mb-4">🗑️</p>
-              <h2 class="text-lg font-black text-gray-900 mb-1">¿Eliminar administrador?</h2>
-              <p class="text-blue-700 font-black text-sm mb-1">{admin().username}</p>
-              <p class="text-gray-500 text-sm mb-4">Esta acción es irreversible.</p>
+            <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm border border-colpsi-border">
+              <span class="inline-flex h-10 w-10 items-center justify-center rounded-md bg-red-50 text-colpsi-red mb-3">
+                <Icon name="trash" class="w-5 h-5" />
+              </span>
+              <h2 class="text-base font-semibold text-colpsi-text mb-1">¿Eliminar administrador?</h2>
+              <p class="text-colpsi-blue font-semibold text-sm mb-1">{admin().username}</p>
+              <p class="text-colpsi-muted text-sm mb-4">Esta acción es irreversible.</p>
               <Show when={deleteError()}>
-                <div class="mb-4 p-3 rounded-xl bg-red-50 text-red-700 text-xs font-bold border border-red-200">
+                <div class="mb-4 p-3 rounded-md bg-red-50 text-red-700 text-xs font-medium border border-red-200">
                   {deleteError()}
                 </div>
               </Show>
-              <div class="flex gap-3">
+              <div class="flex gap-2">
                 <button
                   onClick={() => setConfirmDelete(null)}
-                  class="flex-1 px-4 py-3 rounded-2xl border-2 border-gray-200 font-black text-gray-600 hover:bg-colpsi-surface transition-all text-sm"
+                  class="flex-1 h-9 px-4 rounded-md border border-colpsi-border bg-white font-medium text-colpsi-text hover:bg-colpsi-bg transition-colors text-sm"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={() => handleDelete(admin())}
                   disabled={busy() === admin().id}
-                  class="flex-1 px-4 py-3 rounded-2xl bg-red-600 text-white font-black hover:bg-red-700 active:scale-95 transition-all text-sm disabled:opacity-60"
+                  class="flex-1 h-9 px-4 rounded-md bg-colpsi-red text-white font-semibold hover:opacity-90 transition-colors text-sm disabled:opacity-60"
                 >
                   {busy() === admin().id ? "Eliminando..." : "Sí, eliminar"}
                 </button>
@@ -374,18 +395,20 @@ export default function AdminStaffPage() {
           class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
           onClick={(e) => { if (e.target === e.currentTarget) setShowSudo(false); }}
         >
-          <form onSubmit={handleTransferSudo} class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md border border-colpsi-border animate-in zoom-in-95 duration-200">
-            <p class="text-4xl mb-4">👑</p>
-            <h2 class="text-lg font-black text-gray-900 mb-1">Transferir el rol de Super Usuario</h2>
-            <p class="text-gray-500 text-sm mb-5">
+          <form onSubmit={handleTransferSudo} class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md border border-colpsi-border">
+            <span class="inline-flex h-10 w-10 items-center justify-center rounded-md bg-amber-50 text-amber-600 mb-3">
+              <Icon name="shield" class="w-5 h-5" />
+            </span>
+            <h2 class="text-base font-semibold text-colpsi-text mb-1">Transferir el rol de Super Usuario</h2>
+            <p class="text-colpsi-muted text-sm mb-5">
               El destinatario pasará a ser el único SUDO del sistema y tú quedarás como administrador normal. Esta acción es grave e irrevocable.
             </p>
 
-            <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1">Destinatario</label>
+            <label class="block text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide mb-1">Destinatario</label>
             <select
               value={sudoTarget()}
               onChange={(e) => setSudoTarget(e.currentTarget.value)}
-              class="w-full mb-4 bg-white border-2 border-gray-200 focus:border-amber-500 rounded-xl px-4 py-2.5 outline-none transition-all text-gray-800 text-sm"
+              class="w-full mb-4 h-9 bg-white border border-slate-300 rounded-md px-3 outline-none transition-all text-colpsi-text text-sm focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/15"
             >
               <option value="">— Seleccionar administrador —</option>
               <For each={filtered().filter((a) => a.id !== me()?.id && a.is_active)}>
@@ -393,36 +416,36 @@ export default function AdminStaffPage() {
               </For>
             </select>
 
-            <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1">Contraseña del SUDO actual</label>
+            <label class="block text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide mb-1">Contraseña del SUDO actual</label>
             <input
               type="password"
               placeholder="Confirma con tu contraseña..."
               value={sudoPassword()}
               onInput={(e) => setSudoPassword(e.currentTarget.value)}
-              class="w-full mb-4 bg-white border-2 border-gray-200 focus:border-amber-500 rounded-xl px-4 py-2.5 outline-none transition-all text-gray-800 text-sm"
+              class="w-full mb-4 h-9 bg-white border border-slate-300 rounded-md px-3 outline-none transition-all text-colpsi-text text-sm focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/15"
             />
 
             <Show when={sudoError()}>
-              <div class="mb-4 p-3 rounded-xl bg-red-50 text-red-700 text-xs font-bold border border-red-200">{sudoError()}</div>
+              <div class="mb-4 p-3 rounded-md bg-red-50 text-red-700 text-xs font-medium border border-red-200">{sudoError()}</div>
             </Show>
             <Show when={sudoSuccess()}>
-              <div class="mb-4 p-3 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
+              <div class="mb-4 p-3 rounded-md bg-emerald-50 text-emerald-700 text-xs font-medium border border-emerald-200">
                 ✓ Rol transferido. El destinatario ya es SUDO. Tu sesión se actualizará al recargar.
               </div>
             </Show>
 
-            <div class="flex gap-3">
+            <div class="flex gap-2">
               <button
                 type="button"
                 onClick={() => setShowSudo(false)}
-                class="flex-1 px-4 py-3 rounded-2xl border-2 border-gray-200 font-black text-gray-600 hover:bg-colpsi-surface transition-all text-sm"
+                class="flex-1 h-9 px-4 rounded-md border border-colpsi-border bg-white font-medium text-colpsi-text hover:bg-colpsi-bg transition-colors text-sm"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={sudoBusy() || sudoSuccess()}
-                class="flex-1 px-4 py-3 rounded-2xl bg-amber-600 hover:bg-amber-700 disabled:opacity-60 text-white font-black transition-all text-sm"
+                class="flex-1 h-9 px-4 rounded-md bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white font-semibold transition-colors text-sm"
               >
                 {sudoBusy() ? "Transfiriendo..." : "Transferir SUDO"}
               </button>

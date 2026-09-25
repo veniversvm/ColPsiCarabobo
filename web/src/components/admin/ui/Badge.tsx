@@ -24,7 +24,7 @@ export function Badge(props: BadgeProps) {
   const tone = () => props.tone ?? "neutral";
   return (
     <span
-      class={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded border text-xs font-medium whitespace-nowrap ${tones[tone()]} ${props.class ?? ""}`}
+      class={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded border text-xs font-medium whitespace-nowrap ${props.class === undefined ? tones[tone()] : ""} ${props.class ?? ""}`}
     >
       <Show when={props.dot !== false}>
         <span class="w-1.5 h-1.5 rounded-full bg-current" />

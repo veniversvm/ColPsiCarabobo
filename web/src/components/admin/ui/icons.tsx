@@ -6,7 +6,9 @@ import { JSX } from "solid-js";
 type IconName =
   | "grid" | "users" | "fileText" | "tag" | "newspaper" | "bell" | "ticket"
   | "kanban" | "shield" | "logout" | "refresh" | "chevronRight" | "menu"
-  | "panelLeft" | "sliders" | "search" | "plus" | "pencil" | "trash" | "dots";
+  | "panelLeft" | "sliders" | "search" | "plus" | "pencil" | "trash" | "dots"
+  | "chevronDown" | "user" | "checkCircle" | "inbox" | "arrowRight" | "check"
+  | "clock" | "mail";
 
 const S = {
   rect: (x: number, y: number, w: number, h: number, rx = 2) =>
@@ -100,6 +102,32 @@ const icons: Record<IconName, () => JSX.Element> = {
   </>),
   dots: () => (<>
     {S.circle(12, 12, 1)} {S.circle(19, 12, 1)} {S.circle(5, 12, 1)}
+  </>),
+  chevronDown: () => <>{S.polyline("6 9 12 15 18 9")}</>,
+  user: () => (<>
+    {S.path("M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2")}
+    {S.circle(12, 7, 4)}
+  </>),
+  checkCircle: () => (<>
+    {S.path("M22 11.08V12a10 10 0 1 1-5.93-9.14")}
+    {S.polyline("9 11 12 14 22 4")}
+  </>),
+  inbox: () => (<>
+    {S.polyline("22 12 16 12 14 15 10 15 8 12 2 12")}
+    {S.path("M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z")}
+  </>),
+  arrowRight: () => (<>
+    {S.line(5, 12, 19, 12)}
+    {S.polyline("12 5 19 12 12 19")}
+  </>),
+  check: () => <>{S.polyline("20 6 9 17 4 12")}</>,
+  clock: () => (<>
+    {S.circle(12, 12, 10)}
+    {S.polyline("12 6 12 12 16 14")}
+  </>),
+  mail: () => (<>
+    {S.rect(2, 4, 20, 16, 2)}
+    {S.path("m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7")}
   </>),
 };
 
