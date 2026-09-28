@@ -123,6 +123,49 @@ deno task build      # igual que npm run build (lo usa el dockerfile)
       visible solo con `total > 20`); cualquier cambio de filtro resetea a la
       página 1.
 
+12. **El panel admin no debe morir ante un error puntual de una página** — un error
+    en el render de una ruta admin (p. ej. un `createResource` que lanza porque la
+    API devolvió 500) NO debe llegar al ErrorBoundary global de `app.tsx` (pinta
+    **OfflineAlert a pantalla completa** → el admin percibe "me sacó de la sesión").
+    Reglas:
+    - **ErrorBoundary inline en `admin.tsx`** envuelve `props.children` con
+      `AdminPageError` (`components/admin/AdminPageError.tsx`): tarjeta dentro del
+      contenido con mensaje, Reintentar (`reset`) y Volver al panel; el menú lateral
+      queda intacto. No lo quites ni lo reemplaces por una pantalla completa.
+    - **LISTAS clave con try/catch**: los fetchers de `admin/{inscripciones,
+      noticias,psicologos,notificaciones,tickets}/index.tsx` y
+      `tickets/configuracion.tsx` capturan el error y devuelven `undefined`/vacío
+      (inscripciones y psicólogos conservan su caché de último listado bueno vía
+      `display()`/`cachedData()`). Un fetch nuevo de una lista nunca debe lanzar
+      durante el render; si añades una lista admin, replica ese patrón.
+    - **401 NO borra el JWT globalmente**: en `lib/api.ts` el `sessionStorage.jwt`
+      solo se limpia si el 401 viene de una ruta de sesión
+      (`/admin|/psi|/session` → `validate|login|logout|me`). La muerte real de la
+      sesión la detecta `checkSession` (polling 60s de `/session/validate` o
+      `/psi/me/validate` → `forceLogout` **solo ante 401/403**; un 404 del
+      endpoint de validación ya NO desloguea — significa ruta inexistente/desfase
+      de despliegue, no revocación). Un 401 inesperado de un endpoint de datos
+      puede ser un fallo transitorio del gateway; borrar el token ahí sí saca al
+      admin del panel.
+
+13. **Recuperación silenciosa de sesión** — `sessionStorage.jwt` es por-pestaña:
+    en una pestaña nueva o tras reiniciar el navegador la cookie HttpOnly `jwt`
+    sigue viva pero la copia per-tab se pierde. Sin fix, `auth.tsx` limpiaba la
+    sesión y botaba a `/admin-access`; re-loguear rota la key del admin (gotcha 13
+    de `api/AGENTS.md`) y en ≤60s `checkSession` mataba la sesión de las demás
+    pestañas ("se cerró la sesión").
+    - **`restoreSessionAction`** (`lib/actions/session.ts`): server action **sin**
+      `vinxi/http` (se importa desde el cliente — `auth.tsx`) que lee la cookie
+      `jwt` de la petición (vía `getRequestEvent`, mismo patrón que `lib/api.ts`)
+      y la devuelve al navegador; `auth.tsx` la guarda en `sessionStorage` **sin
+      re-login**. No agrega exposición: el login ya copia el token a sessionStorage.
+    - **NO moverla a `lib/actions/auth.ts`**: ese módulo importa `vinxi/http` y
+      rompe el bundle del cliente (`AsyncLocalStorage` no existe en el navegador —
+      falla el build del router client).
+    - Los recursos admin re-sincronizan al restaurarse: en `admin.tsx`, el recurso
+      de `/session/me` dispara un refetch cuando `user()` se setea y aún no cargó
+      (menú completo en la pestaña recuperada, sin recargar).
+
 ## Estructura
 
 ```

@@ -14,7 +14,14 @@ const labelClass = "block text-[11px] font-semibold text-colpsi-muted uppercase 
 
 export default function AdminTicketsConfiguracion() {
   const [motivosResource, { refetch }] = createResource(
-    () => apiGet<{ data: TicketMotivo[] }>("/admin/tickets/motivos"),
+    async () => {
+      try {
+        return await apiGet<{ data: TicketMotivo[] }>("/admin/tickets/motivos");
+      } catch {
+        // Error transitorio: sin motivos (tarjeta "no hay motivos"), no tumbo la página.
+        return { data: [] };
+      }
+    },
     { initialValue: { data: [] } }
   );
   const motivos = () => motivosResource()?.data ?? [];

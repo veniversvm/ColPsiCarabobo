@@ -86,7 +86,7 @@ export default function AdminStaffPage() {
   // destinatario a sí mismo).
   const [me] = createResource<AdminMe | null>(async () => {
     try {
-      return await apiGet<AdminMe>("/admin/me");
+      return await apiGet<AdminMe>("/session/me");
     } catch {
       return null;
     }

@@ -61,9 +61,13 @@ func SetupAdminRoutes(router fiber.Router, adminRepo domain.UserAdminRepository,
 	// =========================================================================
 	// VALIDACIÓN DE SESIÓN (retorna 401 explícito, no 404 enmascarado)
 	// =========================================================================
-	// Grupo aparte con ProtectedAdmin() para que el frontend pueda distinguir
-	// "sesión inválida" (401) de "ruta inexistente" (404).
-	adminValidate := router.Group("/admin", middleware.NoStore(), authMid.ProtectedAdmin())
-	adminValidate.Get("/validate", h.ValidateSession)
-	adminValidate.Get("/me", h.GetMe)
+	// ⚠️ NO registrar bajo /admin: Fiber v2 (≥2.52) apila el middleware del
+	// PRIMER Group("/admin", ...) a cualquier ruta nueva bajo ese prefijo
+	// (quirk reproducido): un segundo Group o un Get directo sobre /admin
+	// heredan ProtectedAdmin404 y el 401 jamás se sirve. Por eso estas rutas
+	// viven en su propio prefijo /session — el frontend distingue "sesión
+	// inválida" (401) de "ruta inexistente" (404).
+	session := router.Group("/session", middleware.NoStore(), authMid.ProtectedAdmin())
+	session.Get("/validate", h.ValidateSession)
+	session.Get("/me", h.GetMe)
 }

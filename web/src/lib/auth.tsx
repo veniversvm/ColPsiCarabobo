@@ -11,7 +11,9 @@
 import { createContext, useContext, createSignal, JSX, onMount, onCleanup } from "solid-js";
 import Cookies from "js-cookie";
 import { isServer } from "solid-js/web";
+import { useAction } from "@solidjs/router";
 import { apiGet, ApiError } from "~/lib/api";
+import { restoreSessionAction } from "~/lib/actions/session";
 import { AuthUser, UserRole } from "~/types/auth";
 
 const CHECK_INTERVAL_MS = 60_000;
@@ -98,34 +100,61 @@ export function AuthProvider(props: { children: JSX.Element; onServerLogout?: ()
   };
 
   // Verifica contra el backend que la sesión siga vigente.
-  // - 401/403/404 del endpoint de validación → sesión revocada → forzar logout.
-  // - 503 (error de red) → se ignora para no desloguear por un blip de conectividad.
+  // - 401/403 del endpoint de validación → sesión revocada → forzar logout.
+  // - 404 (ruta inexistente / desfase entre la imagen de la API y la fuente) y
+  //   503 (red) se ignoran: no se desloguea al admin por un problema de rutas o
+  //   infraestructura, solo por una revocación real de la sesión.
   const checkSession = async () => {
     const token = sessionStorage.getItem("jwt");
     const currentUser = user();
     if (!token || !currentUser) return;
 
-    const endpoint = currentUser.role === "admin" ? "/admin/validate" : "/psi/me/validate";
+    const endpoint = currentUser.role === "admin" ? "/session/validate" : "/psi/me/validate";
 
     try {
       await apiGet(endpoint);
     } catch (error) {
-      if (error instanceof ApiError && (error.status === 401 || error.status === 403 || error.status === 404)) {
+      if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
         forceLogout();
       }
     }
   };
 
-  onMount(() => {
+  // Restaura la copia del JWT desde la cookie HttpOnly (server action).
+  // El navegador pierde sessionStorage.jwt en pestañas nuevas/reinicios, pero la
+  // cookie (y por tanto la sesión del servidor) sigue viva.
+  const restoreSession = useAction(restoreSessionAction);
+
+  onMount(async () => {
     // Verificación periódica contra el backend: corre de forma continua y
     // no-op cuando no hay sesión (checkSession valida token/usuario).
     const interval = setInterval(checkSession, CHECK_INTERVAL_MS);
     onCleanup(() => clearInterval(interval));
 
     const savedUser = Cookies.get("user_data");
-    const token     = sessionStorage.getItem("jwt");
 
-    if (!savedUser || !token) {
+    // Sin cookie de datos → sin sesión servible → flujo de login (previo).
+    if (!savedUser) {
+      clearLocalSession();
+      return;
+    }
+
+    let token = sessionStorage.getItem("jwt");
+
+    // Copia per-tab perdida (pestaña nueva / reinicio del navegador) pero cookie
+    // HttpOnly `jwt` viva: restaurar la copia SIN re-login. Un re-login rota la
+    // key del admin (gotcha 13 de api/AGENTS.md) y en ≤60s checkSession mataba la
+    // sesión de las demás pestañas → el usuario percibía "se cerró la sesión".
+    if (!token) {
+      try {
+        const restored = await restoreSession();
+        if (restored && !isTokenExpired(restored)) token = restored;
+      } catch {
+        token = "";
+      }
+    }
+
+    if (!token) {
       clearLocalSession();
       return;
     }
@@ -134,6 +163,9 @@ export function AuthProvider(props: { children: JSX.Element; onServerLogout?: ()
       expireSession();
       return;
     }
+
+    // Guardar la copia restaurada (no-op si ya existía) y restaurar el estado.
+    sessionStorage.setItem("jwt", token);
 
     try {
       setUser(JSON.parse(savedUser));

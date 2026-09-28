@@ -93,7 +93,7 @@ func (h *AdminHandler) Logout(c *fiber.Ctx) error {
 // @Security     BearerAuth
 // @Success      200 {object} map[string]interface{}
 // @Failure      401 {object} map[string]interface{}
-// @Router       /admin/validate [get]
+// @Router       /session/validate [get]
 func (h *AdminHandler) ValidateSession(c *fiber.Ctx) error {
 	if _, err := middleware.GetAuthenticatedAdmin(c); err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Sesión inválida o expirada."})
@@ -110,7 +110,7 @@ func (h *AdminHandler) ValidateSession(c *fiber.Ctx) error {
 // @Security     BearerAuth
 // @Success      200 {object} map[string]interface{}
 // @Failure      401 {object} map[string]interface{}
-// @Router       /admin/me [get]
+// @Router       /session/me [get]
 func (h *AdminHandler) GetMe(c *fiber.Ctx) error {
 	admin, err := middleware.GetAuthenticatedAdmin(c)
 	if err != nil {

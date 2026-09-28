@@ -19,7 +19,7 @@ interface Props {
 export function ReceptionSwitchesCard(props: Props) {
   const [me] = createResource<{ sudo: boolean }>(async () => {
     try {
-      return (await apiGet("/admin/me")) ?? { sudo: false };
+      return (await apiGet("/session/me")) ?? { sudo: false };
     } catch {
       return { sudo: false };
     }

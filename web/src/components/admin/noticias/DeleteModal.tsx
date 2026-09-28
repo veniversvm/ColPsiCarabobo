@@ -7,6 +7,7 @@ interface Props {
   isBusy: boolean;
   onConfirm: () => void;
   onCancel: () => void;
+  error?: string;
 }
 
 export function DeleteModal(props: Props) {
@@ -22,6 +23,9 @@ export function DeleteModal(props: Props) {
           </span>
           <h2 class="text-base font-semibold text-colpsi-text mb-1">¿Archivar publicación?</h2>
           <p class="text-colpsi-muted text-sm mb-5">El post quedará oculto. Puedes restaurarlo desde el editor.</p>
+          <Show when={props.error}>
+            <p class="text-red-600 text-sm mb-4 bg-red-50 border border-red-100 rounded-md px-3 py-2">{props.error}</p>
+          </Show>
           <div class="flex gap-2">
             <button
               onClick={props.onCancel}

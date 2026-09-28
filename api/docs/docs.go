@@ -405,7 +405,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Elimina la solicitud y sus archivos S3.",
+                "description": "Marca la solicitud como rechazada (status 'rejected') conservando la ficha y sus archivos para revisión. Body opcional con el motivo.",
                 "tags": [
                     "Administración - Inscripciones"
                 ],
@@ -672,39 +672,6 @@ const docTemplate = `{
                             "additionalProperties": {
                                 "type": "string"
                             }
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/me": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Retorna identidad, rol y matriz de permisos del administrador actual. La UI lo usa para filtrar el menú; es informativo, nunca autoriza: el backend valida cada operación.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Administración - Sesión"
-                ],
-                "summary": "Estado y permisos del administrador autenticado",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
                         }
                     }
                 }
@@ -4450,39 +4417,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/admin/validate": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Devuelve 200 si el token JWT es válido y la sesión sigue activa;",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Administración - Sesión"
-                ],
-                "summary": "Validar sesión de administrador",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
         "/auth/login": {
             "post": {
                 "description": "Valida las credenciales del administrador (email o username) y retorna un JWT dinámico.",
@@ -6926,6 +6860,72 @@ const docTemplate = `{
                             "additionalProperties": {
                                 "type": "string"
                             }
+                        }
+                    }
+                }
+            }
+        },
+        "/session/me": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna identidad, rol y matriz de permisos del administrador actual. La UI lo usa para filtrar el menú; es informativo, nunca autoriza: el backend valida cada operación.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Sesión"
+                ],
+                "summary": "Estado y permisos del administrador autenticado",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/session/validate": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Devuelve 200 si el token JWT es válido y la sesión sigue activa;",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Sesión"
+                ],
+                "summary": "Validar sesión de administrador",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     }
                 }

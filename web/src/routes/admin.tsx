@@ -1,8 +1,9 @@
 // web/src/routes/admin.tsx
-import { JSX, createSignal, Show, createEffect, createResource, For } from "solid-js";
+import { JSX, createSignal, Show, createEffect, createResource, For, ErrorBoundary, onCleanup } from "solid-js";
 import { A, useNavigate, useLocation } from "@solidjs/router";
 import { useAuth } from "~/lib/auth";
 import { apiGet } from "~/lib/api";
+import AdminPageError from "~/components/admin/AdminPageError";
 import type { PendientesResponse } from "~/types/tickets";
 import type { PermissionState } from "~/lib/staff-permissions";
 import { Icon } from "~/components/admin/ui/icons";
@@ -46,16 +47,28 @@ export default function AdminLayout(props: { children: JSX.Element }) {
 
   // Estado y permisos del admin autenticado (para filtrar el menú).
   // El backend sigue validando cada operación: esto es solo cosmético/UX.
-  const [me] = createResource<AdminMe | null>(
+  const [me, { refetch: refetchMe }] = createResource<AdminMe | null>(
     async () => {
       try {
-        return await apiGet<AdminMe>("/admin/me");
+        return await apiGet<AdminMe>("/session/me");
       } catch {
         return null;
       }
     },
     { initialValue: null }
   );
+
+  // Cuando la sesión se restaura en caliente (auth.tsx recupera el token desde la
+  // cookie sin re-login en una pestaña nueva/reiniciada), /session/me se re-evalúa
+  // para completar el menú. No-op en el flujo normal (el fetch inicial ya resolvió).
+  createEffect(() => {
+    const id = user()?.id;
+    const loaded = !!me();
+    if (id && isAuthenticated() && role() === "admin" && !loaded) {
+      const t = setTimeout(refetchMe, 0);
+      onCleanup(() => clearTimeout(t));
+    }
+  });
 
   // Badge de tickets pendientes (polling cada 30s). Silencioso si falla.
   const [pendientes] = createResource(
@@ -199,7 +212,16 @@ export default function AdminLayout(props: { children: JSX.Element }) {
           <main class="flex-1 overflow-y-auto bg-colpsi-bg">
             <div class="mx-auto w-full max-w-[1400px] px-4 sm:px-6 py-5 space-y-5">
               {/* LAS PÁGINAS SE CARGAN AQUÍ */}
-              {props.children}
+              {/* ErrorBoundary inline: un error puntual en la página (p. ej. un
+                  500 transitorio de una lista) pinta AdminPageError dentro del
+                  contenido, SIN tirar el menú lateral → el admin no "sale del
+                  panel". El OfflineAlert global de app.tsx queda solo como
+                  backstop para rutas públicas. */}
+              <ErrorBoundary
+                fallback={(err, reset) => <AdminPageError error={err} reset={reset} />}
+              >
+                {props.children}
+              </ErrorBoundary>
             </div>
           </main>
         </div>
