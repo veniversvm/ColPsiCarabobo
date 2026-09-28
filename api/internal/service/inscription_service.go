@@ -752,6 +752,8 @@ func (s *InscriptionService) Reject(ctx context.Context, admin *domain.UserAdmin
 }
 
 // UpdateNotes actualiza las notas administrativas de una solicitud (texto simple).
+// Cada guardado con cambio de texto persiste la nota actual, agrega una versión
+// al histórico (autor + fecha) y lo anota en la bitácora de auditoría.
 func (s *InscriptionService) UpdateNotes(ctx context.Context, admin *domain.UserAdmin, id uuid.UUID, notes string) error {
 	if err := requireUpdateFicha(admin); err != nil {
 		return err
@@ -761,23 +763,59 @@ func (s *InscriptionService) UpdateNotes(ctx context.Context, admin *domain.User
 		return ErrInscriptionNotFound
 	}
 	clean := s.sanitizer.Sanitize(notes)
+	if cur.Notes == clean {
+		// Sin cambio real: no se reescribe la fila ni se genera una versión.
+		// Un guardado con el mismo contenido no es un evento.
+		return nil
+	}
 	if err := s.repo.UpdateNotes(ctx, id, clean); err != nil {
 		return err
 	}
 
-	// ── Bitácora de auditoría (solo si el texto realmente cambió) ────────────
-	// Un guardado con el mismo contenido no es un evento; el patrón sigue el
-	// contrato de `audit_helpers.go`: clave snake_case que coincide con el tag
-	// JSON del modelo ("notes") y diff {from,to}.
-	if before, after := cur.Notes, clean; before != after {
-		evt := auditAdminEvent(admin, domain.AuditEntityInscription, id.String(), inscriptionAuditLabel(cur), domain.AuditActionUpdate)
-		evt.Changes = BuildDiff(
-			map[string]any{"notes": before},
-			map[string]any{"notes": after},
-		)
-		RecordAudit(ctx, evt)
+	// Histórico de notas: cada guardado con cambio queda versionado con el autor.
+	hist := &domain.PsiInscriptionNote{
+		InscriptionRequestID: id,
+		Notes:               clean,
 	}
+	hist.CreateBy = admin.Username
+	hist.CreateById = &admin.ID
+	if err := s.repo.AppendNotesHistory(ctx, hist); err != nil {
+		return err
+	}
+
+	// ── Bitácora de auditoría ──────────────────────────────────────────────
+	evt := auditAdminEvent(admin, domain.AuditEntityInscription, id.String(), inscriptionAuditLabel(cur), domain.AuditActionUpdate)
+	evt.Changes = BuildDiff(
+		map[string]any{"notes": cur.Notes},
+		map[string]any{"notes": clean},
+	)
+	RecordAudit(ctx, evt)
 	return nil
+}
+
+// NotesHistory devuelve el histórico de notas administrativas de una solicitud,
+// de la más reciente a la más antigua.
+func (s *InscriptionService) NotesHistory(ctx context.Context, admin *domain.UserAdmin, id uuid.UUID) ([]request_structs.InscriptionNoteHistoryDTO, error) {
+	if !canViewFicha(admin) {
+		return nil, domain.ErrPermissionDenied
+	}
+	if _, err := s.repo.GetByID(ctx, id); err != nil {
+		return nil, ErrInscriptionNotFound
+	}
+	list, err := s.repo.ListNotesHistory(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]request_structs.InscriptionNoteHistoryDTO, 0, len(list))
+	for _, n := range list {
+		items = append(items, request_structs.InscriptionNoteHistoryDTO{
+			ID:        n.ID,
+			Notes:     n.Notes,
+			CreateBy:  n.CreateBy,
+			CreatedAt: n.CreatedAt,
+		})
+	}
+	return items, nil
 }
 
 // SendEmailToApplicant envía un correo al solicitante con el mensaje del admin.

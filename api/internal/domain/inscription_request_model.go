@@ -99,3 +99,19 @@ type PsiInscriptionRequest struct {
 
 // TableName devuelve el nombre de la tabla en la base de datos.
 func (PsiInscriptionRequest) TableName() string { return "psi_inscription_requests" }
+
+// PsiInscriptionNote es una versión histórica de las notas administrativas de
+// una solicitud de pre-inscripción (1:N). Cada guardado con cambio de texto
+// agrega una fila que conserva el texto completo, el autor (AuditModel) y la
+// fecha; la columna `notes` de la solicitud mantiene la nota actual editable.
+type PsiInscriptionNote struct {
+	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:uuidv7()" json:"id"`
+	AuditModel
+
+	// InscriptionRequestID apunta a la solicitud dueña de la versión (FK).
+	InscriptionRequestID uuid.UUID `gorm:"type:uuid;not null" json:"inscription_request_id"`
+	Notes               string    `gorm:"type:text;not null" json:"notes"`
+}
+
+// TableName devuelve el nombre de la tabla en la base de datos.
+func (PsiInscriptionNote) TableName() string { return "psi_inscription_notes" }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
@@ -29,6 +30,9 @@ type mockInscriptionRepo struct {
 	DeleteDocsByRequestFunc         func(ctx context.Context, reqID uuid.UUID) error
 	DeleteFunc                      func(ctx context.Context, id uuid.UUID) error
 	SearchFunc                      func(ctx context.Context, filter request_structs.InscriptionListFilter) ([]domain.PsiInscriptionRequest, int64, error)
+	UpdateNotesFunc                 func(ctx context.Context, id uuid.UUID, notes string) error
+	AppendNotesHistoryFunc          func(ctx context.Context, note *domain.PsiInscriptionNote) error
+	ListNotesHistoryFunc            func(ctx context.Context, requestID uuid.UUID) ([]domain.PsiInscriptionNote, error)
 }
 
 func (m *mockInscriptionRepo) CIInPsiUsers(ctx context.Context, ci int) (bool, error) {
@@ -120,6 +124,24 @@ func (m *mockInscriptionRepo) Search(ctx context.Context, filter request_structs
 		return nil, 0, nil
 	}
 	return m.SearchFunc(ctx, filter)
+}
+func (m *mockInscriptionRepo) UpdateNotes(ctx context.Context, id uuid.UUID, notes string) error {
+	if m.UpdateNotesFunc == nil {
+		return nil
+	}
+	return m.UpdateNotesFunc(ctx, id, notes)
+}
+func (m *mockInscriptionRepo) AppendNotesHistory(ctx context.Context, note *domain.PsiInscriptionNote) error {
+	if m.AppendNotesHistoryFunc == nil {
+		return nil
+	}
+	return m.AppendNotesHistoryFunc(ctx, note)
+}
+func (m *mockInscriptionRepo) ListNotesHistory(ctx context.Context, requestID uuid.UUID) ([]domain.PsiInscriptionNote, error) {
+	if m.ListNotesHistoryFunc == nil {
+		return nil, nil
+	}
+	return m.ListNotesHistoryFunc(ctx, requestID)
 }
 
 // mockPsiRepoInscripcion es un mock del repositorio de psicólogos acotado al
@@ -297,6 +319,100 @@ func TestInscriptionService_Permisos(t *testing.T) {
 		}
 		if dto == nil {
 			t.Fatal("esperaba DTO")
+		}
+	})
+}
+
+func TestInscriptionService_NotasHistorico(t *testing.T) {
+	ctx := context.Background()
+	id := uuid.Must(uuid.NewV7())
+	admin := &domain.UserAdmin{ID: uuid.Must(uuid.NewV7()), Credentials: domain.Credentials{Username: "jefe"}, Sudo: true}
+	viewer := &domain.UserAdmin{ID: uuid.Must(uuid.NewV7()), Credentials: domain.Credentials{Username: "solo_lectura"}}
+
+	t.Run("UpdateNotes: con cambio persiste nota y agrega versión al histórico", func(t *testing.T) {
+		var updated, appended string
+		var appendedBy string
+		var appendedByID *uuid.UUID
+		svc := NewInscriptionService(&mockInscriptionRepo{
+			GetByIDFunc: func(ctx context.Context, i uuid.UUID) (*domain.PsiInscriptionRequest, error) {
+				return &domain.PsiInscriptionRequest{ID: i, Nombres: "Ana", Apellidos: "Perez", FPV: 123, Notes: "versión anterior"}, nil
+			},
+			UpdateNotesFunc: func(ctx context.Context, i uuid.UUID, notes string) error { updated = notes; return nil },
+			AppendNotesHistoryFunc: func(ctx context.Context, note *domain.PsiInscriptionNote) error {
+				appended = note.Notes
+				appendedBy = note.CreateBy
+				appendedByID = note.CreateById
+				return nil
+			},
+		}, nil, nil, nil, &mockMailService{})
+
+		if err := svc.UpdateNotes(ctx, admin, id, "nueva versión"); err != nil {
+			t.Fatalf("error inesperado: %v", err)
+		}
+		if updated != "nueva versión" {
+			t.Fatalf("nota persistida = %q, se esperaba %q", updated, "nueva versión")
+		}
+		if appended != "nueva versión" {
+			t.Fatalf("versión histórica = %q, se esperaba %q", appended, "nueva versión")
+		}
+		if appendedBy != "jefe" || appendedByID == nil || *appendedByID != admin.ID {
+			t.Fatalf("autor de la versión = %q/%v, se esperaba jefe/%v", appendedBy, appendedByID, admin.ID)
+		}
+	})
+
+	t.Run("UpdateNotes: mismo texto no reescribe ni versiona", func(t *testing.T) {
+		reewrote, versioned := false, false
+		svc := NewInscriptionService(&mockInscriptionRepo{
+			GetByIDFunc: func(ctx context.Context, i uuid.UUID) (*domain.PsiInscriptionRequest, error) {
+				return &domain.PsiInscriptionRequest{ID: i, Notes: "igual"}, nil
+			},
+			UpdateNotesFunc: func(ctx context.Context, i uuid.UUID, notes string) error { reewrote = true; return nil },
+			AppendNotesHistoryFunc: func(ctx context.Context, note *domain.PsiInscriptionNote) error {
+				versioned = true
+				return nil
+			},
+		}, nil, nil, nil, &mockMailService{})
+
+		if err := svc.UpdateNotes(ctx, admin, id, "igual"); err != nil {
+			t.Fatalf("error inesperado: %v", err)
+		}
+		if reewrote || versioned {
+			t.Fatalf("se reescribió (update=%v) o versionó (append=%v) sin cambio real", reewrote, versioned)
+		}
+	})
+
+	t.Run("NotesHistory: sin permiso de gestión → ErrPermissionDenied", func(t *testing.T) {
+		svc := NewInscriptionService(&mockInscriptionRepo{}, nil, nil, nil, &mockMailService{})
+		if _, err := svc.NotesHistory(ctx, viewer, id); !errors.Is(err, domain.ErrPermissionDenied) {
+			t.Fatalf("esperaba ErrPermissionDenied, got %v", err)
+		}
+	})
+
+	t.Run("NotesHistory: solicitud inexistente → ErrInscriptionNotFound", func(t *testing.T) {
+		svc := NewInscriptionService(&mockInscriptionRepo{}, nil, nil, nil, &mockMailService{})
+		if _, err := svc.NotesHistory(ctx, admin, id); !errors.Is(err, ErrInscriptionNotFound) {
+			t.Fatalf("esperaba ErrInscriptionNotFound, got %v", err)
+		}
+	})
+
+	t.Run("NotesHistory: devuelve versiones de la más reciente a la más antigua", func(t *testing.T) {
+		svc := NewInscriptionService(&mockInscriptionRepo{
+			GetByIDFunc: func(ctx context.Context, i uuid.UUID) (*domain.PsiInscriptionRequest, error) {
+				return &domain.PsiInscriptionRequest{ID: i}, nil
+			},
+			ListNotesHistoryFunc: func(ctx context.Context, requestID uuid.UUID) ([]domain.PsiInscriptionNote, error) {
+				return []domain.PsiInscriptionNote{
+					{ID: uuid.Must(uuid.NewV7()), InscriptionRequestID: requestID, Notes: "nueva", AuditModel: domain.AuditModel{CreateBy: "jefe", CreatedAt: time.Now()}},
+				}, nil
+			},
+		}, nil, nil, nil, &mockMailService{})
+
+		items, err := svc.NotesHistory(ctx, admin, id)
+		if err != nil {
+			t.Fatalf("error inesperado: %v", err)
+		}
+		if len(items) != 1 || items[0].Notes != "nueva" || items[0].CreateBy != "jefe" {
+			t.Fatalf("histórico = %+v, se esperaba [nueva/jefe]", items)
 		}
 	})
 }

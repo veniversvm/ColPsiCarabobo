@@ -61,6 +61,13 @@ type InscriptionRepository interface {
 	// UpdateNotes actualiza solo las notas administrativas de una solicitud.
 	UpdateNotes(ctx context.Context, id uuid.UUID, notes string) error
 
+	// AppendNotesHistory inserta una versión histórica de las notas administrativas.
+	AppendNotesHistory(ctx context.Context, note *PsiInscriptionNote) error
+
+	// ListNotesHistory devuelve las versiones históricas de las notas de una
+	// solicitud, de la más reciente a la más antigua.
+	ListNotesHistory(ctx context.Context, requestID uuid.UUID) ([]PsiInscriptionNote, error)
+
 	// Delete elimina físicamente una solicitud.
 	Delete(ctx context.Context, id uuid.UUID) error
 

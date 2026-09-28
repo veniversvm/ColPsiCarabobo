@@ -188,6 +188,22 @@ func (r *inscriptionRepo) UpdateNotes(ctx context.Context, id uuid.UUID, notes s
 		Update("notes", notes).Error
 }
 
+// AppendNotesHistory inserta una versión histórica de las notas administrativas.
+func (r *inscriptionRepo) AppendNotesHistory(ctx context.Context, note *domain.PsiInscriptionNote) error {
+	return r.db.WithContext(ctx).Create(note).Error
+}
+
+// ListNotesHistory devuelve las versiones históricas de las notas de una
+// solicitud, de la más reciente a la más antigua.
+func (r *inscriptionRepo) ListNotesHistory(ctx context.Context, requestID uuid.UUID) ([]domain.PsiInscriptionNote, error) {
+	var notes []domain.PsiInscriptionNote
+	err := r.db.WithContext(ctx).
+		Where("inscription_request_id = ?", requestID).
+		Order("created_at DESC").
+		Find(&notes).Error
+	return notes, err
+}
+
 // Delete elimina físicamente una solicitud.
 func (r *inscriptionRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	return r.db.WithContext(ctx).Delete(&domain.PsiInscriptionRequest{}, "id = ?", id).Error

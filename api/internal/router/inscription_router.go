@@ -39,6 +39,7 @@ func SetupInscriptionRoutes(router fiber.Router, inscriptionRepo domain.Inscript
 	adminGroup.Post("/:id<uuid>/approve", h.Approve)
 	adminGroup.Delete("/:id<uuid>", h.Reject)
 	adminGroup.Patch("/:id<uuid>/notes", h.UpdateNotes)
+	adminGroup.Get("/:id<uuid>/notes", h.NotesHistory)
 	adminGroup.Post("/:id<uuid>/email", h.SendEmailToApplicant)
 	adminGroup.Post("/:id<uuid>/photo", h.UpdateFichaPhoto)
 	adminGroup.Post("/:id<uuid>/documents", h.AddInscriptionDocument)

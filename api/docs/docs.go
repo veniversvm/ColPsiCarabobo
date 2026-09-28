@@ -524,6 +524,41 @@ const docTemplate = `{
             }
         },
         "/admin/inscripciones/{id}/notes": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Devuelve las versiones históricas de las notas de una solicitud, de la más reciente a la más antigua.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Inscripciones"
+                ],
+                "summary": "Histórico de notas administrativas (admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID de la solicitud",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/request_structs.InscriptionNoteHistoryDTO"
+                            }
+                        }
+                    }
+                }
+            },
             "patch": {
                 "security": [
                     {
@@ -9513,6 +9548,23 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 200,
                     "example": "Solicitud de constancia de solvencia"
+                }
+            }
+        },
+        "request_structs.InscriptionNoteHistoryDTO": {
+            "type": "object",
+            "properties": {
+                "create_by": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
                 }
             }
         },

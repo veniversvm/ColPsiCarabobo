@@ -682,6 +682,34 @@ func (h *InscriptionHandler) UpdateNotes(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"message": "Notas guardadas"})
 }
 
+// NotesHistory godoc
+// @Summary      Histórico de notas administrativas (admin)
+// @Description  Devuelve las versiones históricas de las notas de una solicitud, de la más reciente a la más antigua.
+// @Tags         Administración - Inscripciones
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id path string true "ID de la solicitud"
+// @Success      200 {array} request_structs.InscriptionNoteHistoryDTO
+// @Router       /admin/inscripciones/{id}/notes [get]
+func (h *InscriptionHandler) NotesHistory(c *fiber.Ctx) error {
+	admin, err := middleware.GetAuthenticatedAdmin(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ID inválido"})
+	}
+
+	items, err := h.svc.NotesHistory(c.UserContext(), admin, id)
+	if err != nil {
+		return mapInscriptionErr(c, err, "error al obtener el histórico de notas")
+	}
+
+	return c.JSON(items)
+}
+
 // SendEmailToApplicant godoc
 // @Summary      Enviar correo al solicitante (admin)
 // @Description  Envía un correo con asunto y mensaje del administrador al correo del solicitante.

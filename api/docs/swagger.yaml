@@ -2071,6 +2071,17 @@ definitions:
     - motivo_id
     - title
     type: object
+  request_structs.InscriptionNoteHistoryDTO:
+    properties:
+      create_by:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      notes:
+        type: string
+    type: object
   request_structs.NotificationFilterDTO:
     properties:
       genre:
@@ -3130,6 +3141,29 @@ paths:
       tags:
       - Administración - Inscripciones
   /admin/inscripciones/{id}/notes:
+    get:
+      description: Devuelve las versiones históricas de las notas de una solicitud,
+        de la más reciente a la más antigua.
+      parameters:
+      - description: ID de la solicitud
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/request_structs.InscriptionNoteHistoryDTO'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Histórico de notas administrativas (admin)
+      tags:
+      - Administración - Inscripciones
     patch:
       consumes:
       - application/json

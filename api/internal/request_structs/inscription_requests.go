@@ -131,6 +131,20 @@ type InscriptionDetailDTO struct {
 }
 
 // =========================================================================
+// HISTÓRICO DE NOTAS ADMINISTRATIVAS
+// =========================================================================
+
+// InscriptionNoteHistoryDTO es una versión histórica de las notas
+// administrativas (texto completo + autor + fecha), de la más reciente a la
+// más antigua.
+type InscriptionNoteHistoryDTO struct {
+	ID        uuid.UUID `json:"id"`
+	Notes     string    `json:"notes"`
+	CreateBy  string    `json:"create_by"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+// =========================================================================
 // EDICIÓN ADMIN DE LA FICHA
 // =========================================================================
 
