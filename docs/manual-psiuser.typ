@@ -28,6 +28,11 @@
 // Emergencia…). La numeración automática está desactivada para no duplicar el
 // número en el render ni en el índice (#outline).
 #show heading: set text(fill: azul, weight: "bold")
+// Cada título principal (nivel 1) inicia en página nueva.
+#show heading.where(level: 1): it => {
+  pagebreak()
+  it
+}
 #set list(marker: [•], tight: true)
 
 // ── Bloque de consejo ("tip") ────────────────────────────────────────────────
@@ -97,8 +102,6 @@
 
 // ── Índice ───────────────────────────────────────────────────────────────────
 #outline(indent: auto, depth: 2)
-
-#pagebreak()
 
 // ============================================================================
 // 1. INTRODUCCIÓN
