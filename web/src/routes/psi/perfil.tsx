@@ -26,9 +26,11 @@ import { PrivacySection } from "~/components/psi/profile/PrivacySection";
 import { ServicePreferencesSection } from "~/components/psi/profile/ServicePreferencesSection";
 import { AcademicSection } from "~/components/psi/profile/AcademicSection";
 import { SocialNetworksSection } from "~/components/psi/profile/SocialNetworksSection";
+import { EmergencyContactsSection } from "~/components/psi/profile/EmergencyContactsSection";
+import { emergencyContactsOf } from "~/lib/emergency-contact";
 import { SaveButton } from "~/components/psi/profile/SaveButton";
 import { AvatarUploader } from "~/components/psi/profile/AvatarUploader";
-import { Notebook, NotebookPage } from "~/components/ui/Notebook";
+import { Notebook, NotebookPage, NotebookTabWatcher } from "~/components/ui/Notebook";
 import { Icon } from "~/components/admin/ui/icons";
 
 const updateProfileServer = action(async (formData: FormData) => {
@@ -130,6 +132,9 @@ export default function ProfilePage() {
 
   const [socialForm, setSocialForm] = createStore({ name: "", url: "" });
   const [savingSocial, setSavingSocial] = createSignal(false);
+
+  // Pestaña activa del notebook del perfil (la reporta el propio Notebook).
+  const [activeTab, setActiveTab] = createSignal("cuenta");
 
   const runUpdateAction = useAction(updateProfileServer);
 
@@ -374,6 +379,23 @@ export default function ProfilePage() {
     refetch();
   };
 
+  // Contacto de emergencia:Endpoints propios (no forman parte del guardado del
+  // perfil), por eso viven fuera del FormData de handleSaveProfile.
+  const handleAddEmergency = async (payload: any) => {
+    await apiPost("/psi/me/emergency", payload);
+    refetch();
+  };
+
+  const handleUpdateEmergency = async (id: string, payload: any) => {
+    await apiPatch(`/psi/me/emergency/${id}`, payload);
+    refetch();
+  };
+
+  const handleDeleteEmergency = async (id: string) => {
+    await apiDelete(`/psi/me/emergency/${id}`);
+    refetch();
+  };
+
   return (
     <main class="bg-colpsi-bg min-h-screen pb-24 font-sans">
       <header class="bg-white border-b border-colpsi-border">
@@ -471,6 +493,13 @@ export default function ProfilePage() {
                   icon: "shield",
                   description:
                     "Controla qué información se muestra públicamente en el directorio y cuál queda solo para el colegio.",
+                },
+                {
+                  id: "emergencia",
+                  label: "Contacto de Emergencia",
+                  icon: "users",
+                  description:
+                    "Personas a las que el Colegio puede avisar si no logras localizarte o ante un accidente. Son datos privados: nunca se publican en el directorio.",
                 },
               ]}
             >
@@ -691,14 +720,29 @@ export default function ProfilePage() {
                 />
               </NotebookPage>
 
+              <NotebookPage id="emergencia">
+                <EmergencyContactsSection
+                  contacts={emergencyContactsOf(profile())}
+                  onAdd={handleAddEmergency}
+                  onUpdate={handleUpdateEmergency}
+                  onDelete={handleDeleteEmergency}
+                />
+              </NotebookPage>
+
+              <NotebookTabWatcher onChange={setActiveTab} />
             </Notebook>
 
-            <SaveButton
-              saving={saving()}
-              message={message()}
-              password={form.password ?? ""}
-              onPasswordChange={(v) => setForm("password", v)}
-            />
+            {/* La barra de guardado es del perfil (exige contraseña): en la
+                pestaña de emergencia estorba, porque esa sección ya se guarda
+                sola con sus propios botones. */}
+            <Show when={activeTab() !== "emergencia"}>
+              <SaveButton
+                saving={saving()}
+                message={message()}
+                password={form.password ?? ""}
+                onPasswordChange={(v) => setForm("password", v)}
+              />
+            </Show>
           </form>
 
           {/* Redes Sociales: se guarda con lógica propia (apiPost/apiDelete a

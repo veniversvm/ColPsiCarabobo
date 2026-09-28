@@ -165,6 +165,12 @@ export const FIELD_LABELS: Record<string, string> = {
   social_name: "Plataforma",
   social_url: "URL",
   social_active: "Red activa",
+  // Persona de contacto para emergencias (datos de un tercero; el diff guarda el
+  // valor concreto, así que esta bitácora es el único lugar donde se ven)
+  emergency_contact_name: "Contacto · Nombre",
+  emergency_contact_relationship: "Contacto · Parentesco",
+  emergency_contact_phone: "Contacto · Teléfono",
+  emergency_contact_email: "Contacto · Correo",
   // Staff / RBAC
   role: "Rol",
   can_read_psi: "Permiso · Ver psi", can_create_psi: "Permiso · Crear psi", can_update_psi: "Permiso · Editar psi", can_delete_psi: "Permiso · Eliminar psi",

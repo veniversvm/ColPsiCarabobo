@@ -144,6 +144,20 @@ export function Notebook(props: {
   );
 }
 
+/**
+ * Informa a la ruta cuál es la pestaña activa (no renderiza nada). Sirve para
+ * adaptar lo que hay FUERA del notebook según la sección abierta: por ejemplo,
+ * la barra de guardado del perfil se oculta en la pestaña de emergencia, que
+ * tiene su propio guardado.
+ */
+export function NotebookTabWatcher(props: { onChange: (id: string) => void }) {
+  const ctx = useContext(NotebookContext);
+  createEffect(() => {
+    if (ctx) props.onChange(ctx.active());
+  });
+  return null;
+}
+
 export function NotebookPage(props: { id: string; children: JSX.Element }) {
   const ctx = useContext(NotebookContext);
   // La pestaña inicial se monta desde el primer render (SSR hidrata su contenido);

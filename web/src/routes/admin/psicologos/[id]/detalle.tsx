@@ -31,6 +31,8 @@ import {
 import type { EditFormState, DeontologiaEntry, ObservacionesEntry } from "~/components/admin/psicologos/edit";
 import type { PsiUserDocument } from "~/types/psi";
 import { SolvenciesSection } from "~/components/admin/psicologos/edit/SolvenciesSection";
+import { EmergencyContactsSection } from "~/components/psi/profile/EmergencyContactsSection";
+import { emergencyContactsOf, type EmergencyContactPayload } from "~/lib/emergency-contact";
 import { Notebook, NotebookPage } from "~/components/ui/Notebook";
 import { Icon } from "~/components/admin/ui/icons";
 
@@ -68,6 +70,41 @@ const deleteProfilePictureServer = action(
     "use server";
     const { apiDelete } = await import("~/lib/api");
     return await apiDelete(`/admin/psi/${id}/picture`);
+  },
+);
+
+// Contacto de emergencia: endpoints propios del submódulo (no forman parte del
+// FormData de updateAdminPsiServer, que solo actualiza el expediente).
+const addEmergencyServer = action(
+  async (params: { id: string; payload: EmergencyContactPayload }) => {
+    "use server";
+    const { apiPost } = await import("~/lib/api");
+    return await apiPost(`/admin/psi/${params.id}/emergency`, params.payload);
+  },
+);
+
+const updateEmergencyServer = action(
+  async (params: {
+    id: string;
+    contactId: string;
+    payload: EmergencyContactPayload;
+  }) => {
+    "use server";
+    const { apiPatch } = await import("~/lib/api");
+    return await apiPatch(
+      `/admin/psi/${params.id}/emergency/${params.contactId}`,
+      params.payload,
+    );
+  },
+);
+
+const deleteEmergencyServer = action(
+  async (params: { id: string; contactId: string }) => {
+    "use server";
+    const { apiDelete } = await import("~/lib/api");
+    return await apiDelete(
+      `/admin/psi/${params.id}/emergency/${params.contactId}`,
+    );
   },
 );
 
@@ -220,6 +257,9 @@ const runUpdateAction = useAction(updateAdminPsiServer);
   const runAddDocumento = useAction(addDocumentServer);
   const runUpdateDocumento = useAction(updateDocumentServer);
   const runDeleteDocumento = useAction(deleteDocumentServer);
+  const runAddEmergency = useAction(addEmergencyServer);
+  const runUpdateEmergency = useAction(updateEmergencyServer);
+  const runDeleteEmergency = useAction(deleteEmergencyServer);
   const [profile, { refetch }] = createResource(() =>
     apiGet<any>(`/admin/psi/${params.id}`),
   );
@@ -632,6 +672,7 @@ const runUpdateAction = useAction(updateAdminPsiServer);
               { id: "deontologico", label: "Deontológico" },
               { id: "observaciones", label: "Observaciones" },
               { id: "documentos", label: "Documentos" },
+              { id: "emergencia", label: "Contacto Emergencia" },
               { id: "auditoria", label: "Auditoría" },
             ]}
           >
@@ -709,6 +750,31 @@ const runUpdateAction = useAction(updateAdminPsiServer);
                   if (!id) return;
                   await runDeleteDocumento({ psiId: id, docId });
                   refetchDocumentos();
+                }}
+              />
+            </NotebookPage>
+
+            <NotebookPage id="emergencia">
+              <EmergencyContactsSection
+                audience="admin"
+                contacts={emergencyContactsOf(profile())}
+                onAdd={async (payload) => {
+                  const id = params.id ?? "";
+                  if (!id) return;
+                  await runAddEmergency({ id, payload });
+                  refetch();
+                }}
+                onUpdate={async (contactId, payload) => {
+                  const id = params.id ?? "";
+                  if (!id) return;
+                  await runUpdateEmergency({ id, contactId, payload });
+                  refetch();
+                }}
+                onDelete={async (contactId) => {
+                  const id = params.id ?? "";
+                  if (!id) return;
+                  await runDeleteEmergency({ id, contactId });
+                  refetch();
                 }}
               />
             </NotebookPage>
