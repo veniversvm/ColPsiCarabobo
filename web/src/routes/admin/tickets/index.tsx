@@ -62,9 +62,17 @@ export default function AdminTickets() {
   };
   onCleanup(() => { if (debounceTimer) clearTimeout(debounceTimer); });
 
-  const [motivosConfig] = createResource(() => apiGet<{ data: TicketMotivo[] }>("/admin/tickets/motivos"), {
-    initialValue: { data: [] },
-  });
+  const [motivosConfig] = createResource(
+    async () => {
+      try {
+        return await apiGet<{ data: TicketMotivo[] }>("/admin/tickets/motivos");
+      } catch {
+        // Error transitorio: sin catálogo de motivos (filtro vacío), no tumbo la cola.
+        return { data: [] };
+      }
+    },
+    { initialValue: { data: [] } }
+  );
   const motivos = () => motivosConfig()?.data ?? [];
 
   // Estados disponibles del motivo seleccionado

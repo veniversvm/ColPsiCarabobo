@@ -36,7 +36,14 @@ export default function AdminNoticiasPage() {
   const [confirmDelete, setConfirmDelete] = createSignal<string | null>(null);
   const [busy, setBusy] = createSignal<string | null>(null);
 
-  const [posts, { refetch }] = createResource(() => apiGet<PaginatedResponse<Post>>("/posts?page=1&limit=50"));
+  const [posts, { refetch }] = createResource(async () => {
+    try {
+      return await apiGet<PaginatedResponse<Post>>("/posts?page=1&limit=50");
+    } catch {
+      // Error transitorio: listado parcial/vacío en vez de tumbar el panel.
+      return undefined;
+    }
+  });
 
   const postList = () => posts()?.data ?? [];
 

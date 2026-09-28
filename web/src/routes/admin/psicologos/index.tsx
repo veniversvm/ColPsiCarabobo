@@ -49,7 +49,12 @@ export default function AdminPsychologistsList() {
       if (params.active) queryParts.push(`active=${params.active}`);
       if (params.gender) queryParts.push(`gender=${params.gender}`);
       if (params.specialty) queryParts.push(`specialty=${params.specialty}`);
-      return apiGet<PaginatedResponse<PsiAdminListItem>>(`/admin/psi/list?${queryParts.join("&")}`);
+      try {
+        return await apiGet<PaginatedResponse<PsiAdminListItem>>(`/admin/psi/list?${queryParts.join("&")}`);
+      } catch {
+        // Error transitorio: `cachedData()` conserva el último listado bueno.
+        return undefined;
+      }
     }
   );
 

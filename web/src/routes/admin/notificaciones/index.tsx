@@ -21,7 +21,14 @@ export default function AdminNotificacionesPage() {
   const [busy, setBusy] = createSignal<string | null>(null);
 
   const [list, { refetch }] = createResource(
-    () => apiGet<{ data: Notification[]; total: number; page: number }>(`/notifications/admin?page=${page()}&limit=15`),
+    async () => {
+      try {
+        return await apiGet<{ data: Notification[]; total: number; page: number }>(`/notifications/admin?page=${page()}&limit=15`);
+      } catch {
+        // Error transitorio: valor inicial (lista vacía) en vez de tumbar el panel.
+        return { data: [], total: 0, page: 1 };
+      }
+    },
     { initialValue: { data: [], total: 0, page: 1 } }
   );
 

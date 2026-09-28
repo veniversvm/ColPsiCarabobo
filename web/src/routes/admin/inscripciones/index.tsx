@@ -43,7 +43,14 @@ export default function AdminInscripcionesList() {
     async (params) => {
       const parts = [`page=${params.p}`, `limit=${params.l}`, `status=${encodeURIComponent(params.s)}`];
       if (params.q) parts.push(`q=${encodeURIComponent(params.q)}`);
-      return apiGet<InscriptionListResponse>(`/admin/inscripciones/list?${parts.join("&")}`);
+      try {
+        return await apiGet<InscriptionListResponse>(`/admin/inscripciones/list?${parts.join("&")}`);
+      } catch {
+        // Error transitorio (p. ej. un 500 puntual de la API): no tumbar la
+        // página. `display()` prioriza `cached`, así el último listado bueno
+        // sigue visible hasta que el refetch vuelva a funcionar.
+        return undefined;
+      }
     }
   );
 
