@@ -151,6 +151,9 @@ export const FIELD_LABELS: Record<string, string> = {
   service_modality_telephone: "Modalidad telefónica",
   show_service_modality: "Mostrar modalidad de servicio",
   mini_bio: "Mini biografía",
+  // Motivo del cambio de expediente (Metadata de la bitácora)
+  motivo: "Motivo del cambio",
+  last_change_reason: "Motivo del cambio",
   // Privacidad académica (col_data)
   show_university_undergraduate: "Mostrar universidad de pregrado",
   show_graduate_date: "Mostrar fecha de egreso",

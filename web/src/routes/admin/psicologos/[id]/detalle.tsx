@@ -288,6 +288,9 @@ const runUpdateAction = useAction(updateAdminPsiServer);
   const [files, setFiles] = createSignal<{ [key: string]: File }>({});
   const [avatarFile, setAvatarFile] = createSignal<File | null>(null);
 
+  // Motivo obligatorio del cambio (se envía en el FormData del expediente).
+  const [motivoCambio, setMotivoCambio] = createSignal("");
+
   const SITE_URL = import.meta.env.VITE_SITE_URL || "http://localhost:3000";
   const canonicalUrl = () => {
     const p = profile();
@@ -413,6 +416,12 @@ const runUpdateAction = useAction(updateAdminPsiServer);
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
+    if (!motivoCambio().trim()) {
+      setMessage({ type: "error", text: "Debes indicar el motivo del cambio." });
+      setSaving(false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
 
     const fd = new FormData(); // Usamos FormData para soportar imágenes y tipos de Go
 
@@ -454,12 +463,16 @@ const runUpdateAction = useAction(updateAdminPsiServer);
     const avatar = avatarFile();
     if (avatar) fd.append("profile_picture", avatar);
 
+    // 4. Motivo obligatorio del cambio (registro en el expediente y bitácora)
+    fd.append("last_change_reason", motivoCambio().trim());
+
     try {
       await runUpdateAction({ id: params.id ?? "", payload: fd });
       setMessage({
         type: "success",
         text: "Expediente actualizado exitosamente.",
       });
+      setMotivoCambio("");
       refetch();
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err: any) {
@@ -647,6 +660,29 @@ const runUpdateAction = useAction(updateAdminPsiServer);
               />
             </NotebookPage>
           </Notebook>
+
+          {/* Motivo obligatorio del cambio: se registra en la ficha (último motivo)
+              y en la bitácora de auditoría (Metadata.motivo). */}
+          <div class="mt-4 max-w-5xl mx-auto px-4">
+            <label class="block text-xs font-bold text-colpsi-blue mb-1.5" for="motivo_cambio">
+              Motivo del cambio <span class="text-red-500">*</span>
+            </label>
+            <textarea
+              id="motivo_cambio"
+              rows={2}
+              maxLength={500}
+              value={motivoCambio()}
+              onInput={(e) => setMotivoCambio(e.currentTarget.value)}
+              disabled={saving() || !profile()}
+              placeholder="Indica el motivo por el cual realizas esta modificación al expediente."
+              class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none placeholder:text-slate-400 focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/15 transition-colors text-colpsi-text"
+            />
+            <Show when={profile()?.last_change_reason}>
+              <p class="mt-1 text-[11px] text-colpsi-muted">
+                Último motivo registrado: {profile()?.last_change_reason}
+              </p>
+            </Show>
+          </div>
 
           <div class="sticky bottom-4 z-50 flex justify-end max-w-5xl mx-auto px-4">
             <button
