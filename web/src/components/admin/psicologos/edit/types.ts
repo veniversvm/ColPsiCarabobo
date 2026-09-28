@@ -113,6 +113,15 @@ export interface SocialNetwork {
   url: string;
 }
 
+/** Persona de contacto para emergencias (datos de un TERCERO, no públicos). */
+export interface EmergencyContact {
+  id?: string;
+  name: string;
+  relationship: string;
+  phone?: string;
+  email?: string;
+}
+
 export interface DeontologiaEntry {
   id?: string;
   content: string;
@@ -142,6 +151,9 @@ export interface PsiProfile {
   solvent: boolean;
   proof_of_life: boolean;
   social_networks?: SocialNetwork[];
+  // Solo llega en la ficha del admin (mismo gate que el resto del expediente).
+  // La API omite la clave cuando la lista viene vacía (`omitempty`) → usar `?? []`.
+  emergency_contacts?: EmergencyContact[];
   post_grades?: PostGrade[];
   col_data?: Record<string, any>;
   create_by?: string;

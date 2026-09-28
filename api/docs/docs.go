@@ -2568,6 +2568,231 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/psi/{id}/emergency": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Añade una persona de contacto para emergencias a la ficha de un psicólogo desde el panel de moderación (por ejemplo, cuando el Colegio la obtiene por teléfono). La bitácora registra al operador administrativo.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Psicólogos"
+                ],
+                "summary": "Registrar contacto de emergencia (Admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del Psicólogo",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Datos del contacto",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.CreateEmergencyContactRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/psi/{id}/emergency/{contactId}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Elimina lógicamente un contacto de emergencia de un psicólogo. Verifica que el contacto pertenezca a la ficha indicada (prevención de IDOR).",
+                "tags": [
+                    "Administración - Psicólogos"
+                ],
+                "summary": "Eliminar contacto de emergencia (Admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del Psicólogo",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "UUID del contacto de emergencia",
+                        "name": "contactId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Edita un contacto de emergencia de un psicólogo. Verifica que el contacto pertenezca a la ficha indicada (prevención de IDOR) y revalida la regla de integridad.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Administración - Psicólogos"
+                ],
+                "summary": "Editar contacto de emergencia (Admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del Psicólogo",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "UUID del contacto de emergencia",
+                        "name": "contactId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Campos parciales",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.UpdateEmergencyContactRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/admin/psi/{id}/observaciones": {
             "get": {
                 "security": [
@@ -5756,6 +5981,200 @@ const docTemplate = `{
                 }
             }
         },
+        "/psi/me/emergency": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "El agremiado declara hasta 3 personas a las que el Colegio puede avisar si no puede ser localizado o ante un accidente. Se exige nombre, parentesco y al menos un teléfono o correo.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Psicólogos - Perfil"
+                ],
+                "summary": "Registrar persona de contacto para emergencias",
+                "parameters": [
+                    {
+                        "description": "Datos del contacto",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.CreateEmergencyContactRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/psi/me/emergency/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "Psicólogos - Perfil"
+                ],
+                "summary": "Eliminar persona de contacto para emergencias (Soft Delete)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del contacto",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Actualización parcial (PATCH). La regla de integridad se revalida sobre el resultado: no puede quedar sin nombre, sin parentesco o sin teléfono ni correo.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Psicólogos - Perfil"
+                ],
+                "summary": "Editar persona de contacto para emergencias",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del contacto",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Campos parciales",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_structs.UpdateEmergencyContactRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/psi/me/postgrades": {
             "post": {
                 "security": [
@@ -7509,6 +7928,56 @@ const docTemplate = `{
                 }
             }
         },
+        "domain.PsiUserEmergencyContact": {
+            "type": "object",
+            "properties": {
+                "create_by": {
+                    "description": "CreateBy almacena el nombre o identificador textual del creador.",
+                    "type": "string"
+                },
+                "create_by_id": {
+                    "description": "CreateById es el UUID del usuario/administrador que creó el registro.\nEs un puntero para permitir valores nulos si la creación es automática por el sistema.",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "CreatedAt registra la fecha y hora exacta en que se creó el registro.\nGORM gestiona este campo automáticamente durante la inserción.",
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "description": "Nombre de la persona a la que se avisaría (obligatorio).",
+                    "type": "string"
+                },
+                "phone": {
+                    "description": "Canal de contacto: al menos uno de los dos.",
+                    "type": "string"
+                },
+                "psi_user_id": {
+                    "type": "string"
+                },
+                "relationship": {
+                    "description": "Parentesco o relación con el agremiado (obligatorio). Catálogo corto\ndefinido en el frontend (padre, madre, conyuge, hermano, hijo, tio, primo,\namigo, colega) con opción \"otro\" en texto libre.",
+                    "type": "string"
+                },
+                "update_by": {
+                    "description": "UpdateBy almacena el nombre o identificador textual de la última persona en modificarlo.",
+                    "type": "string"
+                },
+                "update_by_id": {
+                    "description": "UpdateById es el UUID del usuario/administrador que realizó la última actualización.",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "UpdatedAt registra la última fecha y hora en que se modificó el registro.\nGORM actualiza este valor automáticamente en cada operación de guardado.",
+                    "type": "string"
+                }
+            }
+        },
         "domain.PsiUserModel": {
             "type": "object",
             "properties": {
@@ -7578,6 +8047,13 @@ const docTemplate = `{
                 "email": {
                     "description": "Email es la dirección de correo electrónico única del usuario.",
                     "type": "string"
+                },
+                "emergency_contacts": {
+                    "description": "Contacto de emergencia: datos de un TERCERO, visibles solo en /psi/me y en\nla ficha del admin. Los DTOs públicos (directorio) no la incluyen.\n\n` + "`" + `omitempty` + "`" + ` es una barrera de privacidad, no una conveniencia: el sitemap\npúblico (` + "`" + `GET /psi/public/sitemap-data` + "`" + `) serializa el modelo crudo y, al no\nprecargar la relación, la dejaría como ` + "`" + `null` + "`" + ` si el tag fuera plano. Con\n` + "`" + `omitempty` + "`" + ` la clave desaparece por completo cuando no hay contactos, de modo\nque ningún endpoint público puede llegar a exponerlos. El frontend debe leer\nla lista con ` + "`" + `?? []` + "`" + `.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.PsiUserEmergencyContact"
+                    }
                 },
                 "first_name": {
                     "description": "── Identidad legal ───────────────────────────────────────────────────",
@@ -8605,6 +9081,41 @@ const docTemplate = `{
                 }
             }
         },
+        "request_structs.CreateEmergencyContactRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "relationship"
+            ],
+            "properties": {
+                "email": {
+                    "description": "Email es el correo de la persona de contacto (opcional si se informa Phone).",
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "maria.rodriguez@correo.com"
+                },
+                "name": {
+                    "description": "Name identifica a la persona a la que se avisaría (ej: \"María Rodríguez\").",
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 2,
+                    "example": "María Rodríguez"
+                },
+                "phone": {
+                    "description": "Phone es el teléfono fijo o celular de la persona de contacto (opcional\nsi se informa Email).",
+                    "type": "string",
+                    "maxLength": 20,
+                    "example": "+58 412 1234567"
+                },
+                "relationship": {
+                    "description": "Relationship es el parentesco o vínculo con el agremiado. El frontend\nofrece un catálogo cerrado (padre, madre, conyuge, hermano, hijo, tio,\nprimo, amigo, colega) y la opción \"otro\" en texto libre; el backend solo\nexige que no venga vacío.",
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 2,
+                    "example": "madre"
+                }
+            }
+        },
         "request_structs.CreateNoteRequest": {
             "type": "object",
             "required": [
@@ -9484,6 +9995,27 @@ const docTemplate = `{
                     "description": "Content es el nuevo texto de la entrada (texto plano; se sanitiza en la API).",
                     "type": "string",
                     "example": "Expediente actualizado por el Tribunal Disciplinario."
+                }
+            }
+        },
+        "request_structs.UpdateEmergencyContactRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "maria.rodriguez@correo.com"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "María Rodríguez"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "+58 412 1234567"
+                },
+                "relationship": {
+                    "type": "string",
+                    "example": "madre"
                 }
             }
         },

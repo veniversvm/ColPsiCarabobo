@@ -158,6 +158,10 @@ export type PsiProfileSettings = {
   show_mention_undergraduate: boolean;
 
   social_networks?: SocialNetwork[];
+  // Contacto de emergencia (datos de un TERCERO). Solo llega en /psi/me y en la
+  // ficha del admin; el directorio y el perfil público nunca lo incluyen.
+  // Ojo: la API lo omite cuando la lista viene vacía (`omitempty`), de ahí el `?? []`.
+  emergency_contacts?: EmergencyContact[];
   col_data?: Undergraduate; // Datos académicos crudos
 };
 
@@ -171,6 +175,18 @@ export type SocialNetwork = {
   id?: string;
   name: string;
   url: string;
+};
+
+/**
+ * Persona de contacto para emergencias. La API exige nombre y parentesco, y al
+ * menos uno de los dos canales (teléfono o correo).
+ */
+export type EmergencyContact = {
+  id?: string;
+  name: string;
+  relationship: string;
+  phone?: string;
+  email?: string;
 };
 
 export type DirectoryPsychologist = {

@@ -180,10 +180,20 @@ type PsiUserModel struct {
 	ColData        PsiUserColData         `gorm:"foreignKey:PsiUserModelID" json:"col_data"`
 	PostGrades     []PsiUserPostGrade     `gorm:"foreignKey:PsiUserID" json:"post_grades"`
 	SocialNetworks []PsiUserSocialNetwork `gorm:"foreignKey:PsiUserID" json:"social_networks"`
-	Solvencies     []PsiUserSolvency      `gorm:"foreignKey:PsiUserModelID" json:"solvencies"`
-	Documents      []PsiUserDocument      `gorm:"foreignKey:PsiUserID" json:"-"`
-	Observations   []PsiObservations      `gorm:"foreignKey:PsiUserID" json:"-"`
-	Deontologia    []PsiODeontologia      `gorm:"foreignKey:PsiUserID" json:"-"`
+	// Contacto de emergencia: datos de un TERCERO, visibles solo en /psi/me y en
+	// la ficha del admin. Los DTOs públicos (directorio) no la incluyen.
+	//
+	// `omitempty` es una barrera de privacidad, no una conveniencia: el sitemap
+	// público (`GET /psi/public/sitemap-data`) serializa el modelo crudo y, al no
+	// precargar la relación, la dejaría como `null` si el tag fuera plano. Con
+	// `omitempty` la clave desaparece por completo cuando no hay contactos, de modo
+	// que ningún endpoint público puede llegar a exponerlos. El frontend debe leer
+	// la lista con `?? []`.
+	EmergencyContacts []PsiUserEmergencyContact `gorm:"foreignKey:PsiUserID" json:"emergency_contacts,omitempty"`
+	Solvencies        []PsiUserSolvency         `gorm:"foreignKey:PsiUserModelID" json:"solvencies"`
+	Documents         []PsiUserDocument         `gorm:"foreignKey:PsiUserID" json:"-"`
+	Observations      []PsiObservations         `gorm:"foreignKey:PsiUserID" json:"-"`
+	Deontologia       []PsiODeontologia         `gorm:"foreignKey:PsiUserID" json:"-"`
 }
 
 func (PsiUserModel) TableName() string { return "psi_users" }

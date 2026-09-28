@@ -60,6 +60,7 @@ func TestMain(m *testing.M) {
 		&domain.PsiUserColData{},
 		&domain.PsiUserPostGrade{},
 		&domain.PsiUserSocialNetwork{},
+		&domain.PsiUserEmergencyContact{},
 		&domain.PsiUserSolvency{},
 		&domain.PsiSpecialtyModel{},
 		&domain.TextModel{},
@@ -77,7 +78,7 @@ func TestMain(m *testing.M) {
 	exitCode := m.Run()
 
 	tables := []string{
-		"psi_user_social_networks", "psi_user_post_grades", "psi_user_col_data",
+		"psi_user_emergency_contacts", "psi_user_social_networks", "psi_user_post_grades", "psi_user_col_data",
 		"psi_user_solvency", "psi_users", "user_admins", "psi_specialty_models",
 		"posts", "text_models", "login_events", "active_sessions",
 		"page_views", "search_events", "profile_views",
@@ -96,6 +97,7 @@ func TestMain(m *testing.M) {
 func truncateAll(t *testing.T) {
 	t.Helper()
 	tables := []string{
+		"psi_user_emergency_contacts",
 		"psi_user_social_networks",
 		"psi_user_post_grades",
 		"psi_user_col_data",
@@ -216,6 +218,9 @@ func seedPsi(t *testing.T, fpv int, ci int, username string) *domain.PsiUserMode
 		ProofOfLife:          true,
 		ShowContactEmail:     true,
 		BioTextID:            bioText.ID,
+		// audio_book_shell_id es UNIQUE: se hace único por agremiado para que un
+		// test pueda sembrar más de uno en la misma base.
+		AudioBookShellId: "abs_" + username,
 	}
 	require.NoError(t, testDB.Create(psi).Error)
 	return psi

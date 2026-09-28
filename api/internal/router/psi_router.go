@@ -78,6 +78,12 @@ func SetupPsiRoutes(router fiber.Router, psiRepo domain.PsiUserRepository, admin
 	adminGroup.Patch("/:id<uuid>/social/:socialId<uuid>", h.UpdateSocialNetworkByAdmin)
 	adminGroup.Delete("/:id<uuid>/social/:socialId<uuid>", h.DeleteSocialNetworkByAdmin)
 
+	// Persona de contacto para emergencias (datos de un TERCERO: nunca públicos).
+	// El listado llega dentro de GET /admin/psi/:id (mismo gate que la ficha).
+	adminGroup.Post("/:id<uuid>/emergency", h.AddEmergencyContactByAdmin)
+	adminGroup.Patch("/:id<uuid>/emergency/:contactId<uuid>", h.UpdateEmergencyContactByAdmin)
+	adminGroup.Delete("/:id<uuid>/emergency/:contactId<uuid>", h.DeleteEmergencyContactByAdmin)
+
 	// =========================================================================
 	// ZONA 2: AUTOGESTIÓN
 	// =========================================================================
@@ -92,6 +98,12 @@ func SetupPsiRoutes(router fiber.Router, psiRepo domain.PsiUserRepository, admin
 	meGroup.Post("/social", h.AddSocialNetwork)
 	meGroup.Patch("/social/:id", h.UpdateSocialNetwork)
 	meGroup.Delete("/social/:id", h.DeleteSocialNetwork)
+
+	// Persona de contacto para emergencias (auto-gestión). Datos de un tercero:
+	// solo el propio agremiado y el personal autorizado del Colegio los ven.
+	meGroup.Post("/emergency", h.AddEmergencyContact)
+	meGroup.Patch("/emergency/:id", h.UpdateEmergencyContact)
+	meGroup.Delete("/emergency/:id", h.DeleteEmergencyContact)
 	meGroup.Post("/logout", h.Logout)
 	meGroup.Get("/validate", h.ValidateSession)
 
