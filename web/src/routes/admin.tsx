@@ -27,6 +27,7 @@ const menuIcons: Record<string, string> = {
   "/admin/notificaciones": "bell",
   "/admin/tickets": "ticket",
   "/admin/proyectos": "kanban",
+  "/admin/auditoria": "receipt",
   "/admin/staff": "shield",
 };
 
@@ -87,6 +88,7 @@ export default function AdminLayout(props: { children: JSX.Element }) {
     { title: "Notificaciones", path: "/admin/notificaciones", always: false, perms: ["can_send_notifications", "can_manage_notifications", "can_read_notifications"], chip: "bg-violet-100 text-violet-600", label: "text-violet-600" },
     { title: "Tickets", path: "/admin/tickets", always: false, perms: ["can_manage_tickets"], chip: "bg-orange-100 text-orange-600", label: "text-orange-600" },
     { title: "Proyectos", path: "/admin/proyectos", always: false, perms: ["can_manage_projects"], chip: "bg-cyan-100 text-cyan-600", label: "text-cyan-600" },
+    { title: "Auditoría", path: "/admin/auditoria", always: false, perms: ["can_view_logs"], chip: "bg-slate-100 text-slate-600", label: "text-slate-600" },
     { title: "Staff", path: "/admin/staff", always: false, perms: ["can_create_admin", "can_update_admin", "can_delete_admin"], chip: "bg-teal-100 text-teal-600", label: "text-teal-600" },
   ];
 
