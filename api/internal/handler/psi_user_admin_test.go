@@ -220,7 +220,7 @@ func TestUpdatePsiByAdmin(t *testing.T) {
 		token := adminTestToken(admin)
 		app := setupAdminRouteForTest(fiber.MethodPatch, "/psi/:id", h.UpdatePsiByAdmin, adminRepo, psiRepo)
 
-		body := `{"first_name":"UpdatedName"}`
+		body := `{"first_name":"UpdatedName","last_change_reason":"Corrección de nombre por error de tipeo"}`
 		req := httptest.NewRequest(fiber.MethodPatch, "/api/v1/admin/psi/"+psiID.String(), strings.NewReader(body))
 		req.Header.Set("Authorization", "Bearer "+token)
 		req.Header.Set("Content-Type", "application/json")
@@ -228,6 +228,37 @@ func TestUpdatePsiByAdmin(t *testing.T) {
 		resp, err := app.Test(req)
 		require.NoError(t, err)
 		require.Equal(t, fiber.StatusOK, resp.StatusCode)
+	})
+
+	t.Run("missing_motivo_rejected", func(t *testing.T) {
+		adminID := uuid.New()
+		admin := testAdmin(adminID, true, true)
+
+		psiID := uuid.New()
+
+		psiRepo := &mockPsiRepo{
+			GetByIDFunc: func(_ context.Context, id uuid.UUID) (*domain.PsiUserModel, error) {
+				return testPsiUser(psiID), nil
+			},
+		}
+		adminRepo := &mockAdminRepo{
+			GetByIDFunc: func(_ context.Context, id uuid.UUID) (*domain.UserAdmin, error) {
+				return admin, nil
+			},
+		}
+		h := testPsiAdminHandler(psiRepo, adminRepo, &mockAnalyticsRepo{})
+
+		token := adminTestToken(admin)
+		app := setupAdminRouteForTest(fiber.MethodPatch, "/psi/:id", h.UpdatePsiByAdmin, adminRepo, psiRepo)
+
+		body := `{"first_name":"UpdatedName"}`
+		req := httptest.NewRequest(fiber.MethodPatch, "/api/v1/admin/psi/"+psiID.String(), strings.NewReader(body))
+		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := app.Test(req)
+		require.NoError(t, err)
+		require.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
 	})
 
 	t.Run("invalid_uuid", func(t *testing.T) {

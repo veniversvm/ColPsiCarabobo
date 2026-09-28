@@ -3,6 +3,8 @@ package handler
 
 import (
 	"errors"
+	"strings"
+
 	"github.com/rs/zerolog/log"
 	"strconv"
 
@@ -134,9 +136,19 @@ func (h *PsiHandler) UpdatePsiByAdmin(c *fiber.Ctx) error {
 	titleImgTwo, _ := c.FormFile("title_image_two")
 	titleImgThree, _ := c.FormFile("title_image_three")
 
-	// Validación de "Request Vacío" para evitar llamadas innecesarias al servicio
-	if utils.IsEmptyReq(req) && (profilePic == nil && titleImgOne == nil && titleImgTwo == nil && titleImgThree == nil) {
+	// Validación de "Request Vacío" para evitar llamadas innecesarias al servicio.
+	// El motivo del cambio (last_change_reason) es OBLIGATORIO pero NO cuenta como
+	// "campo de cambio": se excluye del chequeo (se copia el struct con el campo a
+	// nil) para que un payload solo-con-motivo no pase como si tuviera datos reales.
+	checkReq := req
+	checkReq.LastChangeReason = nil
+	if utils.IsEmptyReq(checkReq) && (profilePic == nil && titleImgOne == nil && titleImgTwo == nil && titleImgThree == nil) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "No se proporcionaron campos para actualizar"})
+	}
+
+	// El motivo es obligatorio siempre que haya al menos un campo/archivo de cambio.
+	if req.LastChangeReason == nil || strings.TrimSpace(*req.LastChangeReason) == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Debes indicar el motivo del cambio"})
 	}
 
 	if err := h.service.UpdatePsiByAdmin(

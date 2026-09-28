@@ -256,8 +256,11 @@ func (r *psiRepo) Update(
 			"profile_picture_s3_key": psi.ProfilePictureS3Key,
 
 			// ── Auditoría ─────────────────────────────────────────────────
-			"update_by":    psi.UpdateBy,
-			"update_by_id": psi.UpdateById,
+			"update_by":          psi.UpdateBy,
+			"update_by_id":       psi.UpdateById,
+
+			// ── Motivo del último cambio de expediente (admin) ────────────
+			"last_change_reason": psi.LastChangeReason,
 
 			// ── Privacidad: Contacto principal ────────────────────────────
 			"show_contact_email":          gorm.Expr("?", psi.ShowContactEmail),

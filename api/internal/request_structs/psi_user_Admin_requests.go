@@ -228,6 +228,12 @@ type UpdatePsiAdminRequest struct {
 	UniversityProfessor *bool `json:"university_professor" form:"university_professor"`
 	DoubleGuild         *bool `json:"double_guild" form:"double_guild"`
 	CPSM                *bool `json:"cpsm" form:"cpsm"`
+
+	// ── Motivo del cambio (obligatorio, solo admin) ─────────────────────
+	// Razón por la cual el administrador modifica el expediente. Obligatorio
+	// cuando hay al menos un campo/archivo de cambio. Se persiste en
+	// psi_users.last_change_reason y se anota en la bitácora (Metadata.motivo).
+	LastChangeReason *string `json:"last_change_reason" form:"last_change_reason"`
 }
 
 // ── GETTERS DE VISIBILIDAD (Sanitización Multipart) ────────────────────────

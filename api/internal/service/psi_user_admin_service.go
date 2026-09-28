@@ -733,6 +733,12 @@ func (s *PsiService) UpdatePsiByAdmin(
 	psi.UpdateBy = admin.Username
 	psi.UpdateById = &admin.ID
 
+	// 6b. Motivo del cambio: lo persiste en psi_users.last_change_reason siempre
+	// que el admin lo haya declarado (el handler ya lo exige cuando hay cambios).
+	if req.LastChangeReason != nil {
+		psi.LastChangeReason = strings.TrimSpace(*req.LastChangeReason)
+	}
+
 	// 7. PERSISTENCIA — Rollback Distribuido si falla la DB
 	err = s.repo.Update(ctx, psi, colDataToUpdate, bioTextToUpdate, solvenciesToCreate)
 	if err != nil {
@@ -774,10 +780,16 @@ func (s *PsiService) UpdatePsiByAdmin(
 	// ── Bitácora de cambios: actualización del expediente con diff por campo ──
 	evt := auditAdminEvent(admin, domain.AuditEntityPsi, psi.ID.String(), psiAuditLabel(psi), domain.AuditActionUpdate)
 	evt.Changes = BuildDiff(beforeSnapshot, psiCoreSnapshot(psi))
+	// El motivo del cambio es obligatorio y se anota SIEMPRE en Metadata (dato
+	// descriptivo del evento, no del diff por campo).
+	evt.Metadata = map[string]any{}
+	if req.LastChangeReason != nil && strings.TrimSpace(*req.LastChangeReason) != "" {
+		evt.Metadata["motivo"] = strings.TrimSpace(*req.LastChangeReason)
+	}
 	// Los datos gremiales/académicos (colData) NO viven en PsiUserModel: si hubo
 	// actualizaciones y el diff identitario quedó vacío, se anota en Metadata.
 	if len(evt.Changes) == 0 && (colDataToUpdate != nil || bioTextToUpdate != nil || len(solvenciesToCreate) > 0) {
-		evt.Metadata = map[string]any{"detalle": "datos gremiales/académicos u observaciones actualizadas"}
+		evt.Metadata["detalle"] = "datos gremiales/académicos u observaciones actualizadas"
 	}
 	RecordAudit(ctx, evt)
 	return nil

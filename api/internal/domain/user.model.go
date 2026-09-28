@@ -105,6 +105,15 @@ type PsiUserModel struct {
 	ProofOfLife         bool   `gorm:"column:proof_of_life" json:"proof_of_life"` // Fe de vida presentada
 	ProfilePictureS3Key string `gorm:"size:512" json:"profile_picture_url"`       // S3 key de la foto de perfil
 
+	// ── Motivo del último cambio de expediente (solo admin, interno) ──────
+	// Declarado por el administrador al editar la ficha (PATCH /admin/psi/:id).
+	// Es un dato INTERNO del gremio: los DTOs públicos (directorio, detalle
+	// público, sitemap y dto de piso) NO lo exponen. Se refleja también en la
+	// bitácora de auditoría (Metadata.motivo). El sitemap selecciona columnas
+	// explícitas (first_name,last_name,fpv) y el directorio construye su propio
+	// SELECT, así que este campo nunca sale por un endpoint público.
+	LastChangeReason string `gorm:"size:500" json:"last_change_reason"`
+
 	// ── Contacto interno del gremio ────────────────────────────────────
 	ContactPhone     string `gorm:"size:255;not null" json:"contact_phone"`
 	ContactCellPhone string `gorm:"size:255;not null" json:"contact_cell_phone"`

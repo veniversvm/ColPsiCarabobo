@@ -8071,6 +8071,10 @@
                     "description": "IsActive controla si la cuenta puede iniciar sesión.\nDefault false: un psicólogo creado desde una inscripción aprobada nace inactivo\ny solo puede activarse manualmente cuando la administración confirma los\nrequisitos legales (N° de FPV y solvencia; el FPV acredita la inscripción ministerial).",
                     "type": "boolean"
                 },
+                "last_change_reason": {
+                    "description": "── Motivo del último cambio de expediente (solo admin, interno) ──────\nDeclarado por el administrador al editar la ficha (PATCH /admin/psi/:id).\nEs un dato INTERNO del gremio: los DTOs públicos (directorio, detalle\npúblico, sitemap y dto de piso) NO lo exponen. Se refleja también en la\nbitácora de auditoría (Metadata.motivo). El sitemap selecciona columnas\nexplícitas (first_name,last_name,fpv) y el directorio construye su propio\nSELECT, así que este campo nunca sale por un endpoint público.",
+                    "type": "string"
+                },
                 "last_name": {
                     "type": "string"
                 },
@@ -10132,6 +10136,10 @@
                 },
                 "is_active": {
                     "type": "boolean"
+                },
+                "last_change_reason": {
+                    "description": "── Motivo del cambio (obligatorio, solo admin) ─────────────────────\nRazón por la cual el administrador modifica el expediente. Obligatorio\ncuando hay al menos un campo/archivo de cambio. Se persiste en\npsi_users.last_change_reason y se anota en la bitácora (Metadata.motivo).",
+                    "type": "string"
                 },
                 "last_name": {
                     "type": "string"
