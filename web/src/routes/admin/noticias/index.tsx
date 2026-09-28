@@ -2,6 +2,7 @@
 import { createResource, createSignal, For, Show, Suspense, ErrorBoundary } from "solid-js";
 import { A, action, useAction } from "@solidjs/router";
 import { apiDelete, apiGet, apiPatch } from "~/lib/api";
+import { getUserFacingError } from "~/lib/errors";
 import { PaginatedResponse } from "~/types/admin";
 import {
   Post,
@@ -35,6 +36,7 @@ export default function AdminNoticiasPage() {
   const [search,       setSearch]       = createSignal("");
   const [confirmDelete, setConfirmDelete] = createSignal<string | null>(null);
   const [busy, setBusy] = createSignal<string | null>(null);
+  const [deleteError, setDeleteError] = createSignal<string | null>(null);
 
   const [posts, { refetch }] = createResource(async () => {
     try {
@@ -72,10 +74,15 @@ export default function AdminNoticiasPage() {
 
   const handleDelete = async (id: string) => {
     setBusy(id);
+    setDeleteError(null);
     try {
       await runDelete(id);
       setConfirmDelete(null);
       refetch();
+    } catch (err) {
+      // Sesión inválida/API caída: mostrar el error real en el modal en vez de
+      // quedarse mudo (el panel se mantiene; no hay redirect ni logout).
+      setDeleteError(getUserFacingError(err));
     } finally {
       setBusy(null);
     }
@@ -127,7 +134,7 @@ export default function AdminNoticiasPage() {
                   post={post}
                   isBusy={busy() === post.id}
                   onToggle={handleToggle}
-                  onDelete={(id) => setConfirmDelete(id)}
+                  onDelete={(id) => { setDeleteError(null); setConfirmDelete(id); }}
                 />
               )}
             </For>
@@ -144,6 +151,7 @@ export default function AdminNoticiasPage() {
       <DeleteModal
         isOpen={!!confirmDelete()}
         isBusy={busy() === confirmDelete()}
+        error={deleteError()}
         onConfirm={() => handleDelete(confirmDelete()!)}
         onCancel={() => setConfirmDelete(null)}
       />

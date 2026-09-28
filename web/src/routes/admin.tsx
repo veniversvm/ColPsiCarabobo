@@ -1,5 +1,5 @@
 // web/src/routes/admin.tsx
-import { JSX, createSignal, Show, createEffect, createResource, For, ErrorBoundary } from "solid-js";
+import { JSX, createSignal, Show, createEffect, createResource, For, ErrorBoundary, onCleanup } from "solid-js";
 import { A, useNavigate, useLocation } from "@solidjs/router";
 import { useAuth } from "~/lib/auth";
 import { apiGet } from "~/lib/api";
@@ -47,7 +47,7 @@ export default function AdminLayout(props: { children: JSX.Element }) {
 
   // Estado y permisos del admin autenticado (para filtrar el menú).
   // El backend sigue validando cada operación: esto es solo cosmético/UX.
-  const [me] = createResource<AdminMe | null>(
+  const [me, { refetch: refetchMe }] = createResource<AdminMe | null>(
     async () => {
       try {
         return await apiGet<AdminMe>("/admin/me");
@@ -57,6 +57,18 @@ export default function AdminLayout(props: { children: JSX.Element }) {
     },
     { initialValue: null }
   );
+
+  // Cuando la sesión se restaura en caliente (auth.tsx recupera el token desde la
+  // cookie sin re-login en una pestaña nueva/reiniciada), /admin/me se re-evalúa
+  // para completar el menú. No-op en el flujo normal (el fetch inicial ya resolvió).
+  createEffect(() => {
+    const id = user()?.id;
+    const loaded = !!me();
+    if (id && isAuthenticated() && role() === "admin" && !loaded) {
+      const t = setTimeout(refetchMe, 0);
+      onCleanup(() => clearTimeout(t));
+    }
+  });
 
   // Badge de tickets pendientes (polling cada 30s). Silencioso si falla.
   const [pendientes] = createResource(
