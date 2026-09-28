@@ -756,10 +756,28 @@ func (s *InscriptionService) UpdateNotes(ctx context.Context, admin *domain.User
 	if err := requireUpdateFicha(admin); err != nil {
 		return err
 	}
-	if _, err := s.repo.GetByID(ctx, id); err != nil {
+	cur, err := s.repo.GetByID(ctx, id)
+	if err != nil {
 		return ErrInscriptionNotFound
 	}
-	return s.repo.UpdateNotes(ctx, id, s.sanitizer.Sanitize(notes))
+	clean := s.sanitizer.Sanitize(notes)
+	if err := s.repo.UpdateNotes(ctx, id, clean); err != nil {
+		return err
+	}
+
+	// ── Bitácora de auditoría (solo si el texto realmente cambió) ────────────
+	// Un guardado con el mismo contenido no es un evento; el patrón sigue el
+	// contrato de `audit_helpers.go`: clave snake_case que coincide con el tag
+	// JSON del modelo ("notes") y diff {from,to}.
+	if before, after := cur.Notes, clean; before != after {
+		evt := auditAdminEvent(admin, domain.AuditEntityInscription, id.String(), inscriptionAuditLabel(cur), domain.AuditActionUpdate)
+		evt.Changes = BuildDiff(
+			map[string]any{"notes": before},
+			map[string]any{"notes": after},
+		)
+		RecordAudit(ctx, evt)
+	}
+	return nil
 }
 
 // SendEmailToApplicant envía un correo al solicitante con el mensaje del admin.

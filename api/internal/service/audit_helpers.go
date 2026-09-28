@@ -27,6 +27,16 @@ func psiAuditLabel(psi *domain.PsiUserModel) string {
 	return fmt.Sprintf("%s (FPV %d)", name, psi.FPV)
 }
 
+// inscriptionAuditLabel arma la etiqueta legible de una solicitud de inscripción
+// para la bitácora.
+func inscriptionAuditLabel(req *domain.PsiInscriptionRequest) string {
+	if req == nil {
+		return ""
+	}
+	name := strings.TrimSpace(strings.TrimSpace(req.Apellidos) + " " + strings.TrimSpace(req.Nombres))
+	return fmt.Sprintf("%s (FPV %d)", name, req.FPV)
+}
+
 // auditPsiAuthEvent construye un evento de login/logout con el psicólogo como actor.
 func auditPsiAuthEvent(psi *domain.PsiUserModel, action string) AuditEvent {
 	return AuditEvent{
