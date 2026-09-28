@@ -24,7 +24,16 @@ func ConnectDB() (*gorm.DB, error) {
 	// statement_timeout NO se manda por DSN: PgBouncer rechaza el startup param
 	// `options` (08P01). El timeout se fija server-side en init-db/postgresql.conf
 	// (30s), que aplica a todas las conexiones incluida la de PgBouncer.
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable connect_timeout=5",
+	//
+	// prefer_simple_protocol=true es un param LOCAL de pgx (no viaja como startup
+	// param): desactiva el statement cache / protocolo extendido del driver.
+	// PgBouncer en modo transacción reparte cada consulta entre conexiones de
+	// backend distintas, así que un prepared statement cacheado por pgx puede
+	// ejecutarse con un plan viejo tras un cambio de esquema o un reinicio del
+	// pooler → 500 SQLSTATE 0A000 ("cached plan must not change result type") /
+	// 08P01 ("prepared statement name is already in use"). Con protocolo simple
+	// el driver no prepara statements y el pooler deja de chocar.
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable connect_timeout=5 prefer_simple_protocol=true",
 		config.Envs.DBHost,
 		config.Envs.DBUser,
 		config.Envs.DBPass,
