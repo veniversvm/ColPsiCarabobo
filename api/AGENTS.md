@@ -146,6 +146,37 @@ swag init -g cmd/api/main.go -o docs/   # regenerar Swagger
       `gorm.DeletedAt` (embebido en `PsiUserPostGrade`): respeta IDOR y limpia el
       certificado en S3 best-effort. No lo cambies a borrado físico.
 
+13. **Sesión de admin por-fila: re-login/cambio de password/logout matan las
+    sesiones previas** — cada `user_admins` tiene su propia `key` (embebida en su
+    JWT) y un admin puede tener varias pestañas activas; `validateToken` valida
+    contra `GetByID(admin_id)` comparando esa key. Por tanto, CUALQUIER rotación
+    deja **todas** las sesiones de ESE admin inválidas (401/404 enmascarado), sin
+    tocar a los otros admins:
+    - **Login** (`admin_service.go:84`): re-login rota la key — anti-replay, por diseño.
+    - **Update con `password`** (`admin_service.go:457`): rota la key del editado —
+      incluye el auto-edit: si un admin cambia SU contraseña, se caen sus otras pestañas.
+    - **Logout** (`admin_service.go:125`): deja la key en `""` → mata la sesión en
+      todas las pestañas de ese admin.
+    - **DeleteAdmin** (`admin_service.go:515+`): soft-delete → `GetByID` deja de
+      resolver la fila → muere la sesión del borrado (auto-borrado bloqueado por RBAC).
+    Al depurar un "me sacó de la sesión" sin pasar por logout: sospechar rotación
+    de key primero, NO la UI. Lo que **NO** mata la sesión vigente: `is_active=false`
+    (solo bloquea re-login en `admin_service.go:73`) y `TransferSudo` (degrada
+    permisos en vivo sin tocar keys).
+
+14. **NO quitar `prefer_simple_protocol=true` del DSN** (`pkg/database/postgres.go`)
+    — es el fix de los 500 `SQLSTATE 0A000`/`08P01` ("cached plan must not change
+    result type" / "prepared statement name is already in use") que producían
+    PgBouncer (transaction mode) + pgx: pgx cacheaba prepared statements y el
+    pooler reparte cada consulta entre conexiones de backend distintas, así que
+    un plan viejo sobrevivía a migraciones/reinicios. Con protocolo simple el
+    driver no prepara statements; el param es local de pgx (no viaja como startup
+    param, a diferencia de `options`, que PgBouncer rechaza con 08P01). La API
+    respondía esos 500 como genéricos y el frontend los pintaba como
+    "Conexión en pausa" a pantalla completa (el admin percibía "me sacó del
+    panel"). Si necesitas prepared statements por rendimiento en el futuro, la vía
+    correcta es conectar directo a Postgres (no por PgBouncer), no quitar el param.
+
 ## Estructura
 
 ```

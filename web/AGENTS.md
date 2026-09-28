@@ -123,6 +123,28 @@ deno task build      # igual que npm run build (lo usa el dockerfile)
       visible solo con `total > 20`); cualquier cambio de filtro resetea a la
       página 1.
 
+12. **El panel admin no debe morir ante un error puntual de una página** — un error
+    en el render de una ruta admin (p. ej. un `createResource` que lanza porque la
+    API devolvió 500) NO debe llegar al ErrorBoundary global de `app.tsx` (pinta
+    **OfflineAlert a pantalla completa** → el admin percibe "me sacó de la sesión").
+    Reglas:
+    - **ErrorBoundary inline en `admin.tsx`** envuelve `props.children` con
+      `AdminPageError` (`components/admin/AdminPageError.tsx`): tarjeta dentro del
+      contenido con mensaje, Reintentar (`reset`) y Volver al panel; el menú lateral
+      queda intacto. No lo quites ni lo reemplaces por una pantalla completa.
+    - **LISTAS clave con try/catch**: los fetchers de `admin/{inscripciones,
+      noticias,psicologos,notificaciones,tickets}/index.tsx` y
+      `tickets/configuracion.tsx` capturan el error y devuelven `undefined`/vacío
+      (inscripciones y psicólogos conservan su caché de último listado bueno vía
+      `display()`/`cachedData()`). Un fetch nuevo de una lista nunca debe lanzar
+      durante el render; si añades una lista admin, replica ese patrón.
+    - **401 NO borra el JWT globalmente**: en `lib/api.ts` el `sessionStorage.jwt`
+      solo se limpia si el 401 viene de una ruta de sesión
+      (`/admin|/psi` → `validate|login|logout|me`). La muerte real de la sesión la
+      detecta `checkSession` (polling 60s de `/admin/validate` o `/psi/me/validate`
+      → `forceLogout`). Un 401 inesperado de un endpoint de datos puede ser un
+      fallo transitorio del gateway; borrar el token ahí sí saca al admin del panel.
+
 ## Estructura
 
 ```
