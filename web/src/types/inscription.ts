@@ -22,6 +22,13 @@ export interface InscriptionDocument {
   original_filename?: string;
 }
 
+export interface InscriptionNoteHistory {
+  id: string;
+  notes: string;
+  create_by: string;
+  created_at: string;
+}
+
 export interface InscriptionListItem {
   id: string;
   cedula: number;

@@ -13,11 +13,19 @@ import type {
   InscriptionDetail,
   InscriptionDocument,
   InscriptionDocumentType,
+  InscriptionNoteHistory,
   UpdateInscriptionRequest,
   WorkArea,
 } from "~/types/inscription";
 
 const formatDate = (dateStr?: string | null) => (dateStr ? dateStr.split("T")[0] : "");
+
+const formatDateTime = (dateStr?: string | null) => {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
 
 const isImageUrl = (url?: string) => !!url && /\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$)/i.test(url);
 
@@ -35,6 +43,9 @@ export default function AdminInscriptionDetail() {
     apiGet(`/admin/inscripciones/${params.id}`)
   );
   const [workAreas] = createResource<WorkArea[]>(() => apiGet("/specialties"));
+  const [notesHistory, { refetch: refetchNotesHistory }] = createResource<InscriptionNoteHistory[]>(() =>
+    apiGet(`/admin/inscripciones/${params.id}/notes`)
+  );
 
   const [fichaMsg, setFichaMsg] = createSignal<{ type: "ok" | "err"; text: string } | null>(null);
   const [savingFicha, setSavingFicha] = createSignal(false);
@@ -237,6 +248,7 @@ export default function AdminInscriptionDetail() {
       await apiPatch(`/admin/inscripciones/${params.id}/notes`, { notes: notesDraft() });
       savedNotes = notesDraft();
       setNotesFeedback({ type: "ok", text: "Notas guardadas" });
+      refetchNotesHistory();
     } catch (err) {
       setNotesFeedback({ type: "err", text: err instanceof ApiError ? err.message : "Error al guardar las notas" });
     } finally { setSavingNotes(false); }
@@ -638,6 +650,28 @@ export default function AdminInscriptionDetail() {
                   {savingNotes() ? "Guardando..." : "Guardar notas"}
                 </button>
               </div>
+              <Show when={notesHistory() && notesHistory()!.length > 0}>
+                <div class="border-t border-colpsi-border pt-3 space-y-2">
+                  <h3 class="text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide">
+                    Historial de notas ({notesHistory()!.length})
+                  </h3>
+                  <ul class="space-y-2 max-h-64 overflow-y-auto pr-1">
+                    <For each={notesHistory()}>
+                      {(entry) => (
+                        <li class="rounded-md border border-colpsi-border bg-colpsi-bg/60 p-3 space-y-1">
+                          <div class="flex items-center justify-between gap-2 text-[10px] font-medium text-colpsi-muted">
+                            <span>{formatDateTime(entry.created_at)}</span>
+                            <span class="truncate">{entry.create_by || "—"}</span>
+                          </div>
+                          <p class="text-sm text-colpsi-text whitespace-pre-wrap break-words">
+                            {entry.notes || "(notas vacías)"}
+                          </p>
+                        </li>
+                      )}
+                    </For>
+                  </ul>
+                </div>
+              </Show>
             </div>
 
             {/* Enviar correo al solicitante */}
