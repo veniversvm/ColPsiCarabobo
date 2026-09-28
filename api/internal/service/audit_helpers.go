@@ -238,3 +238,39 @@ func socialRemovalChanges(sn *domain.PsiUserSocialNetwork) map[string]domain.Aud
 		"social_url":  {From: sn.URL},
 	}
 }
+
+// emergencyContactSnapshot captura los campos de un contacto de emergencia para
+// el diff. Las claves siguen el contrato snake_case de la bitácora.
+func emergencyContactSnapshot(ec *domain.PsiUserEmergencyContact) map[string]any {
+	if ec == nil {
+		return map[string]any{}
+	}
+	return map[string]any{
+		"emergency_contact_name":         ec.Name,
+		"emergency_contact_relationship": ec.Relationship,
+		"emergency_contact_phone":        ec.Phone,
+		"emergency_contact_email":        ec.Email,
+	}
+}
+
+// emergencyContactCreateChanges arma el diff de alta de un contacto de emergencia
+// (solo `to`).
+func emergencyContactCreateChanges(ec *domain.PsiUserEmergencyContact) map[string]domain.AuditChange {
+	return map[string]domain.AuditChange{
+		"emergency_contact_name":         {To: ec.Name},
+		"emergency_contact_relationship": {To: ec.Relationship},
+		"emergency_contact_phone":        {To: ec.Phone},
+		"emergency_contact_email":        {To: ec.Email},
+	}
+}
+
+// emergencyContactRemovalChanges arma el diff de baja de un contacto de emergencia
+// (solo `from`: el registro ya no existe tras el borrado lógico).
+func emergencyContactRemovalChanges(ec *domain.PsiUserEmergencyContact) map[string]domain.AuditChange {
+	return map[string]domain.AuditChange{
+		"emergency_contact_name":         {From: ec.Name},
+		"emergency_contact_relationship": {From: ec.Relationship},
+		"emergency_contact_phone":        {From: ec.Phone},
+		"emergency_contact_email":        {From: ec.Email},
+	}
+}

@@ -147,6 +147,31 @@ type PsiUserRepository interface {
 	CountSocialNetworksByPsiID(ctx context.Context, psiID uuid.UUID) (int64, error)
 
 	// =========================================================================
+	// CONTACTO DE EMERGENCIA
+	// =========================================================================
+
+	// CreateEmergencyContact registra la persona de contacto para emergencias de
+	// un psicólogo (datos de un tercero, nunca públicos).
+	CreateEmergencyContact(ctx context.Context, contact *PsiUserEmergencyContact) error
+
+	// GetEmergencyContactByID busca un contacto de emergencia por su UUID.
+	GetEmergencyContactByID(ctx context.Context, id uuid.UUID) (*PsiUserEmergencyContact, error)
+
+	// ListEmergencyContactsByPsiID devuelve los contactos de emergencia de un
+	// psicólogo, del más antiguo al más reciente (el primero es el principal).
+	ListEmergencyContactsByPsiID(ctx context.Context, psiID uuid.UUID) ([]PsiUserEmergencyContact, error)
+
+	// UpdateEmergencyContact guarda los cambios de un contacto de emergencia.
+	UpdateEmergencyContact(ctx context.Context, contact *PsiUserEmergencyContact) error
+
+	// DeleteEmergencyContact elimina lógicamente (soft delete) un contacto.
+	DeleteEmergencyContact(ctx context.Context, id uuid.UUID) error
+
+	// CountEmergencyContactsByPsiID retorna la cantidad de contactos registrados
+	// por el usuario (se usa para el control de cuota).
+	CountEmergencyContactsByPsiID(ctx context.Context, psiID uuid.UUID) (int64, error)
+
+	// =========================================================================
 	// EXPEDIENTE DEONTOLÓGICO
 	// =========================================================================
 

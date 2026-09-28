@@ -30,6 +30,17 @@ var (
 	ErrSocialPermDenied = errors.New("no tienes permiso para editar esta red social")
 	// ErrSocialOwnDenied is returned when the user cannot delete a social network they don't own.
 	ErrSocialOwnDenied = errors.New("no puedes borrar una red social que no te pertenece")
+	// ErrEmergencyContactNotFound is returned when an emergency contact record cannot be found.
+	ErrEmergencyContactNotFound = errors.New("contacto de emergencia no encontrado")
+	// ErrMaxEmergencyContacts is returned when the emergency contact limit per profile is reached.
+	ErrMaxEmergencyContacts = errors.New("límite máximo de contactos de emergencia alcanzado")
+	// ErrEmergencyContactPermDenied is returned when the user cannot edit an emergency contact of another profile.
+	ErrEmergencyContactPermDenied = errors.New("no tienes permiso para editar este contacto de emergencia")
+	// ErrEmergencyContactOwnDenied is returned when the user cannot delete an emergency contact they don't own.
+	ErrEmergencyContactOwnDenied = errors.New("no puedes borrar un contacto de emergencia que no te pertenece")
+	// ErrEmergencyContactIncomplete is returned when the emergency contact lacks the name,
+	// the relationship, or any usable contact channel (phone or email).
+	ErrEmergencyContactIncomplete = errors.New("indica el nombre, el parentesco y al menos un teléfono o correo")
 	// ErrPostPermDenied is returned when the user lacks publishing permissions.
 	ErrPostPermDenied = errors.New("no tienes permiso para publicar")
 	// ErrUniqueViolation is returned when a unique constraint is violated.

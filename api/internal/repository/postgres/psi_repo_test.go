@@ -51,6 +51,7 @@ func setupFullTestDB(t *testing.T) *gorm.DB {
 		&domain.PsiUserColData{},
 		&domain.PsiUserPostGrade{},
 		&domain.PsiUserSocialNetwork{},
+		&domain.PsiUserEmergencyContact{},
 		&domain.PsiSpecialtyModel{},
 		&domain.PsiUserSolvency{},
 		&domain.PsiODeontologia{},
@@ -58,6 +59,7 @@ func setupFullTestDB(t *testing.T) *gorm.DB {
 	require.NoError(t, err)
 
 	// TRUCO SENIOR: Limpiar tablas antes de correr los tests
+	db.Exec("TRUNCATE TABLE psi_user_emergency_contacts RESTART IDENTITY CASCADE")
 	db.Exec("TRUNCATE TABLE psi_user_social_networks RESTART IDENTITY CASCADE")
 	db.Exec("TRUNCATE TABLE psi_user_post_grades RESTART IDENTITY CASCADE")
 	db.Exec("TRUNCATE TABLE psi_user_col_data RESTART IDENTITY CASCADE")

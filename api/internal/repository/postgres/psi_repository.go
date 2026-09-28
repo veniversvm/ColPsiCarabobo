@@ -104,6 +104,12 @@ func (r *psiRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.PsiUserMod
 			return db.Order("graduation_year DESC")
 		}).
 		Preload("SocialNetworks").
+		// Contacto de emergencia (datos de un tercero). Se carga SOLO en la vista
+		// de gestión (/psi/me y ficha del admin): GetByFPV —la ficha pública— no
+		// lo precarga, de modo que nunca puede filtrarse al directorio.
+		Preload("EmergencyContacts", func(db *gorm.DB) *gorm.DB {
+			return db.Order("created_at ASC")
+		}).
 		Preload("FullBio").
 		First(&psi, "id = ?", id).Error
 
@@ -836,6 +842,62 @@ func (r *psiRepo) CountSocialNetworksByPsiID(ctx context.Context, psiID uuid.UUI
 }
 
 // =========================================================================
+// CONTACTO DE EMERGENCIA
+// =========================================================================
+
+// CreateEmergencyContact vincula un contacto de emergencia al perfil del psicólogo.
+func (r *psiRepo) CreateEmergencyContact(ctx context.Context, contact *domain.PsiUserEmergencyContact) error {
+	return r.db.WithContext(ctx).Create(contact).Error
+}
+
+// GetEmergencyContactByID busca un contacto de emergencia por su ID único.
+func (r *psiRepo) GetEmergencyContactByID(ctx context.Context, id uuid.UUID) (*domain.PsiUserEmergencyContact, error) {
+	var contact domain.PsiUserEmergencyContact
+	err := r.db.WithContext(ctx).First(&contact, "id = ?", id).Error
+	return &contact, err
+}
+
+// ListEmergencyContactsByPsiID devuelve los contactos de emergencia del
+// psicólogo del más antiguo al más reciente (orden de registro: el primero es
+// el contacto principal declarado).
+func (r *psiRepo) ListEmergencyContactsByPsiID(ctx context.Context, psiID uuid.UUID) ([]domain.PsiUserEmergencyContact, error) {
+	var contacts []domain.PsiUserEmergencyContact
+	err := r.db.WithContext(ctx).
+		Where("psi_user_id = ?", psiID).
+		Order("created_at ASC").
+		Find(&contacts).Error
+	return contacts, err
+}
+
+// UpdateEmergencyContact modifica los datos de un contacto de emergencia existente.
+func (r *psiRepo) UpdateEmergencyContact(ctx context.Context, contact *domain.PsiUserEmergencyContact) error {
+	return r.db.WithContext(ctx).Model(contact).Updates(map[string]interface{}{
+		"name":         contact.Name,
+		"relationship": contact.Relationship,
+		"phone":        contact.Phone,
+		"email":        contact.Email,
+		"update_by":    contact.UpdateBy,
+		"update_by_id": contact.UpdateById,
+	}).Error
+}
+
+// DeleteEmergencyContact elimina lógicamente un contacto de emergencia (soft delete).
+func (r *psiRepo) DeleteEmergencyContact(ctx context.Context, id uuid.UUID) error {
+	return r.db.WithContext(ctx).Delete(&domain.PsiUserEmergencyContact{}, "id = ?", id).Error
+}
+
+// CountEmergencyContactsByPsiID devuelve la cantidad de contactos registrados.
+func (r *psiRepo) CountEmergencyContactsByPsiID(ctx context.Context, psiID uuid.UUID) (int64, error) {
+	var count int64
+	err := r.db.WithContext(ctx).
+		Model(&domain.PsiUserEmergencyContact{}).
+		Where("psi_user_id = ?", psiID).
+		Count(&count).Error
+
+	return count, err
+}
+
+// =========================================================================
 // EXPEDIENTE DEONTOLÓGICO
 // =========================================================================
 
@@ -868,8 +930,8 @@ func (r *psiRepo) UpdateDeontologia(ctx context.Context, id uuid.UUID, content, 
 	return r.db.WithContext(ctx).Model(&domain.PsiODeontologia{}).
 		Where("id = ?", id).
 		Updates(map[string]interface{}{
-			"content":     content,
-			"update_by":   updateBy,
+			"content":      content,
+			"update_by":    updateBy,
 			"update_by_id": updateById,
 		}).Error
 }

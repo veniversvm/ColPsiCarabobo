@@ -771,6 +771,53 @@ definitions:
           GORM actualiza este valor automáticamente en cada operación de guardado.
         type: string
     type: object
+  domain.PsiUserEmergencyContact:
+    properties:
+      create_by:
+        description: CreateBy almacena el nombre o identificador textual del creador.
+        type: string
+      create_by_id:
+        description: |-
+          CreateById es el UUID del usuario/administrador que creó el registro.
+          Es un puntero para permitir valores nulos si la creación es automática por el sistema.
+        type: string
+      created_at:
+        description: |-
+          CreatedAt registra la fecha y hora exacta en que se creó el registro.
+          GORM gestiona este campo automáticamente durante la inserción.
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        description: Nombre de la persona a la que se avisaría (obligatorio).
+        type: string
+      phone:
+        description: 'Canal de contacto: al menos uno de los dos.'
+        type: string
+      psi_user_id:
+        type: string
+      relationship:
+        description: |-
+          Parentesco o relación con el agremiado (obligatorio). Catálogo corto
+          definido en el frontend (padre, madre, conyuge, hermano, hijo, tio, primo,
+          amigo, colega) con opción "otro" en texto libre.
+        type: string
+      update_by:
+        description: UpdateBy almacena el nombre o identificador textual de la última
+          persona en modificarlo.
+        type: string
+      update_by_id:
+        description: UpdateById es el UUID del usuario/administrador que realizó la
+          última actualización.
+        type: string
+      updated_at:
+        description: |-
+          UpdatedAt registra la última fecha y hora en que se modificó el registro.
+          GORM actualiza este valor automáticamente en cada operación de guardado.
+        type: string
+    type: object
   domain.PsiUserModel:
     properties:
       audio_book_shell_id:
@@ -829,6 +876,20 @@ definitions:
       email:
         description: Email es la dirección de correo electrónico única del usuario.
         type: string
+      emergency_contacts:
+        description: |-
+          Contacto de emergencia: datos de un TERCERO, visibles solo en /psi/me y en
+          la ficha del admin. Los DTOs públicos (directorio) no la incluyen.
+
+          `omitempty` es una barrera de privacidad, no una conveniencia: el sitemap
+          público (`GET /psi/public/sitemap-data`) serializa el modelo crudo y, al no
+          precargar la relación, la dejaría como `null` si el tag fuera plano. Con
+          `omitempty` la clave desaparece por completo cuando no hay contactos, de modo
+          que ningún endpoint público puede llegar a exponerlos. El frontend debe leer
+          la lista con `?? []`.
+        items:
+          $ref: '#/definitions/domain.PsiUserEmergencyContact'
+        type: array
       first_name:
         description: ── Identidad legal ───────────────────────────────────────────────────
         type: string
@@ -1666,6 +1727,42 @@ definitions:
     required:
     - content
     type: object
+  request_structs.CreateEmergencyContactRequest:
+    properties:
+      email:
+        description: Email es el correo de la persona de contacto (opcional si se
+          informa Phone).
+        example: maria.rodriguez@correo.com
+        maxLength: 255
+        type: string
+      name:
+        description: 'Name identifica a la persona a la que se avisaría (ej: "María
+          Rodríguez").'
+        example: María Rodríguez
+        maxLength: 255
+        minLength: 2
+        type: string
+      phone:
+        description: |-
+          Phone es el teléfono fijo o celular de la persona de contacto (opcional
+          si se informa Email).
+        example: +58 412 1234567
+        maxLength: 20
+        type: string
+      relationship:
+        description: |-
+          Relationship es el parentesco o vínculo con el agremiado. El frontend
+          ofrece un catálogo cerrado (padre, madre, conyuge, hermano, hijo, tio,
+          primo, amigo, colega) y la opción "otro" en texto libre; el backend solo
+          exige que no venga vacío.
+        example: madre
+        maxLength: 100
+        minLength: 2
+        type: string
+    required:
+    - name
+    - relationship
+    type: object
   request_structs.CreateNoteRequest:
     properties:
       content:
@@ -2298,6 +2395,21 @@ definitions:
         description: Content es el nuevo texto de la entrada (texto plano; se sanitiza
           en la API).
         example: Expediente actualizado por el Tribunal Disciplinario.
+        type: string
+    type: object
+  request_structs.UpdateEmergencyContactRequest:
+    properties:
+      email:
+        example: maria.rodriguez@correo.com
+        type: string
+      name:
+        example: María Rodríguez
+        type: string
+      phone:
+        example: +58 412 1234567
+        type: string
+      relationship:
+        example: madre
         type: string
     type: object
   request_structs.UpdateMemberRequest:
@@ -4162,6 +4274,157 @@ paths:
       security:
       - BearerAuth: []
       summary: Editar documento digital (Admin)
+      tags:
+      - Administración - Psicólogos
+  /admin/psi/{id}/emergency:
+    post:
+      consumes:
+      - application/json
+      description: Añade una persona de contacto para emergencias a la ficha de un
+        psicólogo desde el panel de moderación (por ejemplo, cuando el Colegio la
+        obtiene por teléfono). La bitácora registra al operador administrativo.
+      parameters:
+      - description: UUID del Psicólogo
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Datos del contacto
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.CreateEmergencyContactRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Registrar contacto de emergencia (Admin)
+      tags:
+      - Administración - Psicólogos
+  /admin/psi/{id}/emergency/{contactId}:
+    delete:
+      description: Elimina lógicamente un contacto de emergencia de un psicólogo.
+        Verifica que el contacto pertenezca a la ficha indicada (prevención de IDOR).
+      parameters:
+      - description: UUID del Psicólogo
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: UUID del contacto de emergencia
+        in: path
+        name: contactId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Eliminar contacto de emergencia (Admin)
+      tags:
+      - Administración - Psicólogos
+    patch:
+      consumes:
+      - application/json
+      description: Edita un contacto de emergencia de un psicólogo. Verifica que el
+        contacto pertenezca a la ficha indicada (prevención de IDOR) y revalida la
+        regla de integridad.
+      parameters:
+      - description: UUID del Psicólogo
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: UUID del contacto de emergencia
+        in: path
+        name: contactId
+        required: true
+        type: string
+      - description: Campos parciales
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.UpdateEmergencyContactRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Editar contacto de emergencia (Admin)
       tags:
       - Administración - Psicólogos
   /admin/psi/{id}/observaciones:
@@ -6467,6 +6730,134 @@ paths:
       summary: Mis documentos digitales (Psi)
       tags:
       - Psicólogos - Expediente
+  /psi/me/emergency:
+    post:
+      consumes:
+      - application/json
+      description: El agremiado declara hasta 3 personas a las que el Colegio puede
+        avisar si no puede ser localizado o ante un accidente. Se exige nombre, parentesco
+        y al menos un teléfono o correo.
+      parameters:
+      - description: Datos del contacto
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.CreateEmergencyContactRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Registrar persona de contacto para emergencias
+      tags:
+      - Psicólogos - Perfil
+  /psi/me/emergency/{id}:
+    delete:
+      parameters:
+      - description: UUID del contacto
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Eliminar persona de contacto para emergencias (Soft Delete)
+      tags:
+      - Psicólogos - Perfil
+    patch:
+      consumes:
+      - application/json
+      description: 'Actualización parcial (PATCH). La regla de integridad se revalida
+        sobre el resultado: no puede quedar sin nombre, sin parentesco o sin teléfono
+        ni correo.'
+      parameters:
+      - description: UUID del contacto
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Campos parciales
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request_structs.UpdateEmergencyContactRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Editar persona de contacto para emergencias
+      tags:
+      - Psicólogos - Perfil
   /psi/me/postgrades:
     post:
       consumes:

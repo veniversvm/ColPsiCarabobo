@@ -25,6 +25,7 @@ func main() {
 		&domain.Post{},
 		&domain.PsiSpecialtyModel{},
 		&domain.PsiUserSocialNetwork{},
+		&domain.PsiUserEmergencyContact{},
 		&domain.PsiODeontologia{},
 		&domain.PsiObservations{},
 		&domain.LoginEvent{},
