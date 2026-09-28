@@ -295,6 +295,16 @@ func main() {
 		Max:          60,
 		Expiration:   1 * time.Minute,
 		KeyGenerator: func(c *fiber.Ctx) string { return c.IP() },
+		// Las preflights OPTIONS (CORS) no consumen cuota: cada fetch del
+		// navegador a la API es cross-origin y el navegador manda una preflight
+		// ANTES del método real (2 unidades por petición). Sin este Next, un
+		// panel admin legítimo (polling de /session/validate + pendientes +
+		// navegación + mis curls de verificación comparten el bucket por IP en
+		// Docker) agota los 60/min → 429 en TODO el panel ("Demasiadas
+		// solicitudes"). /live y /ready son healthchecks del orquestador.
+		Next: func(c *fiber.Ctx) bool {
+			return c.Method() == fiber.MethodOptions || c.Path() == "/live" || c.Path() == "/ready"
+		},
 	}))
 
 	// =========================================================================

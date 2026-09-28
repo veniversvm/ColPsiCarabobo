@@ -77,6 +77,15 @@ function normalize(msg: string): string {
  */
 export function getUserFacingError(error: unknown): string {
   const raw = (error as any)?.message || String(error);
+
+  // 429 (rate limit): el limitador global de la API (60 req/min por IP) o los
+  // de login pueden bloquear temporalmente una ráfaga legítima del panel
+  // (navegación + polling + preflights OPTIONS). Mensaje accionable en vez del
+  // genérico "Ocurrió un error inesperado".
+  if ((error as any)?.status === 429) {
+    return "Demasiadas solicitudes. Espera un momento e inténtalo de nuevo.";
+  }
+
   const msg = normalize(raw);
   if (KNOWN_MESSAGES[msg]) return KNOWN_MESSAGES[msg];
   const knownPrefix = KNOWN_PREFIXES.find((p) => msg.startsWith(p));
