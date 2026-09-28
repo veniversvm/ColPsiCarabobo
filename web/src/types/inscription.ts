@@ -86,6 +86,7 @@ export interface InscriptionDetail {
   status: string;
   control_number: string;
   notes: string;
+  reject_reason: string;
   psi_user_id: string | null;
   solvency_count: number;
   created_at: string;

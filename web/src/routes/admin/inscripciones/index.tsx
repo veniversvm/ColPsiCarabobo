@@ -119,6 +119,7 @@ export default function AdminInscripcionesList() {
                 <th class="th-cell">Cédula</th>
                 <th class="th-cell">Nombre completo</th>
                 <th class="th-cell">FPV</th>
+                <th class="th-cell">N° Control</th>
                 <th class="th-cell">Fecha</th>
                 <th class="th-cell">Estado</th>
                 <th class="th-cell text-right">Acciones</th>
@@ -128,7 +129,7 @@ export default function AdminInscripcionesList() {
               <Show
                 when={!data.loading || cached()}
                 fallback={
-                  <tr><td colspan="6" class="py-16 text-center">
+                  <tr><td colspan="7" class="py-16 text-center">
                     <div class="w-8 h-8 border-2 border-colpsi-blue border-t-transparent rounded-full animate-spin mx-auto" />
                   </td></tr>
                 }
@@ -136,7 +137,7 @@ export default function AdminInscripcionesList() {
                 <For
                   each={display()?.items ?? []}
                   fallback={
-                    <tr><td colspan="6" class="py-12 text-center text-sm font-medium text-colpsi-muted">No hay solicitudes</td></tr>
+                    <tr><td colspan="7" class="py-12 text-center text-sm font-medium text-colpsi-muted">No hay solicitudes</td></tr>
                   }
                 >
                   {(item: InscriptionListItem) => (
@@ -144,6 +145,7 @@ export default function AdminInscripcionesList() {
                       <td class="td-cell whitespace-nowrap font-medium">{item.cedula}</td>
                       <td class="td-cell min-w-[200px] font-medium">{item.nombres} {item.apellidos}</td>
                       <td class="td-cell text-colpsi-muted whitespace-nowrap">{item.fpv || "—"}</td>
+                      <td class="td-cell text-colpsi-muted whitespace-nowrap font-medium">{item.control_number || "—"}</td>
                       <td class="td-cell text-colpsi-muted whitespace-nowrap">{new Date(item.created_at).toLocaleDateString()}</td>
                       <td class="td-cell">
                         <Badge tone={STATUS_TONE[item.status] ?? "neutral"}>

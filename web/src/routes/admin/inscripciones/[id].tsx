@@ -57,6 +57,7 @@ export default function AdminInscriptionDetail() {
   const [modalImage, setModalImage] = createSignal<{ src: string; alt: string } | null>(null);
   const [confirmApprove, setConfirmApprove] = createSignal(false);
   const [confirmReject, setConfirmReject] = createSignal(false);
+  const [rejectReason, setRejectReason] = createSignal("");
 
   const closeModal = () => setModalImage(null);
 
@@ -326,7 +327,11 @@ export default function AdminInscriptionDetail() {
     setBusy(true);
     setFeedback(null);
     try {
-      await apiDelete(`/admin/inscripciones/${params.id}`);
+      await apiDelete(`/admin/inscripciones/${params.id}`, {
+        body: JSON.stringify({ reject_reason: rejectReason() }),
+      });
+      setFeedback({ type: "ok", text: "Solicitud rechazada" });
+      setConfirmReject(false);
       navigate("/admin/inscripciones");
     } catch (err) {
       setFeedback({ type: "err", text: err instanceof ApiError ? err.message : "Error al rechazar" });
@@ -405,6 +410,133 @@ export default function AdminInscriptionDetail() {
     );
   };
 
+  const modalityLabel = (d: InscriptionDetail) =>
+    [
+      d.service_modality_presencial && "Presencial",
+      d.service_modality_distance && "A distancia",
+      d.service_modality_telephone && "Telefónica",
+    ].filter(Boolean).join(" · ") || "—";
+
+  // Campo simple de solo-lectura para la ficha de fichas aprobadas/rechazadas.
+  const ReadField = (props: { label: string; value?: string | number | null }) => (
+    <div class="min-w-0">
+      <p class="text-[10px] font-semibold uppercase tracking-wide text-colpsi-muted truncate">{props.label}</p>
+      <p class="text-sm font-medium text-colpsi-text break-words">{props.value ? props.value : "—"}</p>
+    </div>
+  );
+
+  // Vista de lectura de la ficha para solicitudes aprobadas/rechazadas:
+  // sin controles de edición (inputs, subir/borrar archivos, guardar).
+  const ReadonlyFicha = (props: { d: InscriptionDetail }) => {
+    const d = props.d;
+    const dateFmt = (v?: string | null) => (v ? formatDate(v) : "");
+    return (
+      <div class="bg-white rounded-lg border border-colpsi-border overflow-hidden">
+        <div class="px-5 py-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-3">
+          <ReadField label="Cédula" value={d.cedula} />
+          <ReadField label="Nacionalidad" value={d.nacionalidad} />
+          <ReadField label="Nombres" value={d.nombres} />
+          <ReadField label="Apellidos" value={d.apellidos} />
+          <ReadField label="Segundo nombre" value={d.segundo_nombre} />
+          <ReadField label="Segundo apellido" value={d.segundo_apellido} />
+          <ReadField label="Género" value={d.genero} />
+          <ReadField label="FPV" value={d.fpv || ""} />
+          <ReadField label="Teléfono" value={d.telefono} />
+          <ReadField label="Correo" value={d.correo} />
+          <ReadField label="Fecha de nacimiento" value={dateFmt(d.fecha_nacimiento)} />
+          <ReadField label="RIF" value={d.rif} />
+          <ReadField label="Universidad" value={d.titulo_universidad} />
+          <ReadField label="Fecha de graduación" value={dateFmt(d.titulo_fecha_graduacion)} />
+          <ReadField label="Mención" value={d.titulo_mencion} />
+          <ReadField label="Registro N°" value={d.titulo_registro_numero} />
+          <ReadField label="Estado del registro" value={d.titulo_registro_estado} />
+          <ReadField label="Tomo" value={d.titulo_registro_tomo} />
+          <ReadField label="Folio" value={d.titulo_registro_folio} />
+          <ReadField label="Modalidad" value={modalityLabel(d)} />
+          <ReadField label="Dirección de servicio" value={d.service_address} />
+          <ReadField label="Municipio (Carabobo)" value={d.municipality_carabobo} />
+          <ReadField label="Estado (fuera de Carabobo)" value={d.state_outside} />
+          <ReadField label="Municipio (fuera)" value={d.municipality_outside_carabobo} />
+          <ReadField label="País" value={d.country} />
+        </div>
+
+        <div class="border-t border-colpsi-border px-5 py-4 space-y-3">
+          <h3 class="text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide">Fotografía y documentos</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <p class="text-sm font-semibold text-colpsi-text mb-2">Foto tipo carnet</p>
+              <Show when={d.foto_url} fallback={<p class="text-sm text-colpsi-muted">Sin foto</p>}>
+                <button
+                  onClick={() => setModalImage({ src: bucketUrl(d.foto_url), alt: "Foto tipo carnet del solicitante" })}
+                  class="block group relative w-full h-44 overflow-hidden rounded-xl border border-gray-200 cursor-pointer hover:border-colpsi-blue transition-all"
+                  title="Ampliar foto"
+                >
+                  <img src={bucketUrl(d.foto_url)} alt="Foto del solicitante" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                </button>
+              </Show>
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-colpsi-text mb-2">Comprobante de pago</p>
+              <Show when={d.comprobante_url} fallback={<p class="text-sm text-colpsi-muted">Sin comprobante</p>}>
+                <Show
+                  when={isImageUrl(d.comprobante_url)}
+                  fallback={
+                    <a href={d.comprobante_url} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 h-8 px-3 rounded-md bg-white text-xs font-semibold text-colpsi-blue border border-colpsi-border hover:bg-colpsi-bg transition-colors">
+                      Ver comprobante ↗
+                    </a>
+                  }
+                >
+                  <button
+                    onClick={() => setModalImage({ src: bucketUrl(d.comprobante_url), alt: "Comprobante de pago" })}
+                    class="block group relative w-full h-44 overflow-hidden rounded-xl border border-gray-200 cursor-pointer hover:border-colpsi-blue transition-all"
+                    title="Ampliar comprobante"
+                  >
+                    <img src={bucketUrl(d.comprobante_url)} alt="Comprobante de pago" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  </button>
+                </Show>
+              </Show>
+            </div>
+            <For each={DOC_SPECS}>
+              {(spec) => {
+                const doc = docByType(spec.type);
+                return (
+                  <div>
+                    <p class="text-sm font-semibold text-colpsi-text mb-2">{spec.label}</p>
+                    <Show
+                      when={doc}
+                      fallback={
+                        <div class="border border-dashed border-colpsi-border rounded-md p-5 flex items-center justify-center">
+                          <span class="text-[11px] font-medium text-colpsi-muted uppercase">Sin documento</span>
+                        </div>
+                      }
+                    >
+                      <Show
+                        when={isImageUrl(doc!.url)}
+                        fallback={
+                          <a href={doc!.url} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 h-8 px-3 rounded-md bg-white text-xs font-semibold text-colpsi-blue border border-colpsi-border hover:bg-colpsi-bg transition-colors">
+                            Ver documento ↗
+                          </a>
+                        }
+                      >
+                        <button
+                          onClick={() => setModalImage({ src: doc!.url, alt: spec.label })}
+                          class="block group relative w-full h-40 overflow-hidden rounded-xl border border-gray-200 cursor-pointer hover:border-colpsi-blue transition-all"
+                          title="Ampliar documento"
+                        >
+                          <img src={doc!.url} alt={spec.label} class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        </button>
+                      </Show>
+                    </Show>
+                  </div>
+                );
+              }}
+            </For>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <main class="space-y-4 pb-12">
       <button onClick={() => navigate("/admin/inscripciones")} class="inline-flex items-center gap-1.5 text-xs font-semibold text-colpsi-muted uppercase tracking-wide hover:text-colpsi-blue transition-colors">
@@ -436,6 +568,15 @@ export default function AdminInscriptionDetail() {
               </div>
             </Show>
 
+            <Show when={d().status === "rejected"}>
+              <div class="bg-red-50 border border-red-200 rounded-md p-4">
+                <p class="text-sm font-semibold text-colpsi-red">Solicitud rechazada</p>
+                <p class="mt-1 text-sm text-colpsi-text whitespace-pre-wrap">
+                  {d().reject_reason ? `Motivo: ${d().reject_reason}` : "No se indicó el motivo del rechazo."}
+                </p>
+              </div>
+            </Show>
+
             <Show when={feedback()}>
               <div class={`rounded-md p-3 text-sm font-medium ${feedback()!.type === "ok" ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-red-50 text-colpsi-red border border-red-200"}`}>
                 <p>{feedback()!.text}</p>
@@ -447,7 +588,11 @@ export default function AdminInscriptionDetail() {
               </div>
             </Show>
 
-            {/* ── Ficha de inscripción (editable) ───────────────────────────── */}
+            {/* ── Ficha de inscripción ───────────────────────────────────────────── */}
+            <Show
+              when={status() === "pending"}
+              fallback={<ReadonlyFicha d={d()} />}
+            >
             <p class="text-xs font-medium text-colpsi-muted mb-2 ml-1">
               Los campos marcados con <span class="text-colpsi-red font-bold">*</span> son obligatorios para aprobar.
             </p>
@@ -668,6 +813,7 @@ export default function AdminInscriptionDetail() {
                 </Show>
               </button>
             </div>
+            </Show>
 
             {/* Notas administrativas */}
             <div class="bg-white rounded-lg border border-colpsi-border p-5 space-y-3">
@@ -801,10 +947,25 @@ export default function AdminInscriptionDetail() {
       {/* Modal rechazar */}
       <Show when={confirmReject()}>
         <Modal title="Rechazar solicitud" onClose={() => setConfirmReject(false)}>
-          <p class="text-sm text-gray-600 leading-relaxed">
-            Se eliminará permanentemente esta solicitud y los archivos adjuntos. ¿Está seguro?
-          </p>
-          <ModalActions onCancel={() => setConfirmReject(false)} onConfirm={doReject} busy={busy()} confirmLabel="Rechazar y eliminar" danger />
+          <div class="space-y-3">
+            <p class="text-sm text-gray-600 leading-relaxed">
+              La solicitud pasará a estado <strong>Rechazada</strong> conservando la ficha para revisión. El solicitante podrá volver a inscribirse.
+            </p>
+            <div>
+              <label class="block text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide mb-1">
+                Motivo del rechazo (opcional)
+              </label>
+              <textarea
+                value={rejectReason()}
+                onInput={(e) => setRejectReason(e.currentTarget.value)}
+                rows={3}
+                maxLength={500}
+                class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/15 transition-colors text-colpsi-text resize-none"
+                placeholder="Ej: falta el comprobante de pago…"
+              />
+            </div>
+          </div>
+          <ModalActions onCancel={() => setConfirmReject(false)} onConfirm={doReject} busy={busy()} confirmLabel="Rechazar solicitud" danger />
         </Modal>
       </Show>
 

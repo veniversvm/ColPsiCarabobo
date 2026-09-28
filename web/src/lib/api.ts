@@ -59,7 +59,12 @@ export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): 
       throw new ApiError(response.status, msg, errorData);
     }
 
-    return await response.json() as T;
+    // Respuestas sin cuerpo (p. ej. DELETE con 204 No Content) no se parsean:
+    // `response.json()` lanzaría un SyntaxError que rompía flujos como el
+    // rechazo de una inscripción (el rechazo se ejecutaba pero "fallaba").
+    const text = await response.text();
+    if (!text) return undefined as T;
+    return JSON.parse(text) as T;
 
   } catch (error: any) {
     if (error instanceof ApiError) throw error;
