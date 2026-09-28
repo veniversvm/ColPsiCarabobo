@@ -51,6 +51,9 @@ export default function AdminInscriptionDetail() {
   const [savingFicha, setSavingFicha] = createSignal(false);
   const [busy, setBusy] = createSignal(false);
   const [feedback, setFeedback] = createSignal<{ type: "ok" | "err"; text: string; issues?: string[] } | null>(null);
+  // Mensaje de error al aprobar: se muestra sobre los botones aprobar/rechazar
+  // (no en el feedback superior), para que el motivo real del 422 quede junto a la acción.
+  const [approveError, setApproveError] = createSignal<string | null>(null);
   const [modalImage, setModalImage] = createSignal<{ src: string; alt: string } | null>(null);
   const [confirmApprove, setConfirmApprove] = createSignal(false);
   const [confirmReject, setConfirmReject] = createSignal(false);
@@ -135,27 +138,27 @@ export default function AdminInscriptionDetail() {
     return "";
   };
 
-  // Lista COMPLETA de campos pendientes para poder aprobar (mismo criterio que
-  // el gate del backend: regla de ficha + cédula/FPV positivos + ubicación).
-  // Se usa en el banner proactivo sobre "Aprobar inscripción".
+  // Campos que faltan para poder aprobar según la ficha guardada (mismo criterio
+  // que el gate del backend: regla de ficha + cédula/FPV positivos + ubicación).
+  // Se calcula sobre detail() (verdad del servidor), no sobre el form, para que
+  // no parpadee la lista completa antes de que se sincronice el formulario.
   const fichaPendientes = (): string[] => {
-    const f = unwrap(form);
+    const d = detail();
+    if (!d) return [];
     const s = (v: any) => String(v ?? "").trim();
     const out: string[] = [];
-    if (!s(f.segundo_apellido)) out.push("el segundo apellido");
-    if (!s(f.genero)) out.push("el género");
-    if (!s(f.telefono)) out.push("el teléfono de contacto");
-    if (!s(f.fecha_nacimiento)) out.push("la fecha de nacimiento");
-    if (!s(f.titulo_universidad)) out.push("la universidad");
-    if (!s(f.titulo_fecha_graduacion)) out.push("la fecha de graduación");
-    if (!s(f.titulo_registro_estado)) out.push("el estado del registro");
-    const cedulaNum = parseInt(s(f.cedula), 10);
-    if (!s(f.cedula) || !Number.isFinite(cedulaNum) || cedulaNum <= 0) out.push("la cédula");
-    const fpvNum = Number(f.fpv);
-    if (f.fpv === "" || f.fpv === null || Number.isNaN(fpvNum) || fpvNum <= 0) out.push("el N° FPV");
-    const carabobo = s(f.municipality_carabobo) !== "" && s(f.service_address) !== "";
-    const otroEstado = s(f.state_outside) !== "" && s(f.municipality_outside_carabobo) !== "";
-    const exterior = s(f.country) !== "";
+    if (!s(d.segundo_apellido)) out.push("el segundo apellido");
+    if (!s(d.genero)) out.push("el género");
+    if (!s(d.telefono)) out.push("el teléfono de contacto");
+    if (!s(d.fecha_nacimiento)) out.push("la fecha de nacimiento");
+    if (!s(d.titulo_universidad)) out.push("la universidad");
+    if (!s(d.titulo_fecha_graduacion)) out.push("la fecha de graduación");
+    if (!s(d.titulo_registro_estado)) out.push("el estado del registro");
+    if (!Number.isFinite(d.cedula) || d.cedula <= 0) out.push("la cédula");
+    if (!Number.isFinite(d.fpv) || d.fpv <= 0) out.push("el N° FPV");
+    const carabobo = s(d.municipality_carabobo) !== "" && s(d.service_address) !== "";
+    const otroEstado = s(d.state_outside) !== "" && s(d.municipality_outside_carabobo) !== "";
+    const exterior = s(d.country) !== "";
     if (!carabobo && !otroEstado && !exterior) out.push("una ubicación completa (Carabobo, otro estado o exterior)");
     return out;
   };
@@ -306,14 +309,16 @@ export default function AdminInscriptionDetail() {
   const doApprove = async () => {
     setBusy(true);
     setFeedback(null);
+    setApproveError(null);
     try {
       const res = await apiPost<{ control_number: string; email_sent: boolean }>(`/admin/inscripciones/${params.id}/approve`, {});
       setFeedback({ type: "ok", text: `Aprobada · N° de control ${res.control_number}${res.email_sent ? "" : " (email no enviado)"}` });
       setConfirmApprove(false);
     } catch (err) {
       const apiErr = err instanceof ApiError ? err : null;
-      const issues = Array.isArray(apiErr?.data?.issues) ? (apiErr!.data.issues as string[]) : undefined;
-      setFeedback({ type: "err", text: apiErr ? apiErr.message : "Error al aprobar", issues });
+      setApproveError(apiErr ? apiErr.message : "Error al aprobar");
+      // Cierra el modal: el motivo se muestra sobre los botones aprobar/rechazar.
+      setConfirmApprove(false);
     } finally { setBusy(false); }
   };
 
@@ -743,12 +748,13 @@ export default function AdminInscriptionDetail() {
 
             <Show when={status() === "pending"}>
               <Show when={fichaPendientes().length > 0}>
-                <div class="rounded-md p-3 text-sm bg-amber-50 text-amber-900 border border-amber-300">
-                  <p class="font-semibold">La ficha aún no puede aprobarse</p>
-                  <p class="mt-0.5 text-amber-800">Falta completar:</p>
-                  <ul class="mt-1 space-y-0.5 list-disc pl-5">
-                    <For each={fichaPendientes()}>{(p) => <li>{p}</li>}</For>
-                  </ul>
+                <p class="mt-3 text-xs font-medium text-amber-700">
+                  Pendientes para aprobar: <span class="text-amber-900">{fichaPendientes().join(" · ")}</span>
+                </p>
+              </Show>
+              <Show when={approveError()}>
+                <div class="mt-3 rounded-md p-3 text-sm bg-red-50 text-colpsi-red border border-red-200">
+                  {approveError()}
                 </div>
               </Show>
               <div class="flex flex-col sm:flex-row gap-3 pt-2">
