@@ -61,11 +61,17 @@ deno task build      # igual que npm run build (lo usa el dockerfile)
    `API_URL_INTERNAL` (red Docker). En el navegador por `VITE_API_URL`. Nunca
    uses una en el otro contexto.
 
-8. **El directorio solo muestra áreas del catálogo** — `PsychologistCard.tsx`
-   pinta chips de `psychologist.specialties` tal cual llegan del API, y la API
-   Go los resuelve SOLO desde el catálogo (`psi_specialty_models`, ver gotcha 11
-   de `api/AGENTS.md`). Si el catálogo está vacío, las tarjetas salen sin chips:
-   NO es un bug del front. La tarjeta usa `line-clamp-3` en el mini_bio para
+8. **El directorio solo muestra áreas del catálogo y solo de solventes** —
+   `PsychologistCard.tsx` pinta chips de `psychologist.specialties` tal cual
+   llegan del API, y la API Go los resuelve SOLO desde el catálogo
+   (`psi_specialty_models`, ver gotcha 11 de `api/AGENTS.md`): primero por FK y,
+   si falta, por coincidencia exacta del string legacy con un nombre del
+   catálogo. Los chips SOLO aparecen si el psicólogo está solvente — la
+   búsqueda de texto puede devolver insolventes, pero su tarjeta sale sin chips
+   (mostrar áreas revelaría su estado). En la ficha pública
+   (`directorio/[slug].tsx`) las áreas llegan en `psi().work_areas` y el campo
+   `solvent` NO existe en el DTO público: no muestres ni dependas de solvencia
+   en vistas de visitante. La tarjeta usa `line-clamp-3` en el mini_bio para
    mantener alturas uniformes.
 
 9. **`ContactCard` y el detalle `/directorio/[slug]`** — el detalle usa layout de

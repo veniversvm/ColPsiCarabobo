@@ -115,16 +115,20 @@ swag init -g cmd/api/main.go -o docs/   # regenerar Swagger
     usuarios ABS que no empiecen por `psi_` (protege admin/root). Usa la consulta
     `GetAllForABSSync` (Unscoped) para ver también los soft-deleted.
 
-11. **El directorio público solo muestra áreas del catálogo** —
+11. **El directorio y la ficha pública solo muestran áreas del catálogo** —
     `SearchDirectory` (`psi_repository.go`) hace LEFT JOIN a
-    `psi_specialty_models` por `primary/secondary_specialty_id` y devuelve los
-    nombres resueltos (COALESCE a vacío) como `Specialties` del
-    `PsiMiniProfileDTO`. Los strings legacy `primary_work_area` /
-    `secondary_work_area` del import se IGNORAN en el directorio: si el catálogo
-    está vacío, las tarjetas salen sin chips. El filtro por área sí sigue
-    funcionando por FK. No vuelvas a usar los campos legacy para el directorio
-    (rompe el contrato "solo áreas reales"); el detalle completo (`GET /psi/:fpv`)
-    sí conserva el `work_area` para el perfil.
+    `psi_specialty_models`: primero por `primary/secondary_specialty_id` (FK)
+    y, como fallback, por coincidencia EXACTA del string legacy
+    (`sp1n.name = psi_users.primary_work_area`) — los legacy que no existan en
+    el catálogo quedan fuera (COALESCE a vacío): un chip jamás muestra un área
+    inventada. Los chips (`Specialties` del `PsiMiniProfileDTO`) solo se
+    rellenan para psicólogos **solventes**: la navegación sin texto ya muestra
+    solo solventes, y la búsqueda de texto incluye insolventes pero con la
+    tarjeta SIN chips. La ficha pública (`GET /psi/:fpv`) resuelve `work_areas`
+    con `ResolveSpecialtyNames(ctx, ids, legacy)` — FK primero, luego nombre
+    exacto del legacy — y el DTO público NO expone `solvent` (la solvencia es
+    invisible al visitante; un insolvente recibe solo el perfil de identidad).
+    El filtro por área del directorio sigue siendo por FK.
 
 12. **Bitácora de auditoría (audit logs)** — `api_change_logs` se escribe de
     forma **diferida y best-effort** (ver `docs/audit-logs.md`): `Record()`
