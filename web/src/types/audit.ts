@@ -154,6 +154,8 @@ export const FIELD_LABELS: Record<string, string> = {
   // Motivo del cambio de expediente (Metadata de la bitácora)
   motivo: "Motivo del cambio",
   last_change_reason: "Motivo del cambio",
+  // Inscripciones (ficha de inscripción)
+  notes: "Notas administrativas",
   // Privacidad académica (col_data)
   show_university_undergraduate: "Mostrar universidad de pregrado",
   show_graduate_date: "Mostrar fecha de egreso",

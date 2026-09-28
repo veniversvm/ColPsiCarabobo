@@ -215,19 +215,27 @@ export default function AdminInscriptionDetail() {
   const [savingNotes, setSavingNotes] = createSignal(false);
   const [notesFeedback, setNotesFeedback] = createSignal<{ type: "ok" | "err"; text: string } | null>(null);
   let loadedID: string | null = null;
+  let savedNotes = ""; // último valor realmente persistido (para detectar no-op)
   createEffect(() => {
     const d = detail();
     if (d && d.id !== loadedID) {
       loadedID = d.id;
+      savedNotes = d.notes || "";
       setNotesDraft(d.notes || "");
     }
   });
 
   const saveNotes = async () => {
+    if (savingNotes()) return;
+    if (notesDraft().trim() === savedNotes.trim()) {
+      setNotesFeedback({ type: "ok", text: "Las notas ya están guardadas con este contenido." });
+      return;
+    }
     setSavingNotes(true);
     setNotesFeedback(null);
     try {
       await apiPatch(`/admin/inscripciones/${params.id}/notes`, { notes: notesDraft() });
+      savedNotes = notesDraft();
       setNotesFeedback({ type: "ok", text: "Notas guardadas" });
     } catch (err) {
       setNotesFeedback({ type: "err", text: err instanceof ApiError ? err.message : "Error al guardar las notas" });
