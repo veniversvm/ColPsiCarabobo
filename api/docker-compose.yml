@@ -44,7 +44,10 @@ services:
       - DEFAULT_POOL_SIZE=20
       - AUTH_TYPE=scram-sha-256
       - ADMIN_USERS=${DB_USER:-postgres}
-      - IGNORE_STARTUP_PARAMETERS=extra_float_digits,search_path
+      # pgx envía `prefer_simple_protocol` como startup parameter (runtime param
+      # del driver); PgBouncer lo rechaza con 08P01 si no está ignorado. Es
+      # client-side: ignorarlo no cambia el protocolo simple que usa la API.
+      - IGNORE_STARTUP_PARAMETERS=extra_float_digits,search_path,prefer_simple_protocol
     cpus: "0.5"
     mem_limit: 256m
     ports:
