@@ -640,7 +640,7 @@ func (h *InscriptionHandler) Approve(c *fiber.Ctx) error {
 
 // Reject godoc
 // @Summary      Rechazar inscripción (admin)
-// @Description  Elimina la solicitud y sus archivos S3.
+// @Description  Marca la solicitud como rechazada (status 'rejected') conservando la ficha y sus archivos para revisión. Body opcional con el motivo.
 // @Tags         Administración - Inscripciones
 // @Security     BearerAuth
 // @Router       /admin/inscripciones/{id} [delete]
@@ -653,7 +653,18 @@ func (h *InscriptionHandler) Reject(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ID inválido"})
 	}
-	err = h.svc.Reject(c.UserContext(), admin, id)
+
+	// Body opcional: motivo de rechazo.
+	var body request_structs.RejectInscriptionRequest
+	reason := ""
+	if len(c.Body()) > 0 {
+		if err := c.BodyParser(&body); err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "cuerpo inválido"})
+		}
+		reason = body.RejectReason
+	}
+
+	err = h.svc.Reject(c.UserContext(), admin, id, reason)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrInscriptionNotFound):

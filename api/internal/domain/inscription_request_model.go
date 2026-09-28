@@ -91,6 +91,10 @@ type PsiInscriptionRequest struct {
 	// tienen número; el comité lo asigna al aprobar).
 	ControlNumber string            `gorm:"size:50;uniqueIndex:idx_inscription_requests_control_number,where:control_number <> '' AND control_number IS NOT NULL" json:"control_number"`
 	Notes         string            `gorm:"type:text" json:"notes"`
+	// Motivo de rechazo (opcional): se llena al pasar la solicitud a
+	// 'rejected'. Las rechazadas conservan la ficha (datos, documentos y
+	// archivos S3) para su revisión posterior.
+	RejectReason  string            `gorm:"type:text" json:"reject_reason"`
 
 	// ── Vínculo ───────────────────────────────────────────────────────────
 	// PsiUserID se rellena al aprobar: id del expediente creado en psi_users.

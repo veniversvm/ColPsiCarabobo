@@ -520,6 +520,7 @@ func (s *InscriptionService) Detail(ctx context.Context, admin *domain.UserAdmin
 		Status:                      string(req.Status),
 		ControlNumber:               req.ControlNumber,
 		Notes:                       req.Notes,
+		RejectReason:                req.RejectReason,
 		PsiUserID:                   req.PsiUserID,
 		CreatedAt:                   req.CreatedAt,
 		UpdatedAt:                   req.UpdatedAt,
@@ -815,7 +816,13 @@ func (s *InscriptionService) Approve(ctx context.Context, admin *domain.UserAdmi
 }
 
 // Reject rechaza una solicitud: elimina archivos S3 y el registro.
-func (s *InscriptionService) Reject(ctx context.Context, admin *domain.UserAdmin, id uuid.UUID) error {
+// Reject rechaza una solicitud de inscripción: la pasa a status 'rejected'
+// conservando la ficha completa (datos, notas, documentos y archivos S3) para
+// su revisión posterior. El motivo de rechazo es opcional (máx 500 chars).
+// Una solicitud rechazada NO bloquea que el mismo solicitante vuelva a
+// aplicar: los checks de unicidad y los índices parciales solo cubren
+// solicitudes pendientes.
+func (s *InscriptionService) Reject(ctx context.Context, admin *domain.UserAdmin, id uuid.UUID, reason string) error {
 	if !admin.Sudo && !admin.CanDeletePsi {
 		return domain.ErrPermissionDenied
 	}
@@ -828,27 +835,29 @@ func (s *InscriptionService) Reject(ctx context.Context, admin *domain.UserAdmin
 		return ErrInscriptionNotPending
 	}
 
-	// Eliminar archivos S3
-	if s.s3Client != nil {
-		if req.FotoS3Key != "" {
-			_ = s.s3Client.DeleteFile(context.Background(), req.FotoS3Key)
-		}
-		if req.ComprobanteS3Key != "" {
-			_ = s.s3Client.DeleteFile(context.Background(), req.ComprobanteS3Key)
-		}
-		// Fotos de documentos de la ficha
-		if docs, err := s.repo.ListDocumentsByRequestID(ctx, id); err == nil {
-			for _, d := range docs {
-				if d.S3Key != "" {
-					_ = s.s3Client.DeleteFile(context.Background(), d.S3Key)
-				}
-			}
-		}
+	cleanReason := strings.TrimSpace(s.sanitizer.Sanitize(reason))
+	if len(cleanReason) > 500 {
+		cleanReason = cleanReason[:500]
 	}
 
-	// Eliminar filas de documentos de la ficha y luego la solicitud
-	_ = s.repo.DeleteInscriptionDocumentsByRequestID(ctx, id)
-	return s.repo.Delete(ctx, id)
+	prev := *req
+	req.Status = domain.InscriptionRejected
+	req.RejectReason = cleanReason
+	if err := s.repo.Update(ctx, req); err != nil {
+		return MapDBError(err)
+	}
+
+	// ── Bitácora de auditoría ──────────────────────────────────────────────
+	evt := auditAdminEvent(admin, domain.AuditEntityInscription, id.String(), inscriptionAuditLabel(req), domain.AuditActionChangeState)
+	evt.Changes = BuildDiff(
+		map[string]any{"status": prev.Status},
+		map[string]any{"status": req.Status},
+	)
+	if cleanReason != "" {
+		evt.Metadata = map[string]any{"motivo": cleanReason}
+	}
+	RecordAudit(ctx, evt)
+	return nil
 }
 
 // UpdateNotes actualiza las notas administrativas de una solicitud (texto simple).

@@ -281,9 +281,50 @@ func TestInscriptionService_Permisos(t *testing.T) {
 	t.Run("Reject: requiere CanDeletePsi", func(t *testing.T) {
 		repo := &mockInscriptionRepo{}
 		svc := NewInscriptionService(repo, nil, nil, nil, &mockMailService{})
-		err := svc.Reject(ctx, adminSinPermisos, id)
+		err := svc.Reject(ctx, adminSinPermisos, id, "")
 		if !errors.Is(err, domain.ErrPermissionDenied) {
 			t.Fatalf("esperaba ErrPermissionDenied, got %v", err)
+		}
+	})
+
+	t.Run("Reject: marca rechazada y conserva la ficha (con motivo)", func(t *testing.T) {
+		repo := &mockInscriptionRepo{}
+		svc := NewInscriptionService(repo, nil, nil, nil, &mockMailService{})
+		req := &domain.PsiInscriptionRequest{
+			ID: id, Cedula: 10, Nombres: "Ana", Apellidos: "Lopez",
+			Correo: "ana@test.com", Status: domain.InscriptionPending,
+		}
+		var updated *domain.PsiInscriptionRequest
+		repo.GetByIDFunc = func(ctx context.Context, i uuid.UUID) (*domain.PsiInscriptionRequest, error) { return req, nil }
+		repo.UpdateFunc = func(ctx context.Context, r *domain.PsiInscriptionRequest) error {
+			updated = r
+			return nil
+		}
+		err := svc.Reject(ctx, adminSudo, id, "Falta el comprobante de pago")
+		if err != nil {
+			t.Fatalf("error inesperado: %v", err)
+		}
+		if updated == nil {
+			t.Fatal("esperaba que Reject persista vía Update (no Delete)")
+		}
+		if updated.Status != domain.InscriptionRejected {
+			t.Fatalf("esperaba status rejected, got %s", updated.Status)
+		}
+		if updated.RejectReason != "Falta el comprobante de pago" {
+			t.Fatalf("esperaba motivo guardado, got %q", updated.RejectReason)
+		}
+	})
+
+	t.Run("Reject: no pendiente → ErrInscriptionNotPending", func(t *testing.T) {
+		repo := &mockInscriptionRepo{}
+		svc := NewInscriptionService(repo, nil, nil, nil, &mockMailService{})
+		req := &domain.PsiInscriptionRequest{
+			ID: id, Correo: "x@test.com", Status: domain.InscriptionApproved,
+		}
+		repo.GetByIDFunc = func(ctx context.Context, i uuid.UUID) (*domain.PsiInscriptionRequest, error) { return req, nil }
+		err := svc.Reject(ctx, adminSudo, id, "")
+		if !errors.Is(err, ErrInscriptionNotPending) {
+			t.Fatalf("esperaba ErrInscriptionNotPending, got %v", err)
 		}
 	})
 

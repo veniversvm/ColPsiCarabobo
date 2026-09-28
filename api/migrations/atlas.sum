@@ -1,4 +1,4 @@
-h1:saf+JZjZk8fLPLZmZ3nYc7HNm/nXGfjTC3AKqjIptTU=
+h1:fDjl+I5wlNGMBCHlnsm3eXnwsXNfC+P+/NHeqU29i1A=
 20260906232227_baseline.sql h1:j1Y/KjsoWjp4Mg2lqelfRAbPE6zt816LUIVMJ/2yMEE=
 20260911162745_password_reset_tokens.sql h1:0znf8uqLkph1boJ18EdxrWrTNM8X8Bhb0eDZpbqmidI=
 20260914140000_posts_publish_scheduled_idx.sql h1:/U/hJlJ3wKQ95W0giNN98JRTwZv3SgITt4hGJT9/4B0=
@@ -7,3 +7,4 @@ h1:saf+JZjZk8fLPLZmZ3nYc7HNm/nXGfjTC3AKqjIptTU=
 20260928160000_psi_users_last_change_reason.sql h1:hfY0YCV5Vp7XKc5pHgDuI/hNdE2/Aw92KszeqPBgcjE=
 20260928173000_psi_inscription_note_history.sql h1:/MjGEIbIGr1xtbAkwnPb3G1IgPJwDeEvHw4Z5FqxkJo=
 20260928190000_inscription_unique_fpv_correo.sql h1:zOzywlUdcamfyf+wqY305CVElIQNbCXEBb2xHnkUqHA=
+20260928210000_inscription_reject_reason.sql h1:U3INLj36Oe2Mh+YzNGhU0A3ttAbRj/wJXLXFDf+LkB0=

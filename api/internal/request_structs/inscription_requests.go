@@ -124,6 +124,7 @@ type InscriptionDetailDTO struct {
 	Status                string        `json:"status"`
 	ControlNumber         string        `json:"control_number"`
 	Notes                 string        `json:"notes"`
+	RejectReason          string        `json:"reject_reason"`
 	PsiUserID             *uuid.UUID    `json:"psi_user_id,omitempty"`
 	SolvencyCount         int           `json:"solvency_count"`
 	CreatedAt             time.Time     `json:"created_at"`
@@ -147,6 +148,13 @@ type InscriptionNoteHistoryDTO struct {
 // =========================================================================
 // EDICIÓN ADMIN DE LA FICHA
 // =========================================================================
+
+// RejectInscriptionRequest es el cuerpo OPCIONAL del DELETE
+// /admin/inscripciones/:id. El rechazo ya no elimina la ficha: la solicitud
+// pasa a status='rejected' conservando la data para revisión.
+type RejectInscriptionRequest struct {
+	RejectReason string `json:"reject_reason" validate:"omitempty,max=500"`
+}
 
 // UpdateInscriptionRequest es el cuerpo JSON del PATCH /admin/inscripciones/:id.
 // Semántica de reemplazo: el formulario admin envía todos los campos visibles.
