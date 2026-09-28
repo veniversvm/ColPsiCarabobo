@@ -81,6 +81,23 @@ func TestMapDBError(t *testing.T) {
 			wantMsg: "el nombre de usuario ya existe",
 		},
 
+		// ── Unique Constraints: Solicitudes de inscripción pendientes ─────
+		{
+			name:    "duplicate_ci_inscripcion_pending",
+			input:   errors.New("duplicate key value violates unique constraint \"idx_inscription_requests_cedula_pending\""),
+			wantMsg: "la cédula ya se encuentra registrada o tiene una solicitud activa",
+		},
+		{
+			name:    "duplicate_fpv_inscripcion_pending",
+			input:   errors.New("duplicate key value violates unique constraint \"idx_inscription_requests_fpv_pending\""),
+			wantMsg: "el número de FPV ya se encuentra registrado",
+		},
+		{
+			name:    "duplicate_correo_inscripcion_pending",
+			input:   errors.New("duplicate key value violates unique constraint \"idx_inscription_requests_correo_pending\""),
+			wantMsg: "el correo electrónico ya se encuentra registrado",
+		},
+
 		// ── Errores de Longitud ───────────────────────────────────────────
 		{
 			name:    "varchar_25_overflow",

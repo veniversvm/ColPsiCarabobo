@@ -1066,7 +1066,7 @@ func (s *InscriptionService) UpdateFicha(ctx context.Context, admin *domain.User
 	cur.SecondarySpecialtyID = req.SecondarySpecialtyID
 
 	if err := s.repo.Update(ctx, cur); err != nil {
-		return nil, err
+		return nil, MapDBError(err)
 	}
 
 	return s.Detail(ctx, admin, id)

@@ -36,6 +36,20 @@ func MapDBError(err error) error {
 		return errors.New("el nombre de usuario ya existe")
 	}
 
+	// ── Solicitudes de inscripción pendientes (psi_inscription_requests) ──
+	// Respaldan el gate de Submit/UpdateFicha: solo saltan en la carrera entre
+	// la validación y el INSERT. Devuelven los sentinels para que el handler
+	// responda 409 con el mensaje estándar (errors.Is).
+	if strings.Contains(msg, "idx_inscription_requests_cedula_pending") {
+		return ErrCIExists
+	}
+	if strings.Contains(msg, "idx_inscription_requests_fpv_pending") {
+		return ErrFPVExists
+	}
+	if strings.Contains(msg, "idx_inscription_requests_correo_pending") {
+		return ErrEmailExists
+	}
+
 	// ── Errores de Longitud ─────────────────────────────────────────────────
 
 	if strings.Contains(msg, "value too long for type character varying(25)") {
