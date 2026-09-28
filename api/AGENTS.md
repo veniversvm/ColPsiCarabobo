@@ -170,10 +170,15 @@ swag init -g cmd/api/main.go -o docs/   # regenerar Swagger
     PgBouncer (transaction mode) + pgx: pgx cacheaba prepared statements y el
     pooler reparte cada consulta entre conexiones de backend distintas, así que
     un plan viejo sobrevivía a migraciones/reinicios. Con protocolo simple el
-    driver no prepara statements; el param es local de pgx (no viaja como startup
-    param, a diferencia de `options`, que PgBouncer rechaza con 08P01). La API
-    respondía esos 500 como genéricos y el frontend los pintaba como
-    "Conexión en pausa" a pantalla completa (el admin percibía "me sacó del
+    driver no prepara statements. ⚠️ **PARA DESPLEGARlo, PgBouncer necesita
+    ignorar el parámetro**: pgx SÍ lo envía como startup parameter y PgBouncer
+    (transaction mode) lo rechaza con `FATAL: unsupported startup parameter:
+    prefer_simple_protocol (SQLSTATE 08P01)` → la API queda en crash-loop al
+    arrancar. Ya está agregado a `IGNORE_STARTUP_PARAMETERS` en
+    `docker-compose.yml` (`extra_float_digits,search_path,prefer_simple_protocol`);
+    ignorarlo no cambia la semántica (el protocolo simple es decisión client-side
+    del driver). La API respondía esos 500 como genéricos y el frontend los pintaba
+    como "Conexión en pausa" a pantalla completa (el admin percibía "me sacó del
     panel"). Si necesitas prepared statements por rendimiento en el futuro, la vía
     correcta es conectar directo a Postgres (no por PgBouncer), no quitar el param.
 
