@@ -8,6 +8,7 @@ interface Props {
   accept: string;      // "image/*" o "image/*,application/pdf"
   description?: string;
   maxSizeMB?: number;
+  required?: boolean;
   file?: File | null;
   // Nombre de un archivo seleccionado previamente (persistido en la sesión).
   onFile: (file: File | null) => void;
@@ -46,7 +47,10 @@ export function FileUpload(props: Props) {
         <Show when={hasFile()} fallback={<span class="text-2xl">📎</span>}>
           <span class="text-green-600 text-xs font-bold mb-1">✓ Archivo listo</span>
         </Show>
-        <span class="text-[11px] font-black text-colpsi-blue uppercase">{props.label || "Seleccionar archivo"}</span>
+        <span class="text-[11px] font-black text-colpsi-blue uppercase">
+          {props.label || "Seleccionar archivo"}
+          {props.required && <span class="text-red-500"> *</span>}
+        </span>
         <Show when={savedName}>
           <span class="text-[10px] text-gray-400 font-bold mt-1 max-w-full truncate">{savedName}</span>
         </Show>

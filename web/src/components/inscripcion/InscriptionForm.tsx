@@ -319,6 +319,9 @@ export function InscriptionForm() {
       when={submitted()}
       fallback={(
         <form onSubmit={handleSubmit} class="space-y-8">
+          <p class="text-xs font-semibold text-gray-500">
+            Los campos marcados con <span class="text-red-500">*</span> son obligatorios.
+          </p>
           <Show when={receptionDisabled()}>
             <div class="bg-amber-50 border-2 border-amber-200 text-amber-800 rounded-2xl p-5 flex items-start gap-4">
               <span class="text-2xl">⏸️</span>
@@ -530,6 +533,7 @@ export function InscriptionForm() {
                 label="Foto de perfil (tipo carnet)"
                 accept="image/*"
                 description="Imagen (máx. 5MB)"
+                required
                 file={foto()}
                 savedName={fotoMeta ? fotoMeta.name : undefined}
                 onFile={setFoto}
@@ -538,6 +542,7 @@ export function InscriptionForm() {
                 label="Comprobante de pago"
                 accept="image/*,application/pdf"
                 description="Imagen o PDF (máx. 5MB)"
+                required
                 file={comprobante()}
                 savedName={comprobanteMeta ? comprobanteMeta.name : undefined}
                 onFile={setComprobante}
@@ -546,6 +551,7 @@ export function InscriptionForm() {
                 label="Copia de la cédula de identidad"
                 accept="image/*,application/pdf"
                 description="Obligatorio · imagen o PDF (máx. 5MB)"
+                required
                 file={docCedula()}
                 savedName={docCedulaMeta ? docCedulaMeta.name : undefined}
                 onFile={setDocCedula}
@@ -554,6 +560,7 @@ export function InscriptionForm() {
                 label="Copia del título de psicólogo"
                 accept="image/*,application/pdf"
                 description="Obligatorio · imagen o PDF (máx. 5MB)"
+                required
                 file={docTitulo()}
                 savedName={docTituloMeta ? docTituloMeta.name : undefined}
                 onFile={setDocTitulo}
@@ -562,6 +569,7 @@ export function InscriptionForm() {
                 label="Copia del RIF vigente"
                 accept="image/*,application/pdf"
                 description="Obligatorio · imagen o PDF (máx. 5MB)"
+                required
                 file={docRif()}
                 savedName={docRifMeta ? docRifMeta.name : undefined}
                 onFile={setDocRif}

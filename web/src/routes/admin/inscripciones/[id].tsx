@@ -760,8 +760,9 @@ export default function AdminInscriptionDetail() {
               <div class="flex flex-col sm:flex-row gap-3 pt-2">
                 <button
                   onClick={() => setConfirmApprove(true)}
-                  disabled={busy()}
-                  class="flex-1 h-11 rounded-md bg-emerald-600 text-white px-6 font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                  disabled={busy() || !detail() || fichaPendientes().length > 0}
+                  title={fichaPendientes().length > 0 ? "Completa los campos pendientes y guarda la ficha para poder aprobar" : undefined}
+                  class="flex-1 h-11 rounded-md bg-emerald-600 text-white px-6 font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Aprobar inscripción
                 </button>
