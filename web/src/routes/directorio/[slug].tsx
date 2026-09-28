@@ -163,7 +163,7 @@ export default function PsiProfilePage() {
                       fpv={psi().fpv}
                       ci={psi().ci}
                       profilePicture={psi().profile_picture}
-                      specialties={psi().specialties}
+                      specialties={psi().work_areas ?? []}
                       socialNetworks={psi().social_networks}
                     />
                   </div>
@@ -236,7 +236,7 @@ function NotFound() {
       <div class="text-6xl mb-4">🛡️</div>
       <h2 class="text-2xl font-black text-colpsi-blue uppercase tracking-tight">Perfil Protegido</h2>
       <p class="text-colpsi-muted mt-2 max-w-md mx-auto font-medium px-6">
-        El perfil solicitado es privado, el profesional no se encuentra solvente o el registro no existe en nuestra base de datos oficial.
+        El perfil solicitado es privado o no existe en nuestra base de datos oficial.
       </p>
       <A href="/directorio" class="mt-8 inline-flex items-center gap-2 bg-colpsi-blue text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-800 transition-all shadow-lg">
         Volver al Directorio

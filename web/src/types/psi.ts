@@ -70,7 +70,9 @@ export type PsiProfile = {
   profile_picture: string;
   email?: string;
   location: PsiLocation;
-  specialties: string[]; // Aquí el backend mapea las WorkAreas
+  // Áreas de desempeño resueltas desde el catálogo (psi_specialty_models).
+  // La API solo las expone para psicólogos solventes; insolventes llegan vacías.
+  work_areas: string[];
   mini_bio?: string;
   full_bio_content?: string;
   service_modality?: { presencial: boolean; distance: boolean; telephone: boolean };
