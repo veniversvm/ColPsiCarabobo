@@ -47,7 +47,7 @@ export default function AdminAuditoriaPage() {
   // ── Permisos del operador (solo cosmético; el backend enmascara con 404) ──
   const [me] = createResource<AdminMeAudit | null>(async () => {
     try {
-      return await apiGet<AdminMeAudit>("/admin/me");
+      return await apiGet<AdminMeAudit>("/session/me");
     } catch {
       return null;
     }

@@ -56,8 +56,8 @@ export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): 
         // sesión). Un 401 de un endpoint de datos puede ser un fallo transitorio
         // (p. ej. un 500 del pgbouncer que el gateway degrada) y borrar el token
         // aquí saca al admin del panel aunque el backend siga aceptando su sesión:
-        // la validación real la hace checkSession (/admin/validate, /psi/me/validate).
-        const isSessionRoute = /^\/(admin|psi)\/(me(\/.*)?|validate|login|logout)$/.test(endpoint);
+        // la validación real la hace checkSession (/session/validate, /psi/me/validate).
+        const isSessionRoute = /^\/(admin|psi|session)\/(me(\/.*)?|validate|login|logout)$/.test(endpoint);
         if (isSessionRoute) {
           sessionStorage.removeItem("jwt");
         }

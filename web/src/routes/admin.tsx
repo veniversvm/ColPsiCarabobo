@@ -50,7 +50,7 @@ export default function AdminLayout(props: { children: JSX.Element }) {
   const [me, { refetch: refetchMe }] = createResource<AdminMe | null>(
     async () => {
       try {
-        return await apiGet<AdminMe>("/admin/me");
+        return await apiGet<AdminMe>("/session/me");
       } catch {
         return null;
       }
@@ -59,7 +59,7 @@ export default function AdminLayout(props: { children: JSX.Element }) {
   );
 
   // Cuando la sesión se restaura en caliente (auth.tsx recupera el token desde la
-  // cookie sin re-login en una pestaña nueva/reiniciada), /admin/me se re-evalúa
+  // cookie sin re-login en una pestaña nueva/reiniciada), /session/me se re-evalúa
   // para completar el menú. No-op en el flujo normal (el fetch inicial ya resolvió).
   createEffect(() => {
     const id = user()?.id;

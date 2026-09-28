@@ -109,7 +109,7 @@ export function AuthProvider(props: { children: JSX.Element; onServerLogout?: ()
     const currentUser = user();
     if (!token || !currentUser) return;
 
-    const endpoint = currentUser.role === "admin" ? "/admin/validate" : "/psi/me/validate";
+    const endpoint = currentUser.role === "admin" ? "/session/validate" : "/psi/me/validate";
 
     try {
       await apiGet(endpoint);

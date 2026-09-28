@@ -21,7 +21,7 @@ export function EditPageHeader(props: Props) {
   // Solo cosmético: el backend sigue siendo la barrera real (404 enmascarado).
   const [me] = createResource<AdminMePerms | null>(async () => {
     try {
-      return await apiGet<AdminMePerms>("/admin/me");
+      return await apiGet<AdminMePerms>("/session/me");
     } catch {
       return null;
     }
