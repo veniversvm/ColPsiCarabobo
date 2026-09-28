@@ -585,6 +585,10 @@ func mapInscriptionErr(c *fiber.Ctx, err error, fallback string) error {
 		return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": err.Error()})
 	case errors.Is(err, service.ErrCIExists), errors.Is(err, service.ErrFPVExists), errors.Is(err, service.ErrEmailExists):
 		return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": err.Error()})
+	case errors.Is(err, service.ErrInscriptionNotReady):
+		// La ficha no tiene todo lo necesario para crear el psicólogo (campos
+		// obligatorios, identidad o unicidad). 422 con el detalle completo.
+		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"error": err.Error()})
 	case errors.Is(err, domain.ErrPermissionDenied):
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": err.Error()})
 	default:
@@ -594,7 +598,7 @@ func mapInscriptionErr(c *fiber.Ctx, err error, fallback string) error {
 
 // Approve godoc
 // @Summary      Aprobar inscripción (admin)
-// @Description  Aprueba la solicitud, crea el psicólogo con is_active=false y envía email con credenciales.
+// @Description  Aprueba la solicitud, crea el psicólogo con is_active=false y envía email con credenciales. Si la ficha no tiene todos los datos necesarios (campos obligatorios, cédula/FPV válidos o identificadores únicos libres) responde 422 con la lista completa de problemas.
 // @Tags         Administración - Inscripciones
 // @Produce      json
 // @Security     BearerAuth
@@ -615,6 +619,8 @@ func (h *InscriptionHandler) Approve(c *fiber.Ctx) error {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": err.Error()})
 		case errors.Is(err, service.ErrInscriptionNotPending):
 			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": err.Error()})
+		case errors.Is(err, service.ErrInscriptionNotReady):
+			return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"error": err.Error()})
 		case errors.Is(err, service.ErrCIExists), errors.Is(err, service.ErrFPVExists), errors.Is(err, service.ErrEmailExists):
 			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": err.Error()})
 		}

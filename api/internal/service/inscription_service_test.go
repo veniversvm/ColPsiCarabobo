@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -18,6 +19,7 @@ type mockInscriptionRepo struct {
 	CIInPsiUsersFunc                func(ctx context.Context, ci int) (bool, error)
 	FPVInPsiUsersFunc               func(ctx context.Context, fpv int) (bool, error)
 	EmailInPsiUsersFunc             func(ctx context.Context, email string) (bool, error)
+	UsernameInPsiUsersFunc          func(ctx context.Context, username string) (bool, error)
 	ExistsPendingCIFunc             func(ctx context.Context, ci int) (bool, error)
 	ExistsPendingCIExcludingFunc    func(ctx context.Context, ci int, exclude uuid.UUID) (bool, error)
 	ExistsPendingFPVExcludingFunc   func(ctx context.Context, fpv int, exclude uuid.UUID) (bool, error)
@@ -52,6 +54,12 @@ func (m *mockInscriptionRepo) EmailInPsiUsers(ctx context.Context, email string)
 		return false, nil
 	}
 	return m.EmailInPsiUsersFunc(ctx, email)
+}
+func (m *mockInscriptionRepo) UsernameInPsiUsers(ctx context.Context, username string) (bool, error) {
+	if m.UsernameInPsiUsersFunc == nil {
+		return false, nil
+	}
+	return m.UsernameInPsiUsersFunc(ctx, username)
 }
 func (m *mockInscriptionRepo) ExistsPendingCI(ctx context.Context, ci int) (bool, error) {
 	if m.ExistsPendingCIFunc == nil {
@@ -497,9 +505,15 @@ func TestInscriptionService_Approve_MapFichaYMigra(t *testing.T) {
 	id := uuid.Must(uuid.NewV7())
 
 	specID := uint32(7)
+	nac := time.Date(1990, 6, 15, 0, 0, 0, 0, time.UTC)
+	grad := time.Date(2015, 7, 1, 0, 0, 0, 0, time.UTC)
 	req := &domain.PsiInscriptionRequest{
 		ID: id, Cedula: 100, Nacionalidad: "V", Nombres: "María", Apellidos: "Rojas",
-		Correo: "maria@test.com", FPV: 401000, Status: domain.InscriptionPending,
+		SegundoNombre: "Luz", SegundoApellido: "Villalobos", Genero: "F",
+		Telefono: "04141234567", Correo: "maria@test.com", FPV: 401000,
+		FechaNacimiento: &nac, Status: domain.InscriptionPending,
+		TituloUniversidad: "Universidad de Carabobo", TituloFechaGraduacion: &grad,
+		TituloRegistroEstado: "Carabobo",
 		ServiceAddress:          "Urb. La Viña",
 		MunicipalityCarabobo:    "Naguanagua",
 		ServiceModalityDistance: true,
@@ -589,39 +603,148 @@ func TestInscriptionService_Approve_MapFichaYMigra(t *testing.T) {
 	}
 }
 
+// readyInscriptionRequest construye una ficha completa y válida (pasa la regla
+// de campos obligatorios y la identidad legal) para ejercitar el gate de approve.
+func readyInscriptionRequest(id uuid.UUID) *domain.PsiInscriptionRequest {
+	nac := time.Date(1990, 6, 15, 0, 0, 0, 0, time.UTC)
+	grad := time.Date(2015, 7, 1, 0, 0, 0, 0, time.UTC)
+	return &domain.PsiInscriptionRequest{
+		ID: id, Cedula: 100, Nacionalidad: "V", Nombres: "María", Apellidos: "Rojas",
+		SegundoNombre: "Luz", SegundoApellido: "Villalobos", Genero: "F",
+		Telefono: "04141234567", Correo: "maria@test.com", FPV: 401000,
+		FechaNacimiento: &nac, Status: domain.InscriptionPending,
+		TituloUniversidad: "Universidad de Carabobo", TituloFechaGraduacion: &grad,
+		TituloRegistroEstado: "Carabobo",
+		ServiceAddress: "Urb. La Viña", MunicipalityCarabobo: "Naguanagua",
+	}
+}
+
 // TestInscriptionService_Approve_RechazaCeroYNegativos garantiza que ninguna
 // ficha con cédula o FPV 0 pueda convertirse en psicólogo (dicho perfil es
-// inalcanzable en el directorio público).
+// inalcanzable en el directorio público). El gate devuelve ErrInscriptionNotReady
+// con el detalle, nunca un 500.
 func TestInscriptionService_Approve_RechazaCeroYNegativos(t *testing.T) {
 	ctx := context.Background()
 	admin := &domain.UserAdmin{ID: uuid.Must(uuid.NewV7()), Credentials: domain.Credentials{Username: "aprobador"}, CanCreatePsi: true}
 	id := uuid.Must(uuid.NewV7())
 
-	t.Run("ficha con FPV cero → rechazo", func(t *testing.T) {
+	t.Run("ficha con FPV cero → ErrInscriptionNotReady", func(t *testing.T) {
 		repo := &mockInscriptionRepo{}
 		svc := NewInscriptionService(repo, nil, nil, nil, &mockMailService{})
-		bad := &domain.PsiInscriptionRequest{
-			ID: id, Cedula: 100, Nacionalidad: "V", Nombres: "María", Apellidos: "Rojas",
-			Correo: "maria2@test.com", FPV: 0, Status: domain.InscriptionPending,
-		}
+		bad := readyInscriptionRequest(id)
+		bad.FPV = 0
 		repo.GetByIDFunc = func(ctx context.Context, i uuid.UUID) (*domain.PsiInscriptionRequest, error) { return bad, nil }
 		_, err := svc.Approve(ctx, admin, id)
-		if err == nil || err.Error() != "la ficha debe tener un N° FPV válido (mayor a 0) para aprobarse" {
-			t.Fatalf("esperaba rechazo al aprobar ficha con FPV 0, got %v", err)
+		if !errors.Is(err, ErrInscriptionNotReady) {
+			t.Fatalf("esperaba ErrInscriptionNotReady al aprobar ficha con FPV 0, got %v", err)
+		}
+		if !strings.Contains(err.Error(), "N° FPV") {
+			t.Fatalf("el mensaje debe mencionar el N° FPV, got %v", err)
 		}
 	})
 
-	t.Run("ficha con cédula cero → rechazo", func(t *testing.T) {
+	t.Run("ficha con cédula cero → ErrInscriptionNotReady", func(t *testing.T) {
 		repo := &mockInscriptionRepo{}
 		svc := NewInscriptionService(repo, nil, nil, nil, &mockMailService{})
-		bad := &domain.PsiInscriptionRequest{
-			ID: id, Cedula: 0, Nacionalidad: "V", Nombres: "María", Apellidos: "Rojas",
-			Correo: "maria3@test.com", FPV: 401000, Status: domain.InscriptionPending,
-		}
+		bad := readyInscriptionRequest(id)
+		bad.Cedula = 0
 		repo.GetByIDFunc = func(ctx context.Context, i uuid.UUID) (*domain.PsiInscriptionRequest, error) { return bad, nil }
 		_, err := svc.Approve(ctx, admin, id)
-		if err == nil || err.Error() != "la ficha debe tener una cédula válida (mayor a 0) para aprobarse" {
-			t.Fatalf("esperaba rechazo al aprobar ficha con cédula 0, got %v", err)
+		if !errors.Is(err, ErrInscriptionNotReady) {
+			t.Fatalf("esperaba ErrInscriptionNotReady al aprobar ficha con cédula 0, got %v", err)
+		}
+		if !strings.Contains(err.Error(), "cédula") {
+			t.Fatalf("el mensaje debe mencionar la cédula, got %v", err)
+		}
+	})
+}
+
+// TestInscriptionService_Approve_GateIntegral cubre el gate de aprobación:
+// la ficha no se aprueba si cualquier identificador único (CI, FPV, correo o
+// username generado) ya pertenece a otro psicólogo, ni si faltan campos
+// obligatorios. Todos los problemas se reportan juntos (nunca un 500).
+func TestInscriptionService_Approve_GateIntegral(t *testing.T) {
+	ctx := context.Background()
+	admin := &domain.UserAdmin{ID: uuid.Must(uuid.NewV7()), Credentials: domain.Credentials{Username: "aprobador"}, CanCreatePsi: true}
+	id := uuid.Must(uuid.NewV7())
+
+	newSvc := func(mut func(*mockInscriptionRepo)) (*InscriptionService, *domain.PsiInscriptionRequest) {
+		repo := &mockInscriptionRepo{}
+		req := readyInscriptionRequest(id)
+		repo.GetByIDFunc = func(ctx context.Context, i uuid.UUID) (*domain.PsiInscriptionRequest, error) { return req, nil }
+		if mut != nil {
+			mut(repo)
+		}
+		return NewInscriptionService(repo, nil, nil, nil, &mockMailService{}), req
+	}
+
+	assertNotReady := func(t *testing.T, err error, fragment string) {
+		t.Helper()
+		if !errors.Is(err, ErrInscriptionNotReady) {
+			t.Fatalf("esperaba ErrInscriptionNotReady, got %v", err)
+		}
+		if !strings.Contains(err.Error(), fragment) {
+			t.Fatalf("el mensaje debe contener %q, got %v", fragment, err)
+		}
+	}
+
+	t.Run("cédula duplicada en psi_users", func(t *testing.T) {
+		svc, _ := newSvc(func(r *mockInscriptionRepo) {
+			r.CIInPsiUsersFunc = func(ctx context.Context, ci int) (bool, error) { return true, nil }
+		})
+		_, err := svc.Approve(ctx, admin, id)
+		assertNotReady(t, err, "la cédula ya se encuentra registrada en el directorio")
+	})
+
+	t.Run("FPV duplicado en psi_users", func(t *testing.T) {
+		svc, _ := newSvc(func(r *mockInscriptionRepo) {
+			r.FPVInPsiUsersFunc = func(ctx context.Context, fpv int) (bool, error) { return true, nil }
+		})
+		_, err := svc.Approve(ctx, admin, id)
+		assertNotReady(t, err, "el N° FPV ya se encuentra registrado en el directorio")
+	})
+
+	t.Run("correo duplicado en psi_users", func(t *testing.T) {
+		svc, _ := newSvc(func(r *mockInscriptionRepo) {
+			r.EmailInPsiUsersFunc = func(ctx context.Context, email string) (bool, error) { return true, nil }
+		})
+		_, err := svc.Approve(ctx, admin, id)
+		assertNotReady(t, err, "el correo ya se encuentra registrado en el directorio")
+	})
+
+	t.Run("username generado duplicado", func(t *testing.T) {
+		svc, _ := newSvc(func(r *mockInscriptionRepo) {
+			r.UsernameInPsiUsersFunc = func(ctx context.Context, username string) (bool, error) { return true, nil }
+		})
+		_, err := svc.Approve(ctx, admin, id)
+		assertNotReady(t, err, "el nombre de usuario generado ya existe")
+	})
+
+	t.Run("se reportan todos los problemas juntos", func(t *testing.T) {
+		svc, req := newSvc(func(r *mockInscriptionRepo) {
+			r.EmailInPsiUsersFunc = func(ctx context.Context, email string) (bool, error) { return true, nil }
+		})
+		req.FPV = 0
+		req.SegundoApellido = ""
+		_, err := svc.Approve(ctx, admin, id)
+		if !errors.Is(err, ErrInscriptionNotReady) {
+			t.Fatalf("esperaba ErrInscriptionNotReady, got %v", err)
+		}
+		for _, frag := range []string{"N° FPV", "segundo apellido", "correo ya se encuentra registrado"} {
+			if !strings.Contains(err.Error(), frag) {
+				t.Fatalf("el mensaje debe contener %q, got %v", frag, err)
+			}
+		}
+	})
+
+	t.Run("ficha completa sin conflictos → supera el gate", func(t *testing.T) {
+		svc, _ := newSvc(nil)
+		issues, err := svc.approvalReadinessIssues(ctx, readyInscriptionRequest(id))
+		if err != nil {
+			t.Fatalf("error inesperado en el gate: %v", err)
+		}
+		if len(issues) != 0 {
+			t.Fatalf("la ficha completa no debería tener problemas de aprobación, got %v", issues)
 		}
 	})
 }

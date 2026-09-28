@@ -64,6 +64,12 @@ var ErrInscriptionNotFound = errors.New("solicitud de inscripción no encontrada
 // ErrInscriptionNotPending se retorna al intentar aprobar/rechazar una solicitud no pendiente.
 var ErrInscriptionNotPending = errors.New("la solicitud ya fue procesada")
 
+// ErrInscriptionNotReady se retorna al intentar aprobar una ficha que aún no
+// tiene todos los datos necesarios para crear el psicólogo (campos obligatorios,
+// identidad válida e identificadores únicos libres). El mensaje real incluye la
+// lista completa de problemas detectados (ver approvalReadinessIssues).
+var ErrInscriptionNotReady = errors.New("la ficha no puede aprobarse: le faltan datos o requisitos únicos para crear el psicólogo")
+
 // canViewFicha indica si el admin puede ver información de la ficha de solicitudes
 // (gestión de la información del psicólogo).
 func canViewFicha(a *domain.UserAdmin) bool {
@@ -541,6 +547,95 @@ func buildInscriptionDocumentDTOs(docs []domain.PsiInscriptionDocument, client *
 	return out
 }
 
+// approvalReadinessIssues devuelve la lista completa de problemas que
+// impedirían aprobar una ficha (los que el comité debe corregir antes de
+// crear el expediente): campos obligatorios ausentes, identidad no válida
+// (cédula/FPV no positivos) e identificadores únicos ya ocupados en
+// psi_users (CI, FPV, correo o username generado). Lista vacía = lista para
+// aprobar. Si alguna verificación de repo falla, retorna el error de
+// infraestructura (no se enmascara como problema de la ficha).
+func (s *InscriptionService) approvalReadinessIssues(ctx context.Context, req *domain.PsiInscriptionRequest) ([]string, error) {
+	var issues []string
+
+	// ── Regla única de ficha obligatoria (personales, académicos, ubicación) ──
+	if err := ValidateFichaObligatoria(FichaObligatoria{
+		SegundoApellido:         req.SegundoApellido,
+		Genero:                  req.Genero,
+		Telefono:                req.Telefono,
+		FechaNacimientoPresente: req.FechaNacimiento != nil,
+		TituloUniversidad:       req.TituloUniversidad,
+		FechaGraduacionPresente: req.TituloFechaGraduacion != nil,
+		TituloRegistroEstado:    req.TituloRegistroEstado,
+		ServiceAddress:          req.ServiceAddress,
+		MunicipalityCarabobo:    req.MunicipalityCarabobo,
+		StateOutside:            req.StateOutside,
+		MunicipalityOutside:     req.MunicipalityOutSideCarabobo,
+		Country:                 req.Country,
+	}); err != nil {
+		issues = append(issues, err.Error())
+	}
+
+	// ── Identidad legal: un psicólogo nunca se crea sin identidad completa ──
+	if req.Cedula <= 0 {
+		issues = append(issues, "la cédula debe ser un número positivo (mayor a 0)")
+	}
+	if req.FPV <= 0 {
+		issues = append(issues, "el N° FPV debe ser un número positivo (mayor a 0)")
+	}
+	if strings.TrimSpace(req.Nombres) == "" {
+		issues = append(issues, "faltan los nombres")
+	}
+	if strings.TrimSpace(req.Apellidos) == "" {
+		issues = append(issues, "faltan los apellidos")
+	}
+	if strings.TrimSpace(req.Nacionalidad) == "" {
+		issues = append(issues, "falta la nacionalidad")
+	}
+	if strings.TrimSpace(req.Correo) == "" {
+		issues = append(issues, "falta el correo de contacto")
+	}
+
+	// ── Unicidad: CI, FPV, correo y username jamás repetidos entre psicólogos ──
+	if req.Cedula > 0 {
+		exists, err := s.repo.CIInPsiUsers(ctx, req.Cedula)
+		if err != nil {
+			return nil, err
+		}
+		if exists {
+			issues = append(issues, "la cédula ya se encuentra registrada en el directorio")
+		}
+	}
+	if req.FPV > 0 {
+		exists, err := s.repo.FPVInPsiUsers(ctx, req.FPV)
+		if err != nil {
+			return nil, err
+		}
+		if exists {
+			issues = append(issues, "el N° FPV ya se encuentra registrado en el directorio")
+		}
+	}
+	if correo := strings.TrimSpace(req.Correo); correo != "" {
+		exists, err := s.repo.EmailInPsiUsers(ctx, correo)
+		if err != nil {
+			return nil, err
+		}
+		if exists {
+			issues = append(issues, "el correo ya se encuentra registrado en el directorio")
+		}
+	}
+	if username := transliterateUsername(req.Nombres, req.Apellidos); username != "" {
+		exists, err := s.repo.UsernameInPsiUsers(ctx, username)
+		if err != nil {
+			return nil, err
+		}
+		if exists {
+			issues = append(issues, "el nombre de usuario generado ya existe (revisa nombres o apellidos de la ficha)")
+		}
+	}
+
+	return issues, nil
+}
+
 // Approve aprueba una solicitud: genera N° control, crea el expediente del
 // psicólogo (is_active=false) y envía email con las credenciales.
 func (s *InscriptionService) Approve(ctx context.Context, admin *domain.UserAdmin, id uuid.UUID) (*request_structs.ApproveInscriptionResponse, error) {
@@ -556,13 +651,16 @@ func (s *InscriptionService) Approve(ctx context.Context, admin *domain.UserAdmi
 		return nil, ErrInscriptionNotPending
 	}
 
-	// La ficha debe traer cédula y FPV positivos: un psicólogo nunca se crea
-	// con CI o FPV 0 (ese perfil es inalcanzable en el directorio público).
-	if req.Cedula <= 0 {
-		return nil, errors.New("la ficha debe tener una cédula válida (mayor a 0) para aprobarse")
+	// Gate de aprobación: la ficha debe tener TODO lo necesario para crear el
+	// psicólogo (campos obligatorios, identidad válida e identificadores únicos
+	// libres). Se reportan todas las fallas de una sola vez (HTTP 422), nunca
+	// un 500 por constraint de la base.
+	issues, err := s.approvalReadinessIssues(ctx, req)
+	if err != nil {
+		return nil, err
 	}
-	if req.FPV <= 0 {
-		return nil, errors.New("la ficha debe tener un N° FPV válido (mayor a 0) para aprobarse")
+	if len(issues) > 0 {
+		return nil, fmt.Errorf("%w: %s", ErrInscriptionNotReady, strings.Join(issues, "; "))
 	}
 
 	// 1. Generar número de control secuencial
@@ -577,18 +675,6 @@ func (s *InscriptionService) Approve(ctx context.Context, admin *domain.UserAdmi
 	hashed, err := bcrypt.GenerateFromPassword([]byte(tempPassword), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, errors.New("error al procesar seguridad")
-	}
-
-	// 2.5 Validar unicidad de correo antes de crear el psicólogo, para
-	// no depender del constraint único (evita errores 500 en el approve).
-	if req.Correo != "" {
-		emailExists, err := s.repo.EmailInPsiUsers(ctx, req.Correo)
-		if err != nil {
-			return nil, err
-		}
-		if emailExists {
-			return nil, ErrEmailExists
-		}
 	}
 
 	// 3. Construir expediente

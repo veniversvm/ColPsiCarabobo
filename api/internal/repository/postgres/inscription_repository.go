@@ -162,6 +162,17 @@ func (r *inscriptionRepo) EmailInPsiUsers(ctx context.Context, email string) (bo
 	return count > 0, err
 }
 
+// UsernameInPsiUsers retorna si el nombre de usuario ya está registrado en
+// psi_users. No filtra soft-deleted para respetar el constraint único
+// uni_psi_users_username.
+func (r *inscriptionRepo) UsernameInPsiUsers(ctx context.Context, username string) (bool, error) {
+	var count int64
+	err := r.db.WithContext(ctx).Table("psi_users").
+		Where("LOWER(username) = LOWER(?)", username).
+		Count(&count).Error
+	return count > 0, err
+}
+
 // NextControlNumber calcula el siguiente número de control secuencial
 // basado en el MAX(control_number numérico) de psi_users + 1.
 func (r *inscriptionRepo) NextControlNumber(ctx context.Context) (int, error) {

@@ -439,7 +439,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Aprueba la solicitud, crea el psicólogo con is_active=false y envía email con credenciales.",
+                "description": "Aprueba la solicitud, crea el psicólogo con is_active=false y envía email con credenciales. Si la ficha no tiene todos los datos necesarios (campos obligatorios, cédula/FPV válidos o identificadores únicos libres) responde 422 con la lista completa de problemas.",
                 "produces": [
                     "application/json"
                 ],

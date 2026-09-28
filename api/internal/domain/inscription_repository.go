@@ -50,6 +50,12 @@ type InscriptionRepository interface {
 	// EmailInPsiUsers retorna si el correo ya está registrado en psi_users.
 	EmailInPsiUsers(ctx context.Context, email string) (bool, error)
 
+	// UsernameInPsiUsers retorna si el nombre de usuario ya está registrado
+	// en psi_users (constraint único uni_psi_users_username). Se usa al
+	// aprobar para validar la unicidad del username generado antes de crear
+	// el expediente y evitar errores 500 por colisión.
+	UsernameInPsiUsers(ctx context.Context, username string) (bool, error)
+
 	// NextControlNumber calcula el siguiente número de control secuencial
 	// basado en el MAX(control_number numérico) de psi_users + 1.
 	NextControlNumber(ctx context.Context) (int, error)
