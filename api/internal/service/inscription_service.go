@@ -70,6 +70,20 @@ var ErrInscriptionNotPending = errors.New("la solicitud ya fue procesada")
 // lista completa de problemas detectados (ver approvalReadinessIssues).
 var ErrInscriptionNotReady = errors.New("la ficha no puede aprobarse: le faltan datos o requisitos únicos para crear el psicólogo")
 
+// InscriptionNotReadyError transporta la lista estructurada de problemas que
+// impiden aprobar una ficha. Error() mantiene el mensaje compuesto legible,
+// Unwrap() preserva errors.Is(ErrInscriptionNotReady) y el handler expone
+// Issues como array en la respuesta HTTP 422 para que el frontend la liste.
+type InscriptionNotReadyError struct {
+	Issues []string
+}
+
+func (e *InscriptionNotReadyError) Error() string {
+	return fmt.Sprintf("%s: %s", ErrInscriptionNotReady, strings.Join(e.Issues, "; "))
+}
+
+func (e *InscriptionNotReadyError) Unwrap() error { return ErrInscriptionNotReady }
+
 // canViewFicha indica si el admin puede ver información de la ficha de solicitudes
 // (gestión de la información del psicólogo).
 func canViewFicha(a *domain.UserAdmin) bool {
@@ -660,7 +674,7 @@ func (s *InscriptionService) Approve(ctx context.Context, admin *domain.UserAdmi
 		return nil, err
 	}
 	if len(issues) > 0 {
-		return nil, fmt.Errorf("%w: %s", ErrInscriptionNotReady, strings.Join(issues, "; "))
+		return nil, &InscriptionNotReadyError{Issues: issues}
 	}
 
 	// 1. Generar número de control secuencial

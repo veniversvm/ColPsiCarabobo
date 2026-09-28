@@ -730,6 +730,14 @@ func TestInscriptionService_Approve_GateIntegral(t *testing.T) {
 		if !errors.Is(err, ErrInscriptionNotReady) {
 			t.Fatalf("esperaba ErrInscriptionNotReady, got %v", err)
 		}
+		var notReady *InscriptionNotReadyError
+		if !errors.As(err, &notReady) {
+			t.Fatalf("esperaba *InscriptionNotReadyError, got %T", err)
+		}
+		// [segundo apellido obligatorio, N° FPV positivo, correo registrado]
+		if len(notReady.Issues) != 3 {
+			t.Fatalf("esperaba 3 problemas, got %v", notReady.Issues)
+		}
 		for _, frag := range []string{"N° FPV", "segundo apellido", "correo ya se encuentra registrado"} {
 			if !strings.Contains(err.Error(), frag) {
 				t.Fatalf("el mensaje debe contener %q, got %v", frag, err)

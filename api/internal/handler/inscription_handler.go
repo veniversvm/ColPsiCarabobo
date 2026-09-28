@@ -587,7 +587,12 @@ func mapInscriptionErr(c *fiber.Ctx, err error, fallback string) error {
 		return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": err.Error()})
 	case errors.Is(err, service.ErrInscriptionNotReady):
 		// La ficha no tiene todo lo necesario para crear el psicólogo (campos
-		// obligatorios, identidad o unicidad). 422 con el detalle completo.
+		// obligatorios, identidad o unicidad). 422 con el detalle completo y la
+		// lista estructurada de problemas para el frontend.
+		var notReady *service.InscriptionNotReadyError
+		if errors.As(err, &notReady) && notReady != nil {
+			return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"error": err.Error(), "issues": notReady.Issues})
+		}
 		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"error": err.Error()})
 	case errors.Is(err, domain.ErrPermissionDenied):
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": err.Error()})
@@ -620,6 +625,10 @@ func (h *InscriptionHandler) Approve(c *fiber.Ctx) error {
 		case errors.Is(err, service.ErrInscriptionNotPending):
 			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": err.Error()})
 		case errors.Is(err, service.ErrInscriptionNotReady):
+			var notReady *service.InscriptionNotReadyError
+			if errors.As(err, &notReady) && notReady != nil {
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"error": err.Error(), "issues": notReady.Issues})
+			}
 			return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"error": err.Error()})
 		case errors.Is(err, service.ErrCIExists), errors.Is(err, service.ErrFPVExists), errors.Is(err, service.ErrEmailExists):
 			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": err.Error()})
