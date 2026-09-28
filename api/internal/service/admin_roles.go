@@ -112,7 +112,7 @@ var AdminRolePresets = []RolePreset{
 }
 
 // AdminPermissionSet convierte los flags de un UserAdmin (fuente de verdad)
-// en la vista serializable que consume la UI (GET /admin/me).
+// en la vista serializable que consume la UI (GET /session/me).
 func AdminPermissionSet(a *domain.UserAdmin) PermissionSet {
 	return PermissionSet{
 		CanReadPsi:            a.CanReadPsi,

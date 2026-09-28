@@ -3050,7 +3050,8 @@ paths:
       - Administración - Gestión
   /admin/inscripciones/{id}:
     delete:
-      description: Elimina la solicitud y sus archivos S3.
+      description: Marca la solicitud como rechazada (status 'rejected') conservando
+        la ficha y sus archivos para revisión. Body opcional con el motivo.
       responses: {}
       security:
       - BearerAuth: []
@@ -3252,29 +3253,6 @@ paths:
       summary: Listar administradores
       tags:
       - Administración - Gestión
-  /admin/me:
-    get:
-      description: 'Retorna identidad, rol y matriz de permisos del administrador
-        actual. La UI lo usa para filtrar el menú; es informativo, nunca autoriza:
-        el backend valida cada operación.'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Estado y permisos del administrador autenticado
-      tags:
-      - Administración - Sesión
   /admin/posts:
     post:
       consumes:
@@ -5718,27 +5696,6 @@ paths:
       summary: Actualizar administrador
       tags:
       - Administración - Gestión
-  /admin/validate:
-    get:
-      description: Devuelve 200 si el token JWT es válido y la sesión sigue activa;
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Validar sesión de administrador
-      tags:
-      - Administración - Sesión
   /auth/login:
     post:
       consumes:
@@ -7346,6 +7303,50 @@ paths:
       summary: Estado de recepción de tickets (portal psi)
       tags:
       - Tickets - Portal Psi
+  /session/me:
+    get:
+      description: 'Retorna identidad, rol y matriz de permisos del administrador
+        actual. La UI lo usa para filtrar el menú; es informativo, nunca autoriza:
+        el backend valida cada operación.'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Estado y permisos del administrador autenticado
+      tags:
+      - Administración - Sesión
+  /session/validate:
+    get:
+      description: Devuelve 200 si el token JWT es válido y la sesión sigue activa;
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Validar sesión de administrador
+      tags:
+      - Administración - Sesión
   /specialties:
     get:
       description: Retorna el catálogo. Los usuarios ven solo las activas. Admins

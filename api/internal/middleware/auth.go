@@ -158,7 +158,7 @@ func (m *AuthMiddleware) ProtectedAdmin404() fiber.Handler {
 // en lugar de enmascarar la respuesta como 404.
 //
 // Está pensada para endpoints de validación de sesión del lado del cliente
-// (p. ej. GET /admin/validate), donde el frontend necesita distinguir con
+// (p. ej. GET /session/validate), donde el frontend necesita distinguir con
 // claridad "sesión inválida/revocada" (401) de "ruta inexistente".
 func (m *AuthMiddleware) ProtectedAdmin() fiber.Handler {
 	return func(c *fiber.Ctx) error {
