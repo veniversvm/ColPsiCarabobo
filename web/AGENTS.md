@@ -142,8 +142,28 @@ deno task build      # igual que npm run build (lo usa el dockerfile)
       solo se limpia si el 401 viene de una ruta de sesión
       (`/admin|/psi` → `validate|login|logout|me`). La muerte real de la sesión la
       detecta `checkSession` (polling 60s de `/admin/validate` o `/psi/me/validate`
-      → `forceLogout`). Un 401 inesperado de un endpoint de datos puede ser un
-      fallo transitorio del gateway; borrar el token ahí sí saca al admin del panel.
+      → `forceLogout` **solo ante 401/403**; un 404 del endpoint de validación ya
+      NO desloguea — significa ruta inexistente/desfase de despliegue, no revocación).
+      Un 401 inesperado de un endpoint de datos puede ser un fallo transitorio del
+      gateway; borrar el token ahí sí saca al admin del panel.
+
+13. **Recuperación silenciosa de sesión** — `sessionStorage.jwt` es por-pestaña:
+    en una pestaña nueva o tras reiniciar el navegador la cookie HttpOnly `jwt`
+    sigue viva pero la copia per-tab se pierde. Sin fix, `auth.tsx` limpiaba la
+    sesión y botaba a `/admin-access`; re-loguear rota la key del admin (gotcha 13
+    de `api/AGENTS.md`) y en ≤60s `checkSession` mataba la sesión de las demás
+    pestañas ("se cerró la sesión").
+    - **`restoreSessionAction`** (`lib/actions/session.ts`): server action **sin**
+      `vinxi/http` (se importa desde el cliente — `auth.tsx`) que lee la cookie
+      `jwt` de la petición (vía `getRequestEvent`, mismo patrón que `lib/api.ts`)
+      y la devuelve al navegador; `auth.tsx` la guarda en `sessionStorage` **sin
+      re-login**. No agrega exposición: el login ya copia el token a sessionStorage.
+    - **NO moverla a `lib/actions/auth.ts`**: ese módulo importa `vinxi/http` y
+      rompe el bundle del cliente (`AsyncLocalStorage` no existe en el navegador —
+      falla el build del router client).
+    - Los recursos admin re-sincronizan al restaurarse: en `admin.tsx`, el recurso
+      de `/admin/me` dispara un refetch cuando `user()` se setea y aún no cargó
+      (menú completo en la pestaña recuperada, sin recargar).
 
 ## Estructura
 

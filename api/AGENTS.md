@@ -177,6 +177,18 @@ swag init -g cmd/api/main.go -o docs/   # regenerar Swagger
     panel"). Si necesitas prepared statements por rendimiento en el futuro, la vía
     correcta es conectar directo a Postgres (no por PgBouncer), no quitar el param.
 
+15. **La imagen de la API puede quedar desalineada con la fuente** — si
+    `GET /admin/me` o `GET /admin/validate` responden 404 enmascarado
+    (`Cannot GET ...`) ante un token ausente/inválido EN VEZ de 401, el binario
+    corriendo se construyó de un árbol anterior a `ProtectedAdmin`
+    (`admin_router.go:66-68`, grupo `/validate` + `/me`). El Swagger del binario
+    vivo (`GET /swagger/doc.json`) documenta las rutas REALES que registra ese
+    binario. Ante la discrepancia: reconstruir con
+    `docker compose build api && docker compose up -d api` y verificar con
+    `curl -i http://localhost:28080/api/v1/admin/me` (sin token) → 401. El
+    frontend espera 401 para distinguir "sesión inválida" de "ruta inexistente"
+    (ver gotcha 12 de `web/AGENTS.md`).
+
 ## Estructura
 
 ```
