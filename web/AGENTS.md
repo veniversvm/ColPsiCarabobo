@@ -140,12 +140,13 @@ deno task build      # igual que npm run build (lo usa el dockerfile)
       durante el render; si añades una lista admin, replica ese patrón.
     - **401 NO borra el JWT globalmente**: en `lib/api.ts` el `sessionStorage.jwt`
       solo se limpia si el 401 viene de una ruta de sesión
-      (`/admin|/psi` → `validate|login|logout|me`). La muerte real de la sesión la
-      detecta `checkSession` (polling 60s de `/admin/validate` o `/psi/me/validate`
-      → `forceLogout` **solo ante 401/403**; un 404 del endpoint de validación ya
-      NO desloguea — significa ruta inexistente/desfase de despliegue, no revocación).
-      Un 401 inesperado de un endpoint de datos puede ser un fallo transitorio del
-      gateway; borrar el token ahí sí saca al admin del panel.
+      (`/admin|/psi|/session` → `validate|login|logout|me`). La muerte real de la
+      sesión la detecta `checkSession` (polling 60s de `/session/validate` o
+      `/psi/me/validate` → `forceLogout` **solo ante 401/403**; un 404 del
+      endpoint de validación ya NO desloguea — significa ruta inexistente/desfase
+      de despliegue, no revocación). Un 401 inesperado de un endpoint de datos
+      puede ser un fallo transitorio del gateway; borrar el token ahí sí saca al
+      admin del panel.
 
 13. **Recuperación silenciosa de sesión** — `sessionStorage.jwt` es por-pestaña:
     en una pestaña nueva o tras reiniciar el navegador la cookie HttpOnly `jwt`
@@ -162,7 +163,7 @@ deno task build      # igual que npm run build (lo usa el dockerfile)
       rompe el bundle del cliente (`AsyncLocalStorage` no existe en el navegador —
       falla el build del router client).
     - Los recursos admin re-sincronizan al restaurarse: en `admin.tsx`, el recurso
-      de `/admin/me` dispara un refetch cuando `user()` se setea y aún no cargó
+      de `/session/me` dispara un refetch cuando `user()` se setea y aún no cargó
       (menú completo en la pestaña recuperada, sin recargar).
 
 ## Estructura

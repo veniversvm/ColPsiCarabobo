@@ -45,6 +45,10 @@ swag init -g cmd/api/main.go -o docs/   # regenerar Swagger
    "Cannot PATCH ..." del panel admin: el token no está llegando (revisar la
    cookie HttpOnly `jwt` que envían las server actions del frontend), NO es
    que la ruta no exista.
+   Las únicas rutas admin con **401 real** son `/session/me` y
+   `/session/validate` (grupo `ProtectedAdmin`, ver gotchas 15 y 16); los paths
+   `/admin/me` y `/admin/validate` NO existen — se movieron (404 catch-all si
+   alguien los llama).
 
 2. **`S3_ENDPOINT` ≠ `S3_PUBLIC_URL`** — son intencionalmente distintos.
    - `S3_ENDPOINT`: interno, para el SDK, debe apuntar SIEMPRE directo a MinIO
@@ -182,17 +186,31 @@ swag init -g cmd/api/main.go -o docs/   # regenerar Swagger
     panel"). Si necesitas prepared statements por rendimiento en el futuro, la vía
     correcta es conectar directo a Postgres (no por PgBouncer), no quitar el param.
 
-15. **La imagen de la API puede quedar desalineada con la fuente** — si
-    `GET /admin/me` o `GET /admin/validate` responden 404 enmascarado
-    (`Cannot GET ...`) ante un token ausente/inválido EN VEZ de 401, el binario
-    corriendo se construyó de un árbol anterior a `ProtectedAdmin`
-    (`admin_router.go:66-68`, grupo `/validate` + `/me`). El Swagger del binario
-    vivo (`GET /swagger/doc.json`) documenta las rutas REALES que registra ese
-    binario. Ante la discrepancia: reconstruir con
-    `docker compose build api && docker compose up -d api` y verificar con
-    `curl -i http://localhost:28080/api/v1/admin/me` (sin token) → 401. El
-    frontend espera 401 para distinguir "sesión inválida" de "ruta inexistente"
-    (ver gotcha 12 de `web/AGENTS.md`).
+15. **Validación de sesión admin: `GET /session/me` y `GET /session/validate`,
+    NO bajo `/admin`** — el frontend espera un **401 real** para distinguir
+    "sesión inválida/revocada" de "ruta inexistente" (ver gotcha 12 de
+    `web/AGENTS.md`), así que estos endpoints viven en su prefijo propio
+    `/session` con `ProtectedAdmin()` (gotcha 16: registro bajo `/admin`
+    hereda el enmascarado 404 y el 401 jamás se sirve, como pasó desde el
+    05-sep). Verificación:
+    `curl -i http://localhost:28080/api/v1/session/me` (sin token) → **401**
+    (y con token válido → 200). NO existen más `/admin/me` ni
+    `/admin/validate`; un binario viejo o un cliente que los llame recibe 404.
+
+16. **QUIRK de Fiber v2: un 2º `Group()` (o una ruta directa) sobre un prefijo
+    ya usado hereda el middleware del PRIMER grupo** — reproducido con
+    v2.52.11: tras `admin := router.Group("/admin", NoStore,
+    ProtectedAdmin404)`, cualquier registro posterior bajo `/admin` (otro
+    `Group("/admin", ProtectedAdmin)` o `router.Get("/admin/me", ...)` directo
+    sobre el grupo padre) queda apilado con el stack del primer grupo y NUNCA
+    ejecuta su propio middleware. Ejemplo real: el grupo `adminValidate`
+    (401 explícito) fue **código muerto desde el 05-sep** — `/admin/me` y
+    `/admin/validate` respondieron 404 enmascarado a pesar de registrar
+    `ProtectedAdmin` (confirmado incluso con build `--no-cache` y con una
+    reproducción mínima). La única forma limpia de mezclar 401/404 bajo un
+    mismo dominio: **prefijos distintos** (por eso `/session/*`). Si una
+    versión nueva de Fiber cambia esto, validalo con un mini-app de dos grupos
+    sobre el mismo prefijo antes de volver a anidarlos.
 
 ## Estructura
 
