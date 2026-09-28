@@ -50,7 +50,7 @@ export default function AdminInscriptionDetail() {
   const [fichaMsg, setFichaMsg] = createSignal<{ type: "ok" | "err"; text: string } | null>(null);
   const [savingFicha, setSavingFicha] = createSignal(false);
   const [busy, setBusy] = createSignal(false);
-  const [feedback, setFeedback] = createSignal<{ type: "ok" | "err"; text: string } | null>(null);
+  const [feedback, setFeedback] = createSignal<{ type: "ok" | "err"; text: string; issues?: string[] } | null>(null);
   const [modalImage, setModalImage] = createSignal<{ src: string; alt: string } | null>(null);
   const [confirmApprove, setConfirmApprove] = createSignal(false);
   const [confirmReject, setConfirmReject] = createSignal(false);
@@ -133,6 +133,31 @@ export default function AdminInscriptionDetail() {
       return "Debes completar al menos una ubicación completa (Carabobo, otro estado o exterior)";
     }
     return "";
+  };
+
+  // Lista COMPLETA de campos pendientes para poder aprobar (mismo criterio que
+  // el gate del backend: regla de ficha + cédula/FPV positivos + ubicación).
+  // Se usa en el banner proactivo sobre "Aprobar inscripción".
+  const fichaPendientes = (): string[] => {
+    const f = unwrap(form);
+    const s = (v: any) => String(v ?? "").trim();
+    const out: string[] = [];
+    if (!s(f.segundo_apellido)) out.push("el segundo apellido");
+    if (!s(f.genero)) out.push("el género");
+    if (!s(f.telefono)) out.push("el teléfono de contacto");
+    if (!s(f.fecha_nacimiento)) out.push("la fecha de nacimiento");
+    if (!s(f.titulo_universidad)) out.push("la universidad");
+    if (!s(f.titulo_fecha_graduacion)) out.push("la fecha de graduación");
+    if (!s(f.titulo_registro_estado)) out.push("el estado del registro");
+    const cedulaNum = parseInt(s(f.cedula), 10);
+    if (!s(f.cedula) || !Number.isFinite(cedulaNum) || cedulaNum <= 0) out.push("la cédula");
+    const fpvNum = Number(f.fpv);
+    if (f.fpv === "" || f.fpv === null || Number.isNaN(fpvNum) || fpvNum <= 0) out.push("el N° FPV");
+    const carabobo = s(f.municipality_carabobo) !== "" && s(f.service_address) !== "";
+    const otroEstado = s(f.state_outside) !== "" && s(f.municipality_outside_carabobo) !== "";
+    const exterior = s(f.country) !== "";
+    if (!carabobo && !otroEstado && !exterior) out.push("una ubicación completa (Carabobo, otro estado o exterior)");
+    return out;
   };
 
   const saveFicha = async () => {
@@ -286,7 +311,9 @@ export default function AdminInscriptionDetail() {
       setFeedback({ type: "ok", text: `Aprobada · N° de control ${res.control_number}${res.email_sent ? "" : " (email no enviado)"}` });
       setConfirmApprove(false);
     } catch (err) {
-      setFeedback({ type: "err", text: err instanceof ApiError ? err.message : "Error al aprobar" });
+      const apiErr = err instanceof ApiError ? err : null;
+      const issues = Array.isArray(apiErr?.data?.issues) ? (apiErr!.data.issues as string[]) : undefined;
+      setFeedback({ type: "err", text: apiErr ? apiErr.message : "Error al aprobar", issues });
     } finally { setBusy(false); }
   };
 
@@ -406,7 +433,12 @@ export default function AdminInscriptionDetail() {
 
             <Show when={feedback()}>
               <div class={`rounded-md p-3 text-sm font-medium ${feedback()!.type === "ok" ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-red-50 text-colpsi-red border border-red-200"}`}>
-                {feedback()!.text}
+                <p>{feedback()!.text}</p>
+                <Show when={feedback()!.issues && feedback()!.issues!.length > 0}>
+                  <ul class="mt-2 space-y-1 list-disc pl-5 text-base">
+                    <For each={feedback()!.issues!}>{(item) => <li>{item}</li>}</For>
+                  </ul>
+                </Show>
               </div>
             </Show>
 
@@ -710,6 +742,15 @@ export default function AdminInscriptionDetail() {
             </div>
 
             <Show when={status() === "pending"}>
+              <Show when={fichaPendientes().length > 0}>
+                <div class="rounded-md p-3 text-sm bg-amber-50 text-amber-900 border border-amber-300">
+                  <p class="font-semibold">La ficha aún no puede aprobarse</p>
+                  <p class="mt-0.5 text-amber-800">Falta completar:</p>
+                  <ul class="mt-1 space-y-0.5 list-disc pl-5">
+                    <For each={fichaPendientes()}>{(p) => <li>{p}</li>}</For>
+                  </ul>
+                </div>
+              </Show>
               <div class="flex flex-col sm:flex-row gap-3 pt-2">
                 <button
                   onClick={() => setConfirmApprove(true)}
