@@ -212,6 +212,25 @@ swag init -g cmd/api/main.go -o docs/   # regenerar Swagger
     versión nueva de Fiber cambia esto, validalo con un mini-app de dos grupos
     sobre el mismo prefijo antes de volver a anidarlos.
 
+17. **Limitador global 60 req/min por IP** (`cmd/api/main.go:294`,
+    `app.Use(limiter.New(...))` sin `Next` original) — aplica a TODOS los
+    métodos y rutas, clave por `c.IP()`. Sintomatología: el panel admin recibe
+    429 "Demasiadas solicitudes" en `/session/me`, `/admin/tickets/
+    pendientes-count` y en acciones (archivar publicación → el modal muestra
+    error genérico). Causa raíz: **las preflights OPTIONS del CORS cross-
+    origin consumían cuota** (cada fetch del navegador = OPTIONS + método
+    real, 2 unidades por petición) y, en la red Docker, **todo el tráfico del
+    host y del dev server comparte la misma IP** (bridge `172.x.0.1`) — una
+    ráfaga legítima (polling de `/session/validate` 60s + pendientes 30s +
+    navegación + curls de verificación) agota el bucket y se auto-bloquea
+    60s. Fix: `Next` salta `OPTIONS` y `/live` + `/ready` (healthchecks).
+    **No re-agregues** OPTIONS al conteo ni quites el `Next`; mantener Max 60/
+    min como defensa anti-DoS. ⚠️ Si `colpsi_valkey` está caído, el storage
+    cae a **in-memory** (`rate_limiter.go:50`, log "No se pudo conectar…
+    Usando in-memory"): los contadores viven en el proceso y **un restart de
+    la API los resetea**; con Valkey arriba son persistente y multi-instancia
+    (levantar: `docker compose up -d valkey` desde `api/`).
+
 ## Estructura
 
 ```
