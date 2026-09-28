@@ -24,7 +24,9 @@
 )
 #set text(font: ("Noto Sans", "Noto Sans CJK SC"), lang: "es", region: "VE", size: 10pt)
 #set par(justify: true, leading: 0.62em)
-#set heading(numbering: "1.1")
+// Los títulos llevan su número en el texto (1. Introducción, 4.8 Contacto de
+// Emergencia…). La numeración automática está desactivada para no duplicar el
+// número en el render ni en el índice (#outline).
 #show heading: set text(fill: azul, weight: "bold")
 #set list(marker: [•], tight: true)
 
