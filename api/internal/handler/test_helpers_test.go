@@ -110,6 +110,7 @@ type mockPsiRepo struct {
 	UpdateKeyFunc                  func(ctx context.Context, psi *domain.PsiUserModel) error
 	UpdateAudioBookShellIDFunc     func(ctx context.Context, psi *domain.PsiUserModel) error
 	SearchDirectoryFunc            func(ctx context.Context, filter request_structs.PsiDirectoryFilterDTO) ([]domain.PsiUserModel, int64, error)
+	ResolveSpecialtyNamesFunc      func(ctx context.Context, ids []uint32, legacy []string) ([]string, error)
 	GetSitemapDataFunc             func(ctx context.Context) ([]domain.PsiUserModel, error)
 	GetPsiUserColDataFunc          func(ctx context.Context, psiID uuid.UUID) (*domain.PsiUserColData, error)
 	CreatePostGradeFunc            func(ctx context.Context, pg *domain.PsiUserPostGrade) error
@@ -118,10 +119,10 @@ type mockPsiRepo struct {
 	DeleteSocialNetworkFunc        func(ctx context.Context, id uuid.UUID) error
 	GetSocialNetworkByIDFunc       func(ctx context.Context, id uuid.UUID) (*domain.PsiUserSocialNetwork, error)
 	CountSocialNetworksByPsiIDFunc func(ctx context.Context, psiID uuid.UUID) (int64, error)
-	CreateDeontologiaFunc            func(ctx context.Context, entry *domain.PsiODeontologia) error
-	ListDeontologiaByPsiIDFunc       func(ctx context.Context, psiID uuid.UUID) ([]domain.PsiODeontologia, error)
-	GetDeontologiaByIDFunc           func(ctx context.Context, id uuid.UUID) (*domain.PsiODeontologia, error)
-	UpdateDeontologiaFunc            func(ctx context.Context, id uuid.UUID, content, updateBy string, updateById uuid.UUID) error
+	CreateDeontologiaFunc          func(ctx context.Context, entry *domain.PsiODeontologia) error
+	ListDeontologiaByPsiIDFunc     func(ctx context.Context, psiID uuid.UUID) ([]domain.PsiODeontologia, error)
+	GetDeontologiaByIDFunc         func(ctx context.Context, id uuid.UUID) (*domain.PsiODeontologia, error)
+	UpdateDeontologiaFunc          func(ctx context.Context, id uuid.UUID, content, updateBy string, updateById uuid.UUID) error
 }
 
 func (m *mockPsiRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.PsiUserModel, error) {
@@ -165,6 +166,12 @@ func (m *mockPsiRepo) SearchDirectory(ctx context.Context, filter request_struct
 		return m.SearchDirectoryFunc(ctx, filter)
 	}
 	return nil, 0, nil
+}
+func (m *mockPsiRepo) ResolveSpecialtyNames(ctx context.Context, ids []uint32, legacy []string) ([]string, error) {
+	if m.ResolveSpecialtyNamesFunc != nil {
+		return m.ResolveSpecialtyNamesFunc(ctx, ids, legacy)
+	}
+	return []string{}, nil
 }
 func (m *mockPsiRepo) GetSitemapData(ctx context.Context) ([]domain.PsiUserModel, error) {
 	if m.GetSitemapDataFunc != nil {

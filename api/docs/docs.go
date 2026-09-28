@@ -9678,9 +9678,6 @@ const docTemplate = `{
                         "$ref": "#/definitions/request_structs.SocialNetworkDTO"
                     }
                 },
-                "solvent": {
-                    "type": "boolean"
-                },
                 "undergraduate": {
                     "description": "── Datos de Pregrado (condicional por privacidad) ───────────────────",
                     "allOf": [

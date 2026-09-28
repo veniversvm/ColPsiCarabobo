@@ -58,6 +58,9 @@ func (m *mockPsiRepoEmergency) GetByFPV(ctx context.Context, id int) (domain.Psi
 func (m *mockPsiRepoEmergency) GetTextContentByID(ctx context.Context, id uuid.UUID) (string, error) {
 	return m.GetTextContentByIDFunc(ctx, id)
 }
+func (m *mockPsiRepoEmergency) ResolveSpecialtyNames(ctx context.Context, ids []uint32, legacy []string) ([]string, error) {
+	return []string{}, nil
+}
 
 // newEmergencyRepo devuelve un mock con los CRUD de contactos en éxito por
 // defecto, para que cada test solo declare el comportamiento que quiere probar.

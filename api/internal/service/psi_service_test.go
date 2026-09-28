@@ -36,6 +36,7 @@ type mockPsiRepoSvc struct {
 	GetTextContentByIDFunc        func(ctx context.Context, id uuid.UUID) (string, error)
 	ValidateUniqueCredentialsFunc func(ctx context.Context, username, email string, excludeID uuid.UUID) error
 	SearchDirectoryFunc           func(ctx context.Context, filter request_structs.PsiDirectoryFilterDTO) ([]domain.PsiUserModel, int64, error)
+	ResolveSpecialtyNamesFunc     func(ctx context.Context, ids []uint32, legacy []string) ([]string, error)
 	GetSitemapDataFunc            func(ctx context.Context) ([]domain.PsiUserModel, error)
 	GetSolvenciesFunc             func(ctx context.Context, id uuid.UUID) ([]domain.PsiUserSolvency, error)
 	CreateWithColDataFunc         func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, sol []domain.PsiUserSolvency, pg []domain.PsiUserPostGrade) error
@@ -86,6 +87,12 @@ func (m *mockPsiRepoSvc) ValidateUniqueCredentials(ctx context.Context, u, e str
 }
 func (m *mockPsiRepoSvc) SearchDirectory(ctx context.Context, filter request_structs.PsiDirectoryFilterDTO) ([]domain.PsiUserModel, int64, error) {
 	return m.SearchDirectoryFunc(ctx, filter)
+}
+func (m *mockPsiRepoSvc) ResolveSpecialtyNames(ctx context.Context, ids []uint32, legacy []string) ([]string, error) {
+	if m.ResolveSpecialtyNamesFunc == nil {
+		return []string{}, nil
+	}
+	return m.ResolveSpecialtyNamesFunc(ctx, ids, legacy)
 }
 func (m *mockPsiRepoSvc) GetSitemapData(ctx context.Context) ([]domain.PsiUserModel, error) {
 	return m.GetSitemapDataFunc(ctx)
@@ -314,7 +321,7 @@ func TestUpdateProfileSelf_PasswordChangeRotatesKey(t *testing.T) {
 	newPass1 := "NuevaClaveFuerte#1"
 	newPass2 := "NuevaClaveFuerte#1"
 	req := request_structs.PsiUserUpdateRequestSelf{
-		Password:      "passviejo",
+		Password:     "passviejo",
 		NewPassword1: &newPass1,
 		NewPassword2: &newPass2,
 	}

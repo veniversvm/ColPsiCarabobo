@@ -45,11 +45,15 @@ func (s *PsiService) GetPublicDirectory(ctx context.Context, filter request_stru
 		}
 
 		mini.Specialties = []string{}
-		if u.PrimaryWorkArea != "" {
-			mini.Specialties = append(mini.Specialties, u.PrimaryWorkArea)
-		}
-		if u.SecondaryWorkArea != "" {
-			mini.Specialties = append(mini.Specialties, u.SecondaryWorkArea)
+		// Las áreas de trabajo solo se muestran si el psicólogo está solvente:
+		// revelarlas en una tarjeta de un insolvente filtraría su estado.
+		if u.Solvent {
+			if u.PrimaryWorkArea != "" {
+				mini.Specialties = append(mini.Specialties, u.PrimaryWorkArea)
+			}
+			if u.SecondaryWorkArea != "" {
+				mini.Specialties = append(mini.Specialties, u.SecondaryWorkArea)
+			}
 		}
 
 		// Modalidad de servicio: solo si el psicólogo autorizó su visibilidad.
@@ -94,7 +98,6 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 			CI:             psi.CI,
 			Gender:         psi.Genre,
 			ProfilePicture: s.avatarURL(psi.ProfilePictureS3Key, psi.UpdatedAt),
-			Solvent:        false,
 			Undergraduate: request_structs.UndergraduateDTO{
 				University: psi.ColData.UniversityUndergraduate,
 			},
@@ -117,7 +120,6 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 		CI:                   psi.CI,
 		Gender:               psi.Genre,
 		ProfilePicture:       s.avatarURL(psi.ProfilePictureS3Key, psi.UpdatedAt),
-		Solvent:              true,
 		MiniBio:              psi.MiniBio,
 		FullBioContent:       fullBio,
 		PrimaryWorkArea:      psi.PrimaryWorkArea,
@@ -127,6 +129,25 @@ func (s *PsiService) GetPublicProfile(ctx context.Context, id int) (*request_str
 		PostGrades:           make([]request_structs.PostGradeDTO, 0),
 		SocialNetworks:       make([]request_structs.SocialNetworkDTO, 0),
 		Undergraduate:        request_structs.UndergraduateDTO{},
+	}
+
+	// Áreas de desempeño resueltas desde el catálogo oficial. Esta rama ya
+	// garantiza psi.Solvent == true: un insolvente jamás llega aquí y, por
+	// tanto, nunca se exponen sus áreas en la ficha pública.
+	var specialtyIDs []uint32
+	if psi.PrimarySpecialtyID != nil {
+		specialtyIDs = append(specialtyIDs, *psi.PrimarySpecialtyID)
+	}
+	if psi.SecondarySpecialtyID != nil {
+		specialtyIDs = append(specialtyIDs, *psi.SecondarySpecialtyID)
+	}
+	// Fallback exacto: si la FK no está asignada (miembros importados), el
+	// string legacy solo se muestra si coincide con un nombre del catálogo.
+	legacy := []string{psi.PrimaryWorkArea, psi.SecondaryWorkArea}
+	if names, err := s.repo.ResolveSpecialtyNames(ctx, specialtyIDs, legacy); err != nil {
+		log.Warn().Err(err).Int("psi_id", id).Str("component", "psi_service_directory").Msg("Error al resolver los nombres de las áreas de desempeño")
+	} else {
+		dto.WorkAreas = names
 	}
 
 	if psi.ShowContactEmail {

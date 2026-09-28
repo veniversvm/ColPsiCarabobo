@@ -2183,8 +2183,6 @@ definitions:
         items:
           $ref: '#/definitions/request_structs.SocialNetworkDTO'
         type: array
-      solvent:
-        type: boolean
       undergraduate:
         allOf:
         - $ref: '#/definitions/request_structs.UndergraduateDTO'

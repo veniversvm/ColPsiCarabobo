@@ -256,8 +256,8 @@ func (r *psiRepo) Update(
 			"profile_picture_s3_key": psi.ProfilePictureS3Key,
 
 			// ── Auditoría ─────────────────────────────────────────────────
-			"update_by":          psi.UpdateBy,
-			"update_by_id":       psi.UpdateById,
+			"update_by":    psi.UpdateBy,
+			"update_by_id": psi.UpdateById,
 
 			// ── Motivo del último cambio de expediente (admin) ────────────
 			"last_change_reason": psi.LastChangeReason,
@@ -540,15 +540,18 @@ func (r *psiRepo) SearchDirectory(ctx context.Context, filter request_structs.Ps
 	var total int64
 
 	// 1. Base: Siempre ACTIVOS
-	//    Las áreas de desempeño se resuelven SOLO desde el catálogo
-	//    (psi_specialty_models) vía las FK primary/secondary_specialty_id, de modo
-	//    que las tarjetas del directorio muestren únicamente áreas que existen en
-	//    el catálogo oficial. El campo legacy primary/secondary_work_area queda
-	//    fuera (COALESCE a vacío): si la FK no está asignada no se pinta chip.
+	//    Las áreas de desempeño se resuelven desde el catálogo
+	//    (psi_specialty_models). Primero por FK (primary/secondary_specialty_id)
+	//    y, si la FK no está asignada, por coincidencia EXACTA de los strings
+	//    legacy primary/secondary_work_area contra el nombre del catálogo: un
+	//    chip jamás muestra un área inventada (los valores legacy que no existan
+	//    en el catálogo quedan fuera con COALESCE a vacío).
 	query := r.db.WithContext(ctx).Model(&domain.PsiUserModel{}).
-		Select("psi_users.id, psi_users.first_name, psi_users.last_name, psi_users.ci, psi_users.fpv, psi_users.profile_picture_s3_key, psi_users.mini_bio, psi_users.solvent, psi_users.primary_specialty_id, psi_users.secondary_specialty_id, psi_users.updated_at, psi_users.service_modality_presencial, psi_users.service_modality_distance, psi_users.service_modality_telephone, psi_users.show_service_modality, COALESCE(sp1.name, '') AS primary_work_area, COALESCE(sp2.name, '') AS secondary_work_area").
+		Select("psi_users.id, psi_users.first_name, psi_users.last_name, psi_users.ci, psi_users.fpv, psi_users.profile_picture_s3_key, psi_users.mini_bio, psi_users.solvent, psi_users.primary_specialty_id, psi_users.secondary_specialty_id, psi_users.updated_at, psi_users.service_modality_presencial, psi_users.service_modality_distance, psi_users.service_modality_telephone, psi_users.show_service_modality, COALESCE(sp1.name, sp1n.name, '') AS primary_work_area, COALESCE(sp2.name, sp2n.name, '') AS secondary_work_area").
 		Joins("LEFT JOIN psi_specialty_models sp1 ON sp1.id = psi_users.primary_specialty_id").
 		Joins("LEFT JOIN psi_specialty_models sp2 ON sp2.id = psi_users.secondary_specialty_id").
+		Joins("LEFT JOIN psi_specialty_models sp1n ON sp1n.name = psi_users.primary_work_area").
+		Joins("LEFT JOIN psi_specialty_models sp2n ON sp2n.name = psi_users.secondary_work_area").
 		Where("psi_users.is_active = ?", true)
 
 	// 2. Lógica de Búsqueda por Identidad
@@ -606,6 +609,86 @@ func (r *psiRepo) SearchDirectory(ctx context.Context, filter request_structs.Ps
 		Find(&users).Error
 
 	return users, total, err
+}
+
+// ResolveSpecialtyNames resuelve los nombres de áreas del catálogo a partir de
+// sus IDs (FK) y, como fallback, por coincidencia EXACTA (normalizada) de los
+// strings legacy (PrimaryWorkArea/SecondaryWorkArea) contra psi_specialty_models.
+// Preserva el orden de entrada (ids primero, luego legacy) y omite IDs nulos,
+// duplicados o nombres que no existan en el catálogo: un chip jamás muestra un
+// área inventada. El catálogo es una tabla pequeña y estable (decenas de filas),
+// por lo que se lee completa y se resuelve en memoria: una única consulta sin
+// condiciones dinámicas de OR.
+func (r *psiRepo) ResolveSpecialtyNames(ctx context.Context, ids []uint32, legacy []string) ([]string, error) {
+	names := make([]string, 0, len(ids)+len(legacy))
+	seen := make(map[string]struct{}, len(ids)+len(legacy))
+
+	normalize := func(s string) string {
+		return strings.ToLower(strings.Join(strings.Fields(strings.TrimSpace(s)), " "))
+	}
+	addName := func(catalogName string) {
+		key := normalize(catalogName)
+		if key == "" {
+			return
+		}
+		if _, dup := seen[key]; dup {
+			return
+		}
+		seen[key] = struct{}{}
+		names = append(names, catalogName)
+	}
+
+	clean := make([]uint32, 0, len(ids))
+	seenID := make(map[uint32]struct{}, len(ids))
+	for _, id := range ids {
+		if id == 0 {
+			continue
+		}
+		if _, dup := seenID[id]; dup {
+			continue
+		}
+		seenID[id] = struct{}{}
+		clean = append(clean, id)
+	}
+
+	// Sin FK que resolver ni legacy que matchear, no hay nada que consultar.
+	hasLegacy := false
+	for _, lg := range legacy {
+		if strings.TrimSpace(lg) != "" {
+			hasLegacy = true
+			break
+		}
+	}
+	if len(clean) == 0 && !hasLegacy {
+		return names, nil
+	}
+
+	var catalog []domain.PsiSpecialtyModel
+	if err := r.db.WithContext(ctx).Select("id, name").Find(&catalog).Error; err != nil {
+		return nil, err
+	}
+
+	byID := make(map[uint32]string, len(catalog))
+	byName := make(map[string]string, len(catalog))
+	for _, sp := range catalog {
+		byID[sp.ID] = sp.Name
+		byName[normalize(sp.Name)] = sp.Name
+	}
+
+	// 1. Nombres oficiales por FK del catálogo.
+	for _, id := range clean {
+		if name, ok := byID[id]; ok {
+			addName(name)
+		}
+	}
+	// 2. Fallback exacto: los miembro importados sin FK recuperan su área real
+	//    SI su string legacy coincide con un nombre del catálogo.
+	for _, lg := range legacy {
+		if name, ok := byName[normalize(lg)]; ok {
+			addName(name)
+		}
+	}
+	return names, nil
 }
 
 // SearchAdmin provee una búsqueda sin restricciones para el panel administrativo.

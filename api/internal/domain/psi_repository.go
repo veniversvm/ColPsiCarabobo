@@ -101,6 +101,15 @@ type PsiUserRepository interface {
 	// ignorando filtros de visibilidad pública o estatus de solvencia.
 	SearchAdmin(ctx context.Context, filter request_structs.PsiDirectoryFilterDTO) ([]PsiUserModel, int64, error)
 
+	// ResolveSpecialtyNames traduce los IDs del catálogo de áreas de desempeño
+	// (psi_specialty_models) a sus nombres, preservando el orden de entrada y
+	// omitiendo IDs nulos o inexistentes. Como fallback, cuando falta la FK,
+	// resuelve por coincidencia EXACTA de los nombres legacy dados (strings
+	// primary/secondary_work_area del import) contra el catálogo: jamás devuelve
+	// un área que no exista en el catálogo oficial. Se usa en la ficha pública
+	// para exponer las áreas SOLO de psicólogos solventes.
+	ResolveSpecialtyNames(ctx context.Context, ids []uint32, legacy []string) ([]string, error)
+
 	// =========================================================================
 	// GESTIÓN ACADÉMICA (POSTGRADOS)
 	// =========================================================================

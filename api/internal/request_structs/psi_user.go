@@ -255,7 +255,6 @@ type PsiFullProfileDTO struct {
 	CI             int    `json:"ci"`
 	Gender         string `json:"gender"`
 	ProfilePicture string `json:"profile_picture"`
-	Solvent        bool   `json:"solvent"`
 
 	// ── Contacto (visibilidad condicional) ───────────────────────────────
 	Email   string `json:"email,omitempty"`
