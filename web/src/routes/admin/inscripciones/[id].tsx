@@ -448,6 +448,9 @@ export default function AdminInscriptionDetail() {
             </Show>
 
             {/* ── Ficha de inscripción (editable) ───────────────────────────── */}
+            <p class="text-xs font-medium text-colpsi-muted mb-2 ml-1">
+              Los campos marcados con <span class="text-colpsi-red font-bold">*</span> son obligatorios para aprobar.
+            </p>
             <Notebook
               pages={[
                 { id: "personales", label: "Datos Personales" },
@@ -458,45 +461,48 @@ export default function AdminInscriptionDetail() {
             >
               <NotebookPage id="personales">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                  <Field label="Cédula"><input type="number" value={form.cedula} onInput={(e) => set("cedula", e.currentTarget.value)} class={IC} /></Field>
-                  <Field label="Nacionalidad">
+                  <Field label="Cédula" required><input type="number" value={form.cedula} onInput={(e) => set("cedula", e.currentTarget.value)} class={IC} /></Field>
+                  <Field label="Nacionalidad" required>
                     <select value={form.nacionalidad} onChange={(e) => set("nacionalidad", e.currentTarget.value)} class={IC}>
                       <option value="V">V - Venezolano</option>
                       <option value="E">E - Extranjero</option>
                     </select>
                   </Field>
-                  <Field label="N° FPV"><input type="number" value={form.fpv} onInput={(e) => set("fpv", e.currentTarget.value)} class={IC} /></Field>
-                  <Field label="Nombres"><input type="text" value={form.nombres} onInput={(e) => set("nombres", e.currentTarget.value)} class={IC} /></Field>
+                  <Field label="N° FPV" required><input type="number" value={form.fpv} onInput={(e) => set("fpv", e.currentTarget.value)} class={IC} /></Field>
+                  <Field label="Nombres" required><input type="text" value={form.nombres} onInput={(e) => set("nombres", e.currentTarget.value)} class={IC} /></Field>
                   <Field label="Segundo nombre"><input type="text" value={form.segundo_nombre} onInput={(e) => set("segundo_nombre", e.currentTarget.value)} class={IC} /></Field>
-                  <Field label="Apellidos"><input type="text" value={form.apellidos} onInput={(e) => set("apellidos", e.currentTarget.value)} class={IC} /></Field>
-                  <Field label="Segundo apellido"><input type="text" value={form.segundo_apellido} onInput={(e) => set("segundo_apellido", e.currentTarget.value)} class={IC} /></Field>
-                  <Field label="Género">
+                  <Field label="Apellidos" required><input type="text" value={form.apellidos} onInput={(e) => set("apellidos", e.currentTarget.value)} class={IC} /></Field>
+                  <Field label="Segundo apellido" required><input type="text" value={form.segundo_apellido} onInput={(e) => set("segundo_apellido", e.currentTarget.value)} class={IC} /></Field>
+                  <Field label="Género" required>
                     <select value={form.genero} onChange={(e) => set("genero", e.currentTarget.value)} class={IC}>
                       <option value="">Seleccionar</option>
                       <option value="M">Masculino</option>
                       <option value="F">Femenino</option>
                     </select>
                   </Field>
-                  <Field label="Fecha de nacimiento"><input type="date" value={form.fecha_nacimiento ?? ""} onInput={(e) => set("fecha_nacimiento", e.currentTarget.value)} class={IC} /></Field>
-                  <Field label="Teléfono"><input type="tel" value={form.telefono} onInput={(e) => set("telefono", e.currentTarget.value)} class={IC} /></Field>
-                  <Field label="Correo electrónico"><input type="email" value={form.correo} onInput={(e) => set("correo", e.currentTarget.value)} class={IC} /></Field>
+                  <Field label="Fecha de nacimiento" required><input type="date" value={form.fecha_nacimiento ?? ""} onInput={(e) => set("fecha_nacimiento", e.currentTarget.value)} class={IC} /></Field>
+                  <Field label="Teléfono" required><input type="tel" value={form.telefono} onInput={(e) => set("telefono", e.currentTarget.value)} class={IC} /></Field>
+                  <Field label="Correo electrónico" required><input type="email" value={form.correo} onInput={(e) => set("correo", e.currentTarget.value)} class={IC} /></Field>
                   <Field label="RIF"><input type="text" value={form.rif} onInput={(e) => set("rif", e.currentTarget.value)} class={IC} /></Field>
                 </div>
               </NotebookPage>
 
               <NotebookPage id="academicos">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                  <Field label="Universidad"><input type="text" value={form.titulo_universidad} onInput={(e) => set("titulo_universidad", e.currentTarget.value)} class={IC} /></Field>
-                  <Field label="Fecha de graduación"><input type="date" value={form.titulo_fecha_graduacion ?? ""} onInput={(e) => set("titulo_fecha_graduacion", e.currentTarget.value)} class={IC} /></Field>
+                  <Field label="Universidad" required><input type="text" value={form.titulo_universidad} onInput={(e) => set("titulo_universidad", e.currentTarget.value)} class={IC} /></Field>
+                  <Field label="Fecha de graduación" required><input type="date" value={form.titulo_fecha_graduacion ?? ""} onInput={(e) => set("titulo_fecha_graduacion", e.currentTarget.value)} class={IC} /></Field>
                   <Field label="Mención"><input type="text" value={form.titulo_mencion} onInput={(e) => set("titulo_mencion", e.currentTarget.value)} class={IC} /></Field>
                   <Field label="N° Registro del título"><input type="text" value={form.titulo_registro_numero} onInput={(e) => set("titulo_registro_numero", e.currentTarget.value)} class={IC} /></Field>
-                  <Field label="Estado del registro"><input type="text" value={form.titulo_registro_estado} onInput={(e) => set("titulo_registro_estado", e.currentTarget.value)} class={IC} /></Field>
+                  <Field label="Estado del registro" required><input type="text" value={form.titulo_registro_estado} onInput={(e) => set("titulo_registro_estado", e.currentTarget.value)} class={IC} /></Field>
                   <Field label="Tomo del registro"><input type="text" value={form.titulo_registro_tomo} onInput={(e) => set("titulo_registro_tomo", e.currentTarget.value)} class={IC} /></Field>
                   <Field label="Folio del registro"><input type="text" value={form.titulo_registro_folio} onInput={(e) => set("titulo_registro_folio", e.currentTarget.value)} class={IC} /></Field>
                 </div>
               </NotebookPage>
 
               <NotebookPage id="ubicacion">
+                <p class="text-xs font-medium text-amber-700 mb-4 ml-1">
+                  <span class="text-colpsi-red font-bold">*</span> Obligatorio: al menos una ubicación completa (Carabobo, otro estado o exterior).
+                </p>
                 <div class="space-y-8">
                   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     <Field label="Municipio (Carabobo)">

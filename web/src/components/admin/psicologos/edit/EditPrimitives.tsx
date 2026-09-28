@@ -5,11 +5,12 @@ import { Show, createSignal } from "solid-js";
 export const IC  = "h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none placeholder:text-slate-400 focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/15 transition-colors text-colpsi-text";
 export const IC2 = "h-9 w-full rounded-md border border-slate-300 bg-colpsi-bg px-3 text-sm outline-none placeholder:text-slate-400 focus:border-colpsi-blue focus:ring-2 focus:ring-colpsi-blue/15 transition-colors text-colpsi-text";
 
-export function Field(props: { label: string; children: any }) {
+export function Field(props: { label: string; required?: boolean; children: any }) {
   return (
     <div>
       <label class="block text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide ml-1 mb-1">
         {props.label}
+        {props.required && <span class="text-colpsi-red"> *</span>}
       </label>
       {props.children}
     </div>
