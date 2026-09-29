@@ -166,6 +166,16 @@ deno task build      # igual que npm run build (lo usa el dockerfile)
       de `/session/me` dispara un refetch cuando `user()` se setea y aún no cargó
       (menú completo en la pestaña recuperada, sin recargar).
 
+14. **Campos de fecha/datetime → `FlatDatePicker` (nunca input nativo)** — Todos
+    los campos de fecha de los formularios (inscripción pública y ficha admin,
+    noticias, notificaciones con hora, filtros de auditoría) usan el wrapper
+    `components/ui/FlatDatePicker.tsx` (flatpickr, locale español, `Y-m-d` o
+    `Y-m-dTH:i` con `enableTime`). No reintroducir `type="date"`/`datetime-local`
+    nativos — el nativo obliga a teclear la fecha a mano. La barra de pestañas
+    del `Notebook` incluye flechas `chevronLeft`/`chevronRight` (scroll ~240px,
+    deshabilitadas en los bordes); el cálculo de `scrollLeft/scrollWidth` es
+    cliente-solo (`onMount`), jamás en SSR.
+
 ## Estructura
 
 ```
