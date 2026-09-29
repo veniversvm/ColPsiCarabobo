@@ -2,6 +2,7 @@
 import { Show } from "solid-js";
 import { Accessor, Setter } from "solid-js";
 import { PostStatus, STATUS_OPTIONS, IC, labelClass } from "./types";
+import FlatDatePicker from "~/components/ui/FlatDatePicker";
 
 interface Props {
   title: Accessor<string>;
@@ -109,12 +110,11 @@ export function EditMetadataSection(props: Props) {
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class={labelClass}>Fecha</label>
-              <input
-                type="date"
+              <FlatDatePicker
                 value={props.publishAt().split("T")[0] ?? ""}
-                onInput={(e) => {
+                onChange={(v) => {
                   const time = props.publishAt().split("T")[1] || "08:00";
-                  props.setPublishAt(`${e.currentTarget.value}T${time}`);
+                  props.setPublishAt(`${v}T${time}`);
                 }}
                 class={IC}
               />

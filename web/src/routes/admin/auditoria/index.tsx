@@ -6,6 +6,7 @@
 import { createResource, createSignal, createEffect, Show, For, Suspense } from "solid-js";
 import { useSearchParams } from "@solidjs/router";
 import { apiGet, apiDownloadBlob } from "~/lib/api";
+import FlatDatePicker from "~/components/ui/FlatDatePicker";
 import { getUserFacingError } from "~/lib/errors";
 import { AuditLogDrawer } from "~/components/admin/auditoria/AuditLogDrawer";
 import {
@@ -286,11 +287,11 @@ export default function AdminAuditoriaPage() {
             </Show>
             <div>
               <label class={LBL}>Desde</label>
-              <input type="date" value={desde()} onInput={(e) => { setDesde(e.currentTarget.value); resetPage(); }} class={IC} />
+              <FlatDatePicker value={desde()} onChange={(v) => { setDesde(v); resetPage(); }} class={IC} />
             </div>
             <div>
               <label class={LBL}>Hasta</label>
-              <input type="date" value={hasta()} onInput={(e) => { setHasta(e.currentTarget.value); resetPage(); }} class={IC} />
+              <FlatDatePicker value={hasta()} onChange={(v) => { setHasta(v); resetPage(); }} class={IC} />
             </div>
           </div>
         </div>
@@ -302,7 +303,7 @@ export default function AdminAuditoriaPage() {
           <div class="flex items-end gap-4 flex-wrap">
             <div class="w-48">
               <label class={LBL}>Desde (por defecto: últimos 30 días)</label>
-              <input type="date" value={desde()} onInput={(e) => setDesde(e.currentTarget.value)} class={IC} />
+              <FlatDatePicker value={desde()} onChange={setDesde} class={IC} />
             </div>
             <p class="text-xs text-colpsi-muted font-medium pb-2.5">
               {statTotal(stats()?.stats)} sucesos registrados

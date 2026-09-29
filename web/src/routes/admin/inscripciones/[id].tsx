@@ -6,6 +6,7 @@ import { apiGet, apiPost, apiPatch, apiDelete, ApiError } from "~/lib/api";
 import { bucketUrl } from "~/lib/bucket";
 import { ImageModal } from "~/components/ui/ImageModal";
 import { Notebook, NotebookPage } from "~/components/ui/Notebook";
+import FlatDatePicker from "~/components/ui/FlatDatePicker";
 import { Field, IC } from "~/components/admin/psicologos/edit/EditPrimitives";
 import { Icon } from "~/components/admin/ui/icons";
 import { MUNICIPIOS_CARABOBO, ESTADOS_VENEZUELA, municipiosDe } from "~/lib/geo";
@@ -625,7 +626,7 @@ export default function AdminInscriptionDetail() {
                       <option value="F">Femenino</option>
                     </select>
                   </Field>
-                  <Field label="Fecha de nacimiento" required><input type="date" value={form.fecha_nacimiento ?? ""} onInput={(e) => set("fecha_nacimiento", e.currentTarget.value)} class={IC} /></Field>
+                  <Field label="Fecha de nacimiento" required><FlatDatePicker value={form.fecha_nacimiento ?? ""} onChange={(v) => set("fecha_nacimiento", v)} class={IC} /></Field>
                   <Field label="Teléfono" required><input type="tel" value={form.telefono} onInput={(e) => set("telefono", e.currentTarget.value)} class={IC} /></Field>
                   <Field label="Correo electrónico" required><input type="email" value={form.correo} onInput={(e) => set("correo", e.currentTarget.value)} class={IC} /></Field>
                   <Field label="RIF"><input type="text" value={form.rif} onInput={(e) => set("rif", e.currentTarget.value)} class={IC} /></Field>
@@ -635,7 +636,7 @@ export default function AdminInscriptionDetail() {
               <NotebookPage id="academicos">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                   <Field label="Universidad" required><input type="text" value={form.titulo_universidad} onInput={(e) => set("titulo_universidad", e.currentTarget.value)} class={IC} /></Field>
-                  <Field label="Fecha de graduación" required><input type="date" value={form.titulo_fecha_graduacion ?? ""} onInput={(e) => set("titulo_fecha_graduacion", e.currentTarget.value)} class={IC} /></Field>
+                  <Field label="Fecha de graduación" required><FlatDatePicker value={form.titulo_fecha_graduacion ?? ""} onChange={(v) => set("titulo_fecha_graduacion", v)} class={IC} /></Field>
                   <Field label="Mención"><input type="text" value={form.titulo_mencion} onInput={(e) => set("titulo_mencion", e.currentTarget.value)} class={IC} /></Field>
                   <Field label="N° Registro del título"><input type="text" value={form.titulo_registro_numero} onInput={(e) => set("titulo_registro_numero", e.currentTarget.value)} class={IC} /></Field>
                   <Field label="Estado del registro" required><input type="text" value={form.titulo_registro_estado} onInput={(e) => set("titulo_registro_estado", e.currentTarget.value)} class={IC} /></Field>
