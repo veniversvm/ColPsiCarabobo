@@ -8,6 +8,9 @@
 //   y reconstruir, porque la URL se inlinea en el bundle.
 // - Fija `base-uri`/`form-action`. `frame-ancestors` NO va aquí: es ignorado en
 //   un `<meta>`; el clickjacking se cubre con los headers de la API (X-Frame-Options).
+// - `frame-src 'self' blob:` permite la vista previa de los manuales PDF de los
+//   paneles (fetch autenticado → objectURL blob; el archivo jamás se sirve
+//   estático, solo vía el endpoint autenticado /api/v1/manuales/:file).
 // - `connect-src` incluye `ws://localhost:*`/`wss://localhost:*` para el HMR de
 //   Vinxi en desarrollo (el websocket de `/_build`).
 
@@ -18,7 +21,7 @@ import { createHandler, StartServer } from "@solidjs/start/server";
 const BUCKET_ORIGIN =
   (import.meta.env.VITE_BUCKET_URL || "").match(/^https?:\/\/[^/]+/i)?.[0] || "";
 
-const CSP = `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:${BUCKET_ORIGIN ? ` ${BUCKET_ORIGIN}` : ""}; connect-src 'self' data: https: http://localhost:* ws://localhost:* wss://localhost:*; font-src 'self' data:; form-action 'self'; base-uri 'self'`;
+const CSP = `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:${BUCKET_ORIGIN ? ` ${BUCKET_ORIGIN}` : ""}; connect-src 'self' data: https: http://localhost:* ws://localhost:* wss://localhost:*; font-src 'self' data:; frame-src 'self' blob:; form-action 'self'; base-uri 'self'`;
 
 // Los paneles privados (/admin y /psi) se renderizan SOLO en el cliente (SPA).
 // En SSR se devuelve la carcasa vacía y el documento NO accede a props.children,

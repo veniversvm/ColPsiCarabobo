@@ -283,6 +283,75 @@ func (m *AuthMiddleware) OptionalHybridAuth() fiber.Handler {
 	}
 }
 
+// ProtectedAnyAuth protege los recursos compartidos entre ambos paneles
+// (p. ej. los manuales PDF). Acepta una sesión válida de ADMINISTRADOR o de
+// PSICÓLOGO y responde 401 explícito cuando el token falta, es inválido o
+// expiró.
+//
+// NO reutiliza OptionalHybridAuth: ese middleware termina con c.Next(), y
+// anidarlo aquí avanzaría el stack de Fiber hasta el handler y luego mi
+// wrapper avanzaría OTRA vez (hasta el catch-all), pisando la respuesta —
+// reproducido con Fiber v2.52. Validación autocontenida, igual que
+// ProtectedAdmin / ProtectedPsiUser.
+func (m *AuthMiddleware) ProtectedAnyAuth() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		authHeader := c.Get("Authorization")
+		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+			return jwtError(c, fiber.StatusUnauthorized, "Acceso no autorizado.")
+		}
+
+		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("método de firma inesperado: %v", token.Method)
+			}
+
+			claims, ok := token.Claims.(jwt.MapClaims)
+			if !ok {
+				return nil, fmt.Errorf("claims inválidos")
+			}
+
+			userID, _ := claims["user_id"].(string)
+			role, _ := claims["role"].(string)
+			uid, err := uuid.Parse(userID)
+			if err != nil {
+				return nil, fmt.Errorf("user_id inválido: %w", err)
+			}
+
+			// Resolución dinámica del secreto + inyección de identidad,
+			// solo DESPUÉS de verificar la firma (sin side-effects antes).
+			if role == "admin" {
+				admin, err := m.adminRepo.GetByID(c.UserContext(), uid)
+				if err != nil {
+					return nil, fmt.Errorf("admin no encontrado: %w", err)
+				}
+				if admin.Key == "" {
+					return nil, errors.New("session expired")
+				}
+				c.Locals("admin", admin)
+				return []byte(admin.Key), nil
+			}
+
+			psi, err := m.psiRepo.GetByID(c.UserContext(), uid)
+			if err != nil {
+				return nil, fmt.Errorf("psi no encontrado: %w", err)
+			}
+			if psi.Key == "" {
+				return nil, errors.New("session expired")
+			}
+			c.Locals("psi_user", psi)
+			return []byte(psi.Key), nil
+		})
+
+		if err != nil || !token.Valid {
+			return jwtError(c, fiber.StatusUnauthorized, "Acceso no autorizado.")
+		}
+
+		return c.Next()
+	}
+}
+
 // ProtectedPsiUser protege las rutas de autogestión de los psicólogos colegiados.
 //
 // Implementa el bloqueo estándar HTTP 401 (Unauthorized) cuando las credenciales
