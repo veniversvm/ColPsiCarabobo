@@ -20,6 +20,8 @@ import {
   Show,
   For,
   useContext,
+  onMount,
+  onCleanup,
 } from "solid-js";
 import type { JSX } from "solid-js";
 import { Icon, type IconName } from "~/components/admin/ui/icons";
@@ -63,13 +65,52 @@ export function Notebook(props: {
   const activeTitleColor = () =>
     TAB_COLORS[activeIdx() % TAB_COLORS.length]?.title ?? "#1e3a8a";
 
+  // ── Flechas de navegación de pestañas ─────────────────────────────────────
+  // La barra scrollea horizontalmente (overflow-x-auto) cuando hay muchas
+  // pestañas; las flechas desplazan el tablist ~240px y se deshabilitan en los
+  // bordes. Todo cliente-solo (scrollWidth/scrollLeft no existen en SSR).
+  let tabListEl: HTMLDivElement | undefined;
+  const [canPrev, setCanPrev] = createSignal(false);
+  const [canNext, setCanNext] = createSignal(false);
+
+  const updateArrows = () => {
+    const el = tabListEl;
+    if (!el) return;
+    setCanPrev(el.scrollLeft > 1);
+    setCanNext(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+  };
+
+  onMount(() => {
+    updateArrows();
+    window.addEventListener("resize", updateArrows);
+  });
+  onCleanup(() => window.removeEventListener("resize", updateArrows));
+
+  const scrollTabs = (dir: -1 | 1) => {
+    const el = tabListEl;
+    if (!el) return;
+    el.scrollBy({ left: dir * 240, behavior: "smooth" });
+  };
+
   return (
     <NotebookContext.Provider value={{ active }}>
       <div class="bg-white rounded-lg border border-colpsi-border overflow-hidden">
-        <div
-          role="tablist"
-          class="flex items-end overflow-x-auto bg-colpsi-bg/60 border-b border-colpsi-border"
-        >
+        <div class="flex items-stretch bg-colpsi-bg/60 border-b border-colpsi-border">
+          <button
+            type="button"
+            aria-label="Mover pestañas a la izquierda"
+            disabled={!canPrev()}
+            onClick={() => scrollTabs(-1)}
+            class="shrink-0 px-1.5 flex items-center justify-center text-colpsi-muted hover:text-colpsi-blue disabled:opacity-30 disabled:cursor-default transition-colors"
+          >
+            <Icon name="chevronLeft" class="w-4 h-4" />
+          </button>
+          <div
+            ref={tabListEl}
+            role="tablist"
+            onScroll={updateArrows}
+            class="flex items-end overflow-x-auto flex-1 min-w-0"
+          >
           <For each={props.pages}>
             {(page, i) => {
               const isActive = () => active() === page.id;
@@ -118,6 +159,16 @@ export function Notebook(props: {
               );
             }}
           </For>
+          </div>
+          <button
+            type="button"
+            aria-label="Mover pestañas a la derecha"
+            disabled={!canNext()}
+            onClick={() => scrollTabs(1)}
+            class="shrink-0 px-1.5 flex items-center justify-center text-colpsi-muted hover:text-colpsi-blue disabled:opacity-30 disabled:cursor-default transition-colors"
+          >
+            <Icon name="chevronRight" class="w-4 h-4" />
+          </button>
         </div>
         <div class="p-5">
           <div class="flex items-center gap-2 mb-3">
