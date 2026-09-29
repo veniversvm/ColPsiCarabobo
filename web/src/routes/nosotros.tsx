@@ -3,7 +3,7 @@
 import { A } from "@solidjs/router";
 import { Title, Meta, Link } from "@solidjs/meta";
 
-const SITE_URL = import.meta.env.VITE_SITE_URL || "http://localhost:3000";
+import { SITE_URL } from "~/lib/site";
 
 export default function AboutUs() {
   const canonicalUrl = `${SITE_URL}/nosotros`;

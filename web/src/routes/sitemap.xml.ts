@@ -1,7 +1,9 @@
 import { apiGet } from "~/lib/api";
 
-// 1. Configuración de URL base (Asegúrate de tener VITE_SITE_URL en tu .env de producción)
-const SITE_URL = import.meta.env.VITE_SITE_URL || "http://localhost:3000";
+// URL base del sitio: única fuente en `~/lib/site` (lee VITE_SITE_URL y, si no
+// está, cae al dominio de producción — antes cada archivo tenía su propio
+// fallback y el sitemap llegó a declarar uno distinto al de las páginas).
+import { SITE_URL } from "~/lib/site";
 
 // ── HELPERS PARA SLUGS (Deben coincidir con tus rutas [slug].tsx) ──
 

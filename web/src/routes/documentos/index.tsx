@@ -5,7 +5,7 @@ import { Title, Meta, Link } from "@solidjs/meta";
 import { documentos } from "../../lib/documentos";
 import DocumentIndexCard from "../../components/doc/DocumentIndexCard";
 
-const SITE_URL = import.meta.env.VITE_SITE_URL || "http://localhost:3000";
+import { SITE_URL } from "~/lib/site";
 
 export default function DocumentosIndex() {
   const canonicalUrl = `${SITE_URL}/documentos`;

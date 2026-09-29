@@ -19,7 +19,7 @@ interface PostDetail {
   text: { id: string; content: string };
 }
 
-const SITE_URL = import.meta.env.VITE_SITE_URL || "https://colpsi-carabobo.org";
+import { SITE_URL } from "~/lib/site";
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString("es-VE", { day: "numeric", month: "long", year: "numeric" });

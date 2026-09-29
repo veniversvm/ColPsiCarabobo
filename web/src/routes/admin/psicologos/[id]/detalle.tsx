@@ -11,6 +11,7 @@ import { createStore, unwrap } from "solid-js/store";
 import { useParams, action, useAction } from "@solidjs/router";
 import { apiGet } from "~/lib/api";
 import { createProfileSlug } from "~/lib/utils";
+import { SITE_URL } from "~/lib/site";
 
 import {
   EditPageHeader,
@@ -291,7 +292,6 @@ const runUpdateAction = useAction(updateAdminPsiServer);
   // Motivo obligatorio del cambio (se envía en el FormData del expediente).
   const [motivoCambio, setMotivoCambio] = createSignal("");
 
-  const SITE_URL = import.meta.env.VITE_SITE_URL || "http://localhost:3000";
   const canonicalUrl = () => {
     const p = profile();
     if (!p) return "";

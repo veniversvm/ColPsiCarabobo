@@ -4,7 +4,7 @@ import { createSignal, Show } from "solid-js";
 import { Title, Meta, Link } from "@solidjs/meta";
 import { InscriptionForm } from "~/components/inscripcion/InscriptionForm";
 
-const SITE_URL = import.meta.env.VITE_SITE_URL || "https://colpsicarabobo.org";
+import { SITE_URL } from "~/lib/site";
 
 export default function InscriptionPage() {
   const canonicalUrl = `${SITE_URL}/inscripcion`;

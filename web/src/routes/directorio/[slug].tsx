@@ -18,7 +18,7 @@ import { FullBioModal } from "~/components/directory/FullBioModal";
 
 export const ssr = true;
 
-const SITE_URL = import.meta.env.VITE_SITE_URL || "http://localhost:3000";
+import { SITE_URL } from "~/lib/site";
 const imgUrl = bucketUrl;
 
 // ✅ Server function para obtener el perfil desde la API

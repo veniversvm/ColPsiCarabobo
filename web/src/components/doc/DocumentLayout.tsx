@@ -7,7 +7,7 @@ import { Title, Meta, Link } from "@solidjs/meta";
 import type { ControlSecciones, DocModulo } from "../../lib/documentos";
 import DocumentSectionCard from "./DocumentSectionCard";
 
-const SITE_URL = import.meta.env.VITE_SITE_URL || "http://localhost:3000";
+import { SITE_URL } from "~/lib/site";
 
 function slugId(i: number) {
   return `seccion-${i}`;

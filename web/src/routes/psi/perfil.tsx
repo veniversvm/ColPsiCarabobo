@@ -16,6 +16,7 @@ import {
   enforceMaxLength,
 } from "~/lib/sanitizer";
 import { useAuth } from "~/lib/auth";
+import { SITE_URL } from "~/lib/site";
 import { ProfileFormData } from "~/types/psi";
 
 import { AccountSection } from "~/components/psi/profile/AccountSection";
@@ -138,9 +139,9 @@ export default function ProfilePage() {
 
   const runUpdateAction = useAction(updateProfileServer);
 
-  const SITE_URL =
-    import.meta.env.VITE_SITE_URL || "http://localhost:28080/api/v1";
-
+  // NOTA: antes esta URL caía en "http://localhost:28080/api/v1" (la URL de la
+  // API) cuando VITE_SITE_URL no estaba definida, y el `canonical` de la ficha
+  // pública de un agremiado quedaba apuntando al backend. Ver `lib/site.ts`.
   const canonicalUrl = `${SITE_URL}/directorio/${profile()?.first_name}-${profile()?.last_name}-fpv${profile()?.fpv}`;
 
   createEffect(() => {
