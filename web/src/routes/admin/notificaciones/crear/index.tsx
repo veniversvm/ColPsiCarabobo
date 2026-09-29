@@ -2,6 +2,7 @@
 import { createResource, createSignal, For, Show, Suspense } from "solid-js";
 import { A, action, useAction, useNavigate } from "@solidjs/router";
 import { apiGet, apiPost } from "~/lib/api";
+import FlatDatePicker from "~/components/ui/FlatDatePicker";
 import { PaginatedResponse, PsiAdminListItem } from "~/types/admin";
 import {
   CreateNotificationResponse,
@@ -405,7 +406,13 @@ export default function CrearNotificacionPage() {
           <h2 class="text-base font-semibold text-colpsi-text border-b border-colpsi-border pb-3 mb-4">Programación</h2>
           <div>
             <label class={labelCls}>Enviar en fecha/hora (opcional)</label>
-            <input type="datetime-local" value={scheduledAt()} onInput={(e) => setScheduledAt(e.currentTarget.value)} class={inputCls} />
+            <FlatDatePicker
+              enableTime
+              dateFormat="Y-m-dTH:i"
+              value={scheduledAt()}
+              onChange={setScheduledAt}
+              class={inputCls}
+            />
             <p class="text-xs text-colpsi-muted font-medium mt-1.5">Vacío = se envía de inmediato.</p>
           </div>
         </section>
