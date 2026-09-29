@@ -282,6 +282,12 @@ func (r *psiRepo) Update(
 			"show_phone_out_side_venezuela":                  gorm.Expr("?", psi.ShowPhoneOutSideVenezuela),
 			"show_cell_phone_out_side_venezuela":             gorm.Expr("?", psi.ShowCellPhoneOutSideVenezuela),
 			"show_public_service_address_out_side_venezuela": gorm.Expr("?", psi.ShowPublicServiceAddressOutSideVenezuela),
+
+			// ── Modalidad de servicio y preferencias ─────────────────────
+			"service_modality_presencial":  gorm.Expr("?", psi.ServiceModalityPresencial),
+			"service_modality_distance":    gorm.Expr("?", psi.ServiceModalityDistance),
+			"service_modality_telephone":   gorm.Expr("?", psi.ServiceModalityTelephone),
+			"show_service_modality":        gorm.Expr("?", psi.ShowServiceModality),
 		}
 
 		if err := tx.Model(&domain.PsiUserModel{}).
@@ -328,6 +334,9 @@ func (r *psiRepo) Update(
 				"title_image_one_s3_key":   colData.TitleImageOneS3Key,
 				"title_image_two_s3_key":   colData.TitleImageTwoS3Key,
 				"title_image_three_s3_key": colData.TitleImageThreeS3Key,
+
+				// ── Preferencias (auto-gestión psi) ───────────────────────
+				"birthday_notification": gorm.Expr("?", colData.BirthdayNotification),
 
 				// ── Auditoría ─────────────────────────────────────────────
 				"update_by":    colData.UpdateBy,
@@ -454,6 +463,12 @@ func (r *psiRepo) UpdatePublicProfile(
 			"show_phone_out_side_venezuela":                  gorm.Expr("?", psi.ShowPhoneOutSideVenezuela),
 			"show_cell_phone_out_side_venezuela":             gorm.Expr("?", psi.ShowCellPhoneOutSideVenezuela),
 			"show_public_service_address_out_side_venezuela": gorm.Expr("?", psi.ShowPublicServiceAddressOutSideVenezuela),
+
+			// ── Modalidad de servicio y preferencias (auto-gestión psi) ──
+			"service_modality_presencial":  gorm.Expr("?", psi.ServiceModalityPresencial),
+			"service_modality_distance":    gorm.Expr("?", psi.ServiceModalityDistance),
+			"service_modality_telephone":   gorm.Expr("?", psi.ServiceModalityTelephone),
+			"show_service_modality":        gorm.Expr("?", psi.ShowServiceModality),
 		}
 
 		if err := tx.Model(psi).
@@ -469,6 +484,9 @@ func (r *psiRepo) UpdatePublicProfile(
 				"show_university_undergraduate": gorm.Expr("?", colData.ShowUniversityUndergraduate),
 				"show_graduate_date":            gorm.Expr("?", colData.ShowGraduateDate),
 				"show_mention_undergraduate":    gorm.Expr("?", colData.ShowMentionUndergraduate),
+
+				// Preferencias (auto-gestión psi)
+				"birthday_notification": gorm.Expr("?", colData.BirthdayNotification),
 
 				"title_image_one_s3_key":   colData.TitleImageOneS3Key,
 				"title_image_two_s3_key":   colData.TitleImageTwoS3Key,
