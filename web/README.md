@@ -150,6 +150,22 @@ Los errores de red se convierten en `ApiError(503, "OFFLINE_SERVICE")` y los de 
 | Idempotency key en creación | `areas/crear/index.tsx` |
 | robots.txt dinámico | `src/routes/robots.txt.ts` |
 
+## Manuales (PDF de los paneles)
+
+Los manuales (`/admin/manual` y `/psi/manual`) **no** viven en `web/public`
+(se servirían públicos): están **incrustados en el binario de la API Go**
+(`api/internal/manuales/`, vía `//go:embed`) y se sirven solo por
+`GET /api/v1/manuales/:file` con sesión válida (admin O psicólogo, 401 sin
+token). El visor `components/manuales/ManualPdf.tsx` baja el PDF como blob con
+el JWT en la cabecera `Authorization` y lo pinta en un `<iframe>` desde un
+objectURL (`frame-src 'self' blob:` está permitido en el CSP de
+`src/entry-server.tsx`).
+
+**Para actualizar un manual**: regenerar el PDF fuente en `docs/manual-*.pdf` y
+copiarlo a `api/internal/manuales/files/`, luego reconstruir el API
+(`docker compose build api && docker compose up -d api` desde `api/`). No tocar
+el visor web.
+
 ## Docker
 
 ```bash

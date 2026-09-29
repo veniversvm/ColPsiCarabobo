@@ -6008,6 +6008,37 @@ paths:
       summary: Enviar solicitud de pre-inscripción (público)
       tags:
       - Inscripcion
+  /manuales/{file}:
+    get:
+      description: Devuelve el manual solicitado en PDF. Requiere sesión válida de
+        administrador o de psicólogo. Los archivos están embebidos en el binario y
+        nunca se sirven a visitantes anónimos.
+      parameters:
+      - description: Nombre del manual (manual-admin.pdf | manual-psiuser.pdf)
+        in: path
+        name: file
+        required: true
+        type: string
+      responses:
+        "200":
+          description: PDF del manual
+          schema:
+            type: file
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Obtener manual (PDF)
+      tags:
+      - Manuales
   /notifications/admin:
     get:
       description: Lista las notificaciones creadas por el administrador, paginadas

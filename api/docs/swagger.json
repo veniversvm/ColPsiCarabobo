@@ -4872,6 +4872,51 @@
                 }
             }
         },
+        "/manuales/{file}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Devuelve el manual solicitado en PDF. Requiere sesión válida de administrador o de psicólogo. Los archivos están embebidos en el binario y nunca se sirven a visitantes anónimos.",
+                "tags": [
+                    "Manuales"
+                ],
+                "summary": "Obtener manual (PDF)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Nombre del manual (manual-admin.pdf | manual-psiuser.pdf)",
+                        "name": "file",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "PDF del manual",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/notifications/admin": {
             "get": {
                 "security": [

@@ -30,6 +30,7 @@ const menuIcons: Record<string, string> = {
   "/admin/proyectos": "kanban",
   "/admin/auditoria": "receipt",
   "/admin/staff": "shield",
+  "/admin/manual": "book",
 };
 
 export default function AdminLayout(props: { children: JSX.Element }) {
@@ -103,6 +104,7 @@ export default function AdminLayout(props: { children: JSX.Element }) {
     { title: "Proyectos", path: "/admin/proyectos", always: false, perms: ["can_manage_projects"], chip: "bg-cyan-100 text-cyan-600", label: "text-cyan-600" },
     { title: "Auditoría", path: "/admin/auditoria", always: false, perms: ["can_view_logs"], chip: "bg-slate-100 text-slate-600", label: "text-slate-600" },
     { title: "Staff", path: "/admin/staff", always: false, perms: ["can_create_admin", "can_update_admin", "can_delete_admin"], chip: "bg-teal-100 text-teal-600", label: "text-teal-600" },
+    { title: "Manual", path: "/admin/manual", always: true, perms: [] as (keyof PermissionState)[], chip: "bg-slate-100 text-slate-600", label: "text-slate-600" },
   ];
 
   const visibleMenu = () =>

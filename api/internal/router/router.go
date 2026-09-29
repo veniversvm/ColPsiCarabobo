@@ -65,6 +65,7 @@ func SetupRouter(app *fiber.App, db *gorm.DB, s3Client *s3.S3Client, appCache *c
 	SetupInscriptionRoutes(api, inscriptionRepo, psiRepo, adminRepo, settingsRepo, s3Client, mailSvc, analyticsSvc)
 	SetupKanbanRoutes(api, adminRepo, psiRepo, kanbanRepo, analyticsSvc)
 	SetupAuditRoutes(api, adminRepo, psiRepo, auditSvc, analyticsSvc)
+	SetupManualRoutes(api, adminRepo, psiRepo, analyticsSvc)
 
 	// =========================================================================
 	// DEFAULT 404 HANDLER (CATCH-ALL)

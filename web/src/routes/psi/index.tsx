@@ -147,6 +147,12 @@ export default function PsiDashboard() {
             </div>
             <span class="text-xs font-bold text-colpsi-blue">Solicitudes</span>
           </A>
+          <A href="/psi/manual" class="bg-white p-4 rounded-3xl border border-colpsi-border shadow-sm flex flex-col items-center text-center group active:scale-95 transition-transform">
+            <div class="w-12 h-12 bg-blue-50 text-colpsi-blue rounded-2xl flex items-center justify-center mb-2 group-hover:bg-colpsi-yellow transition-colors">
+              📖
+            </div>
+            <span class="text-xs font-bold text-colpsi-blue">Manual</span>
+          </A>
         </div>
 
         {/* Noticias Recientes */}
