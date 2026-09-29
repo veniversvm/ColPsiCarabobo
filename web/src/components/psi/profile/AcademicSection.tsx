@@ -248,6 +248,10 @@ export function AcademicSection(props: AcademicSectionProps) {
 
           <div class="space-y-4">
             <label class="text-[11px] font-semibold text-colpsi-muted uppercase tracking-wide">Documentos del Título</label>
+            <p class="text-[11px] text-colpsi-muted leading-relaxed">
+              Sube una imagen de los documentos que te acreditan como profesional
+              (título, acta de grado, certificado, etc.).
+            </p>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <ImageSlot
                 label="Imagen del Título"
