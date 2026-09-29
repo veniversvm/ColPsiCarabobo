@@ -83,6 +83,16 @@ type Config struct {
 	// <= 0 desactiva el purge automático.
 	AuditLogRetentionDays int
 
+	// Telemetría de visitantes (page_views, search_events, profile_views).
+	// AnalyticsRetentionDays es la ventana de conservación en días; <= 0 desactiva
+	// el purge, lo que la ley no permite para datos personales: se deja en 90.
+	AnalyticsRetentionDays int
+	// AnalyticsIPSalt sale de la huella de cada dirección IP. Debe ser estable
+	// entre reinicios (si cambia, la misma IP produce otra huella y los conteos de
+	// visitantes únicos se rompen). Si se deja vacía se usa una constante: la
+	// huella no sirve para reidentificar, solo para agrupar.
+	AnalyticsIPSalt string
+
 	// Audiobookshelf (biblioteca digital de los agremiados solventes)
 	AbsBaseURL         string // URL interna que usa la API para hablar con ABS (SDK)
 	AbsPublicURL       string // URL pública que abre el navegador (auto-login)
@@ -184,6 +194,10 @@ func InitConfig() {
 
 		// Retención de la bitácora de cambios (audit logs)
 		AuditLogRetentionDays: getEnvInt("AUDIT_LOG_RETENTION_DAYS", 90),
+
+		// Telemetría de visitantes
+		AnalyticsRetentionDays: getEnvInt("ANALYTICS_RETENTION_DAYS", 90),
+		AnalyticsIPSalt:        getEnv("ANALYTICS_IP_SALT", ""),
 
 		// Audiobookshelf
 		AbsBaseURL:        getEnv("ABS_BASE_URL", "http://localhost:21337"),

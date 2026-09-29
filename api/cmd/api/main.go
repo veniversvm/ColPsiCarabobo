@@ -188,6 +188,34 @@ func main() {
 		}()
 	}
 
+	// ── Retención de la telemetría de visitantes ──────────────────────────────
+	// page_views, search_events y profile_views guardan datos personales de quien
+	// navega sin sesión (búsquedas, IP hasheada, origen de referencia). Se purgan
+	// al arrancar y luego una vez al día, porque los Términos y Condiciones
+	// declaran ANALYTICS_RETENTION_DAYS como plazo de conservación: sin este
+	// ticker la promesa sería falsa (PurgeOldData existía pero nadie lo llamaba).
+	if config.Envs.AnalyticsRetentionDays > 0 {
+		purgeAnalytics := func() {
+			purgeCtx, purgeCancel := context.WithTimeout(bgCtx, 30*time.Second)
+			analyticsSvc.PurgeOldData(purgeCtx, config.Envs.AnalyticsRetentionDays)
+			purgeCancel()
+		}
+		// Al arrancar, en segundo plano: no bloquea el arranque de la API.
+		go purgeAnalytics()
+		go func() {
+			ticker := time.NewTicker(24 * time.Hour)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-bgCtx.Done():
+					return
+				case <-ticker.C:
+					purgeAnalytics()
+				}
+			}
+		}()
+	}
+
 	// ── Limpieza periódica de sesiones expiradas ──────────────────────────────
 	// Corre cada hora en background — elimina ActiveSession con expires_at < now.
 	// Cada ejecución lleva su propio timeout para no dejar una conexión colgada.

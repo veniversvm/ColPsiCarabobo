@@ -39,13 +39,17 @@ const analyticsSemCapacity = 50
 type AnalyticsService struct {
 	repo domain.AnalyticsRepository
 	sem  chan struct{}
+	// ipSalt se resuelve UNA vez en el constructor para que la huella de una IP
+	// sea la misma durante toda la vida del proceso (ver analytics_privacy.go).
+	ipSalt string
 }
 
 // NewAnalyticsService actúa como constructor para inyectar la dependencia del repositorio.
 func NewAnalyticsService(repo domain.AnalyticsRepository) *AnalyticsService {
 	return &AnalyticsService{
-		repo: repo,
-		sem:  make(chan struct{}, analyticsSemCapacity),
+		repo:   repo,
+		sem:    make(chan struct{}, analyticsSemCapacity),
+		ipSalt: resolveIPSalt(),
 	}
 }
 
@@ -150,7 +154,7 @@ func (s *AnalyticsService) RecordSearch(
 			ResultsCount: resultsCount,
 			UserID:       userID,
 			SessionID:    sessionID,
-			IP:           ip,
+			IP:           s.fingerprintIP(ip),
 		})
 	}()
 }
@@ -169,12 +173,15 @@ func (s *AnalyticsService) RecordProfileView(psiID uuid.UUID, viewerID *uuid.UUI
 			PsiID:     psiID,
 			ViewerID:  viewerID,
 			SessionID: sessionID,
-			IP:        ip,
+			IP:        s.fingerprintIP(ip),
 		})
 	}()
 }
 
 // RecordPageView persiste una visita a una página del portal.
+// Hoy ningún flujo lo invoca: el middleware usa TrackPageView (que además
+// deduplica). Se sanea igual para que nadie reintroduzca una IP en claro por
+// aquí — ver analytics_privacy.go.
 func (s *AnalyticsService) RecordPageView(view domain.PageView) {
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), analyticsWriteTimeout)
@@ -184,6 +191,8 @@ func (s *AnalyticsService) RecordPageView(view domain.PageView) {
 		}
 		defer s.release()
 
+		view.IP = s.fingerprintIP(view.IP)
+		view.Referer = refererOrigin(view.Referer)
 		_ = s.repo.CreatePageView(ctx, view)
 	}()
 }
@@ -191,11 +200,18 @@ func (s *AnalyticsService) RecordPageView(view domain.PageView) {
 // TrackPageView aplica debouncing (una visita por sesión en la ventana) y persiste
 // la visita de forma SÍNCRONA bajo el semáforo. La invoca el middleware analytics
 // dentro de su propia goroutine, evitando anidamiento de goroutines por request.
+//
+// Antes de persistir, la visita se sanea: la IP se convierte en huella y el
+// Referer se reduce a su origen (ver analytics_privacy.go). El saneamiento va
+// AQUÍ, y no en el middleware, para que todo llamador futuro herede la garantía.
 func (s *AnalyticsService) TrackPageView(ctx context.Context, view domain.PageView) {
 	if !s.acquire(ctx) {
 		return
 	}
 	defer s.release()
+
+	view.IP = s.fingerprintIP(view.IP)
+	view.Referer = refererOrigin(view.Referer)
 
 	count, _ := s.repo.CountRecentPageViews(ctx, view.SessionID, time.Now().Add(-analyticsVisitWindow))
 	if count > 0 {

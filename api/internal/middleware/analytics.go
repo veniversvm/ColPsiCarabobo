@@ -22,6 +22,13 @@ import (
 // una conexión del pool.
 const analyticsCtxTimeout = 5 * time.Second
 
+// analyticsSessionCookieDays es la vida de la cookie técnica _sid, que existe
+// únicamente para no contar dos veces la misma visita dentro de la ventana de
+// deduplicación. Antes duraba 365 días, que es una ventana de seguimiento
+// desproporcionada para lo que hace; 30 días mantiene el conteo de visitantes
+// únicos igual de útil.
+const analyticsSessionCookieDays = 30
+
 // skipPaths define una Lista Negra (Blocklist) de prefijos de ruta que no deben
 // generar eventos analíticos, evitando que el "ruido" contamine las métricas de negocio.
 var skipPaths = []string{
@@ -101,13 +108,16 @@ func AnalyticsMiddleware(analytics *service.AnalyticsService) fiber.Handler {
 		}
 
 		// 5. Gestión de Sesión Anónima (Tracking Cookie)
+		// Solo sirve para no contar dos veces a la misma persona: la deduplicación
+		// de TrackPageView corre en analyticsVisitWindow (30 minutos), así que 30
+		// días de vida sobra con creces y es lo que se declara en los Términos.
 		sessionID := c.Cookies("_sid")
 		if sessionID == "" {
 			sessionID = uuid.Must(uuid.NewV7()).String()
 			c.Cookie(&fiber.Cookie{
 				Name:     "_sid",
 				Value:    sessionID,
-				Expires:  time.Now().Add(365 * 24 * time.Hour),
+				Expires:  time.Now().Add(analyticsSessionCookieDays * 24 * time.Hour),
 				HTTPOnly: true,
 				Secure:   config.Envs.Environment == "production",
 				SameSite: "Lax",
