@@ -21,6 +21,15 @@ const CHECK_INTERVAL_MS = 60_000;
 interface AuthContextValue {
   user: () => AuthUser | null;
   isAuthenticated: () => boolean;
+  /**
+   * `true` cuando la restauración de sesión ya terminó (favorable o no).
+   * Las guardas de ruta que rediriJAN deben esperar este flag: usar solo
+   * `isAuthenticated()` en la primera pasada expulsa a quien sí tiene sesión
+   * pero aún no la ha restaurado. Para conditionally RENDERIZAR en cambio
+   * `isAuthenticated()` ya alcanza (lo que no se renderiza no necesita
+   * corregirse después).
+   */
+  sessionReady: () => boolean;
   role: () => UserRole | null;
   login: (token: string, user: AuthUser) => void;
   logout: () => void;
@@ -53,6 +62,18 @@ function msUntilExpiry(token: string): number {
 
 export function AuthProvider(props: { children: JSX.Element; onServerLogout?: () => Promise<void> | void }) {
   const [user, setUser] = createSignal<AuthUser | null>(null);
+
+  // `sessionReady` pasa a true cuando la restauración de sesión terminó, sin
+  // importar cómo haya terminado (hay cookie o no, el token expiró o no).
+  //
+  // Por qué existe: `user()` empieza en null durante SSR y en el primer render
+  // del cliente, y la restauración puede ser ASÍNCRONA (el `await
+  // restoreSession()` de más abajo, que salta cuando falta `sessionStorage.jwt`,
+  // o sea en pestaña nueva o tras reiniciar el navegador). Una guarda de ruta
+  // que diera por hecho "sin `user()` → no hay sesión" expulsaría al
+  // agremiado legítimamente logueado de páginas como `/psi/terminos`
+  // justo en el caso que la recuperación silenciosa viene a arreglar.
+  const [sessionReady, setSessionReady] = createSignal(false);
 
   const clearLocalSession = () => {
     sessionStorage.removeItem("jwt");
@@ -126,59 +147,66 @@ export function AuthProvider(props: { children: JSX.Element; onServerLogout?: ()
   const restoreSession = useAction(restoreSessionAction);
 
   onMount(async () => {
-    // Verificación periódica contra el backend: corre de forma continua y
-    // no-op cuando no hay sesión (checkSession valida token/usuario).
-    const interval = setInterval(checkSession, CHECK_INTERVAL_MS);
-    onCleanup(() => clearInterval(interval));
-
-    const savedUser = Cookies.get("user_data");
-
-    // Sin cookie de datos → sin sesión servible → flujo de login (previo).
-    if (!savedUser) {
-      clearLocalSession();
-      return;
-    }
-
-    let token = sessionStorage.getItem("jwt");
-
-    // Copia per-tab perdida (pestaña nueva / reinicio del navegador) pero cookie
-    // HttpOnly `jwt` viva: restaurar la copia SIN re-login. Un re-login rota la
-    // key del admin (gotcha 13 de api/AGENTS.md) y en ≤60s checkSession mataba la
-    // sesión de las demás pestañas → el usuario percibía "se cerró la sesión".
-    if (!token) {
-      try {
-        const restored = await restoreSession();
-        if (restored && !isTokenExpired(restored)) token = restored;
-      } catch {
-        token = "";
-      }
-    }
-
-    if (!token) {
-      clearLocalSession();
-      return;
-    }
-
-    if (isTokenExpired(token)) {
-      expireSession();
-      return;
-    }
-
-    // Guardar la copia restaurada (no-op si ya existía) y restaurar el estado.
-    sessionStorage.setItem("jwt", token);
-
+    // `try/finally` (no `onCleanup`) porque hay CUATRO `return` tempranos en
+    // este cuerpo: sin el `finally`, cualquiera de ellos dejaría `sessionReady`
+    // en false para siempre y toda guarda de ruta se quedaría esperando.
     try {
-      setUser(JSON.parse(savedUser));
-    } catch {
-      clearLocalSession();
-      return;
-    }
+      // Verificación periódica contra el backend: corre de forma continua y
+      // no-op cuando no hay sesión (checkSession valida token/usuario).
+      const interval = setInterval(checkSession, CHECK_INTERVAL_MS);
+      onCleanup(() => clearInterval(interval));
 
-    // Timer preciso: se dispara exactamente cuando vence el JWT
-    const ms = msUntilExpiry(token);
-    if (ms > 0) {
-      const timer = setTimeout(expireSession, ms);
-      onCleanup(() => clearTimeout(timer));
+      const savedUser = Cookies.get("user_data");
+
+      // Sin cookie de datos → sin sesión servible → flujo de login (previo).
+      if (!savedUser) {
+        clearLocalSession();
+        return;
+      }
+
+      let token = sessionStorage.getItem("jwt");
+
+      // Copia per-tab perdida (pestaña nueva / reinicio del navegador) pero cookie
+      // HttpOnly `jwt` viva: restaurar la copia SIN re-login. Un re-login rota la
+      // key del admin (gotcha 13 de api/AGENTS.md) y en ≤60s checkSession mataba la
+      // sesión de las demás pestañas → el usuario percibía "se cerró la sesión".
+      if (!token) {
+        try {
+          const restored = await restoreSession();
+          if (restored && !isTokenExpired(restored)) token = restored;
+        } catch {
+          token = "";
+        }
+      }
+
+      if (!token) {
+        clearLocalSession();
+        return;
+      }
+
+      if (isTokenExpired(token)) {
+        expireSession();
+        return;
+      }
+
+      // Guardar la copia restaurada (no-op si ya existía) y restaurar el estado.
+      sessionStorage.setItem("jwt", token);
+
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch {
+        clearLocalSession();
+        return;
+      }
+
+      // Timer preciso: se dispara exactamente cuando vence el JWT
+      const ms = msUntilExpiry(token);
+      if (ms > 0) {
+        const timer = setTimeout(expireSession, ms);
+        onCleanup(() => clearTimeout(timer));
+      }
+    } finally {
+      setSessionReady(true);
     }
   });
 
@@ -198,6 +226,7 @@ export function AuthProvider(props: { children: JSX.Element; onServerLogout?: ()
   const value: AuthContextValue = {
     user,
     isAuthenticated: () => !!user(),
+    sessionReady,
     role: () => user()?.role || null,
     login,
     logout,

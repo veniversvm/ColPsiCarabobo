@@ -155,6 +155,21 @@ export default function PsiDashboard() {
           </A>
         </div>
 
+        {/* Franja legal — entre Acceso Rápido y Noticias.
+            Colocada aquí y no en el pie porque esta es la pantalla de entrada del
+            portal: es donde el agremiado la va a ver sin buscarla. */}
+        <div class="bg-blue-50 border border-blue-100 rounded-2xl px-5 py-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-center">
+          <span class="text-[11px] text-gray-600 font-medium">
+            Al usar este portal usted acepta los Términos y Condiciones
+          </span>
+          <A
+            href="/psi/terminos"
+            class="text-[11px] font-black uppercase tracking-widest text-colpsi-blue underline underline-offset-4 hover:text-colpsi-red transition-colors"
+          >
+            Ver las condiciones del portal
+          </A>
+        </div>
+
         {/* Noticias Recientes */}
         <section class="space-y-4">
           <div class="flex justify-between items-end px-2">

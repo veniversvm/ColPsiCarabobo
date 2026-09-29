@@ -1,7 +1,7 @@
 import { A } from "@solidjs/router";
 import { Title, Meta, Link } from "@solidjs/meta";
 
-const SITE_URL = import.meta.env.VITE_SITE_URL || "https://colpsicarabobo.org";
+import { SITE_URL } from "~/lib/site";
 
 export default function PublicPortal() {
   const canonicalUrl = `${SITE_URL}/explorar`; 
@@ -91,16 +91,34 @@ export default function PublicPortal() {
             />
 
             {/* Opción: Sobre la Institución */}
-            <NavCard 
-              title="Sobre Nosotros" 
-              desc="Conozca nuestra historia, misión y marco ético profesional." 
-              href="/nosotros" 
-              icon="🏛️" 
+            <NavCard
+              title="Sobre Nosotros"
+              desc="Conozca nuestra historia, misión y marco ético profesional."
+              href="/nosotros"
+              icon="🏛️"
               color="border-yellow-100"
             />
 
-            
+          </div>
 
+          {/* Franja legal bajo las tarjetas.
+              Va FUERA del grid `lg:grid-cols-4` a propósito: una quinta tarjeta
+              dejaría una celda huérfana en el diseño de cuatro columnas.
+
+              Fondo PROPIO (tarjeta blanca) y no transparente: este div es hermano
+              del `</section>` del héroe, así que se apoya sobre `bg-colpsi-bg`
+              (#f8fafc), no sobre el degradado azul. Con texto blanco al 70 % la
+              frase quedaba ilegible sobre ese casi-blanco. */}
+          <div class="mt-8 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-center bg-white rounded-2xl border border-colpsi-border px-6 py-4 shadow-sm">
+            <span class="text-[11px] text-gray-600 font-medium">
+              Al usar este sitio usted acepta los Términos y Condiciones
+            </span>
+            <A
+              href="/terminos"
+              class="text-[11px] font-black uppercase tracking-widest text-colpsi-blue underline underline-offset-4 hover:text-colpsi-red transition-colors"
+            >
+              Ver términos
+            </A>
           </div>
         </div>
 

@@ -292,11 +292,12 @@ func buildTestApp(db *gorm.DB) *fiber.App {
 	psiRepo := repopostgres.NewPsiRepository(db)
 	postRepo := repopostgres.NewPostRepository(db)
 	specialtyRepo := repopostgres.NewSpecialtyRepository(db)
+	termsRepo := repopostgres.NewPsiTermsAcceptanceRepository(db)
 
 	api := app.Group("/api/v1")
 
 	router.SetupAdminRoutes(api, adminRepo, psiRepo, nil, analyticsSvc, nil)
-	router.SetupPsiRoutes(api, psiRepo, adminRepo, nil, analyticsSvc, nil, nil)
+	router.SetupPsiRoutes(api, psiRepo, adminRepo, nil, analyticsSvc, nil, nil, termsRepo)
 	router.SetupSpecialtyRoutes(api, psiRepo, adminRepo, specialtyRepo, analyticsSvc)
 	router.SetupPostRoutes(api, adminRepo, psiRepo, postRepo, nil, analyticsSvc)
 

@@ -41,6 +41,7 @@ func SetupRouter(app *fiber.App, db *gorm.DB, s3Client *s3.S3Client, appCache *c
 	ticketRepo := postgres.NewTicketRepository(db)
 	ticketConfigRepo := postgres.NewTicketConfigRepository(db)
 	settingsRepo := postgres.NewAppSettingsRepository(db)
+	termsRepo := postgres.NewPsiTermsAcceptanceRepository(db)
 
 	// Agrupación principal
 	api := app.Group("/api/v1")
@@ -58,7 +59,7 @@ func SetupRouter(app *fiber.App, db *gorm.DB, s3Client *s3.S3Client, appCache *c
 	// psicólogo (ListMyTickets) si se registrara después.
 	SetupAdminRoutes(api, adminRepo, psiRepo, settingsRepo, analyticsSvc, mailSvc)
 	SetupTicketRoutes(api, adminRepo, psiRepo, s3Client, ticketRepo, ticketConfigRepo, settingsRepo, notificationSvc, analyticsSvc)
-	SetupPsiRoutes(api, psiRepo, adminRepo, s3Client, analyticsSvc, mailSvc, appCache)
+	SetupPsiRoutes(api, psiRepo, adminRepo, s3Client, analyticsSvc, mailSvc, appCache, termsRepo)
 	SetupSpecialtyRoutes(api, psiRepo, adminRepo, specialtyRepo, analyticsSvc)
 	SetupPostRoutes(api, adminRepo, psiRepo, postRepo, s3Client, analyticsSvc)
 	SetupNotificationRoutes(api, adminRepo, psiRepo, analyticsSvc, notificationSvc)

@@ -231,6 +231,25 @@ swag init -g cmd/api/main.go -o docs/   # regenerar Swagger
     la API los resetea**; con Valkey arriba son persistente y multi-instancia
     (levantar: `docker compose up -d valkey` desde `api/`).
 
+18. **La IP no se guarda en claro: se guarda una huella, y la sal
+    (`ANALYTICS_IP_SALT`) tiene que ser estable** — `service/analytics_privacy.go`
+    (`fingerprintIP`, `refererOrigin`). La sustitución ocurre **dentro de los
+    métodos del servicio** (`TrackPageView`, `RecordSearch`, `RecordProfileView`,
+    `RecordPageView`), no en los puntos de llamada, para que todo llamador
+    futuro herede la garantía. La sal se resuelve **una vez** en
+    `NewAnalyticsService`: si `ANALYTICS_IP_SALT` cambia entre reinicios la
+    misma IP produce otra huella y los conteos de visitantes únicos se rompen;
+    vacío usa una constante por defecto con el mismo propósito (que un
+    despliegue malo no guarde IP en claro en silencio). ⚠️ **Una huella NO es
+    anonimización**: una IPv4 tiene 2³² valores y es reversible por fuerza
+    bruta; lo que acota el daño es `ANALYTICS_RETENTION_DAYS` (90), que
+    programa `PurgeOldData` al arrancar y con un ticker diario — la función
+    existía con test unitario y **nadie la invocaba**. `login_events` y
+    `active_sessions` **no se tocan** (bitácora de seguridad). El texto de
+    búsqueda **sí se conserva verbatim** y el §10.1 de `/terminos` lo declara:
+    si se cambia esto hay que cambiar el texto, y al revés (ver
+    `docs/plan-terminos-condiciones.md`).
+
 ## Estructura
 
 ```

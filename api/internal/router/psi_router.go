@@ -15,9 +15,10 @@ import (
 )
 
 // SetupPsiRoutes registers psychologist public, self-management, and admin CRUD routes.
-func SetupPsiRoutes(router fiber.Router, psiRepo domain.PsiUserRepository, adminRepo domain.UserAdminRepository, s3Client *s3.S3Client, analyticsSvc *service.AnalyticsService, mailService service.IMailService, appCache *cache.Cache) {
+func SetupPsiRoutes(router fiber.Router, psiRepo domain.PsiUserRepository, adminRepo domain.UserAdminRepository, s3Client *s3.S3Client, analyticsSvc *service.AnalyticsService, mailService service.IMailService, appCache *cache.Cache, termsRepo domain.PsiTermsAcceptanceRepository) {
 	svc := service.NewPsiService(psiRepo, s3Client, mailService)
 	h := handler.NewPsiHandler(svc, analyticsSvc, appCache)
+	termsH := handler.NewTermsHandler(service.NewTermsService(termsRepo))
 	absSvc := service.NewAudiobookshelfService(
 		config.Envs.AbsBaseURL,
 		config.Envs.AbsPublicURL,
@@ -109,6 +110,13 @@ func SetupPsiRoutes(router fiber.Router, psiRepo domain.PsiUserRepository, admin
 
 	// Mis documentos digitales — SOLO LECTURA (el psicólogo no puede editarlos)
 	meGroup.Get("/documents", h.GetMyDocuments)
+
+	// Términos y Condiciones — Parte II. Solo informa y registra: el aviso
+	// bloqueante es del cliente, para que un fallo aquí nunca cierre el portal.
+	// Prefijo /psi/me (no uno nuevo) porque el 401 de ProtectedPsiUser es real
+	// y es el mismo que protege el resto de la autogestión.
+	meGroup.Get("/terms", termsH.GetTermsStatus)
+	meGroup.Post("/terms", termsH.AcceptTerms)
 
 	// =========================================================================
 	// ZONA 3: PÚBLICO

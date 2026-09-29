@@ -6526,6 +6526,122 @@
                 }
             }
         },
+        "/psi/me/terms": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Devuelve la versión vigente de los términos y si el agremiado ya la aceptó, con su historial. El control del aviso es del cliente: si este endpoint falla, el portal sigue funcionando por completo.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Psicólogos - Términos"
+                ],
+                "summary": "Estado de aceptación de los Términos y Condiciones (Parte II)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/service.TermsStatus"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Registra la aceptación de la versión vigente. Es idempotente: repetirla no crea una fila nueva ni un segundo evento de bitácora. Aceptar una versión que no es la vigente devuelve 409.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Psicólogos - Términos"
+                ],
+                "summary": "Aceptar los Términos y Condiciones (Parte II)",
+                "parameters": [
+                    {
+                        "description": "Versión aceptada",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.AcceptTermsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/service.TermsStatus"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/psi/me/validate": {
             "get": {
                 "security": [
@@ -8930,6 +9046,15 @@
                 }
             }
         },
+        "handler.AcceptTermsRequest": {
+            "type": "object",
+            "properties": {
+                "version": {
+                    "description": "Version es la versión que el agremiado afirma haber leído. El backend solo\nacepta la vigente (domain.TermsVersion): enviar otra devuelve 409.",
+                    "type": "string"
+                }
+            }
+        },
         "handler.LoginRequest": {
             "type": "object",
             "required": [
@@ -10627,6 +10752,41 @@
                 },
                 "slug": {
                     "type": "string"
+                }
+            }
+        },
+        "service.TermsAcceptanceSummary": {
+            "type": "object",
+            "properties": {
+                "accepted_at": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.TermsStatus": {
+            "type": "object",
+            "properties": {
+                "accepted": {
+                    "description": "Accepted indica si el agremiado ya aceptó ESA versión exacta.\nSi el documento cambia, vuelve a false y el modal reaparece.",
+                    "type": "boolean"
+                },
+                "accepted_at": {
+                    "description": "AcceptedAt es cuándo la aceptó (null si nunca).",
+                    "type": "string"
+                },
+                "current_version": {
+                    "description": "CurrentVersion es la versión vigente que declara el backend.",
+                    "type": "string"
+                },
+                "history": {
+                    "description": "History son las aceptaciones previas, de la más reciente a la más antigua.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/service.TermsAcceptanceSummary"
+                    }
                 }
             }
         }

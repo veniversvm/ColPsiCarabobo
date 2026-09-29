@@ -1566,6 +1566,14 @@ definitions:
         description: Username es el identificador único de login del usuario.
         type: string
     type: object
+  handler.AcceptTermsRequest:
+    properties:
+      version:
+        description: |-
+          Version es la versión que el agremiado afirma haber leído. El backend solo
+          acepta la vigente (domain.TermsVersion): enviar otra devuelve 409.
+        type: string
+    type: object
   handler.LoginRequest:
     properties:
       identifier:
@@ -2806,6 +2814,33 @@ definitions:
         $ref: '#/definitions/service.PermissionSet'
       slug:
         type: string
+    type: object
+  service.TermsAcceptanceSummary:
+    properties:
+      accepted_at:
+        type: string
+      version:
+        type: string
+    type: object
+  service.TermsStatus:
+    properties:
+      accepted:
+        description: |-
+          Accepted indica si el agremiado ya aceptó ESA versión exacta.
+          Si el documento cambia, vuelve a false y el modal reaparece.
+        type: boolean
+      accepted_at:
+        description: AcceptedAt es cuándo la aceptó (null si nunca).
+        type: string
+      current_version:
+        description: CurrentVersion es la versión vigente que declara el backend.
+        type: string
+      history:
+        description: History son las aceptaciones previas, de la más reciente a la
+          más antigua.
+        items:
+          $ref: '#/definitions/service.TermsAcceptanceSummary'
+        type: array
     type: object
 host: localhost:8080
 info:
@@ -7115,6 +7150,84 @@ paths:
       summary: Actualizar red social
       tags:
       - Psicólogos - Perfil
+  /psi/me/terms:
+    get:
+      description: 'Devuelve la versión vigente de los términos y si el agremiado
+        ya la aceptó, con su historial. El control del aviso es del cliente: si este
+        endpoint falla, el portal sigue funcionando por completo.'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/service.TermsStatus'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Estado de aceptación de los Términos y Condiciones (Parte II)
+      tags:
+      - Psicólogos - Términos
+    post:
+      consumes:
+      - application/json
+      description: 'Registra la aceptación de la versión vigente. Es idempotente:
+        repetirla no crea una fila nueva ni un segundo evento de bitácora. Aceptar
+        una versión que no es la vigente devuelve 409.'
+      parameters:
+      - description: Versión aceptada
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.AcceptTermsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/service.TermsStatus'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Aceptar los Términos y Condiciones (Parte II)
+      tags:
+      - Psicólogos - Términos
   /psi/me/validate:
     get:
       description: Devuelve 200 si el token JWT es válido y la sesión sigue activa;
