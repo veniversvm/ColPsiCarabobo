@@ -300,6 +300,33 @@ swag init -g cmd/api/main.go -o docs/   # regenerar Swagger
     OJO la fila de `text_models` **nunca actualiza `update_by`** (el `Updates`
     solo escribe `content`), aunque el servicio lo setee en memoria: la
     trazabilidad real está en `api_change_logs`.
+20. **La extensión `unaccent` la crea una migración, NO un modelo — y por eso
+    `atlas migrate diff` va a proponer borrarla** — el buscador del directorio
+    y la búsqueda de agremiados la usan en **18 llamadas** de
+    `internal/repository/postgres/psi_repository.go`
+    (`unaccent(first_name) ILIKE unaccent(?)`, etc.); sin ella, Postgres
+    responde `42883 function unaccent(character varying) does not exist` y,
+    como parece un fallo de búsqueda y no de esquema, se depura donde no es.
+    Hasta `20260930160000_unaccent_extension.sql` no la declaraba **ninguna**
+    migración ni `AutoMigrate` (`pkg/database/migration.go` solo activa
+    `pgcrypto`), así que solo existía en las bases montadas a mano. Ahora es
+    una migración (`CREATE EXTENSION IF NOT EXISTS ... WITH SCHEMA public`).
+    ⚠️ Como **ningún modelo de dominio la declara**, Atlas la marca como
+    objeto huérfano y el `.sql` que genera incluirá
+    `DROP EXTENSION unaccent`: **elimínalo antes de aplicar** (la migración lo
+    advierte en su propio comentario). Esto es la misma trampa que el
+    `DROP INDEX idx_posts_status_publish_at` del diff de la persona de
+    contacto, y más general: **`migrate diff` compara los modelos contra las
+    migraciones, no contra la realidad de la base**, así que no conoce los
+    `CHECK`, los índices **únicos parciales** ni las columnas escritas a mano
+    (`reject_reason`, `last_change_reason`, `can_view_logs`…) y los propone
+    borrar. Revisa siempre el `.sql` generado. Al depurar un 42883 o un
+    "objeto no existe" de una base recién creada, mira primero si el
+    `migrations/README.md` lista la extensión u objeto que falta.
+    Las revisiones aplicadas viven en el schema `atlas_schema_revisions` (no
+    en una tabla de `public`); si el directorio y esa tabla discrepan aparece
+    *checksum mismatch* y se sincroniza con
+    `atlas migrate set <versión> --env gorm --url ...`.
 
 ## TestKnownFlaky: TestGetAccess_ConcurrentSameUser
 
