@@ -10,9 +10,9 @@ services:
     volumes:
       # PostgreSQL 18+ requiere montar en /var/lib/postgresql (usa subdirectorio por versión)
       - postgres_data:/var/lib/postgresql
-      - ./init-db:/docker-entrypoint-initdb.d 
-      - ./init-db/pg_hba.conf:/etc/postgresql/pg_hba.conf
-      - ./init-db/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./init-db:/docker-entrypoint-initdb.d:z
+      - ./init-db/pg_hba.conf:/etc/postgresql/pg_hba.conf:z
+      - ./init-db/postgresql.conf:/etc/postgresql/postgresql.conf:ro,z
     command: postgres -c hba_file=/etc/postgresql/pg_hba.conf -c config_file=/etc/postgresql/postgresql.conf
     # Contabo 4 vCPU/8GB: tope duro de CPU en 3 y de memoria para no ahogar el host.
     cpus: "3.0"
@@ -67,7 +67,7 @@ services:
         condition: service_healthy
     volumes:
       # CORRECCIÓN: Como el compose ya está en /api, la ruta es ./migrations
-      - ./migrations:/migrations
+      - ./migrations:/migrations:z
     # Usamos la ruta absoluta del contenedor (/migrations) para evitar errores
     command: >
       migrate apply 
@@ -170,7 +170,7 @@ services:
 
   # 7. MinIO
   s3:
-    image: minio/minio
+    image: quay.io/minio/minio:latest
     container_name: colpsi_s3
     restart: always
     ports:
@@ -202,7 +202,7 @@ services:
     ports:
       - "29000:80"
     volumes:
-      - ./nginx-imgcache.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx-imgcache.conf:/etc/nginx/nginx.conf:ro,z
       - imgcache_data:/var/cache/nginx
     mem_limit: 512m
     networks:
@@ -210,7 +210,7 @@ services:
 
   # 8. Helper MinIO
   createbuckets:
-    image: minio/mc
+    image: quay.io/minio/mc:latest
     depends_on:
       - s3
     networks:
