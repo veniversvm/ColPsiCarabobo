@@ -480,21 +480,16 @@ func (s *PsiService) UpdatePsiByAdmin(
 	var bioTextToUpdate *domain.TextModel
 	if req.FullBio != nil {
 		cleanHTML := s.sanitizer.Sanitize(*req.FullBio)
-		if psi.BioTextID != uuid.Nil {
-			psi.FullBio.Content = cleanHTML
-			psi.FullBio.UpdateBy = admin.Username
-			psi.FullBio.UpdateById = &admin.ID
-		} else {
-			psi.FullBio = domain.TextModel{
-				ID:      uuid.Must(uuid.NewV7()),
-				Content: cleanHTML,
-				AuditModel: domain.AuditModel{
-					CreateBy: admin.Username, CreateById: &admin.ID,
-					UpdateBy: admin.Username, UpdateById: &admin.ID,
-				},
-			}
-			psi.BioTextID = psi.FullBio.ID
-		}
+		// NO se pre-genera un ID aquí. Si el agremiado no tiene fila de bio
+		// (bio_text_id NULL, GORM lo carga como uuid.Nil) el repositorio la crea y
+		// la enlaza; inventar un UUID en el servicio hacía que el UPDATE afectara 0
+		// filas y el guardado de bio_text_id fallara por la FK
+		// fk_psi_users_full_bio (SQLSTATE 23503). Ver upsertBioText.
+		psi.FullBio.Content = cleanHTML
+		psi.FullBio.CreateBy = admin.Username
+		psi.FullBio.CreateById = &admin.ID
+		psi.FullBio.UpdateBy = admin.Username
+		psi.FullBio.UpdateById = &admin.ID
 		bioTextToUpdate = &psi.FullBio
 	}
 
@@ -745,7 +740,18 @@ func (s *PsiService) UpdatePsiByAdmin(
 		for _, key := range uploadedS3Keys {
 			_ = s.s3Client.DeleteFile(context.Background(), key)
 		}
-		return fmt.Errorf("error al persistir los cambios: %w", err)
+		// El detalle va al log, NO al cliente: el handler responde con err.Error()
+		// y un error crudo de Postgres filtraría nombres de tabla, columnas y
+		// constraints (CWE-209). MapDBError traduce los casos conocidos (cédula,
+		// FPV, correo, username, longitud) y su fallback devuelve el error original,
+		// así que lo que no reconoce se enmascara aquí.
+		log.Error().Err(err).Str("component", "psi_user_admin_service").
+			Str("psi_id", psi.ID.String()).
+			Msg("Error al persistir los cambios del agremiado")
+		if dbErr := MapDBError(err); !errors.Is(dbErr, err) {
+			return dbErr // caso conocido: mensaje ya apto para el usuario
+		}
+		return errors.New("no se pudieron guardar los cambios. Inténtalo de nuevo.")
 	}
 
 	// La cuenta ABS se identifica por el correo del agremiado (no por su

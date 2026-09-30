@@ -283,6 +283,14 @@ func (s *PostService) UpdatePost(ctx context.Context, admin *domain.UserAdmin, r
 				UpdateById: &admin.ID,
 			},
 		}
+		// Publicaciones creadas antes de que existiera el TextModel llegan con
+		// TextID = uuid.Nil (text_id NULL en BD). El repositorio las creará y
+		// enlazará; se rellena la autoría de alta para que la fila no quede
+		// huérfana en create_by / create_by_id.
+		if post.TextID == uuid.Nil {
+			textModel.CreateBy = admin.Username
+			textModel.CreateById = &admin.ID
+		}
 	}
 
 	// 6. PERSISTENCIA Y COMPENSACIÓN (SAGA ROLLBACK)

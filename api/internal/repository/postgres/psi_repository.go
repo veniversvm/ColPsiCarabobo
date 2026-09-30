@@ -187,12 +187,9 @@ func (r *psiRepo) Update(
 
 		// 1. Guardar Bio Extensa
 		if bioText != nil {
-			if err := tx.Model(bioText).Updates(map[string]interface{}{
-				"content": bioText.Content,
-			}).Error; err != nil {
+			if err := upsertBioText(tx, psi, bioText); err != nil {
 				return err
 			}
-			psi.BioTextID = bioText.ID
 		}
 
 		// 2. Actualizar perfil principal
@@ -370,6 +367,38 @@ func (r *psiRepo) Update(
 	})
 }
 
+// upsertBioText crea o actualiza la fila de biografía extensa (text_models) de un
+// agremiado dentro de una transacción ya abierta y deja psi.BioTextID enlazado.
+//
+// Criterio de decisión: el ID que llega en bioText es el que el agremiado tenía
+// (psi.BioTextID). Si viene en cero (uuid.Nil) es que el agremiado AÚN NO tiene fila
+// de bio —los creados antes de que existiera el TextModel quedaron con
+// psi_users.bio_text_id = NULL, y GORM los carga como UUID cero—, y en ese caso la
+// fila se CREA y se enlaza. Hacer un UPDATE en su lugar fallaría por dos motivos:
+//   - Con la primary key en cero, GORM no genera WHERE y devuelve
+//     "WHERE conditions required".
+//   - Con un ID recién inventado (que es lo que hacía antes el servicio), el UPDATE
+//     afecta 0 filas SIN error y el posterior guardado de bio_text_id revienta la FK
+//     fk_psi_users_full_bio (SQLSTATE 23503).
+//
+// Se invierte el orden de las operaciones respecto al servicio: primero el texto,
+// después el enlace, para no referenciar una fila que aún no existe.
+func upsertBioText(tx *gorm.DB, psi *domain.PsiUserModel, bioText *domain.TextModel) error {
+	if bioText.ID == uuid.Nil {
+		// GORM genera el ID (default:uuidv7()) y lo deja en bioText.ID.
+		if err := tx.Create(bioText).Error; err != nil {
+			return err
+		}
+	} else if err := tx.Model(bioText).Updates(map[string]interface{}{
+		"content": bioText.Content,
+	}).Error; err != nil {
+		return err
+	}
+
+	psi.BioTextID = bioText.ID
+	return nil
+}
+
 // UpdatePublicProfile actualiza los datos permitidos para edición por parte del usuario.
 // Usa tx.Omit("ColData") para prevenir que GORM intente actualizar asociaciones no deseadas.
 // api/internal/repository/postgres/psi_repository.go
@@ -389,12 +418,9 @@ func (r *psiRepo) UpdatePublicProfile(
 
 		// 1. Guardar Bio Extensa
 		if bioText != nil {
-			if err := tx.Model(bioText).Updates(map[string]interface{}{
-				"content": bioText.Content,
-			}).Error; err != nil {
+			if err := upsertBioText(tx, psi, bioText); err != nil {
 				return err
 			}
-			psi.BioTextID = bioText.ID
 		}
 
 		// 2. Actualizar perfil principal

@@ -135,6 +135,14 @@ func (r *postRepo) List(ctx context.Context, filter domain.PostFilter, page, lim
 //   - Siempre actualiza la metadata del [domain.Post] (título, estado, imagen, etc.).
 //   - Solo actualiza el [domain.TextModel] si el parámetro text no es nil.
 //
+// Si el [domain.TextModel] llega sin ID (uuid.Nil) significa que la publicación
+// todavía NO tiene fila de contenido —las publicadas antes de que existiera el
+// TextModel quedaron con posts.text_id = NULL, y GORM las carga como UUID cero—.
+// En ese caso se CREA la fila y se enlaza al post en vez de actualizarla, porque
+// un Update cuyo modelo tiene la primary key en cero no genera condición y GORM lo
+// rechaza con "WHERE conditions required" (500). Es el mismo criterio de atomicidad
+// que aplica [postRepo.Create]: nunca puede quedar un Post sin su TextModel.
+//
 // La operación completa se revierte si cualquiera de las actualizaciones falla.
 func (r *postRepo) Update(ctx context.Context, post *domain.Post, text *domain.TextModel) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -151,14 +159,22 @@ func (r *postRepo) Update(ctx context.Context, post *domain.Post, text *domain.T
 			return err
 		}
 
-		if text != nil {
-			if err := tx.Model(text).Updates(map[string]interface{}{
-				"content": text.Content,
-			}).Error; err != nil {
+		if text == nil {
+			return nil
+		}
+
+		// El post no tiene fila de contenido: se crea y se enlaza.
+		if text.ID == uuid.Nil {
+			if err := tx.Create(text).Error; err != nil {
 				return err
 			}
+			post.TextID = text.ID
+			return tx.Model(post).Update("text_id", text.ID).Error
 		}
-		return nil
+
+		return tx.Model(text).Updates(map[string]interface{}{
+			"content": text.Content,
+		}).Error
 	})
 }
 
