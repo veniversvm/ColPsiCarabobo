@@ -254,6 +254,81 @@ func TestPsiService_UpdateByAdmin_Patch(t *testing.T) {
 			t.Errorf("Se esperaba rechazo por CI 0 en edición, se obtuvo: %v", err)
 		}
 	})
+
+	// El servicio NO debe inventar un ID de biografía. Si el agremiado no tiene
+	// fila de bio (bio_text_id NULL → uuid.Nil), inventar un UUID hacía que el
+	// UPDATE del repositorio afectara 0 filas sin error y que el guardado de
+	// bio_text_id fallara por la FK fk_psi_users_full_bio (SQLSTATE 23503).
+	t.Run("Bio sin fila: se pasa el ID en cero para que el repo la cree", func(t *testing.T) {
+		sinBio := &domain.PsiUserModel{
+			ID:        targetID,
+			Solvent:   true,
+			BioTextID: uuid.Nil,
+			ColData:   domain.PsiUserColData{PsiUserModelID: targetID, RegisterNumber: 12345},
+		}
+		repo.GetByIDFunc = func(ctx context.Context, id uuid.UUID) (*domain.PsiUserModel, error) {
+			return sinBio, nil
+		}
+
+		var got *domain.TextModel
+		repo.UpdateFunc = func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, text *domain.TextModel, solvencies []domain.PsiUserSolvency) error {
+			got = text
+			return nil
+		}
+
+		html := "<p>Biografía</p>"
+		reason := "actualización de prueba"
+		req := request_structs.UpdatePsiAdminRequest{FullBio: &html, LastChangeReason: &reason}
+
+		if err := svc.UpdatePsiByAdmin(ctx, admin, targetID, req, nil, nil, nil, nil); err != nil {
+			t.Fatalf("UpdatePsiByAdmin falló: %v", err)
+		}
+		if got == nil {
+			t.Fatal("Se esperaba un TextModel con la nueva biografía")
+		}
+		if got.ID != uuid.Nil {
+			t.Errorf("El servicio no debe inventar el ID de la bio, llegó: %v", got.ID)
+		}
+		if got.Content != html {
+			t.Errorf("La biografía no llegó al repositorio: %q", got.Content)
+		}
+		if got.CreateBy != "super_admin" || got.UpdateBy != "super_admin" {
+			t.Error("La fila de bio debe quedar con la autoría de quien la editó")
+		}
+	})
+
+	t.Run("Bio existente: se conserva el ID real", func(t *testing.T) {
+		bioID := uuid.Must(uuid.NewV7())
+		conBio := &domain.PsiUserModel{
+			ID: targetID, Solvent: true,
+			BioTextID: bioID,
+			FullBio:   domain.TextModel{ID: bioID, Content: "bio vieja"},
+			ColData:   domain.PsiUserColData{PsiUserModelID: targetID, RegisterNumber: 12345},
+		}
+		repo.GetByIDFunc = func(ctx context.Context, id uuid.UUID) (*domain.PsiUserModel, error) {
+			return conBio, nil
+		}
+
+		var got *domain.TextModel
+		repo.UpdateFunc = func(ctx context.Context, psi *domain.PsiUserModel, col *domain.PsiUserColData, text *domain.TextModel, solvencies []domain.PsiUserSolvency) error {
+			got = text
+			return nil
+		}
+
+		html := "<p>Bio nueva</p>"
+		reason := "actualización de prueba"
+		req := request_structs.UpdatePsiAdminRequest{FullBio: &html, LastChangeReason: &reason}
+
+		if err := svc.UpdatePsiByAdmin(ctx, admin, targetID, req, nil, nil, nil, nil); err != nil {
+			t.Fatalf("UpdatePsiByAdmin falló: %v", err)
+		}
+		if got == nil || got.ID != bioID {
+			t.Error("Debe conservarse el ID de la fila de bio existente")
+		}
+		if got.Content != html {
+			t.Errorf("La biografía no llegó al repositorio: %q", got.Content)
+		}
+	})
 }
 
 // TestPsiService_GetAdminDirectory_Security evalúa el Gatekeeping (Control de Acceso).

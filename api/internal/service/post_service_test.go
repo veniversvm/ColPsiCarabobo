@@ -186,4 +186,110 @@ func TestPostService_Extensive(t *testing.T) {
 			t.Error("Se debió denegar la creación al admin sin permisos")
 		}
 	})
+
+	// --- 5. TEST DE EDICIÓN DE UNA NOTICIA SIN FILA DE TEXTO ---
+	// Las noticias publicadas antes de que existiera el TextModel quedaron con
+	// posts.text_id = NULL, que GORM carga como uuid.Nil. El servicio debe pasar el
+	// contenido con ese ID en cero (para que el repo cree y enlace la fila) y
+	// rellenar la autoría de alta, en vez de intentar actualizar una fila inexistente.
+	t.Run("Update_Post_Sin_TextID", func(t *testing.T) {
+		admin := &domain.UserAdmin{
+			ID:               uuid.Must(uuid.NewV7()),
+			Credentials:      domain.Credentials{Username: "admin"},
+			CanUpdatePublish: true,
+		}
+		orphanPost := &domain.Post{ID: uuid.Must(uuid.NewV7()), Title: "Noticia sin cuerpo", Status: domain.PostStatusPublished}
+
+		repo.GetByIDFunc = func(ctx context.Context, id uuid.UUID) (*domain.Post, error) {
+			return orphanPost, nil
+		}
+
+		var gotText *domain.TextModel
+		repo.UpdateFunc = func(ctx context.Context, p *domain.Post, textModel *domain.TextModel) error {
+			gotText = textModel
+			return nil
+		}
+
+		body := "<p>Cuerpo nuevo</p>"
+		req := request_structs.UpdatePostRequest{Content: &body}
+		if err := svc.UpdatePost(ctx, admin, req, nil, orphanPost.ID); err != nil {
+			t.Fatalf("UpdatePost no debe fallar para un post sin text_id: %v", err)
+		}
+
+		if gotText == nil {
+			t.Fatal("Se esperaba un TextModel con el nuevo contenido")
+		}
+		if gotText.ID != uuid.Nil {
+			t.Errorf("El ID debe llegar en cero para que el repo cree la fila, llegó: %v", gotText.ID)
+		}
+		if gotText.Content != body {
+			t.Errorf("El contenido no se persistió: %q", gotText.Content)
+		}
+		if gotText.CreateBy != "admin" || gotText.CreateById == nil || *gotText.CreateById != admin.ID {
+			t.Error("La fila de texto creada debe quedar con la autoría de quien la generó")
+		}
+	})
+
+	// --- 6. TEST DE EDICIÓN DE UNA NOTICIA QUE YA TIENE TEXTO ---
+	// Con TextID real solo se cambia el contenido: no se toca la autoría de alta.
+	t.Run("Update_Post_Con_TextID", func(t *testing.T) {
+		admin := &domain.UserAdmin{
+			ID:               uuid.Must(uuid.NewV7()),
+			Credentials:      domain.Credentials{Username: "admin"},
+			CanUpdatePublish: true,
+		}
+		textID := uuid.Must(uuid.NewV7())
+		existing := &domain.Post{ID: uuid.Must(uuid.NewV7()), Title: "Noticia con cuerpo", TextID: textID, Status: domain.PostStatusPublished}
+
+		repo.GetByIDFunc = func(ctx context.Context, id uuid.UUID) (*domain.Post, error) {
+			return existing, nil
+		}
+
+		var gotText *domain.TextModel
+		repo.UpdateFunc = func(ctx context.Context, p *domain.Post, textModel *domain.TextModel) error {
+			gotText = textModel
+			return nil
+		}
+
+		body := "<p>Editado</p>"
+		req := request_structs.UpdatePostRequest{Content: &body}
+		if err := svc.UpdatePost(ctx, admin, req, nil, existing.ID); err != nil {
+			t.Fatalf("UpdatePost falló: %v", err)
+		}
+
+		if gotText == nil || gotText.ID != textID {
+			t.Fatal("Debe conservar el ID de la fila de texto existente")
+		}
+		if gotText.CreateBy != "" {
+			t.Error("No se debe rellenar la autoría de alta al editar un texto existente")
+		}
+	})
+
+	// --- 7. TEST DE PATCH PARCIAL (solo metadata, sin contenido) ---
+	// Si el admin no manda content, no se toca la fila de texto en absoluto.
+	t.Run("Update_Post_Solo_Metadata", func(t *testing.T) {
+		admin := &domain.UserAdmin{
+			ID:               uuid.Must(uuid.NewV7()),
+			Credentials:      domain.Credentials{Username: "admin"},
+			CanUpdatePublish: true,
+		}
+		existing := &domain.Post{ID: uuid.Must(uuid.NewV7()), Title: "Titulo viejo", TextID: uuid.Must(uuid.NewV7()), Status: domain.PostStatusPublished}
+
+		repo.GetByIDFunc = func(ctx context.Context, id uuid.UUID) (*domain.Post, error) {
+			return existing, nil
+		}
+
+		repo.UpdateFunc = func(ctx context.Context, p *domain.Post, textModel *domain.TextModel) error {
+			if textModel != nil {
+				t.Error("Sin content en el request no debe tocarse el texto")
+			}
+			return nil
+		}
+
+		nuevo := "Titulo nuevo"
+		req := request_structs.UpdatePostRequest{Title: &nuevo}
+		if err := svc.UpdatePost(ctx, admin, req, nil, existing.ID); err != nil {
+			t.Fatalf("UpdatePost falló: %v", err)
+		}
+	})
 }

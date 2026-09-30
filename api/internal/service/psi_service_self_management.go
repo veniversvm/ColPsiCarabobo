@@ -245,21 +245,16 @@ func (s *PsiService) UpdateProfileSelf(
 	var bioTextToUpdate *domain.TextModel
 	if req.FullBio != nil {
 		cleanHTML := s.sanitizer.Sanitize(*req.FullBio)
-		if psi.BioTextID != uuid.Nil {
-			psi.FullBio.Content = cleanHTML
-			psi.FullBio.UpdateBy = psi.Username
-			psi.FullBio.UpdateById = &psi.ID
-		} else {
-			psi.FullBio = domain.TextModel{
-				ID:      uuid.Must(uuid.NewV7()),
-				Content: cleanHTML,
-				AuditModel: domain.AuditModel{
-					CreateBy: psi.Username, CreateById: &psi.ID,
-					UpdateBy: psi.Username, UpdateById: &psi.ID,
-				},
-			}
-			psi.BioTextID = psi.FullBio.ID
-		}
+		// NO se pre-genera un ID aquí. Si el agremiado no tiene fila de bio
+		// (bio_text_id NULL, GORM lo carga como uuid.Nil) el repositorio la crea y
+		// la enlaza; inventar un UUID en el servicio hacía que el UPDATE afectara 0
+		// filas y el guardado de bio_text_id fallara por la FK
+		// fk_psi_users_full_bio (SQLSTATE 23503). Ver upsertBioText.
+		psi.FullBio.Content = cleanHTML
+		psi.FullBio.CreateBy = psi.Username
+		psi.FullBio.CreateById = &psi.ID
+		psi.FullBio.UpdateBy = psi.Username
+		psi.FullBio.UpdateById = &psi.ID
 		bioTextToUpdate = &psi.FullBio
 	}
 

@@ -7,6 +7,7 @@ package postgres
 import (
 	"context"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -677,3 +678,116 @@ func TestPsiRepo_ComprehensiveSuite(t *testing.T) {
 }
 
 func boolPtr(b bool) *bool { return &b }
+
+// TestPsiRepo_UpsertBioText cubre el alta del texto de biografía extensa.
+//
+// Los agremiados creados antes de que existiera el TextModel quedaron con
+// psi_users.bio_text_id = NULL, que GORM carga como uuid.Nil. El servicio NO puede
+// inventar un UUID en ese caso: el UPDATE afectaría 0 filas sin error y el
+// guardado de bio_text_id reventaría la FK fk_psi_users_full_bio (SQLSTATE 23503).
+// upsertBioText debe crear la fila y enlazarla.
+func TestPsiRepo_UpsertBioText(t *testing.T) {
+	mainDB := setupFullTestDB(t)
+	ctx := context.Background()
+
+	// nuevoPsi crea un agremiado con una fila de bio ya existente.
+	nuevoPsi := func(t *testing.T, tx *gorm.DB, ci, fpv int) domain.PsiUserModel {
+		t.Helper()
+		bio := domain.TextModel{ID: uuid.New(), Content: "bio inicial"}
+		require.NoError(t, tx.Create(&bio).Error)
+		psi := domain.PsiUserModel{
+			ID: uuid.New(), CI: ci, FPV: fpv, BornDate: time.Now(),
+			Genre: "M", Nationality: "V", ContactEmail: "bio@t.com", ContactPhone: "2000",
+			FirstName: "Bio", LastName: "Prueba", BioTextID: bio.ID,
+			Credentials: domain.Credentials{Username: "bio" + strconv.Itoa(ci), Email: "bio" + strconv.Itoa(ci) + "@t.com", IsActive: true},
+		}
+		require.NoError(t, tx.Create(&psi).Error)
+		return psi
+	}
+
+	// sinBio deja el agremiado con bio_text_id NULL, como quedó en producción.
+	sinBio := func(t *testing.T, tx *gorm.DB, ci, fpv int) domain.PsiUserModel {
+		t.Helper()
+		psi := nuevoPsi(t, tx, ci, fpv)
+		require.NoError(t, tx.Exec("UPDATE psi_users SET bio_text_id = NULL WHERE id = ?", psi.ID).Error)
+		return psi
+	}
+
+	t.Run("agremiado sin bio recibe su primera fila", func(t *testing.T) {
+		tx := mainDB.Begin()
+		defer tx.Rollback()
+		r := NewPsiRepository(tx)
+
+		created := sinBio(t, tx, 31001, 31001)
+
+		// GetByID hace Preload("FullBio"): con bio_text_id NULL, FullBio queda en cero.
+		loaded, err := r.GetByID(ctx, created.ID)
+		require.NoError(t, err)
+		require.Equal(t, uuid.Nil, loaded.BioTextID, "bio_text_id NULL debe cargarse como uuid.Nil")
+		require.Equal(t, uuid.Nil, loaded.FullBio.ID, "FullBio precargado debe venir en cero")
+
+		nuevo := "<p>Biografía extensa</p>"
+		loaded.FullBio.Content = nuevo
+		loaded.FullBio.CreateBy = "admin"
+		loaded.FullBio.UpdateBy = "admin"
+		require.NoError(t, r.UpdatePublicProfile(ctx, loaded, nil, &loaded.FullBio))
+
+		require.NotEqual(t, uuid.Nil, loaded.BioTextID, "debe generarse y enlazarse un ID de bio")
+		require.Equal(t, loaded.BioTextID, loaded.FullBio.ID)
+
+		reread, err := r.GetByID(ctx, created.ID)
+		require.NoError(t, err)
+		require.Equal(t, nuevo, reread.FullBio.Content)
+		require.Equal(t, reread.BioTextID, reread.FullBio.ID, "el enlace debe coincidir con la fila real")
+	})
+
+	t.Run("agremiado con bio edita su fila, no crea otra", func(t *testing.T) {
+		tx := mainDB.Begin()
+		defer tx.Rollback()
+		r := NewPsiRepository(tx)
+
+		created := nuevoPsi(t, tx, 31002, 31002)
+		loaded, err := r.GetByID(ctx, created.ID)
+		require.NoError(t, err)
+		originalBioID := loaded.BioTextID
+		require.NotEqual(t, uuid.Nil, originalBioID)
+
+		var before int64
+		require.NoError(t, tx.Model(&domain.TextModel{}).Count(&before).Error)
+
+		loaded.FullBio.Content = "<p>Bio editada</p>"
+		loaded.FullBio.UpdateBy = "admin"
+		require.NoError(t, r.UpdatePublicProfile(ctx, loaded, nil, &loaded.FullBio))
+
+		var after int64
+		require.NoError(t, tx.Model(&domain.TextModel{}).Count(&after).Error)
+		require.Equal(t, before, after, "no debe crear una fila nueva si la bio ya existía")
+		require.Equal(t, originalBioID, loaded.BioTextID, "el ID de bio no debe cambiar")
+
+		reread, err := r.GetByID(ctx, created.ID)
+		require.NoError(t, err)
+		require.Equal(t, "<p>Bio editada</p>", reread.FullBio.Content)
+		require.Equal(t, originalBioID, reread.FullBio.ID)
+	})
+
+	t.Run("Update (ruta admin) también crea la bio que falta", func(t *testing.T) {
+		tx := mainDB.Begin()
+		defer tx.Rollback()
+		r := NewPsiRepository(tx)
+
+		created := sinBio(t, tx, 31003, 31003)
+		loaded, err := r.GetByID(ctx, created.ID)
+		require.NoError(t, err)
+		require.Equal(t, uuid.Nil, loaded.BioTextID)
+
+		loaded.FullBio.Content = "<p>Bio desde el panel</p>"
+		loaded.FullBio.CreateBy = "admin"
+		loaded.FullBio.UpdateBy = "admin"
+		require.NoError(t, r.Update(ctx, loaded, nil, &loaded.FullBio, nil))
+
+		require.NotEqual(t, uuid.Nil, loaded.BioTextID)
+		reread, err := r.GetByID(ctx, created.ID)
+		require.NoError(t, err)
+		require.Equal(t, "<p>Bio desde el panel</p>", reread.FullBio.Content)
+	})
+}

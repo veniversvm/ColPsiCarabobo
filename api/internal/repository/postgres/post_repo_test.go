@@ -150,6 +150,87 @@ func TestPostRepo_FullLifecycle(t *testing.T) {
 		require.Equal(t, "<p>Contenido Completo</p>", found.Text.Content)
 	})
 
+	// # Escenario: Actualizar el cuerpo de una publicación que NO tiene fila de texto
+	// Las publicaciones anteriores a la creación del TextModel quedaron con
+	// posts.text_id = NULL, que GORM carga como uuid.Nil. Un Update sobre un modelo
+	// con primary key en cero no genera WHERE y GORM lo rechaza con
+	// "WHERE conditions required" (500). El repo debe crear la fila y enlazarla.
+	t.Run("Update crea y enlaza el texto si el post no tiene text_id", func(t *testing.T) {
+		tx := mainDB.Begin()
+		defer tx.Rollback()
+		repo := repoFactory(tx)
+
+		// Preparación: post huérfano de texto, tal como queda en producción
+		// (text_id NULL). Se inserta con SQL crudo porque el AutoMigrate del banco
+		// de pruebas deja text_id NOT NULL (uuid.UUID es tipo valor, GORM nunca
+		// envía NULL), mientras que la migración de producción sí lo permite.
+		postID := uuid.New()
+		require.NoError(t, tx.Exec(
+			`INSERT INTO posts (id, title, type, status, text_id) VALUES (?::uuid, ?, 'public', 'published', NULL)`,
+			postID, "Noticia sin cuerpo").Error)
+
+		var loaded domain.Post
+		require.NoError(t, tx.First(&loaded, "id = ?", postID).Error)
+		require.Equal(t, uuid.Nil, loaded.TextID, "text_id NULL debe cargarse como uuid.Nil")
+
+		// Ejecución: el servicio entrega el TextModel con el ID que venía del post.
+		text := &domain.TextModel{ID: loaded.TextID, Content: "<p>Cuerpo nuevo</p>"}
+		require.NoError(t, repo.Update(ctx, &loaded, text))
+
+		// Verificación: se creó la fila de texto y el post quedó enlazado a ella.
+		require.NotEqual(t, uuid.Nil, text.ID, "el repo debe generar el ID de la fila creada")
+		require.Equal(t, text.ID, loaded.TextID)
+
+		found, err := repo.GetByID(ctx, postID)
+		require.NoError(t, err)
+		require.Equal(t, text.ID, found.TextID)
+		require.Equal(t, "<p>Cuerpo nuevo</p>", found.Text.Content)
+	})
+
+	// # Escenario: el mismo post, ahora con texto, se actualiza en el sitio (no crea otra fila)
+	t.Run("Update reutiliza la fila de texto existente", func(t *testing.T) {
+		tx := mainDB.Begin()
+		defer tx.Rollback()
+		repo := repoFactory(tx)
+
+		text := &domain.TextModel{ID: uuid.New(), Content: "contenido original"}
+		require.NoError(t, tx.Create(text).Error)
+		post := &domain.Post{ID: uuid.New(), Title: "Noticia con cuerpo", Type: "public", Status: domain.PostStatusPublished, TextID: text.ID}
+		require.NoError(t, tx.Create(post).Error)
+
+		var before, after int64
+		require.NoError(t, tx.Model(&domain.TextModel{}).Count(&before).Error)
+
+		require.NoError(t, repo.Update(ctx, post, &domain.TextModel{ID: post.TextID, Content: "contenido editado"}))
+
+		require.NoError(t, tx.Model(&domain.TextModel{}).Count(&after).Error)
+		require.Equal(t, before, after, "no debe crear una fila nueva si el texto ya existía")
+
+		var reread domain.TextModel
+		require.NoError(t, tx.First(&reread, "id = ?", text.ID).Error)
+		require.Equal(t, "contenido editado", reread.Content)
+	})
+
+	// # Escenario: nil en el contenido no toca la fila de texto (PATCH parcial de metadata)
+	t.Run("Update sin contenido no toca el texto", func(t *testing.T) {
+		tx := mainDB.Begin()
+		defer tx.Rollback()
+		repo := repoFactory(tx)
+
+		text := &domain.TextModel{ID: uuid.New(), Content: "cuerpo intacto"}
+		require.NoError(t, tx.Create(text).Error)
+		post := &domain.Post{ID: uuid.New(), Title: "Titulo viejo", Type: "public", TextID: text.ID}
+		require.NoError(t, tx.Create(post).Error)
+
+		post.Title = "Titulo nuevo"
+		require.NoError(t, repo.Update(ctx, post, nil))
+
+		found, err := repo.GetByID(ctx, post.ID)
+		require.NoError(t, err)
+		require.Equal(t, "Titulo nuevo", found.Title)
+		require.Equal(t, "cuerpo intacto", found.Text.Content)
+	})
+
 	t.Run("PublishScheduled transitions due posts", func(t *testing.T) {
 		tx := mainDB.Begin()
 		defer tx.Rollback()

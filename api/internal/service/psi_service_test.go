@@ -424,3 +424,89 @@ func TestPsiService_DeletePostGrade(t *testing.T) {
 		}
 	})
 }
+
+// TestUpdateProfileSelf_FullBio_SinFila comprueba que la auto-gestión no invente
+// el ID de la biografía. Con bio_text_id NULL (GORM lo carga como uuid.Nil), un
+// UUID inventado en el servicio hacía que el UPDATE del repositorio afectara 0
+// filas sin error y que el guardado de bio_text_id fallara por la FK
+// fk_psi_users_full_bio (SQLSTATE 23503). El repo decide: crear o actualizar.
+func TestUpdateProfileSelf_FullBio_SinFila(t *testing.T) {
+	repo := &mockPsiRepoSvc{}
+	svc := NewPsiService(repo, nil, nil)
+	psiID := uuid.Must(uuid.NewV7())
+	hashed, _ := bcrypt.GenerateFromPassword([]byte("pass123"), bcrypt.DefaultCost)
+	ctx := context.Background()
+
+	base := func() *domain.PsiUserModel {
+		return &domain.PsiUserModel{
+			ID:        psiID,
+			BioTextID: uuid.Nil,
+			Credentials: domain.Credentials{
+				Username: "psico_bio",
+				Password: string(hashed),
+			},
+		}
+	}
+	repo.ValidateUniqueCredentialsFunc = func(ctx context.Context, u, e string, ex uuid.UUID) error { return nil }
+
+	t.Run("Sin fila de bio: el ID llega en cero", func(t *testing.T) {
+		psi := base()
+		repo.GetPsiUserColDataFunc = func(ctx context.Context, id uuid.UUID) (*domain.PsiUserColData, error) {
+			t.Error("no debe leer ColData si solo cambia la bio")
+			return &domain.PsiUserColData{}, nil
+		}
+
+		var got *domain.TextModel
+		repo.UpdatePublicProfileFunc = func(ctx context.Context, p *domain.PsiUserModel, c *domain.PsiUserColData, t *domain.TextModel) error {
+			got = t
+			return nil
+		}
+
+		html := "<p>Mi biografía</p>"
+		req := request_structs.PsiUserUpdateRequestSelf{Password: "pass123", FullBio: &html}
+		if _, err := svc.UpdateProfileSelf(ctx, psi, psiID, req, nil, nil, nil, nil); err != nil {
+			t.Fatalf("UpdateProfileSelf falló: %v", err)
+		}
+		if got == nil {
+			t.Fatal("Se esperaba un TextModel con la nueva bio")
+		}
+		if got.ID != uuid.Nil {
+			t.Errorf("El servicio no debe inventar el ID de la bio, llegó: %v", got.ID)
+		}
+		if got.Content != html {
+			t.Errorf("La bio no llegó al repositorio: %q", got.Content)
+		}
+		if got.CreateBy != "psico_bio" || got.UpdateBy != "psico_bio" {
+			t.Error("La fila de bio debe quedar con la autoría del agremiado")
+		}
+	})
+
+	t.Run("Con fila de bio: se conserva el ID real", func(t *testing.T) {
+		bioID := uuid.Must(uuid.NewV7())
+		psi := base()
+		psi.BioTextID = bioID
+		psi.FullBio = domain.TextModel{ID: bioID, Content: "bio vieja"}
+
+		repo.GetPsiUserColDataFunc = func(ctx context.Context, id uuid.UUID) (*domain.PsiUserColData, error) {
+			return &domain.PsiUserColData{}, nil
+		}
+
+		var got *domain.TextModel
+		repo.UpdatePublicProfileFunc = func(ctx context.Context, p *domain.PsiUserModel, c *domain.PsiUserColData, t *domain.TextModel) error {
+			got = t
+			return nil
+		}
+
+		html := "<p>Bio editada</p>"
+		req := request_structs.PsiUserUpdateRequestSelf{Password: "pass123", FullBio: &html}
+		if _, err := svc.UpdateProfileSelf(ctx, psi, psiID, req, nil, nil, nil, nil); err != nil {
+			t.Fatalf("UpdateProfileSelf falló: %v", err)
+		}
+		if got == nil || got.ID != bioID {
+			t.Error("Debe conservarse el ID de la fila de bio existente")
+		}
+		if got.Content != html {
+			t.Errorf("La bio no llegó al repositorio: %q", got.Content)
+		}
+	})
+}
