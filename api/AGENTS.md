@@ -50,6 +50,13 @@ swag init -g cmd/api/main.go -o docs/   # regenerar Swagger
    `/admin/me` y `/admin/validate` NO existen — se movieron (404 catch-all si
    alguien los llama).
 
+   La clave de firma **es `admin.Key`**, no un secreto global: se resuelve por
+   `user_id` en `validateToken`. Un re-login rota la key → los JWT firmados con
+   la anterior dejan de validar (404). Al depurar, mira el `SELECT * FROM
+   "user_admins" WHERE id = '...'` del log de SQL: si sale `rows:0`, el
+   `user_id` del token no existe (un dígito mal transcrito produce exactamente
+   el mismo 404 que un token caducado) y el problema está en el cliente, no en
+   la ruta ni en la key.
 2. **`S3_ENDPOINT` ≠ `S3_PUBLIC_URL`** — son intencionalmente distintos.
    - `S3_ENDPOINT`: interno, para el SDK, debe apuntar SIEMPRE directo a MinIO
      (en Docker: `http://s3:9000`; en dev local: `http://localhost:29002`).
@@ -262,6 +269,53 @@ swag init -g cmd/api/main.go -o docs/   # regenerar Swagger
     si se cambia esto hay que cambiar el texto, y al revés (ver
     `docs/plan-terminos-condiciones.md`).
 
+19. **`text_id` / `bio_text_id` NULL = el `TextModel` no existe todavía, y
+    GORM lo trata como `uuid.Nil`** — los campos son `uuid.UUID` **por valor**,
+    así que una columna NULL se carga como UUID cero, no como NULL: las
+    publicaciones y agremiados creados antes de que existiera el `TextModel`
+    quedaron huérfanos (2 de 5 noticias y 1 de 103 agremiados en local) y
+    cualquier edición de su cuerpo fallaba. **Dos síntomas distintos según
+    quién inventara el ID**:
+    - `tx.Model(text).Updates(...)` con la primary key en cero → GORM no genera
+      WHERE → **`WHERE conditions required`** (500).
+    - Un UUID "nuevo" generado en el servicio → el UPDATE afecta **0 filas sin
+      error** y el guardado posterior del FK revienta `fk_psi_users_full_bio`
+      (SQLSTATE 23503), que además se filtraba al cliente.
+    **Quien decide es el repositorio, nunca el servicio**: `postRepo.Update` y
+    el helper `upsertBioText` (compartido por `psiRepo.Update` y
+    `UpdatePublicProfile`) hacen `Create` + enlace cuando el ID llega en
+    `uuid.Nil`, ordenando **texto→enlace** para no referenciar una fila
+    inexistente; los servicios solo rellenan autoría. Regla general: si un
+    `Model(&X{}).Update(...)` puede recibir la primary key en cero, ramifica
+    por `== uuid.Nil` y `Create`; y jamás inventes el ID de una fila que aún no
+    has insertado, porque el fallo se manifiesta dos puntos más tarde (FK) y
+    enmascarado. Ambas columnas admiten NULL a propósito: no las hagas NOT NULL
+    sin un backfill.
+    OJO `UpdatePsiByAdmin` responde **403 con `err.Error()` para cualquier
+    error** del servicio (contrato heredado, no lo cambies sin revisar el
+    frontend), así que un error de persistencia debe salir enmascarado desde el
+    servicio (`log.Error()` + `MapDBError` o mensaje genérico) — el fallback
+    passthrough de `MapDBError` es intencional y está testeado, no lo "arregles"
+    globalmente.
+    OJO la fila de `text_models` **nunca actualiza `update_by`** (el `Updates`
+    solo escribe `content`), aunque el servicio lo setee en memoria: la
+    trazabilidad real está en `api_change_logs`.
+
+## TestKnownFlaky: TestGetAccess_ConcurrentSameUser
+
+`internal/service/audiobookshelf_service_test.go` falla de forma intermitente
+(~10% de las corridas) **y es esperado por diseño**: el test exige
+`createCalls == 2` ("ambas goroutines intentaron crear") pero `GetAccess`
+serializa por usuario, así que según el scheduler hay 1 o 2 llamadas. No es
+una regresión ni una race (verificado con `-race -count=10`: limpio, y falla
+igual en baseline sin los cambios del commit actual). Si lo ves fallar, no lo
+persigas: relanza `make test-unit`.
+
+Los 4 fallos de repositorio que sí son preexistentes y constantes
+(`make test-repo`) son `TestAdminRepo_ComprehensiveSuite`,
+`TestAdminRepo_Update_PreservesBoolean{False,True}` y
+`TestPsiRepo_ComprehensiveSuite`.
+
 ## Estructura
 
 ```
@@ -298,7 +352,15 @@ api/
 ## Flujo de verificación rápida
 
 1. `go build ./... && go vet ./...` — ¿compila sin advertencias?
+   OJO: `go build ./...` desde `api/` falla con
+   `db_data/pgdata: permission denied` (el datadir de Postgres en el árbol);
+   usa `go build ./internal/... ./cmd/... ./pkg/...`.
 2. `make test-unit` — ¿tests unitarios en verde?
+   OJO: `TestGetAccess_ConcurrentSameUser` es flaky (ver
+   [TestKnownFlaky](#testknownflaky-testgetaccess_concurrentsameuser)); relanza
+   antes de culpar a tu cambio. `make test-repo` necesita
+   `colpsi_test_db` arriba (`docker compose -f docker-compose.test.yml up -d`)
+   y tiene 4 fallos preexistentes constantes.
 3. Con Docker: `docker compose up -d` (api, db, pgbouncer, s3, valkey).
 4. `curl http://localhost:28080/api/v1/psi/directory` → 200 con URLs de imágenes
    `http://localhost:29000/colpsi-bucket/...` (nunca `s3:9000`).
