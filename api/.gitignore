@@ -63,3 +63,10 @@ minio_data/
 biblioteca/books/
 biblioteca/config/
 biblioteca/metadata/
+
+# Plantilla de producción: NO se commitea. Es una copia de trabajo con los
+# secretos reales del server (DB_PASSWORD, AWS_*, ADMIN_PASSWORD, JWT_*,
+# ABS_PASSWORD_SECRET, ABS_ADMIN_TOKEN…), no una plantilla con placeholders:
+# subirla publicaría credenciales de producción en el repo para siempre.
+# Para un server nuevo, regenera los valores con `openssl rand -hex 32`.
+.env.production.example
