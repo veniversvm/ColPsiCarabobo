@@ -20,6 +20,7 @@ alfabético**: el nombre de cada archivo es su versión.
 | `20260928190000_inscription_unique_fpv_correo.sql` | 2 índices **únicos parciales** (FPV y correo) que cierran la ventana de carrera del doble envío |
 | `20260928210000_inscription_reject_reason.sql` | Columna `psi_inscription_requests.reject_reason` |
 | `20260929210000_psi_terms_acceptance.sql` | Aceptación de Términos y Condiciones + 3 índices (uno único por usuario y versión) |
+| `20260930160000_unaccent_extension.sql` | Extensión `unaccent` (la del buscador) |
 | `atlas.sum` | Checksums del directorio (**lo genera Atlas, nunca se edita a mano**) |
 | `atlas.hcl` (en `api/`, no aquí) | Define el env `gorm`: fuente de verdad = modelos, destino = `file://migrations` |
 | `intrucciones.txt` | Guía rápida de uso de Atlas |
@@ -32,6 +33,10 @@ Los 150 índices se reparten en 42 primary keys, 22 índices únicos y 86 no
 únicos. Las migraciones crean 103 índices de forma explícita (86 no únicos +
 17 únicos); los 42 PK y los 5 `UNIQUE` restantes van declarados dentro del
 `CREATE TABLE`.
+
+**Extensiones:** `plpgsql` (del propio PostgreSQL) y `unaccent`, que declara
+`20260930160000_unaccent_extension.sql` y necesita el buscador. La API además
+activa `pgcrypto` al arrancar.
 
 <details>
 <summary>Las 42 tablas</summary>
@@ -117,13 +122,16 @@ atlas migrate hash --env gorm
   pooler guarda planes preparados con el esquema viejo; con
   `prefer_simple_protocol=true` (gotcha 14 de `api/AGENTS.md`) eso ya no ocurre,
   pero el reinicio sigue siendo una precaución barata.
-- ⚠️ **Extensión `unaccent`: nadie la crea.** Ninguna migración la declara, pero
-  el buscador la usa en 18 llamadas de
+- ⚠️ **La extensión `unaccent` la crea una migración, no un modelo.** El
+  buscador la usa en 18 llamadas de
   `internal/repository/postgres/psi_repository.go` (`unaccent(first_name)
-  ILIKE unaccent(?)`, etc.). Solo existe en las bases de datos montadas antes
-  de esto, así que una base creada únicamente con estas migraciones responde
-  `42883 function does not exist` al buscar. Si creas una base de cero,
-  ejecuta `CREATE EXTENSION IF NOT EXISTS unaccent;` a mano.
+  ILIKE unaccent(?)`, etc.) y sin ella responde `42883 function
+  unaccent(character varying) does not exist`. Está declarada en
+  `20260930160000_unaccent_extension.sql`, pero como **ningún modelo de
+  dominio la declara**, `atlas migrate diff` la marca como huérfana y propondrá
+  `DROP EXTENSION unaccent`: bórralo del `.sql` generado antes de aplicar. La
+  extensión `pgcrypto` sí la crea la propia API al arrancar
+  (`pkg/database/migration.go`), con `IF NOT EXISTS`.
 - La API además ejecuta `AutoMigrate` de GORM al arrancar
   (`pkg/database/migration.go`), que es *self-healing*: crea lo que falte. Eso
   puede **tapar** una migración mal aplicada, así que no confíes en que "la API

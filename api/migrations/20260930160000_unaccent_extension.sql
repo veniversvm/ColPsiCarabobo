@@ -1,0 +1,14 @@
+-- Extensión "unaccent": la usa el buscador del directorio y la búsqueda de
+-- agremiados en 18 llamadas de internal/repository/postgres/psi_repository.go
+-- (unaccent(first_name) ILIKE unaccent(?), etc.).
+--
+-- Hasta aquí solo existía en las bases de datos montadas a mano: ninguna
+-- migración la creaba, así que una base construida únicamente con este
+-- directorio respondía 42883 (function unaccent(text) does not exist) en
+-- cuanto se usaba el buscador. Se declara aquí para cerrar ese hueco.
+--
+-- Va fuera de `migrate diff` a propósito (ver migrations/README.md): la
+-- extensión no la declara ningún modelo de dominio, así que Atlas la marcaría
+-- como objeto huérfano y propondría DROP EXTENSION unaccent. Si algún día lo
+-- hace, elimínalo del .sql antes de aplicar.
+CREATE EXTENSION IF NOT EXISTS "unaccent" WITH SCHEMA public;
