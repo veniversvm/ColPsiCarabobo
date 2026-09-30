@@ -11,7 +11,7 @@ basadas en los modelos de GORM definidos en Go.
 3. Base de Datos corriendo (Docker): docker-compose up -d db
 
 --- 1. GENERAR UNA NUEVA MIGRACIÓN (DIFF) ---
-Cada vez que modifiques un struct en 'internal/domain/models.go', ejecuta:
+Cada vez que modifiques un struct en 'internal/domain/*.model.go', ejecuta:
 
 $ atlas migrate diff (nombre_de_la_migracion) --env gorm
 
@@ -42,6 +42,10 @@ $ atlas migrate status --env gorm \
 - NUNCA borres el archivo atlas.sum.
 - Las migraciones se basan en el archivo 'api/atlas.hcl' y el bridge 
   'api/cmd/exp/migrate/main.go'.
+- OJO: 'atlas migrate diff' compara los MODELOS contra las migraciones, asi que 
+  no conoce los CHECK, los indices unicos parciales ni las columnas anadidas a 
+  mano, y a veces propone borrarlos. Revisa el .sql generado antes de aplicarlo. 
+  Ver 'README.md' en este directorio.
 ==========================================================
 
 
