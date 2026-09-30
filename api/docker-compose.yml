@@ -44,7 +44,10 @@ services:
       - DEFAULT_POOL_SIZE=20
       - AUTH_TYPE=scram-sha-256
       - ADMIN_USERS=${DB_USER:-postgres}
-      - IGNORE_STARTUP_PARAMETERS=extra_float_digits,search_path
+      # pgx envía `prefer_simple_protocol` como startup parameter (runtime param
+      # del driver); PgBouncer lo rechaza con 08P01 si no está ignorado. Es
+      # client-side: ignorarlo no cambia el protocolo simple que usa la API.
+      - IGNORE_STARTUP_PARAMETERS=extra_float_digits,search_path,prefer_simple_protocol
     cpus: "0.5"
     mem_limit: 256m
     ports:
@@ -166,8 +169,13 @@ services:
       retries: 5
 
   # 7. MinIO
+  # `minio/minio` ya no se puede descargar: MinIO retiró el repo de Docker Hub
+  # (cambio de licencia a AGPLv3) y el de quay.io pide autenticación, así que un
+  # server nuevo falla con "pull access denied" y NO levanta el stack completo.
+  # `bitnamilegacy/minio` es el mismo MinIO (solo cambia el empaquetado) y sí es
+  # público. OJO: corre como UID 1001, no 1000.
   s3:
-    image: minio/minio
+    image: bitnamilegacy/minio:latest
     container_name: colpsi_s3
     restart: always
     ports:
@@ -206,17 +214,20 @@ services:
       - colpsi_network
 
   # 8. Helper MinIO
+  # `minio/mc` tampoco existe ya en Docker Hub. Esta imagen trae el cliente mc
+  # en /opt/bitnami/minio-client/bin/mc, pero NO lo expone como `mc` en el PATH,
+  # así que la entrypoint de abajo invoca la ruta absoluta.
   createbuckets:
-    image: minio/mc
+    image: bitnamilegacy/minio:latest
     depends_on:
       - s3
     networks:
       - colpsi_network
     entrypoint: >
       /bin/sh -c "
-      until (/usr/bin/mc alias set myminio http://s3:9000 ${AWS_ACCESS_KEY_ID:-minioadmin} ${AWS_SECRET_ACCESS_KEY:-minioadmin}) do echo 'Esperando a MinIO...' && sleep 1; done;
-      /usr/bin/mc mb --ignore-existing myminio/${AWS_S3_BUCKET:-colpsi-bucket};
-      /usr/bin/mc anonymous set public myminio/${AWS_S3_BUCKET:-colpsi-bucket};
+      until (/opt/bitnami/minio-client/bin/mc alias set myminio http://s3:9000 ${AWS_ACCESS_KEY_ID:-minioadmin} ${AWS_SECRET_ACCESS_KEY:-minioadmin}) do echo 'Esperando a MinIO...' && sleep 1; done;
+      /opt/bitnami/minio-client/bin/mc mb --ignore-existing myminio/${AWS_S3_BUCKET:-colpsi-bucket};
+      /opt/bitnami/minio-client/bin/mc anonymous set public myminio/${AWS_S3_BUCKET:-colpsi-bucket};
       exit 0;
       "
 
