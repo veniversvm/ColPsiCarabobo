@@ -18,7 +18,7 @@ services:
     cpus: "3.0"
     mem_limit: 3.5g
     ports:
-      - "${POSTGRES_HOST_PORT:-25432}:5432"
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-25432}:5432"
     networks:
       - colpsi_network
     restart: unless-stopped
@@ -51,7 +51,7 @@ services:
     cpus: "0.5"
     mem_limit: 256m
     ports:
-      - "${PGBOUNCER_HOST_PORT:-26432}:5432"
+      - "127.0.0.1:${PGBOUNCER_HOST_PORT:-26432}:5432"
     networks:
       - colpsi_network
     depends_on:
@@ -85,7 +85,7 @@ services:
     container_name: colpsi_api
     env_file: .env
     ports:
-      - "28080:8080" 
+      - "127.0.0.1:28080:8080"
     environment:
       # Sobrescribimos localhost para que apunte a los contenedores internos
       - DB_HOST=pgbouncer
@@ -146,8 +146,8 @@ services:
     container_name: colpsi_mailhog
     profiles: ["${MAILPIT_PROFILE:-disabled}"]
     ports:
-      - "21025:1025"   # SMTP server (host 21025 → interno 1025)
-      - "28025:8025"   # Web UI + API (http://localhost:28025)
+      - "127.0.0.1:21025:1025"   # SMTP server (host 21025 → interno 1025)
+      - "127.0.0.1:28025:8025"   # Web UI + API (http://localhost:28025)
     networks:
       - colpsi_network
 
@@ -156,7 +156,7 @@ services:
     image: valkey/valkey:9.1-alpine
     container_name: colpsi_valkey
     ports:
-      - "26379:6379"
+      - "127.0.0.1:26379:6379"
     volumes:
       - valkey_data:/data
     command: valkey-server --save "" --appendonly no --maxmemory 512mb --maxmemory-policy allkeys-lru --maxclients 512 --loglevel warning
@@ -196,8 +196,8 @@ services:
       # 29000 quedó reservado para el edge cache nginx (imgcache).
       # 29001: consola MinIO.
       # 29002: acceso DIRECTO al SDK desde el host (S3_ENDPOINT en dev local).
-      - "29001:9001"
-      - "29002:9000"
+      - "127.0.0.1:29001:9001"
+      - "127.0.0.1:29002:9000"
     environment:
       - MINIO_ROOT_USER=${AWS_ACCESS_KEY_ID:-minioadmin}
       - MINIO_ROOT_PASSWORD=${AWS_SECRET_ACCESS_KEY:-minioadmin}
@@ -219,7 +219,7 @@ services:
     depends_on:
       - s3
     ports:
-      - "29000:80"
+      - "127.0.0.1:29000:80"
     volumes:
       - ./nginx-imgcache.conf:/etc/nginx/nginx.conf:ro
       - imgcache_data:/var/cache/nginx
@@ -250,7 +250,7 @@ services:
     container_name: audiobookshelf
     restart: unless-stopped
     ports:
-      - "21337:80" # Mapea el puerto 21337 de tu máquina al 80 del contenedor
+      - "127.0.0.1:21337:80" # Mapea el puerto 21337 de tu máquina al 80 del contenedor
     volumes:
       # Carpetas para tus archivos multimedia
       - ./biblioteca/audiobooks:/audiobooks
