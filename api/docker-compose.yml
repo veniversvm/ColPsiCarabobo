@@ -170,7 +170,7 @@ services:
 
   # 7. MinIO
   s3:
-    image: quay.io/minio/minio:latest
+    image: quay.io/minio/minio:RELEASE.2024-01-16T16-07-38Z
     container_name: colpsi_s3
     restart: always
     ports:
@@ -210,7 +210,7 @@ services:
 
   # 8. Helper MinIO
   createbuckets:
-    image: quay.io/minio/mc:latest
+    image: quay.io/minio/mc:RELEASE.2024-01-16T16-06-34Z
     depends_on:
       - s3
     networks:
