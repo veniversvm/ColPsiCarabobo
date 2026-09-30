@@ -228,14 +228,12 @@ services:
     container_name: audiobookshelf
     restart: unless-stopped
     ports:
-      - "21337:80" # Mapea el puerto 21337 de tu máquina al 80 del contenedor
+      - "21337:80"
     volumes:
-      # Carpetas para tus archivos multimedia
-      - ./biblioteca/audiobooks:/audiobooks
-      - ./biblioteca/books:/books
-      # Carpetas críticas donde se guarda tu progreso de lectura y configuración
-      - ./biblioteca/config:/config
-      - ./biblioteca/metadata:/metadata
+      - ./biblioteca/audiobooks:/audiobooks:Z
+      - ./biblioteca/books:/books:Z
+      - ./biblioteca/config:/config:Z
+      - ./biblioteca/metadata:/metadata:Z
     environment:
       - AUDIOBOOKSHELF_UID=1000
       - AUDIOBOOKSHELF_GID=1000
