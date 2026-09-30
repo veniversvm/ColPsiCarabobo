@@ -199,7 +199,7 @@ const _SECCIONES: TerminosSeccion[] = [
       {
         tipo: "lista",
         items: [
-          "El acceso a la biblioteca virtual (audiolibros del Colegio) es **exclusivo para agremiados solventes**. Si usted está insolvente, el acceso aparece bloqueado y su sesión en la biblioteca podrá ser retirada.",
+          "El acceso a la biblioteca virtual (libros y documentos digitales del Colegio) es **exclusivo para agremiados solventes**. Si usted está insolvente, el acceso aparece bloqueado y su sesión en la biblioteca podrá ser retirada.",
           "El acceso es **personal e intransferible**: no puede compartir su sesión ni credenciales con terceros.",
           "Los materiales están protegidos por derechos de autor. Se ofrecen para **uso personal y profesional**; **no puede copiarlos, redistribuirlos ni publicarlos**.",
           "El servicio depende de una plataforma externa y puede no estar disponible en ocasiones.",

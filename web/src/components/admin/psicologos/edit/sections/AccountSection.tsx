@@ -18,11 +18,16 @@ interface Props {
   pictureUrl: string;
   onDeletePicture: () => void;
   // --- Reinicio de clave por administración ---
-  onResetPassword: () => void;
-  resettingPassword: boolean;
+  // Opcionales a propósito: son acciones sobre un agremiado QUE YA EXISTE. La
+  // única ruta que monta esta sección (`admin/psicologos/[id]/detalle.tsx`) los
+  // pasa todos. Se declaran opcionales para que una futura reutilización no
+  // reviente con `props.onX is not a function` al pulsar el botón, y los bloques
+  // se ocultan con `<Show>` cuando no vienen (ver más abajo).
+  onResetPassword?: () => void;
+  resettingPassword?: boolean;
   // --- Sincronización de la Biblioteca Virtual (Audiobookshelf) ---
-  onSyncAbs: () => void;
-  syncingAbs: boolean;
+  onSyncAbs?: () => void;
+  syncingAbs?: boolean;
 }
 
 export function AccountSection(props: Props) {
@@ -114,49 +119,56 @@ export function AccountSection(props: Props) {
               Si el usuario está logueado, su sesión se invalidará.
             </p>
 
-            <div class="flex flex-wrap items-center justify-between gap-4 mt-5 pt-5 border-t border-blue-100">
-              <p class="text-sm text-blue-700 leading-relaxed">
-                <span class="font-semibold uppercase mr-1">Clave de acceso:</span>
-                Reinicia la contraseña para cerrar todas sus sesiones y enviarle
-                una temporal por correo.
-              </p>
-              <button
-                type="button"
-                onClick={() => props.onResetPassword()}
-                disabled={props.resettingPassword}
-                class="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide bg-red-600 text-white rounded-lg px-4 py-2.5 hover:bg-red-700 active:scale-95 transition-all disabled:opacity-50"
-              >
-                <Show
-                  when={props.resettingPassword}
-                  fallback={<><Icon name="key" class="w-3.5 h-3.5" /> Reiniciar clave</>}
-                >
-                  <span class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Procesando...</span>
-                </Show>
-              </button>
-            </div>
+            {/* Reiniciar clave y Sincronizar biblioteca solo se pintan si llega su
+                handler: son acciones sobre un agremiado existente. */}
 
-            <div class="flex flex-wrap items-center justify-between gap-4 mt-5 pt-5 border-t border-blue-100">
-              <p class="text-sm text-blue-700 leading-relaxed">
-                <span class="font-semibold uppercase mr-1">Biblioteca Virtual:</span>
-                Crea o reactiva la cuenta del agremiado en Audiobookshelf si está
-                solvente, o la desactiva si perdió el derecho.
-              </p>
-              <button
-                type="button"
-                onClick={() => props.onSyncAbs()}
-                disabled={props.syncingAbs}
-                class="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide bg-colpsi-blue text-white rounded-lg px-4 py-2.5 hover:bg-colpsi-blue-light active:scale-95 transition-all disabled:opacity-50"
-              >
-                <Show
-                  when={props.syncingAbs}
-                  fallback={<><Icon name="refresh" class="w-3.5 h-3.5" /> Sincronizar biblioteca</>}
+            <Show when={!!props.onResetPassword}>
+              <div class="flex flex-wrap items-center justify-between gap-4 mt-5 pt-5 border-t border-blue-100">
+                <p class="text-sm text-blue-700 leading-relaxed">
+                  <span class="font-semibold uppercase mr-1">Clave de acceso:</span>
+                  Reinicia la contraseña para cerrar todas sus sesiones y enviarle
+                  una temporal por correo.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => props.onResetPassword()}
+                  disabled={props.resettingPassword}
+                  class="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide bg-red-600 text-white rounded-lg px-4 py-2.5 hover:bg-red-700 active:scale-95 transition-all disabled:opacity-50"
                 >
-                  <span class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Procesando...</span>
-                </Show>
-              </button>
-            </div>
+                  <Show
+                    when={props.resettingPassword}
+                    fallback={<><Icon name="key" class="w-3.5 h-3.5" /> Reiniciar clave</>}
+                  >
+                    <span class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Procesando...</span>
+                  </Show>
+                </button>
+              </div>
+            </Show>
+
+            <Show when={!!props.onSyncAbs}>
+              <div class="flex flex-wrap items-center justify-between gap-4 mt-5 pt-5 border-t border-blue-100">
+                <p class="text-sm text-blue-700 leading-relaxed">
+                  <span class="font-semibold uppercase mr-1">Biblioteca Virtual:</span>
+                  Crea o reactiva la cuenta del agremiado en Audiobookshelf si está
+                  solvente, o la desactiva si perdió el derecho.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => props.onSyncAbs()}
+                  disabled={props.syncingAbs}
+                  class="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide bg-colpsi-blue text-white rounded-lg px-4 py-2.5 hover:bg-colpsi-blue-light active:scale-95 transition-all disabled:opacity-50"
+                >
+                  <Show
+                    when={props.syncingAbs}
+                    fallback={<><Icon name="refresh" class="w-3.5 h-3.5" /> Sincronizar biblioteca</>}
+                  >
+                    <span class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Procesando...</span>
+                  </Show>
+                </button>
+              </div>
+            </Show>
           </div>
         </div>
 

@@ -89,7 +89,9 @@ export default function PsiDashboard() {
             class={`w-full flex items-center gap-3 text-left group ${profile()?.solvent ? 'active:scale-[0.99] transition-transform' : 'cursor-not-allowed'}`}
           >
             <div class={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${profile()?.solvent ? 'bg-blue-50 text-colpsi-blue group-hover:bg-colpsi-yellow transition-colors' : 'bg-gray-100 text-gray-400'}`}>
-              🎧
+              {/* Icono de libros, NO de auriculares: Audiobookshelf se usa aquí solo
+                  como almacén de PDF, no hay ningún audiolibro (ver manual §9). */}
+              📚
             </div>
             <div class="flex-1">
               <span class={`text-xs font-bold ${profile()?.solvent ? 'text-colpsi-blue' : 'text-gray-400'}`}>
@@ -97,7 +99,7 @@ export default function PsiDashboard() {
               </span>
               <p class="text-[11px] text-colpsi-muted mt-0.5 leading-snug">
                 <Show when={profile()?.solvent} fallback="Ponte al día con el gremio para acceder a la biblioteca virtual">
-                  Audiolibros y contenidos exclusivos para agremiados
+                  Libros y documentos digitales para agremiados
                 </Show>
               </p>
             </div>
