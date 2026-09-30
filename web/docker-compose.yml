@@ -6,8 +6,20 @@ services:
     container_name: colpsi_web
     env_file: .env
     environment:
-      # IMPORTANTE: Al ser SSR/Server Actions, Deno llama a la API por la red interna
-      - VITE_API_URL=http://colpsi_api:8080/api/v1
+      # IMPORTANTE: al ser SSR + Server Actions hay DOS URLs y no son la misma.
+      #
+      # - `API_URL_INTERNAL` se lee en RUNTIME (process.env, solo servidor) y
+      #   `src/lib/api.ts` la tiene prioridad. La usan los Server Actions para
+      #   hablar con la API por la red interna de Docker, que es lo correcto:
+      #   no sale del host y no depende de DNS público.
+      # - `VITE_API_URL` se INLINEA EN BUILD (import.meta.env) y por eso viaja al
+      #   bundle del NAVEGADOR. Debe ser la URL pública del .env.
+      #
+      # NO pongas `VITE_API_URL` acá: `environment:` pisa a `env_file`, y
+      # horneaba `http://colpsi_api:8080/api/v1` en el bundle — un hostname de
+      # Docker que ningún navegador puede resolver. El sitio se veía bien (el
+      # SSR responde por `API_URL_INTERNAL`) pero todo fetch desde el cliente
+      # (búsqueda del directorio, login, acciones del panel) se rompía.
       - API_URL_INTERNAL=http://colpsi_api:8080/api/v1
       - PORT=3000
     ports:
