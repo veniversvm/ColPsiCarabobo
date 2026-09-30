@@ -173,11 +173,21 @@ services:
   # (cambio de licencia a AGPLv3) y el de quay.io pide autenticación, así que un
   # server nuevo falla con "pull access denied" y NO levanta el stack completo.
   # `bitnamilegacy/minio` es el mismo MinIO (solo cambia el empaquetado) y sí es
-  # público. OJO: corre como UID 1001, no 1000.
+  # público.
+  # ⚠️ `user: "0:0"` es OBLIGATORIO, no cosmético. Bitnami corre como UID 1001,
+  # pero los volúmenes existentes los creó `minio/minio` como root y quedaron
+  # root:root. Sin esta línea MinIO arranca y muere con
+  #   FATAL Unable to initialize backend: Unable to write to the backend
+  # (no toca los datos: el fallo es al crear /data/.minio.sys/tmp).
+  # Forzar root reproduce exactamente lo que hacía la imagen anterior, así que
+  # NO hay que chown ni migrar nada. Alternativa sería
+  # `chown -R 1001:1001` sobre el volumen, pero es un paso manual que hay que
+  # repetir si la imagen vuelve a cambiar de UID.
   s3:
     image: bitnamilegacy/minio:latest
     container_name: colpsi_s3
     restart: always
+    user: "0:0"
     ports:
       # 29000 quedó reservado para el edge cache nginx (imgcache).
       # 29001: consola MinIO.
