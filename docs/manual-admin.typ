@@ -244,6 +244,15 @@ En *Identidad* el sistema muestra la *edad calculada* a partir de la fecha de
 nacimiento. *Solvencias* permite registrar la solvencia anual del colega y
 *Estatus* controla el estado de la cuenta y el número de control interno.
 
+La pestaña *Cuenta* agrupa los datos de acceso del agremiado, su fotografía, el
+código QR de ingreso y los botones de administración: *Restablecer contraseña*
+y *Sincronizar biblioteca* (ver sección 4.5).
+
+#figure(
+  image("capturas-admin/35-psi-detalle-cuenta.png", width: 82%),
+  caption: [Ficha del psicólogo — pestaña Cuenta (sincronización de biblioteca)],
+)
+
 La segunda libreta concentra los módulos de gestión: *Redes, Deontológico,
 Observaciones, Documentos, Contacto Emergencia y Auditoría*.
 
@@ -285,6 +294,63 @@ expediente interno del gremio.
 #aviso[Los datos que el psicólogo marca como privados *no* se modifican desde el
 panel sin justificación: la cuenta del agremiado y su visibilidad en el
 Directorio son gestionadas por el propio colega desde su portal.]
+
+== 4.5 Biblioteca virtual del agremiado
+
+Los agremiados solventes tienen acceso a la *Biblioteca Virtual* del Colegio, un
+catálogo de libros y documentos digitales que consultan y descargan desde su
+portal. El Colegio no gestiona ese catálogo con cuentas propias: lo apoya en
+Audiobookshelf, y desde el panel solo se administra la cuenta de acceso de cada
+agremiado.
+
+== 4.5.1 Sincronizar la cuenta de un agremiado
+
+En la pestaña *Cuenta* de la ficha hay un botón *Sincronizar biblioteca*. Compara
+la cuenta del agremiado en la biblioteca con lo que el panel sabe de él y deja
+una de estas tres cosas:
+
++ *Crea* la cuenta, si el agremiado es solvente y aún no tenía una.
++ *Reactiva* la cuenta, si estaba desactivada y el agremiado volvió a estar al
+  día. Es el caso de quien regulariza su cuota después de un año impagado.
++ *Desactiva* la cuenta, si el agremiado dejó de ser solvente o la cuenta se
+  desactivó. Perder el acceso a la biblioteca es una consecuencia de perder la
+  solvencia, no una sanción.
+
+Al terminar muestra un informe con el resultado: cuántas cuentas se crearon,
+reactivaron, desactivaron, cuántos casos quedaron sin cambios y cuántos dieron
+error. Un informe con varios errores y ningún cambio suele significar que el
+servicio de biblioteca no está disponible, no que haya un problema con ese
+agremiado en concreto.
+
+#aviso[Sincronizar toca el estado de la cuenta del agremiado, por lo que exige el
+permiso de *editar psicólogos*. La operación *no* se anota en la bitácora de
+auditoría, que registra los cambios de datos de la ficha: aquí solo cambia el
+acceso a la biblioteca, sin alterar ningún dato del expediente.]
+
+== 4.5.2 La sincronización automática
+
+El Colegio no espera a que se pulse ese botón. El sistema revisa todas las
+cuentas cada 24 horas —y también al arrancar la API— y aplica la misma regla:
+
++ Todo agremiado *solvente y activo* tiene una cuenta activa en la biblioteca.
++ Todo agremiado *insolvente*, inactivo o dado de baja tiene su cuenta
+  desactivada.
++ Las cuentas que ya no corresponden a ningún agremiado se desactivan también.
+  Suele tratarse de cuentas antiguas creadas con el número de cédula en vez del
+  correo; se pueden eliminar sin miedo cuando ya están desactivadas.
+
+Por eso el acceso del agremiado a la biblioteca no depende de que nadie pulse
+nada: si regulariza su cuota recupera el acceso solo, y si deja de estar al día
+lo pierde solo.
+
+#tip[Si un agremiado dice que no entra a la biblioteca y su estatus de solvencia
+es correcto, la cuenta suele estar desactivada por un desajuste anterior. Pulsa
+*Sincronizar biblioteca*: el sistema la reactiva y el colega entra de
+inmediato, sin esperar a la pasada de las 24 horas.]
+
+#aviso[La clave de cada cuenta de biblioteca la genera el servidor y nunca se
+muestra en pantalla. El agremiado entra con un acceso automático desde su
+portal, así que no hay clave que recuperarle ni que comunicarle.]
 
 // ============================================================================
 // 5. INSCRIPCIONES

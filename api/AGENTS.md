@@ -102,13 +102,25 @@ swag init -g cmd/api/main.go -o docs/   # regenerar Swagger
 9. **Biblioteca virtual (Audiobookshelf)** — `GET /psi/me/audiobookshelf`
    (`psi_handler.go:GetAudiobookshelfAccess`) devuelve la URL de auto-login
    `{ABS_PUBLIC_URL}/login/?accessToken=...` SOLO a agremiados solventes
-   (403 si no). El usuario ABS es `psi_<ci>` y se crea al vuelo vía la API de
-   admin con la clave derivada de `ABS_PASSWORD_SECRET` (nunca
-   se expone en claro). El id de la cuenta ABS se persiste en
-   `audio_book_shell_id` (`UpdateAudioBookShellID`). El acceso se sirve por
-   `ABS_PUBLIC_URL`, mientras `ABS_BASE_URL` es la interna del SDK.
+   (403 si no). El usuario ABS es el **correo en minúsculas** del agremiado
+   (`AbsUsernameFor`); solo cae a `psi_<ci>` si no tiene correo, y esas
+   cuentas legacy son precisamente las que el worker de sync desactiva. Se
+   crea al vuelo vía la API de admin con la clave derivada por
+   `passwordFor` = HMAC-SHA256(`ABS_PASSWORD_SECRET`, `"abs:"+usuario`) hex
+   recortado a 32 chars (nunca se expone en claro). El `accessToken` de la URL
+   lo emite **ABS**, no la API, y **no caduca**: los `server-settings` de ABS
+   no definen `tokenExpiration` (= 0), así que revocar el acceso = desactivar
+   la cuenta. Ojo: `POST /psi/login-library` firma un token de 30 días pero
+   **el frontend nunca lo llama** (ruta muerta). El id de la cuenta ABS se
+   persiste en `audio_book_shell_id` (`UpdateAudioBookShellID`). El acceso se
+   sirve por `ABS_PUBLIC_URL`, mientras `ABS_BASE_URL` es la interna del SDK.
    El admin de aprovisionamiento (`ABS_ADMIN_USERNAME/PASSWORD`) debe tener rol
    admin en ABS; si `colpsi-bot` no funciona (401), usar `root` del propio ABS.
+   ⚠️ El catálogo contiene **3 títulos, todos PDF** (`biblioteca/books`);
+   `biblioteca/audiobooks` está vacía y los ítems llegan `mediaType: book`,
+   `ebookFormat: pdf`, `numChapters: 0`, `coverPath: null`. **No hay nada que
+   reproducir**: se descarga y se lee. No prometas "audiolibros" ni streaming
+   en la documentación (ver `docs/manual-psiuser.typ` §9).
 
 10. **Worker de sync ABS** (`cmd/api/abs_sync_worker.go`) — `runABSSyncLoop`
     se dispara UNA vez al arrancar y luego cada `ABS_SYNC_INTERVAL_HOURS`

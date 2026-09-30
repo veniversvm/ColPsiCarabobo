@@ -298,8 +298,8 @@ de cédula según corresponda.
 
 ### 2.2 Biblioteca virtual
 
-Tarjeta con acceso a la biblioteca de audio-libros del Colegio (plataforma
-Audiobookshelf).
+Tarjeta con acceso a la biblioteca de **libros y documentos digitales** del
+Colegio (plataforma Audiobookshelf).
 
 - **Solo disponible para agremiados solventes.** Si no lo es, el botón aparece
   bloqueado con un candado y el texto *"Ponte al día con el gremio para acceder
@@ -307,6 +307,29 @@ Audiobookshelf).
 - Al pulsarlo se abre en una pestaña nueva la sesión personal ya iniciada en la
   biblioteca. **La clave nunca pasa por la web**: se genera en el servidor.
 - Si la biblioteca no responde, el portal avisa y reintenta después.
+
+> **Nota — lo que hay realmente dentro.** Audiobookshelf es un reproductor de
+> audio, pero aquí se usa solo como almacén de PDF: el catálogo tiene **3
+> títulos, los tres en PDF**, y `biblioteca/audiobooks` está **vacía**. Los ítems
+> llegan con `mediaType: book`, `ebookFormat: pdf`, `numChapters: 0`,
+> `duration: 0` y `coverPath: null` — no hay nada que reproducir en línea. En la
+> práctica el agremiado **descarga el archivo y lo lee** con su lector de PDF
+> (los 110 usuarios de ABS tienen `download: true`). No hay que prometer
+> "audiolibros" ni streaming: el nombre de la plataforma es lo único que suena a
+> audio.
+
+> **Cómo funciona el acceso sin clave.** El usuario de ABS es el **correo** del
+> agremiado en minúsculas (`AbsUsernameFor`; solo cae a `psi_<ci>` si no tiene
+> correo — esas son las cuentas huérfanas que el sync desactiva). La clave se
+> **deriva por HMAC-SHA256** de `ABS_PASSWORD_SECRET` sobre `"abs:"+usuario`,
+> recortada a 32 caracteres hex (`passwordFor`): nunca se guarda ni se devuelve
+> al cliente. El servidor inicia sesión en ABS con esa clave y usa el
+> `accessToken` que le devuelve para armar `{ABS_PUBLIC_URL}/login/?accessToken=…`.
+> Ese token es de ABS, no nuestro, y **no tiene caducidad propia**: los
+> `server-settings` de ABS no definen `tokenExpiration` (= 0).
+>
+> Ojo: `POST /psi/login-library` sí firma un token de 30 días, pero **el
+> frontend nunca lo llama** — es una ruta muerta para la web.
 
 ### 2.3 Acceso rápido
 
@@ -715,7 +738,7 @@ por su firma de archivo, no por su extensión.
 | Contraseña | Mínimo 8 caracteres, sin espacios, con mayúscula, minúscula, número y símbolo |
 | Verificación de sesión | Cada 60 segundos |
 | Cierre de sesión | Invalida todas las sesiones abiertas del agremiado |
-| Ventana de sesión de la biblioteca | 30 días (sesión independiente, en Audiobookshelf) |
+| Ventana de sesión de la biblioteca | **No caduca por sí sola** (token de auto-login sin `exp` y `tokenExpiration` de ABS = 0). Se revoca al desactivar la cuenta |
 | Límite general de la API | 60 peticiones por minuto y conexión, en toda la aplicación |
 
 ---
@@ -1697,7 +1720,7 @@ credencial.
 
 | Regla | Valor |
 |---|---|
-| Duración de sesión | 24 h (biblioteca: 30 días) |
+| Duración de sesión | 24 h (biblioteca: sin caducidad propia; se revoca al desactivar la cuenta) |
 | Login del agremiado | 15 / 5 min por conexión |
 | Login del personal | 5 / 30 min por conexión |
 | Límite general de la API | 60 req/min por conexión (no cuenta los preflight) |
@@ -1849,7 +1872,7 @@ para que no se confundan con comportamiento intencionado.
 | **Bitácora / auditoría** | El registro interno de qué cambió, quién y cuándo. |
 | **Motivo del cambio** | La explicación obligatoria que el Colegio escribe al editar un agremiado. Se guarda en su ficha y en la bitácora. |
 | **Interruptor de recepción** | El apagador global que impide abrir nuevas solicitudes o inscripciones. |
-| **Biblioteca virtual** | La colección de audio-libros del Colegio (Audiobookshelf). Solo para solventes. |
+| **Biblioteca virtual** | La colección de libros y documentos digitales del Colegio (Audiobookshelf). Solo para solventes. |
 | **Idempotencia** | Poder reintentar un alta sin crear duplicados. |
 
 ---

@@ -117,6 +117,8 @@ del Colegio de Psicólogos del Estado Carabobo. Desde allí cada colegiado puede
   formación, modalidad de servicio, privacidad y contacto de emergencia).
 + Registrar sus *postgrados* y mantener sus *documentos* al día.
 + Recibir *notificaciones* gremiales.
++ Consultar y descargar el material de la *Biblioteca Virtual* del Colegio (ver
+  sección 9).
 + Abrir y dar seguimiento a *solicitudes (tickets)* ante la administración.
 
 El portal es de uso personal: lo que se guarda en el perfil alimenta el
@@ -183,12 +185,16 @@ pantalla la información más consultada:
 + *Estatus de Solvencia*: muestra si el agremiado está *AL DÍA* o *INSOLVENTE*,
   junto con su número de FPV. Los agremiados solventes tienen acceso a todos
   los servicios, incluida la Biblioteca Virtual.
-+ *Biblioteca Virtual*: acceso a audiolibros y contenidos exclusivos. Solo está
-  disponible para agremiados solventes; si no lo estás, el acceso aparece
-  bloqueado con un candado.
-+ *Acceso rápido*: atajos a *Mi Perfil*, *Postgrados*, *Mis Documentos*,
-  *Notificaciones* y *Solicitudes*.
++ *Biblioteca Virtual*: acceso al material de lectura del Colegio, que puedes
+  consultar y descargar. Solo está disponible para agremiados solventes; si no
+  lo estás, el acceso aparece bloqueado con un candado (ver sección 9).
++ *Acceso rápido*: seis atajos a *Mi Perfil*, *Académico*, *Mis Documentos*,
+  *Notificaciones*, *Solicitudes* y *Manual*.
 + *Noticias gremiales*: las publicaciones más recientes del Colegio.
+
+Debajo del acceso rápido, el Colegio recuerda que el uso del portal supone
+aceptar los *Términos y Condiciones* del portal, con un enlace a su texto
+completo.
 
 En pantallas de celular el panel se reorganiza automáticamente para verse y
 usarse con una mano:
@@ -472,9 +478,78 @@ encabezado.
 de respaldo. Una solicitud bien explicada se resuelve en menos pasadas.]
 
 // ============================================================================
-// 9. SUPORTE Y RECOMENDACIONES
+// 9. BIBLIOTECA VIRTUAL
 // ============================================================================
-= 9. Soporte y recomendaciones
+= 9. Biblioteca virtual
+
+El Colegio pone a disposición de sus agremiados una Biblioteca Virtual con
+material de lectura para la formación continua: libros y documentos digitales
+que se consultan y se descargan desde el mismo lugar.
+
+#figure(
+  image("capturas/19-biblioteca.png", width: 82%),
+  caption: [Tarjeta de la Biblioteca Virtual en el panel principal],
+)
+
+== 9.1 Quién tiene acceso
+
+El acceso es exclusivo de los agremiados solventes. La tarjeta del panel
+principal lo muestra siempre, pero:
+
++ Si estás al día, aparece con su flecha azul y abre la biblioteca.
++ Si estás insolvente, aparece con un candado y el mensaje "Ponte al día con el
+  gremio para acceder a la biblioteca virtual"; no se puede abrir.
+
+El requisito es el mismo del resto de los servicios: la solvencia anual. Si
+regularizas tu cuota, el acceso se restablece automáticamente, sin que tengas
+que pedir nada.
+
+#nota[
+  El acceso depende de tu estatus de solvencia, que se calcula a partir de las
+  constancias registradas en la pestaña *Solvencias* de tu ficha. Si crees que
+  estás al día y sin embargo te aparece bloqueado, abre una Solicitud
+  (sección 8.2) indicando tu número de FPV.
+]
+
+== 9.2 Cómo entrar
+
+Pulsa la tarjeta *Biblioteca Virtual*. La biblioteca se abre en una pestaña
+nueva del navegador, con tu sesión ya iniciada: no te pide usuario ni
+contraseña.
+
++ No necesitas recordar ninguna clave propia para la biblioteca. El Colegio
+  genera internamente una clave asociada a tu cuenta y se encarga de
+  entregártela por ti.
++ Puedes volver a entrar tantas veces como quieras desde la misma tarjeta, sin
+  volver a escribir nada.
++ La sesión de la biblioteca es independiente de la del portal: cerrar sesión
+  en el portal no te cierra la biblioteca, y viceversa.
+
+== 9.3 Qué puedes hacer dentro
+
+La biblioteca reúne libros y documentos digitales del Colegio. Dentro puedes:
+
++ *Consultar* el catálogo y abrir la ficha de cada título.
++ *Descargar* el material a tu equipo para leerlo con el programa que prefieras.
+
+#figure(
+  image("capturas/20-biblioteca-catalogo.png", width: 82%),
+  caption: [Catálogo de la biblioteca abierto en el navegador],
+)
+
+Los títulos aparecen con el nombre del archivo, así que la primera vez conviene
+abrir la ficha de cada uno y comprobar cuál es.
+
+#tip[
+  Descarga los documentos y guárdalos en una carpeta con un orden claro. El
+  Colegio amplía la colección con el tiempo, y tenerlos separados por área o por
+  año te facilita volver a consultarlos.
+]
+
+// ============================================================================
+// 10. SOPORTE Y RECOMENDACIONES
+// ============================================================================
+= 10. Soporte y recomendaciones
 
 + *No recuerdo mi contraseña*: usa _¿Olvidaste tu contraseña?_ en la pantalla
   de ingreso.
@@ -483,6 +558,11 @@ de respaldo. Una solicitud bien explicada se resuelve en menos pasadas.]
 + *Mi perfil se ve incompleto en el Directorio*: revisa las pestañas
   *Expediente Académico*, *Ubicación Geográfica* y *Privacidad y Visibilidad*;
   las áreas de trabajo solo se muestran si están en el catálogo del Colegio.
++ *La Biblioteca Virtual me sale con candado*: revisa tu estatus de solvencia
+  en el panel principal; solo los agremiados al día pueden entrar (sección 9.1).
++ *La biblioteca no me abre o se queda cargando*: es posible que el servicio
+  esté temporalmente caído. Inténtalo en unos minutos y, si persiste, abre una
+  Solicitud (sección 8.2) contándonos qué pasa.
 + *Necesito una constancia o corregir mis datos*: abre una *Solicitud* (ver
   sección 8.2) con el motivo correspondiente.
 + *No encuentro un documento*: verifica *Mis Documentos* y contacta a la
