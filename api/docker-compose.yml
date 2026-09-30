@@ -114,6 +114,10 @@ services:
         condition: service_started
       migrador:
         condition: service_completed_successfully
+      # La API exige ABS_ADMIN_TOKEN al arrancar (main.go:75 → log.Fatal), así que
+      # tiene que esperar a que abs-init haya dejado el root de ABS creado.
+      abs-init:
+        condition: service_completed_successfully
     restart: unless-stopped
 
   # 4. pgAdmin (Solo Dev)
@@ -260,6 +264,43 @@ services:
     # ABS es Node y puede pedir 1-2GB; topes para no ahogar el server de 8GB.
     cpus: "2.0"
     mem_limit: 1.5g
+    networks:
+      - colpsi_network
+
+  # Bootstrap de Audiobookshelf.
+  #
+  # ABS genera la contraseña del usuario `root` al crear su base por primera vez
+  # y la muestra una única vez en los logs: si ese log se pierde (recreate del
+  # contenedor, logrotate, otro server), la contraseña queda desconocida y NO hay
+  # forma de recuperarla por la vía normal. `ABS_ADMIN_TOKEN` es un hard gate de
+  # arranque (cmd/api/main.go:75 → log.Fatal), así que ese bloqueo tumba la API.
+  #
+  # Este servicio crea el root solo si no existe, vía POST /init — el propio
+  # endpoint de bootstrap de ABS. Es idempotente por diseño: el handler rechaza
+  # con 500 cuando `Database.hasRootUser` ya es true, así que nunca pisa una
+  # clave existente ni deja el arranque a medias.
+  #
+  # Reusa nginx:alpine (ya está en el stack) en vez de sumar una imagen nueva.
+  # OJO: su wget es el de BUSYBOX, no el de GNU — solo acepta `--post-data`,
+  # no `--method=POST` ni `--body-data`. Con GNU el POST salía sin enviarse y
+  # el servicio reportaba "root creado" sin haber hecho nada.
+  #
+  # El script vive en disco (`scripts/abs-init.sh`) y no inline en el
+  # entrypoint: dentro de un bloque `>` de YAML los newlines se convierten en espacios
+  # y el shell depende de ese folding para no cortar la línea del POST.
+  abs-init:
+    image: nginx:alpine
+    container_name: colpsi_abs_init
+    restart: "no" # corre una vez y termina; no es un servicio de larga vida
+    depends_on:
+      - audiobookshelf
+    environment:
+      - ABS_URL=http://audiobookshelf:80
+      - ABS_USER=${ABS_ADMIN_USERNAME:-root}
+      - ABS_PASS=${ABS_ADMIN_PASSWORD:-}
+    entrypoint: /bin/sh /scripts/abs-init.sh
+    volumes:
+      - ./scripts/abs-init.sh:/scripts/abs-init.sh:ro
     networks:
       - colpsi_network
 

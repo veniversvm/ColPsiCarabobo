@@ -327,6 +327,36 @@ swag init -g cmd/api/main.go -o docs/   # regenerar Swagger
     en una tabla de `public`); si el directorio y esa tabla discrepan aparece
     *checksum mismatch* y se sincroniza con
     `atlas migrate set <versión> --env gorm --url ...`.
+21. **El `root` de Audiobookshelf lo crea el servicio `abs-init`, y su
+    contraseña SOLO existe si `ABS_ADMIN_PASSWORD` está en el `.env`** — ABS
+    genera la clave del `root` al crear su base por primera vez y la muestra
+    **una única vez** en los logs; si ese log se pierde (recreate del
+    contenedor, logrotate, un server nuevo) la clave queda desconocida y **no
+    hay forma de recuperarla**. Como `ABS_ADMIN_TOKEN` es un gate duro de
+    arranque (`cmd/api/main.go:75` → `log.Fatal`), ese bloqueo tumba la API
+    entera. El servicio `abs-init` (`scripts/abs-init.sh`, imagen `nginx:alpine`
+    ya presente en el stack) lo resuelve: espera a ABS, consulta
+    `GET /status` (`isInit`) y solo si viene `false` llama a `POST /init` — el
+    propio endpoint de bootstrap de ABS, que **rechaza con 500 si
+    `Database.hasRootUser` ya es true**, así que nunca pisa una clave existente.
+    `api` lo espera con `depends_on: abs-init → service_completed_successfully`.
+    - **`ABS_PASS` vacío + `isInit:false` → exit 1 a propósito**: frena el
+      arranque de la API en vez de dejar que cree un `root` sin clave (ABS
+      avisa `Creating root user with no password`, y un root sin clave es
+      accesible sin autenticación).
+    - ⚠️ El `wget` de `nginx:alpine` es el de **BUSYBOX, no el de GNU**: solo
+      acepta `--post-data` (con `--header` aparte). Con `--method=POST` /
+      `--body-data` (sintaxis de GNU) el POST **no se envía**, `wget` imprime su
+      usage y sale !=0; si el script no comprobara el código de salida, el
+      servicio reportaría "root creado" sin haber hecho nada.
+    - El script vive **en disco**, montado `:ro`, y no inline en el `entrypoint`:
+      dentro de un bloque `>` de YAML los newlines se convierten en espacios y el
+      shell depende de ese folding para no cortar la línea del POST.
+    - ⚠️ Esto **no** arregla un ABS que ya tiene un `root` con clave desconocida
+      (`/init` da 500 a propósito): para eso hay que borrar
+      `biblioteca/config/absdatabase.sqlite` (se pierden las cuentas de ABS, que
+      recrea el worker de sync, y el progreso de lectura; **no** los PDFs de
+      `biblioteca/books/`).
 
 ## TestKnownFlaky: TestGetAccess_ConcurrentSameUser
 
