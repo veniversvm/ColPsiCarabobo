@@ -151,7 +151,11 @@ swag init -g cmd/api/main.go -o docs/   # regenerar Swagger
     con `ResolveSpecialtyNames(ctx, ids, legacy)` — FK primero, luego nombre
     exacto del legacy — y el DTO público NO expone `solvent` (la solvencia es
     invisible al visitante; un insolvente recibe solo el perfil de identidad).
-    El filtro por área del directorio sigue siendo por FK.
+    El filtro por área del directorio (`SearchDirectory`), el del panel
+    (`SearchAdmin`) y el de las notificaciones masivas (`ResolveRecipients`)
+    usan la **misma** expresión que el chip (`specialtyAreaFilterSQL`, ver
+    gotcha 24) — el filtro comparaba solo por la FK mientras el chip resolvía
+    por FK + nombre, y por eso no encontraba a casi nadie.
 
 12. **Bitácora de auditoría (audit logs)** — `api_change_logs` se escribe de
     forma **diferida y best-effort** (ver `docs/audit-logs.md`): `Record()`
@@ -453,6 +457,51 @@ swag init -g cmd/api/main.go -o docs/   # regenerar Swagger
     - Los correos ya entregados no se reescriben: el fix evita que el próximo envío
       vuelva a emitir esos avisos, pero la reputación de calentamiento que ya
       acumuló el dominio sigue como esté.
+24. **El área que se MUESTRA y el área por la que se FILTRA son la MISMA
+    expresión — y por eso viven en constantes, no repetidas** — el "filtro por
+    área de desempeño" estaba roto en tres sitios a la vez y **nada fallaba**:
+    `SearchDirectory`, `SearchAdmin` y `ResolveRecipients`
+    (`notification_repo.go`, el selector de destinatarios de las notificaciones
+    masivas) filtraban por `primary_specialty_id = ? OR
+    secondary_specialty_id = ?`, o sea **solo por FK**, mientras la tarjeta
+    mostraba el área resuelta con `COALESCE(sp1.name, sp1n.name, '')` (FK y, si
+    falta, coincidencia EXACTA del legacy). En los datos la FK está poblada en
+    **2 de 103 agremiados**: el directorio pintaba 13 chips "Clínica" y el filtro
+    devolvía 2; las 7 tarjetas de "Neuropsicología" devolvían **0** (directorio
+    vacío) y una notificación masiva dirigida a "Clínica" salía a 2 personas en vez
+    de a 21. El síntoma era "el filtro no funciona", no un error: el chip y su
+    propio filtro eran dos nociones distintas de "tener esta área".
+    - **Regla**: el filtro compara contra `specialtyAreaFilterSQL`, que se arma
+      con las mismas constantes (`specialtyPrimaryArea` / `specialtySecondaryArea`)
+      que el SELECT del chip, y los 4 JOIN van en `applySpecialtyJoins` (usado por
+      las tres consultas). El nombre de catálogo del ID entrante se resuelve con
+      una subconsulta **no correlacionada** (Postgres la evalúa una vez), y
+      `psi_specialty_models.name` tiene índice ÚNICO
+      (`idx_psi_specialty_models_name`), así que los JOIN por nombre no pueden
+      duplicar filas y el COALESCE del SELECT y el del WHERE devuelven lo mismo.
+      Si añades un cuarto consumidor, usa las constantes: **copiar el SQL a mano
+      es exactamente cómo drifted esto**.
+    - ⚠️ **Al añadir esos JOIN a una consulta que ya existía, hay que CUALIFICAR
+      `id` y `created_at`**: `psi_specialty_models` comparte `id`, `created_at`,
+      `updated_at` y `deleted_at` con `psi_users`, así que un `Select("id, …")` o
+      un `Order("created_at DESC")` sin calificar muere con
+      `42702 column reference "id" is ambiguous` (y el `Order`, también en el
+      `Count` que GORM arma aparte). En `SearchAdmin` quedaron
+      `psi_users.id` / `psi_users.created_at`, y en `ResolveRecipients`,
+      `Pluck("psi_users.id", …)`.
+    - Un legacy que **no existe en el catálogo** (`Deportiva`, `Forense`,
+      `Social`, `Organizacional` — 63 filas en local) sigue sin ser alcanzable por
+      ningún filtro **y es lo correcto**: mostrarse un área inventada rompe
+      gotcha 11. Es una limitación de **datos**, no del código: se arregla
+      asignando la FK (o migrando el texto al nombre exacto del catálogo), no
+      tocando el SQL.
+    - El contrato lo fijan `TestPsiRepo_FiltroDeAreaCoincideConElChip` y
+      `TestPsiRepo_FiltroDeAreaDelPanelAdminEsElMismo`
+      (`psi_repo_specialty_filter_test.go`, requieren `make test-repo`): montan
+      mitad con FK y mitad solo con legacy, y exigen que filtrar devuelva lo mismo
+      que se muestra. Ojo al escribir fixtures de `PsiUserModel`: `bio_text_id` y
+      `audio_book_shell_id` son FK/UNIQUE y sin valor rompen el INSERT (23503 /
+      23505) — ver gotcha 19.
 
 ## TestKnownFlaky: TestGetAccess_ConcurrentSameUser
 

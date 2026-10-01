@@ -577,6 +577,49 @@ func (r *psiRepo) GetPsiUserColData(ctx context.Context, psiID uuid.UUID) (*doma
 // MOTORES DE BÚSQUEDA Y ESTADÍSTICAS
 // =========================================================================
 
+// ── Área de desempeño: una sola definición, compartida por el directorio y el panel ──
+//
+// El área que se MUESTRA y el área por la que se FILTRA tienen que ser la misma
+// expresión, y por eso viven aquí y en ningún otro sitio.
+//
+// Cuando divergen, el síntoma es que el filtro "no funciona" sin que nada falle:
+// la tarjeta muestra un chip que su propio filtro no encuentra. Así estaba:
+// SearchDirectory resolvía el área mostrada por FK + coincidencia EXACTA del
+// legacy (COALESCE(sp1.name, sp1n.name, cadena vacía)) pero el WHERE filtraba
+// solo por FK (primary_specialty_id = ?), y en los datos la FK está poblada en
+// 2 de 103 agremiados — 13 tarjetas mostraban "Clínica" y el filtro devolvía 2;
+// las 7 de "Neuropsicología" devolvían 0. SearchAdmin repetía el mismo WHERE
+// solo-FK, y las notificaciones masivas también (con el agravante de que el
+// lote de correo de "Clínica" salía a los 2 en vez de a los 21).
+//
+// El nombre de catálogo del ID entrante se resuelve con una subconsulta NO
+// correlacionada (Postgres la evalúa una vez). `psi_specialty_models.name` tiene
+// índice ÚNICO (idx_psi_specialty_models_name), así que sp1n/sp2n no pueden
+// duplicar filas y el COALESCE del SELECT y el del WHERE devuelven lo mismo.
+const (
+	specialtyPrimaryArea   = "COALESCE(sp1.name, sp1n.name, '')"
+	specialtySecondaryArea = "COALESCE(sp2.name, sp2n.name, '')"
+
+	// specialtyAreaFilterSQL es el espejo exacto de las dos expresiones de arriba:
+	// coincide con el área que la tarjeta MUESTRA, no con una noción paralela de
+	// "tener esta área".
+	specialtyAreaFilterSQL = "(" + specialtyPrimaryArea + " = (SELECT name FROM psi_specialty_models WHERE id = ?) OR " +
+		specialtySecondaryArea + " = (SELECT name FROM psi_specialty_models WHERE id = ?))"
+)
+
+// applySpecialtyJoins añade los 4 JOIN que resuelven el área (FK primero, luego
+// coincidencia exacta del legacy). Los usa tanto SearchDirectory como
+// SearchAdmin: el segundo también los necesitaba, y al añadirlos hay que
+// cualificar `id` y `created_at` en su SELECT/ORDER porque el catálogo comparte
+// esas columnas con psi_users (si no, 42702 "column reference is ambiguous").
+func applySpecialtyJoins(q *gorm.DB) *gorm.DB {
+	return q.
+		Joins("LEFT JOIN psi_specialty_models sp1 ON sp1.id = psi_users.primary_specialty_id").
+		Joins("LEFT JOIN psi_specialty_models sp2 ON sp2.id = psi_users.secondary_specialty_id").
+		Joins("LEFT JOIN psi_specialty_models sp1n ON sp1n.name = psi_users.primary_work_area").
+		Joins("LEFT JOIN psi_specialty_models sp2n ON sp2n.name = psi_users.secondary_work_area")
+}
+
 // SearchDirectory implementa la lógica de búsqueda para el directorio público.
 // Diferencia entre búsqueda por "Identidad" (exacta por CI/FPV) y "Navegación" (filtro por solvencia).
 func (r *psiRepo) SearchDirectory(ctx context.Context, filter request_structs.PsiDirectoryFilterDTO) ([]domain.PsiUserModel, int64, error) {
@@ -591,12 +634,11 @@ func (r *psiRepo) SearchDirectory(ctx context.Context, filter request_structs.Ps
 	//    chip jamás muestra un área inventada (los valores legacy que no existan
 	//    en el catálogo quedan fuera con COALESCE a vacío).
 	query := r.db.WithContext(ctx).Model(&domain.PsiUserModel{}).
-		Select("psi_users.id, psi_users.first_name, psi_users.last_name, psi_users.ci, psi_users.fpv, psi_users.profile_picture_s3_key, psi_users.mini_bio, psi_users.solvent, psi_users.primary_specialty_id, psi_users.secondary_specialty_id, psi_users.updated_at, psi_users.service_modality_presencial, psi_users.service_modality_distance, psi_users.service_modality_telephone, psi_users.show_service_modality, COALESCE(sp1.name, sp1n.name, '') AS primary_work_area, COALESCE(sp2.name, sp2n.name, '') AS secondary_work_area").
-		Joins("LEFT JOIN psi_specialty_models sp1 ON sp1.id = psi_users.primary_specialty_id").
-		Joins("LEFT JOIN psi_specialty_models sp2 ON sp2.id = psi_users.secondary_specialty_id").
-		Joins("LEFT JOIN psi_specialty_models sp1n ON sp1n.name = psi_users.primary_work_area").
-		Joins("LEFT JOIN psi_specialty_models sp2n ON sp2n.name = psi_users.secondary_work_area").
+		Select("psi_users.id, psi_users.first_name, psi_users.last_name, psi_users.ci, psi_users.fpv, psi_users.profile_picture_s3_key, psi_users.mini_bio, psi_users.solvent, psi_users.primary_specialty_id, psi_users.secondary_specialty_id, psi_users.updated_at, psi_users.service_modality_presencial, psi_users.service_modality_distance, psi_users.service_modality_telephone, psi_users.show_service_modality, "+
+			specialtyPrimaryArea+" AS primary_work_area, "+
+			specialtySecondaryArea+" AS secondary_work_area").
 		Where("psi_users.is_active = ?", true)
+	query = applySpecialtyJoins(query)
 
 	// 2. Lógica de Búsqueda por Identidad
 	if filter.SearchTerm != "" {
@@ -622,10 +664,12 @@ func (r *psiRepo) SearchDirectory(ctx context.Context, filter request_structs.Ps
 		query = query.Where("solvent = ?", true)
 	}
 
-	// 3. Filtro por Área de Desempeño (Especialidad) — FK directa
+	// 3. Filtro por Área de Desempeño (Especialidad) — se compara contra el área
+	//    RESUELTA (FK + coincidencia del legacy), la misma expresión que la tarjeta
+	//    muestra. Filtrar solo por la FK devolvía 2 de los 13 que se ven como
+	//    "Clínica": el filtro era inalcanzable para casi todos.
 	if filter.SpecialtyID > 0 {
-		query = query.Where("primary_specialty_id = ? OR secondary_specialty_id = ?",
-			filter.SpecialtyID, filter.SpecialtyID)
+		query = query.Where(specialtyAreaFilterSQL, filter.SpecialtyID, filter.SpecialtyID)
 	}
 
 	// 4. Filtro de Ubicación (Respetando Privacidad)
@@ -741,8 +785,12 @@ func (r *psiRepo) SearchAdmin(ctx context.Context, filter request_structs.PsiDir
 	var users []domain.PsiUserModel
 	var total int64
 
+	// `id` y `created_at` van cualificados porque psi_specialty_models comparte
+	// esas columnas con psi_users y, al añadir los JOIN del área, sin calificar
+	// Postgres responde 42702 "column reference is ambiguous".
 	query := r.db.WithContext(ctx).Model(&domain.PsiUserModel{}).
-		Select("id, first_name, last_name, ci, fpv, email, solvent, is_active, control_number, born_date, primary_work_area, secondary_work_area, primary_specialty_id, secondary_specialty_id")
+		Select("psi_users.id, psi_users.first_name, psi_users.last_name, psi_users.ci, psi_users.fpv, psi_users.email, psi_users.solvent, psi_users.is_active, psi_users.control_number, psi_users.born_date, psi_users.primary_work_area, psi_users.secondary_work_area, psi_users.primary_specialty_id, psi_users.secondary_specialty_id")
+	query = applySpecialtyJoins(query)
 
 	if filter.SearchTerm != "" {
 		// Limpiamos espacios
@@ -761,10 +809,10 @@ func (r *psiRepo) SearchAdmin(ctx context.Context, filter request_structs.PsiDir
 		)
 	}
 
-	// Filtro por Área de Desempeño — FK directa
+	// Filtro por Área de Desempeño — misma expresión que el directorio
+	// (specialtyAreaFilterSQL), no la FK suelta.
 	if filter.SpecialtyID > 0 {
-		query = query.Where("primary_specialty_id = ? OR secondary_specialty_id = ?",
-			filter.SpecialtyID, filter.SpecialtyID)
+		query = query.Where(specialtyAreaFilterSQL, filter.SpecialtyID, filter.SpecialtyID)
 	}
 
 	// Filtro por Ubicación (también con unaccent, muy útil para nombres de municipios)
@@ -796,7 +844,7 @@ func (r *psiRepo) SearchAdmin(ctx context.Context, filter request_structs.PsiDir
 	}
 
 	offset := (filter.Page - 1) * filter.Limit
-	err := query.Order("created_at DESC").
+	err := query.Order("psi_users.created_at DESC").
 		Limit(filter.Limit).
 		Offset(offset).
 		Find(&users).Error
