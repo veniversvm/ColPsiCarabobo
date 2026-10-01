@@ -13,7 +13,6 @@ import (
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/veniversvm/ColPsiCarabobo/api/internal/config"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/utils"
 )
@@ -25,16 +24,6 @@ const resetTokenTTL = 1 * time.Hour
 func hashToken(token string) string {
 	h := sha256.Sum256([]byte(token))
 	return hex.EncodeToString(h[:])
-}
-
-// siteURLBuilder devuelve la URL pública de la aplicación desde donde se
-// renderizan los enlaces de recuperación. Prioriza SITE_URL sobre el valor
-// por defecto (producción) para permitir pruebas locales.
-func siteURLBuilder() string {
-	if config.Envs != nil && config.Envs.AppURL != "" && config.Envs.AppURL != "http://localhost:3000" {
-		return strings.TrimRight(config.Envs.AppURL, "/")
-	}
-	return "https://franhsabt-testing-ground.lat"
 }
 
 // RequestPasswordReset solicita el envío de un enlace de recuperación de
@@ -66,9 +55,11 @@ func (s *PsiService) RequestPasswordReset(ctx context.Context, email string) err
 		return nil // No fallar ante el usuario
 	}
 
-	// Enviar correo con el enlace (fire-and-forget)
+	// Enviar correo con el enlace (fire-and-forget). La URL sale de
+	// resolveSiteURL (no de una constante propia) para que el botón y el pie del
+	// correo nunca puedan apuntar a dominios distintos.
 	if s.mailService != nil {
-		resetURL := fmt.Sprintf("%s/reset-password?token=%s", siteURLBuilder(), token)
+		resetURL := fmt.Sprintf("%s/reset-password?token=%s", resolveSiteURL(), token)
 		mailData := map[string]interface{}{
 			"Name":     psi.FirstName,
 			"Email":    psi.Email,

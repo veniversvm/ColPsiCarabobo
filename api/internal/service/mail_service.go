@@ -8,6 +8,9 @@ import (
 	"fmt"
 	"html/template"
 	"math/rand"
+	"net"
+	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -17,10 +20,47 @@ import (
 	"github.com/wneessen/go-mail"
 )
 
-// siteURL es la URL pública del frontend inyectada en las plantillas de correo.
-// Temporalmente fija al dominio de despliegue actual para que todos los correos
-// (incluso desde dev, que también usa Resend) apunten a producción.
-const siteURL = "https://franhsabt-testing-ground.lat"
+// defaultSiteURL es el dominio público de producción, usado solo como respaldo
+// cuando APP_URL no define una URL utilizable (ver resolveSiteURL).
+const defaultSiteURL = "https://colegio-psicologos-carabobo.com"
+
+// resolveSiteURL devuelve la URL pública del frontend que se inyecta en las
+// plantillas de correo (enlaces del pie, botón de restablecimiento y la imagen
+// de la bandera).
+//
+// La fuente de verdad es APP_URL: producción ya la define y el sitio se sirve
+// desde el mismo dominio registrable que usa el remitente
+// (`SMTP_FROM=info-sistema@contact.colegio-psicologos-carabobo.com`), que es lo
+// que los filtros de spam revisan — un enlace a un dominio ajeno (o a un dominio
+// de pruebas) degrada la reputación del dominio de envío sin avisar.
+//
+// Se ignora cualquier URL local (localhost/127.0.0.1/::1) porque el destinatario
+// del correo no puede resolverla: en ese caso, y en dev, cae a producción.
+func resolveSiteURL() string {
+	if config.Envs != nil {
+		if u := strings.TrimRight(strings.TrimSpace(config.Envs.AppURL), "/"); u != "" && !isLocalURL(u) {
+			return u
+		}
+	}
+	return defaultSiteURL
+}
+
+// isLocalURL indica si la URL apunta al propio host de desarrollo.
+func isLocalURL(raw string) bool {
+	parsed, err := url.Parse(raw)
+	if err != nil {
+		return true // URL inválida: trátala como no utilizable
+	}
+	host := parsed.Hostname()
+	if host == "" {
+		return true
+	}
+	if host == "localhost" || strings.HasSuffix(host, ".localhost") {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
+}
 
 // maskEmail enmascara un email para logs: "j***@e****.com"
 func maskEmail(email string) string {
@@ -240,11 +280,12 @@ func (s *MailService) SendEmail(to string, subject string, templateName string, 
 // correos se personalizan desde .env sin tocar cada punto de envío.
 //
 // Las variables expuestas a las plantillas son:
-//   - SiteURL:   URL pública del frontend (siteURL, fija al dominio de despliegue)
+//   - SiteURL:   URL pública del frontend (resolveSiteURL → APP_URL, sin barra
+//     final, para poder componer rutas como "{{.SiteURL}}/bandera-carabobo.png")
 //   - Signature: firma mostrada tras "Atentamente" (config.Envs.MailSignature)
 func augmentTemplateData(data interface{}) map[string]interface{} {
 	base := map[string]interface{}{
-		"SiteURL":   siteURL,
+		"SiteURL":   resolveSiteURL(),
 		"Signature": config.Envs.MailSignature,
 	}
 	if data == nil {
