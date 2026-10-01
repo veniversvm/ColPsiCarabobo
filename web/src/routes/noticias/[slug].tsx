@@ -152,10 +152,6 @@ export default function PublicNoticiaDetailPage() {
                     class="absolute inset-0 w-full h-full object-cover opacity-20"
                   />
                 </Show>
-                <div
-                  class="absolute inset-0 opacity-5"
-                  style="background-image: repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%);background-size:12px 12px;"
-                />
                 <div class="relative max-w-3xl mx-auto px-4 py-16 md:py-20">
                   <nav class="flex items-center gap-2 text-[11px] text-blue-300 font-bold mb-8" aria-label="Breadcrumb">
                     <A href="/" class="hover:text-white transition-colors">Inicio</A>

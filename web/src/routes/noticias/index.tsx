@@ -122,10 +122,8 @@ export default function PublicNoticiasPage() {
     <main class="min-h-screen bg-colpsi-bg">
 
       {/* ── CABECERA ───────────────────────────────────────────────────────── */}
-      <header class="text-white py-16 px-6 relative isolate overflow-hidden">
-        <ArcoHeroImage velo={0.8} />
-        <div class="absolute inset-0 opacity-5"
-          style="background-image: repeating-linear-gradient(45deg, #fff 0, #fff 1px, transparent 0, transparent 50%); background-size: 12px 12px;" />
+      <header class="text-white py-20 px-6 relative isolate overflow-hidden">
+        <ArcoHeroImage />
         <div class="max-w-5xl mx-auto relative">
           <p class="text-xs font-black uppercase tracking-[0.3em] text-blue-300 mb-3">
             Colegio de Psicólogos de Carabobo
