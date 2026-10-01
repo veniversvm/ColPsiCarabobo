@@ -4,6 +4,7 @@ import { A } from "@solidjs/router";
 import { Title, Meta, Link } from "@solidjs/meta";
 
 import { SITE_URL } from "~/lib/site";
+import ArcoHeroImage from "~/components/layaout/ArcoHeroImage";
 
 export default function AboutUs() {
   const canonicalUrl = `${SITE_URL}/nosotros`;
@@ -41,7 +42,8 @@ export default function AboutUs() {
       {/* ── CONTENIDO DE LA PÁGINA ─────────────────────────────────────────── */}
       <main class="bg-colpsi-bg min-h-screen pb-24 font-sans">
         {/* ── HERO SUTIL ─────────────────────────────────────────────────── */}
-        <header class="bg-heraldic py-20 px-6 border-b border-blue-900 shadow-inner">
+        <header class="py-20 px-6 border-b border-blue-900 shadow-inner relative isolate overflow-hidden">
+          <ArcoHeroImage />
           <div class="max-w-4xl mx-auto text-center">
             <div class="inline-block px-5 py-2 bg-blue-800/50 text-colpsi-yellow rounded-full text-[10px] font-black tracking-[0.2em] uppercase mb-6 border border-colpsi-yellow/30">
               Institución

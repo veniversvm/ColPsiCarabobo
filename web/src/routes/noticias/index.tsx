@@ -4,6 +4,7 @@ import { A } from "@solidjs/router";
 import { apiGet } from "~/lib/api";
 import { LoadingScreen } from "~/components/ui/LoadingScreen";
 import { bucketUrl as imgUrl } from "~/lib/bucket";
+import ArcoHeroImage from "~/components/layaout/ArcoHeroImage";
 
 interface Post {
   id: string;
@@ -121,7 +122,8 @@ export default function PublicNoticiasPage() {
     <main class="min-h-screen bg-colpsi-bg">
 
       {/* ── CABECERA ───────────────────────────────────────────────────────── */}
-      <header class="bg-colpsi-navy text-white py-16 px-6 relative overflow-hidden">
+      <header class="text-white py-16 px-6 relative isolate overflow-hidden">
+        <ArcoHeroImage velo={0.8} />
         <div class="absolute inset-0 opacity-5"
           style="background-image: repeating-linear-gradient(45deg, #fff 0, #fff 1px, transparent 0, transparent 50%); background-size: 12px 12px;" />
         <div class="max-w-5xl mx-auto relative">
