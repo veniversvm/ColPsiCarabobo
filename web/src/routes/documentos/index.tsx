@@ -6,6 +6,7 @@ import { documentos } from "../../lib/documentos";
 import DocumentIndexCard from "../../components/doc/DocumentIndexCard";
 
 import { SITE_URL } from "~/lib/site";
+import ArcoHeroImage from "~/components/layaout/ArcoHeroImage";
 
 export default function DocumentosIndex() {
   const canonicalUrl = `${SITE_URL}/documentos`;
@@ -40,7 +41,8 @@ export default function DocumentosIndex() {
       <Link rel="canonical" href={canonicalUrl} />
 
       <main class="min-h-screen bg-colpsi-bg pb-24 font-sans">
-        <header class="bg-heraldic py-20 px-6 border-b border-blue-900 shadow-inner relative overflow-hidden">
+        <header class="py-20 px-6 border-b border-blue-900 shadow-inner relative isolate overflow-hidden">
+          <ArcoHeroImage />
           <div class="absolute left-1/2 top-[-60px] -translate-x-1/2 text-[14rem] opacity-10 font-black select-none pointer-events-none">
             ⚖️
           </div>

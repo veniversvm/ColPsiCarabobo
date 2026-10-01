@@ -1,5 +1,6 @@
 // web/src/components/directory/SearchHeader.tsx
 import { DropdownSelect } from "~/components/ui/DropdownSelect";
+import ArcoHeroImage from "~/components/layaout/ArcoHeroImage";
 
 interface WorkArea {
   id: number;
@@ -19,7 +20,8 @@ interface SearchHeaderProps {
 
 export function SearchHeader(props: SearchHeaderProps) {
   return (
-    <section class="bg-heraldic pt-16 pb-20 px-6 text-center relative shadow-2xl">
+    <section class="pt-16 pb-20 px-6 text-center relative isolate shadow-2xl overflow-hidden">
+      <ArcoHeroImage velo={0.78} />
       <div class="max-w-5xl mx-auto space-y-6">
         <h1 class="text-white text-3xl md:text-5xl font-black tracking-tighter italic uppercase">
           Directorio Profesional

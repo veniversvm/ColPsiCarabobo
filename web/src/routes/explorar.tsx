@@ -2,6 +2,7 @@ import { A } from "@solidjs/router";
 import { Title, Meta, Link } from "@solidjs/meta";
 
 import { SITE_URL } from "~/lib/site";
+import ArcoHeroImage from "~/components/layaout/ArcoHeroImage";
 
 export default function PublicPortal() {
   const canonicalUrl = `${SITE_URL}/explorar`; 
@@ -39,7 +40,8 @@ export default function PublicPortal() {
 
       <main class="min-h-screen bg-colpsi-bg pb-20 font-sans">
         {/* Banner de Bienvenida a la Comunidad */}
-        <section class="bg-heraldic pt-16 pb-32 px-6 text-center text-white relative shadow-inner overflow-hidden">
+        <section class="pt-16 pb-32 px-6 text-center text-white relative isolate shadow-inner overflow-hidden">
+          <ArcoHeroImage />
           <div class="max-w-4xl mx-auto space-y-5 relative z-10">
             <div class="inline-block px-5 py-1.5 bg-colpsi-yellow text-colpsi-blue rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-2 shadow-sm border border-colpsi-yellow/50">
               Servicio a la comunidad

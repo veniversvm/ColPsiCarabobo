@@ -4,10 +4,27 @@ import { A } from "@solidjs/router";
 
 export default function Home() {
   return (
-    <main class="relative min-h-[90vh] flex flex-col items-center justify-center bg-white px-4 text-center overflow-hidden">
-      
+    <main class="relative isolate min-h-[90vh] flex flex-col items-center justify-center bg-white px-4 text-center overflow-hidden">
+      {/* FONDO DECORATIVO (portada). `isolate` en el <main> es obligatorio:
+          sin stacking context, esta capa -z-20 queda detrás del `bg-white` del
+          propio main y la imagen no se ve. Al 20% el logo y los botones (que
+          van en z-10) siguen leyéndose sobre blanco. */}
+      <div class="absolute inset-0 -z-20">
+        <picture>
+          <source media="(min-width: 768px)" srcset="/arco-desktop.webp" />
+          <img
+            src="/arco-movil.webp"
+            alt=""
+            aria-hidden="true"
+            loading="eager"
+            decoding="async"
+            class="h-full w-full object-cover object-center opacity-20"
+          />
+        </picture>
+      </div>
+
       {/* SECCIÓN DE IDENTIDAD */}
-      <div class="mb-10 relative">
+      <div class="mb-10 relative z-10">
         <img
           src="/logo-horizontal.png"
           alt="Colegio de Psicólogos del Estado Carabobo"
@@ -40,7 +57,7 @@ export default function Home() {
       </div>
 
       {/* LA FRANJA DINÁMICA */}
-      <div class="fixed bottom-0 left-0 w-full h-3 flex overflow-hidden shadow-[0_-4px_15px_rgba(0,0,0,0.1)]">
+      <div class="fixed bottom-0 left-0 w-full h-3 flex overflow-hidden shadow-[0_-4px_15px_rgba(0,0,0,0.1)] z-20">
         <div class="relative flex-1 bg-colpsi-red">
           <div class="absolute inset-0 bg-linear-to-r from-transparent via-white/50 to-transparent animate-flag-flow" />
         </div>
