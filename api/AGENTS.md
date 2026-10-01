@@ -410,6 +410,49 @@ swag init -g cmd/api/main.go -o docs/   # regenerar Swagger
       en claro y varchar(45) a propósito**: bitácora de seguridad de cuentas con
       sesión (§10.3) y prueba de aceptación jurídica. No las "corrijas" por
       uniformidad: hashear la IP de una aceptación falsifica el registro.
+23. **Todo enlace e imagen de los correos va en el dominio del remitente, y la
+    URL sale de `resolveSiteURL()` (APP_URL), nunca de una constante** — dos
+    avisos materiales de un verificador de spam, y ninguno fallaba visiblemente:
+    el correo se enviaba, se veía bien, y lo único que pasaba es que se degradaba
+    la reputación del dominio de envío.
+    - **Aviso "las URLs no coinciden con el dominio de envío"**: `mail_service.go`
+      tenía `const siteURL = "https://franhsabt-testing-ground.lat"` (un dominio de
+      pruebas) inyectada a TODAS las plantillas como `{{.SiteURL}}`, y
+      `psi_service_password_reset.go` repetía la misma constante como fallback.
+      Lo grave era que convivían **dos dominios en el mismo correo**: el botón de
+      reset salía de `APP_URL` (correcto) y el pie de la constante. Ahora hay una
+      sola fuente (`resolveSiteURL()`: `APP_URL` con `TrimRight("/")`, y fallback
+      a `defaultSiteURL` si está vacía o es local — un host local no le sirve de
+      nada a quien recibe el correo).
+    - **Aviso "las imágenes deberían estar en el dominio de envío"**: la bandera
+      venía hotlinkeada de `upload.wikimedia.org` en 6 plantillas. Ahora es
+      `{{.SiteURL}}/bandera-carabobo.png`, un PNG propio en `web/public/`.
+      OJO el SVG de Commons **era un composed de 5 rasters embebidos**
+      (`<image>` con `data:image`), no arte vectorial, y Gmail/Outlook **no
+      renderizan SVG**: la bandera era invisible en el correo aunque el aviso
+      pasara. El PNG salió del render oficial
+      (`commons.wikimedia.org/wiki/Special:FilePath/Bandera_de_carabobo.svg?width=320`
+      → 330x220, 12 KB); **no** lo conviertas con ImageMagick local: su delegate
+      de SVG invoca `rsvg-convert`, que no está instalado.
+    - **El contrato lo vigila `TestTemplates_SinRecursosDeTerceros`**
+      (`templates_test.go`): recorre **todas** las plantillas embebidas, extrae
+      cada URL absoluta del HTML renderizado y falla si el host no es el de
+      `SiteURL`; también falla si algún `<img>` es `.svg`. Si añades una
+      plantilla con un recurso externo, el test lo dice — no lo compliques con una
+      lista de excepciones.
+    - ⚠️ **`notification.html` tenía `{{.SiteURL}}.`** y eso también lo cazó el
+      test: al autolinkear, el punto final se va con la URL y queda el host
+      `colegio-psicologos-carabobo.com.` (un host distinto, y feo). La URL va
+      ahora en un `<a href>` con la puntuación **fuera**. Si escribes una URL en
+      el texto de un correo, sepárala de la puntuación.
+    - ⚠️ **`web/public/` va DENTRO de la imagen** (no hay bind-mount en
+      `web/docker-compose.yml`): un archivo nuevo ahí no aparece hasta
+      `docker compose build web && docker compose up -d web`. Un `curl` a un asset
+      nuevo contra el contenedor viejo devuelve 404 con el HTML del fallback SPA
+      (no el asset), aunque el build local ya lo tenga en `.output/public/`.
+    - Los correos ya entregados no se reescriben: el fix evita que el próximo envío
+      vuelva a emitir esos avisos, pero la reputación de calentamiento que ya
+      acumuló el dominio sigue como esté.
 
 ## TestKnownFlaky: TestGetAccess_ConcurrentSameUser
 
