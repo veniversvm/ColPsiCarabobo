@@ -134,6 +134,11 @@ func AnalyticsMiddleware(analytics *service.AnalyticsService) fiber.Handler {
 		// 6. Volcado Asíncrono a Base de Datos
 		// La goroutine es la única frontera asíncrona: TrackPageView corre de forma
 		// síncrona dentro (con su propio debouncing) bajo el semáforo del servicio.
+		//
+		// OJO: aquí se entrega la DIRECCIÓN en crudo, aunque el campo se llame
+		// IPHash. La conversión a huella la hace el servicio a propósito (es el
+		// que garantiza que a la base nunca llegue una IP); si te la haces aquí,
+		// otro flujo futuro vuelve a escribirla en claro.
 		go func() {
 			ctx, cancel := context.WithTimeout(context.Background(), analyticsCtxTimeout)
 			defer cancel()
@@ -143,7 +148,7 @@ func AnalyticsMiddleware(analytics *service.AnalyticsService) fiber.Handler {
 				Method:    method,
 				UserID:    userID,
 				SessionID: sessionID,
-				IP:        ip,
+				IPHash:    ip,
 				Referer:   referer,
 				CreatedAt: time.Now(),
 			})

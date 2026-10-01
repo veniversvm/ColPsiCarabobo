@@ -17,7 +17,7 @@ func TestAnalyticsService_fingerprintIP(t *testing.T) {
 	svc := NewAnalyticsService(nil)
 
 	t.Run("la IP no se guarda en claro", func(t *testing.T) {
-		h := svc.fingerprintIP("190.52.130.45")
+		h := svc.FingerprintIP("190.52.130.45")
 		assert.NotEqual(t, "190.52.130.45", h)
 		assert.NotContains(t, h, "190.52")
 		assert.Len(t, h, 64) // hex de SHA-256
@@ -26,21 +26,21 @@ func TestAnalyticsService_fingerprintIP(t *testing.T) {
 	t.Run("la misma IP produce la misma huella", func(t *testing.T) {
 		// Requisito de los conteos de visitantes únicos: si la huella cambiara
 		// entre llamadas, cada visita contaría como un visitante nuevo.
-		assert.Equal(t, svc.fingerprintIP("190.52.130.45"), svc.fingerprintIP("190.52.130.45"))
+		assert.Equal(t, svc.FingerprintIP("190.52.130.45"), svc.FingerprintIP("190.52.130.45"))
 	})
 
 	t.Run("IP distintas producen huellas distintas", func(t *testing.T) {
-		assert.NotEqual(t, svc.fingerprintIP("190.52.130.45"), svc.fingerprintIP("190.52.130.46"))
+		assert.NotEqual(t, svc.FingerprintIP("190.52.130.45"), svc.FingerprintIP("190.52.130.46"))
 	})
 
 	t.Run("sin IP no hay huella, no un hash vacío", func(t *testing.T) {
-		assert.Empty(t, svc.fingerprintIP(""))
-		assert.Empty(t, svc.fingerprintIP("   "))
+		assert.Empty(t, svc.FingerprintIP(""))
+		assert.Empty(t, svc.FingerprintIP("   "))
 	})
 
 	t.Run("la sal separa contextos distintos", func(t *testing.T) {
 		other := &AnalyticsService{ipSalt: "otra-sal"}
-		assert.NotEqual(t, svc.fingerprintIP("190.52.130.45"), other.fingerprintIP("190.52.130.45"))
+		assert.NotEqual(t, svc.FingerprintIP("190.52.130.45"), other.FingerprintIP("190.52.130.45"))
 	})
 }
 
@@ -105,12 +105,12 @@ func TestTrackPageViewSaneaAntesDePersistir(t *testing.T) {
 	svc.TrackPageView(t.Context(), domain.PageView{
 		Path:      "/directorio",
 		SessionID: "sess-1",
-		IP:        "190.52.130.45",
+		IPHash:    "190.52.130.45",
 		Referer:   "https://www.google.com/search?q=secreto",
 	})
 
 	require.True(t, creada, "la visita debió persistirse")
-	assert.NotContains(t, guardada.IP, "190.52")
+	assert.NotContains(t, guardada.IPHash, "190.52")
 	assert.Equal(t, "https://www.google.com", guardada.Referer)
 	assert.NotContains(t, guardada.Referer, "secreto")
 	// Lo útil para la métrica se conserva intacto.
@@ -135,7 +135,7 @@ func TestRecordSearchHasheaIP(t *testing.T) {
 	svc.RecordSearch("depresion", "", "valencia", "", 0, nil, "sess-1", "190.52.130.45")
 	<-listo
 
-	assert.NotContains(t, guardada.IP, "190.52")
+	assert.NotContains(t, guardada.IPHash, "190.52")
 	// El texto de la búsqueda SÍ se conserva: el Colegio lo consulta en el panel
 	// de métricas y así está declarado en los Términos.
 	assert.Equal(t, "depresion", guardada.Query)
