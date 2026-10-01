@@ -178,7 +178,11 @@ func (h *InscriptionHandler) Submit(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"message": "Solicitud recibida correctamente. Recibirás un correo con tus credenciales en un plazo de 5 días hábiles.",
+		// Sin plazo comprometido: el §10 de /terminos solo promete un "plazo
+		// razonable" y avisa por correo O teléfono. El texto anterior prometía
+		// "5 días hábiles" y además daba el correo de credenciales por hecho,
+		// cuando solo se envía si la solicitud es aprobada.
+		"message": "Solicitud recibida correctamente. Si tu solicitud es aprobada, recibirás un correo con tus credenciales de acceso a la plataforma.",
 		"id":      inscription.ID,
 	})
 }

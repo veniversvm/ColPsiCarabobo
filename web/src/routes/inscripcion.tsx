@@ -271,10 +271,10 @@ export default function InscriptionPage() {
 
                 <div class="space-y-6 text-gray-600 text-sm leading-relaxed font-medium text-justify">
                   <p>
-                    A partir del momento en que el profesional envía el correo electrónico con todos los datos y recaudos completos, se inicia un lapso de cinco (5) días hábiles.
+                    Una vez que el profesional envía el correo electrónico con todos los datos y recaudos completos, el departamento administrativo del Colegio de Psicólogos del Estado Carabobo realiza la revisión técnica, la validación del pago y la preparación preliminar del expediente.
                   </p>
                   <p>
-                    Durante este período, el departamento administrativo del Colegio de Psicólogos del Estado Carabobo realizará la revisión técnica, la validación del pago y la preparación preliminar del expediente. Transcurridos los cinco días hábiles, la institución contactará al solicitante para asignarle la fecha y hora de su cita presencial obligatoria.
+                    Completada la revisión, la institución contactará al solicitante lo antes posible para asignarle la fecha y hora de su cita presencial obligatoria.
                   </p>
                 </div>
               </div>
