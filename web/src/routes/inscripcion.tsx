@@ -45,13 +45,13 @@ export default function InscriptionPage() {
       <main class="bg-colpsi-bg min-h-screen pb-24 font-sans">
 
         {/* ── HERO SUTIL ─────────────────────────────────────────────────── */}
-        <header class="py-20 px-6 border-b border-blue-900 shadow-inner relative isolate overflow-hidden">
+        <header class="py-20 px-6 border-b border-blue-900 shadow-inner relative isolate bg-colpsi-blue overflow-hidden">
           <ArcoHeroImage />
           <div class="max-w-4xl mx-auto text-center">
-            <div class="inline-block px-5 py-2 bg-blue-800/50 text-colpsi-yellow rounded-full text-[10px] font-black tracking-[0.2em] uppercase mb-6 border border-colpsi-yellow/30">
+            <div class="inline-block px-5 py-2 bg-colpsi-navy/75 text-colpsi-yellow rounded-full text-[10px] font-black tracking-[0.2em] uppercase mb-6 border border-colpsi-yellow/30 text-shadow-hero">
               Trámites Legales
             </div>
-            <h1 class="text-4xl md:text-6xl font-black text-white tracking-tight leading-tight">
+            <h1 class="text-4xl md:text-6xl font-black text-white tracking-tight leading-tight text-shadow-hero">
               Procedimiento de <br />
               <span class="text-colpsi-yellow italic">Inscripción</span>
             </h1>

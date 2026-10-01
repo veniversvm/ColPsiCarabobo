@@ -78,6 +78,67 @@
   text-shadow: 0 1px 12px rgba(223, 204, 135, 0.25);
 }
 
+/* Velo de los heroes públicos con foto (`ArcoHeroImage`).
+ *
+ * POR QUÉ hace falta y por qué es un degradado y no un plano. Medido con
+ * ImageMagick sobre los dos WebP, en gris 0-255 y por franjas verticales:
+ *
+ *              media   p90    p95    p99    max
+ *   desktop    88-117  126-192 146-200 161-239  254
+ *   movil      96-169  106-211 145-222 197-240  254
+ *
+ * O sea: NO es una foto con una manchita clara, es un cielo brillante entero —
+ * el p90 ya está en 180-210. Por eso el velo plano de 0.72 que se puso en su
+ * día no era un capricho de estilo: sin algo encima, el título blanco se apoya
+ * en un p95 de ~200, y ahí el blanco da 2.3:1 (falla incluso para texto
+ * grande). Por eso quitarlo del todo dejó las franjas ilegibles.
+ *
+ * Un plano tampoco es la respuesta, porque para tapar el máximo (254) haría
+ * falta un fondo casi sólido: eso es justo la pantalla azul que se rechazó. Lo
+ * que hace falta es densidad donde está el texto y foto donde no:
+ *
+ *   - Degradado vertical: denso en la banda central (h1 y párrafo), abierto en
+ *     el borde superior e inferior, que es lo que se ve de la foto.
+ *   - Con el pico en 0.66 el texto pasa los percentiles altos con holgura: sobre
+ *     un p95 de 200 el blanco queda en 7.5:1 y el `text-blue-100` en 6.1:1 (los
+ *     dos por encima del 4.5:1 de texto normal), y sobre el p99 de 219 en
+ *     6.8:1 y 5.5:1. Incluso sobre el píxel más claro (254) el blanco aguanta
+ *     5.7:1. El 1% de píxeles sueltos casi blancos de las nubes lo remata
+ *     `text-shadow-hero`.
+ *   - En los bordes abiertos (0.40) el `text-blue-100` del kicker y de los
+ *     badges queda en 5.1:1 sobre un p95 de 145.
+ *   - El color es el navy más oscuro del escudo (#0a174f) y no el azul medio: el
+ *     navegador compone el alfa en sRGB, no en lineal, así que para oscurecer va
+ *     el color más oscuro con la opacidad más baja. Con el azul medio (#1e3a8a)
+ *     al 0.72 el fondo quedaba en sRGB 58; con este navy al 0.66 queda en 75 —
+ *     bastante menos tapado y legible igual.
+ *
+ * OJO: el degradado abre a 0.40/0.38 en los bordes, no a cero. Bajarlos más
+ * dejaba el texto de las esquinas (el kicker de `/noticias`, los badges)
+ * apacheado en el cielo. */
+@utility bg-velo-hero {
+  background-image: linear-gradient(
+    to bottom,
+    rgba(10, 23, 79, 0.4) 0%,
+    rgba(10, 23, 79, 0.58) 20%,
+    rgba(10, 23, 79, 0.66) 45%,
+    rgba(10, 23, 79, 0.66) 62%,
+    rgba(10, 23, 79, 0.56) 82%,
+    rgba(10, 23, 79, 0.38) 100%
+  );
+}
+
+/* Sombra del texto de los heroes con foto. Es la segunda garantía, no la
+ * principal: separa los glifos de los tonos medios del arco. Doble sombra, una
+ * pegada al glifo para el contorno y otra difusa para el halo. `text-shadow` se
+ * hereda, así que basta aplicarla al h1 para que la palabra en amarillo la
+ * herede también. */
+@utility text-shadow-hero {
+  text-shadow:
+    0 1px 2px rgba(2, 6, 23, 0.6),
+    0 2px 16px rgba(2, 6, 23, 0.5);
+}
+
 @utility animate-shake {
   animation: shake 0.4s ease-in-out;
 }

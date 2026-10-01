@@ -20,10 +20,10 @@ interface SearchHeaderProps {
 
 export function SearchHeader(props: SearchHeaderProps) {
   return (
-    <section class="pt-16 pb-20 px-6 text-center relative isolate shadow-2xl overflow-hidden">
-      <ArcoHeroImage velo={0.78} />
+    <section class="pt-16 pb-20 px-6 text-center relative isolate bg-colpsi-blue shadow-2xl overflow-hidden">
+      <ArcoHeroImage />
       <div class="max-w-5xl mx-auto space-y-6">
-        <h1 class="text-white text-3xl md:text-5xl font-black tracking-tighter italic uppercase">
+        <h1 class="text-white text-3xl md:text-5xl font-black tracking-tighter italic uppercase text-shadow-hero">
           Directorio Profesional
         </h1>
 
@@ -98,7 +98,7 @@ export function SearchHeader(props: SearchHeaderProps) {
           </div>
 
           {/* Texto de Ayuda */}
-          <p class="text-blue-200 text-xs mt-4 text-left md:text-center font-medium">
+          <p class="text-blue-100 text-xs mt-4 text-left md:text-center font-medium text-shadow-hero">
             💡 Tip: Filtra por <span class="text-white font-bold">Área de Desempeño</span> para encontrar especialistas según tus necesidades.
           </p>
         </form>

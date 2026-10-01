@@ -41,20 +41,20 @@ export default function DocumentosIndex() {
       <Link rel="canonical" href={canonicalUrl} />
 
       <main class="min-h-screen bg-colpsi-bg pb-24 font-sans">
-        <header class="py-20 px-6 border-b border-blue-900 shadow-inner relative isolate overflow-hidden">
+        <header class="py-20 px-6 border-b border-blue-900 shadow-inner relative isolate bg-colpsi-blue overflow-hidden">
           <ArcoHeroImage />
           <div class="absolute left-1/2 top-[-60px] -translate-x-1/2 text-[14rem] opacity-10 font-black select-none pointer-events-none">
             ⚖️
           </div>
           <div class="max-w-4xl mx-auto text-center relative z-10">
-            <div class="inline-block px-5 py-2 bg-blue-800/50 text-colpsi-yellow rounded-full text-[10px] font-black tracking-[0.2em] uppercase mb-6 border border-colpsi-yellow/30">
+            <div class="inline-block px-5 py-2 bg-colpsi-navy/75 text-colpsi-yellow rounded-full text-[10px] font-black tracking-[0.2em] uppercase mb-6 border border-colpsi-yellow/30 text-shadow-hero">
               Transparencia institucional
             </div>
-            <h1 class="text-4xl md:text-6xl font-black text-white tracking-tight leading-tight">
+            <h1 class="text-4xl md:text-6xl font-black text-white tracking-tight leading-tight text-shadow-hero">
               Marco{" "}
               <span class="text-colpsi-yellow italic">Legal y Normativo</span>
             </h1>
-            <p class="text-blue-200 text-lg max-w-2xl mx-auto font-medium leading-relaxed mt-4">
+            <p class="text-blue-100 text-lg max-w-2xl mx-auto font-medium leading-relaxed mt-4 text-shadow-hero">
               Estatutos, ley de ejercicio profesional, código de ética y reglamento
               que rigen nuestra corporación y la profesión del Psicólogo en Venezuela.
             </p>
