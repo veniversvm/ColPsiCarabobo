@@ -21,6 +21,7 @@ alfabético**: el nombre de cada archivo es su versión.
 | `20260928210000_inscription_reject_reason.sql` | Columna `psi_inscription_requests.reject_reason` |
 | `20260929210000_psi_terms_acceptance.sql` | Aceptación de Términos y Condiciones + 3 índices (uno único por usuario y versión) |
 | `20260930160000_unaccent_extension.sql` | Extensión `unaccent` (la del buscador) |
+| `20261001100000_analytics_ip_hash.sql` | Renombra `page_views/search_events/profile_views.ip` a `ip_hash` (64), para que la huella SHA-256 entre tras el fix de privacidad. **No toca** `login_events`, `active_sessions` ni `psi_terms_acceptance` (IP en claro, bitácora de seguridad y registro de aceptación). |
 | `atlas.sum` | Checksums del directorio (**lo genera Atlas, nunca se edita a mano**) |
 | `atlas.hcl` (en `api/`, no aquí) | Define el env `gorm`: fuente de verdad = modelos, destino = `file://migrations` |
 | `intrucciones.txt` | Guía rápida de uso de Atlas |

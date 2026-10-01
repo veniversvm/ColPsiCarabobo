@@ -10,13 +10,19 @@ import (
 
 // ---------------------------------------------------------------------------
 // 1. LOGIN EVENT — cada vez que alguien inicia sesión
+//
+// ⚠️ Bitácora de seguridad de cuentas CON sesión: la IP se guarda EN CLARO a
+// propósito y el panel la consulta. Es la excepción declarada aparte en la
+// sección de seguridad de los Términos; no la conviertas en huella. Lo mismo que
+// ActiveSession.IP y PsiTermsAcceptance.IP. Para la huella de visitantes anónimos
+// ver el IPHash de las tres tablas siguientes.
 // ---------------------------------------------------------------------------
 type LoginEvent struct {
 	ID        uuid.UUID      `gorm:"type:uuid;primaryKey;default:uuidv7()"`
 	UserID    uuid.UUID      `gorm:"type:uuid;not null;index"`
 	Username  string         `gorm:"size:100"`
 	Role      string         `gorm:"size:50"` // "psi" | "admin"
-	IP        string         `gorm:"size:45"`
+	IP        string         `gorm:"size:45"` // varchar(45) = largo máximo de una IPv6
 	UserAgent string         `gorm:"size:512"`
 	CreatedAt time.Time      `gorm:"index"`
 	DeletedAt gorm.DeletedAt `gorm:"index"`
@@ -24,6 +30,11 @@ type LoginEvent struct {
 
 // ---------------------------------------------------------------------------
 // 2. PAGE VIEW — cada visita a cualquier ruta (sin login requerido)
+//
+// ⚠️ IPHash NO es una IP: es hex(sha256(sal + "|" + ip)), 64 caracteres, que
+// sustituye a la dirección (ver service/analytics_privacy.go). Por eso el ancho
+// es 64 y no 45, y por eso la columna se llama ip_hash. La sustitución la hace el
+// SERVICIO, nunca el middleware: así todo llamador futuro hereda la garantía.
 // ---------------------------------------------------------------------------
 type PageView struct {
 	ID        uint       `gorm:"primaryKey;autoIncrement"`
@@ -31,13 +42,15 @@ type PageView struct {
 	Method    string     `gorm:"size:10"`
 	UserID    *uuid.UUID `gorm:"type:uuid;index"` // nil si no está autenticado
 	SessionID string     `gorm:"size:64;index"`   // cookie anónima
-	IP        string     `gorm:"size:45"`
-	Referer   string     `gorm:"size:512"`
+	IPHash    string     `gorm:"column:ip_hash;size:64"`
+	Referer   string     `gorm:"size:512"` // origen (esquema://host), nunca la URL completa
 	CreatedAt time.Time  `gorm:"index"`
 }
 
 // ---------------------------------------------------------------------------
 // 3. SEARCH EVENT — cada búsqueda parametrizada en el directorio
+//
+// ⚠️ IPHash: huella de la IP, no la IP (ver PageView).
 // ---------------------------------------------------------------------------
 type SearchEvent struct {
 	ID uint `gorm:"primaryKey;autoIncrement"`
@@ -49,33 +62,36 @@ type SearchEvent struct {
 	ResultsCount int        // cuántos resultados devolvió
 	UserID       *uuid.UUID `gorm:"type:uuid;index"`
 	SessionID    string     `gorm:"size:64"`
-	IP           string     `gorm:"size:45"`
+	IPHash       string     `gorm:"column:ip_hash;size:64"`
 	CreatedAt    time.Time  `gorm:"index"`
 }
 
 // ---------------------------------------------------------------------------
 // 4. PROFILE VIEW — cada vez que se visita el perfil de un psicólogo
+//
+// ⚠️ IPHash: huella de la IP, no la IP (ver PageView).
 // ---------------------------------------------------------------------------
 type ProfileView struct {
-	ID        uint       `gorm:"primaryKey;autoIncrement"`
-	PsiID     uuid.UUID  `gorm:"type:uuid;not null;index"` // perfil visto
+	ID        uint      `gorm:"primaryKey;autoIncrement"`
+	PsiID     uuid.UUID `gorm:"type:uuid;not null;index"` // perfil visto
 	ViewerID  *uuid.UUID `gorm:"type:uuid;index"`          // nil si anónimo
-	SessionID string     `gorm:"size:64"`
-	IP        string     `gorm:"size:45"`
-	CreatedAt time.Time  `gorm:"index"`
+	SessionID string    `gorm:"size:64"`
+	IPHash    string    `gorm:"column:ip_hash;size:64"`
+	CreatedAt time.Time `gorm:"index"`
 }
 
 // ---------------------------------------------------------------------------
 //  5. ACTIVE SESSION — sesiones activas en este momento
 //     Se inserta en login, se actualiza con heartbeat, se marca expired en logout
 //
+// ⚠️ IP en claro y varchar(45) a propósito, igual que LoginEvent.IP.
 // ---------------------------------------------------------------------------
 type ActiveSession struct {
 	ID        uuid.UUID `gorm:"type:uuid;primaryKey;default:uuidv7()"`
 	UserID    uuid.UUID `gorm:"type:uuid;not null;index;uniqueIndex"` // 1 sesión por usuario
 	Username  string    `gorm:"size:100"`
 	Role      string    `gorm:"size:50"`
-	IP        string    `gorm:"size:45"`
+	IP        string    `gorm:"size:45"` // varchar(45) = largo máximo de una IPv6
 	LastSeen  time.Time `gorm:"index"`
 	ExpiresAt time.Time `gorm:"index"`
 	CreatedAt time.Time

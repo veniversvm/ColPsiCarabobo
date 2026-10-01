@@ -8,11 +8,14 @@
 // aquí se concentran las dos reducciones que lo permiten:
 //
 //   - La dirección IP no se guarda: se guarda su HUELLA (SHA-256 con sal del
-//     servidor). La huella sirve para contar visitantes distintos y no para leer
-//     la dirección. NO es anonimización: una IPv4 tiene 2^32 valores, así que un
-//     atacante con la base podría revertarla por fuerza bruta. Por eso la
+//     servidor) en la columna ip_hash de page_views, search_events y
+//     profile_views. La huella sirve para contar visitantes distintos y no para
+//     leer la dirección. NO es anonimización: una IPv4 tiene 2^32 valores, así que
+//     un atacante con la base podría revertarla por fuerza bruta. Por eso la
 //     retención (ANALYTICS_RETENTION_DAYS, 90 días) es la que acota de verdad el
-//     daño, y por eso el texto legal dice "huella", nunca "anónimo".
+//     daño, y por eso el texto legal dice "huella", nunca "anónimo". El ancho de
+//     esa columna es 64 (el hex completo): 45 era el largo máximo de una IPv6 y
+//     hacía fallar TODOS los inserts — ver migrations/20261001100000.
 //   - La cabecera Referer no se guarda completa: se guarda solo el origen
 //     (esquema://host). La URL completa llega con los parámetros de campañas,
 //     buscadores y redes sociales, es decir datos de terceros que el Colegio no
@@ -20,7 +23,10 @@
 //
 // OJO — alcance deliberado: el login_event y el active_session NO se tocan. Son
 // bitácora de seguridad de cuentas con sesión (admin y agremiados) y el panel los
-// usa; se declaran aparte en la sección de seguridad de los términos.
+// usa; se declaran aparte en la sección de seguridad de los términos. Ahí la IP
+// sigue en claro, y por eso su columna sigue siendo varchar(45). Lo mismo con
+// psi_terms_acceptance.ip, que es el registro de quién aceptó los Términos y desde
+// dónde. Aplicar la huella ahí sería falsear una prueba jurídica.
 package service
 
 import (
@@ -48,9 +54,20 @@ func resolveIPSalt() string {
 	return analyticsDefaultIPSalt
 }
 
-// fingerprintIP convierte una dirección IP en su huella, o "" si no hay
+// FingerprintIP convierte una dirección IP en su huella, o "" si no hay
 // dirección. Nunca devuelve la dirección original.
-func (s *AnalyticsService) fingerprintIP(ip string) string {
+//
+// Devuelve 64 hex exactos: eso es lo que cabe en la columna ip_hash
+// (character varying(64), migración 20261001100000_analytics_ip_hash.sql) y lo que
+// fija TestAnalyticsService_fingerprintIP. Si algún día cambiara el algoritmo, ese
+// ancho dejaría de alcanzar y TODAS las escrituras de telemetría volverían a
+// fallar en silencio, que es exactamente el bug que esa columna corrigió.
+//
+// Es pública porque es un contrato de dos puntas: la misma fórmula tiene que
+// producir el histórico que documenta la migración (backfill en SQL con
+// sha256(sal || '|' || ip)) y lo que escribe el servicio. La equivalencia entre
+// ambas la fija TestAnalyticsRepo_HashSQLDelBackfillEquivaleAFingerprint.
+func (s *AnalyticsService) FingerprintIP(ip string) string {
 	ip = strings.TrimSpace(ip)
 	if ip == "" {
 		return ""

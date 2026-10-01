@@ -317,7 +317,7 @@ func TestAnalyticsService_RecordPageView(t *testing.T) {
 			Path:      "/directorio",
 			Method:    "GET",
 			SessionID: "abc123",
-			IP:        "127.0.0.1",
+			IPHash:    "127.0.0.1",
 		})
 		time.Sleep(50 * time.Millisecond)
 

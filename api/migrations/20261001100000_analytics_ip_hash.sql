@@ -1,0 +1,107 @@
+-- ============================================================================
+-- La columna "ip" de la telemetría de visitantes pasó a guardar la HUELLA de la
+-- IP, y el ancho no se movió con ella: la telemetría llevaba un día entero
+-- descartando el 100% de sus escrituras.
+--
+-- Historia: el baseline creó "ip" como character varying(45), el largo máximo de
+-- una IPv6, porque antes se guardaba la dirección en claro. El fix de privacidad
+-- (analytics_privacy.go) sustituyó esa dirección por hex(sha256(sal + "|" + ip)),
+-- que son 64 caracteres, y el INSERT empezó a fallar con
+--   22001 value too long for type character varying(45)
+-- sin que nada lo delatara: las escrituras de telemetría son fire-and-forget y su
+-- error se descartaba con "_ =" (ver analytics_service.go). El síntoma era un
+-- error de GORM en el log; el efecto real, que page_views, search_events y
+-- profile_views dejaron de crecer (visitas, búsquedas, fichas consultadas y
+-- visitantes únicos congelados en el panel).
+--
+-- Por eso además de ampliar a 64 la columna se RENOMBRA: ya no guarda una IP y
+-- que se llame "ip" es exactamente el tipo de mentira que costó este bug. Ninguna
+-- consulta leía esta columna (los visitantes únicos se cuentan con
+-- DISTINCT session_id), así que el rename no rompe ninguna lectura.
+--
+-- NO SE TOCAN, a propósito, las otras tres columnas de IP del esquema:
+--   - login_events.ip        y active_sessions.ip: bitácora de seguridad de
+--     cuentas CON sesión (admin y agremiados); el panel la consulta y los Términos
+--     la declaran aparte en su sección de seguridad. Guardan la IP en claro y por
+--     eso 45 (el largo máximo de una IPv6) sigue siendo su ancho correcto.
+--   - psi_terms_acceptance.ip: prueba de aceptación de un documento jurídico, con
+--     la dirección en claro porque es el registro de quién y desde dónde aceptó.
+--   - api_change_logs.ip: bitácora forense; ya era character varying(64).
+--
+-- Escrita a mano (ALTER ... RENAME), no con `migrate diff`: Atlas compara los
+-- modelos contra las migraciones, no contra la base, y este rename no aparece en
+-- ningún struct (ver migrations/README.md).
+--
+-- ⚠️ OPERATIVO — el orden importa, porque el binario y el esquema quedan
+-- desalineados en la ventana intermedia:
+--   1. atlas migrate apply   (el código viejo escribe en "ip" y recibe 42703
+--                             column "ip" does not exist: se pierde telemetría,
+--                             que es lo mismo que antes)
+--   2. reiniciar colpsi_pgbouncer  (obligatorio: ALTER sobre una tabla que la API
+--                             consulta deja planes preparados con el esquema
+--                             viejo; sin el reinicio la API responde
+--                             0A000 "cached plan must not change result type")
+--   3. docker compose build api && docker compose up -d api
+-- ============================================================================
+
+-- Rename: la columna ya no contiene una dirección IP.
+ALTER TABLE "page_views" RENAME COLUMN "ip" TO "ip_hash";
+ALTER TABLE "search_events" RENAME COLUMN "ip" TO "ip_hash";
+ALTER TABLE "profile_views" RENAME COLUMN "ip" TO "ip_hash";
+
+-- Ancho: 64 hex = sha256 completo (2 caracteres por byte).
+ALTER TABLE "page_views" ALTER COLUMN "ip_hash" TYPE character varying(64);
+ALTER TABLE "search_events" ALTER COLUMN "ip_hash" TYPE character varying(64);
+ALTER TABLE "profile_views" ALTER COLUMN "ip_hash" TYPE character varying(64);
+
+-- ============================================================================
+-- BACKFILL DEL HISTÓRICO — UNA VEZ POR BASE, NO ES PARTE DE LA MIGRACIÓN
+-- ============================================================================
+-- Las filas escritas ANTES del fix de privacidad guardan la dirección en claro,
+-- y los Términos (§10.1) prometen que no se guarda. Hay que hashear esas filas con
+-- la MISMA sal que usa la API (ANALYTICS_IP_SALT) para que la huella de un
+-- visitante que vuelve coincida con la de su propio histórico.
+--
+-- Está fuera de este archivo a propósito: la sal es un secreto de cada
+-- despliegue, no del esquema, y una base nueva construida solo desde
+-- migrations/ no tiene filas históricas que hashear (nace con la columna
+-- correcta). Atlas trata además cualquier .sql de este directorio como
+-- migración, así que un archivo con este SQL se aplicaría en cada despliegue.
+--
+-- Sustituye <sal> por el valor de ANALYTICS_IP_SALT del entorno. Si la variable
+-- no está definida, la API usa la constante analyticsDefaultIPSalt
+-- ("colpsi-analytics-ipsalt-v1" en analytics_privacy.go) y ese es el valor que
+-- hay que poner. NO las mezcles: con una sal distinta, el histórico queda con
+-- huellas que no corresponden a nada (siguen siendo huellas, no IPs, así que la
+-- promesa legal se sostiene, pero un visitante de antes y después del corte
+-- contaría como dos).
+--
+-- El filtro es lo que hace el UPDATE idempotente: una IPv4 tiene punto, una IPv6
+-- tiene dos puntos, y un hex de 64 caracteres no tiene ninguno. Una segunda
+-- pasada no encuentra filas.
+--
+-- convert_to(..., 'UTF8') NO es opcional: sha256() solo existe para bytea, y
+-- '<sal>' || '|' || ip_hash resuelve a text, así que sin la conversión el UPDATE
+-- muere con "function sha256(text) does not exist" (SQLSTATE 42883). Los bytes
+-- hasheados son los mismos que los que calcula Go: convert_to(texto,'UTF8') es la
+-- codificación UTF-8 de ese texto.
+--
+--   BEGIN;
+--     UPDATE page_views     SET ip_hash = encode(sha256(convert_to('<sal>' || '|' || ip_hash, 'UTF8')), 'hex')
+--       WHERE ip_hash <> '' AND ip_hash ~ '[.:]';
+--     UPDATE search_events  SET ip_hash = encode(sha256(convert_to('<sal>' || '|' || ip_hash, 'UTF8')), 'hex')
+--       WHERE ip_hash <> '' AND ip_hash ~ '[.:]';
+--     UPDATE profile_views  SET ip_hash = encode(sha256(convert_to('<sal>' || '|' || ip_hash, 'UTF8')), 'hex')
+--       WHERE ip_hash <> '' AND ip_hash ~ '[.:]';
+--   COMMIT;
+--
+-- Requiere pgcrypto (sha256), que la API habilita en cada arranque
+-- (pkg/database/migration.go). Para comprobarlo antes de tocar nada:
+--   SELECT count(*) FILTER (WHERE ip_hash ~ '[.:]')  AS pendientes,
+--          count(*) FILTER (WHERE length(ip_hash) = 64) AS ya_hasheadas
+--     FROM page_views;
+--
+-- La equivalencia de esa expresión con FingerprintIP() de Go la fija
+-- TestAnalyticsRepo_HashSQLDelBackfillEquivaleAFingerprint en
+-- internal/repository/postgres/analytics_repository_test.go: si algún día cambia
+-- el algoritmo, ese test falla y hay que rehacer el histórico.

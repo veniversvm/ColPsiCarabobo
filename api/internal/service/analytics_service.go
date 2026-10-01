@@ -11,10 +11,17 @@
 //     (analyticsWriteTimeout) y un semáforo que acota la concurrencia máxima.
 //     Si la BD se degrada o hay locks, una goroutine muere sola a los pocos
 //     segundos en lugar de esperar una conexión del pool indefinidamente.
+//
+// Visibilidad del fallo:
+//   - Que una escritura sea descartable para la petición NO significa que sea
+//     discardable para el operador: cada error se registra (con throttling) desde
+//     analytics_ingest.go. Descartarlo en silencio con "_ =" fue lo que dejó el
+//     panel de métricas congelado un día entero sin que nadie lo notara.
 package service
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -42,14 +49,22 @@ type AnalyticsService struct {
 	// ipSalt se resuelve UNA vez en el constructor para que la huella de una IP
 	// sea la misma durante toda la vida del proceso (ver analytics_privacy.go).
 	ipSalt string
+
+	// writeErrMu protege writeErrState. Las escrituras corren en goroutines
+	// propias, así que sin esto había carrera al registrar los fallos.
+	writeErrMu sync.Mutex
+	// writeErrState agrupa los errores de escritura por operación para poder
+	// registrarlos sin inundar el log (ver analytics_ingest.go).
+	writeErrState map[string]*analyticsWriteOpError
 }
 
 // NewAnalyticsService actúa como constructor para inyectar la dependencia del repositorio.
 func NewAnalyticsService(repo domain.AnalyticsRepository) *AnalyticsService {
 	return &AnalyticsService{
-		repo:   repo,
-		sem:    make(chan struct{}, analyticsSemCapacity),
-		ipSalt: resolveIPSalt(),
+		repo:          repo,
+		sem:           make(chan struct{}, analyticsSemCapacity),
+		ipSalt:        resolveIPSalt(),
+		writeErrState: make(map[string]*analyticsWriteOpError),
 	}
 }
 
@@ -82,23 +97,34 @@ func (s *AnalyticsService) RecordLogin(userID uuid.UUID, username, role, ip, use
 		}
 		defer s.release()
 
-		_ = s.repo.CreateLoginEvent(ctx, domain.LoginEvent{
+		// OJO: aquí la IP se guarda EN CLARO a propósito (bitácora de seguridad de
+		// cuentas con sesión, declarada aparte en los Términos). No le apliques la
+		// huella de FingerprintIP: es la excepción, no un olvido.
+		if err := s.repo.CreateLoginEvent(ctx, domain.LoginEvent{
 			UserID:    userID,
 			Username:  username,
 			Role:      role,
 			IP:        ip,
 			UserAgent: userAgent,
-		})
+		}); err != nil {
+			s.reportWriteError("create_login_event", err)
+		} else {
+			s.reportWriteOK("create_login_event")
+		}
 
 		now := time.Now()
-		_ = s.repo.UpsertActiveSession(ctx, domain.ActiveSession{
+		if err := s.repo.UpsertActiveSession(ctx, domain.ActiveSession{
 			UserID:    userID,
 			Username:  username,
 			Role:      role,
 			IP:        ip,
 			LastSeen:  now,
 			ExpiresAt: now.Add(8 * time.Hour),
-		})
+		}); err != nil {
+			s.reportWriteError("upsert_active_session", err)
+		} else {
+			s.reportWriteOK("upsert_active_session")
+		}
 	}()
 }
 
@@ -112,7 +138,11 @@ func (s *AnalyticsService) RecordLogout(userID uuid.UUID) {
 		}
 		defer s.release()
 
-		_ = s.repo.DeleteActiveSession(ctx, userID)
+		if err := s.repo.DeleteActiveSession(ctx, userID); err != nil {
+			s.reportWriteError("delete_active_session", err)
+		} else {
+			s.reportWriteOK("delete_active_session")
+		}
 	}()
 }
 
@@ -127,7 +157,11 @@ func (s *AnalyticsService) HeartbeatSession(userID uuid.UUID) {
 		defer s.release()
 
 		now := time.Now()
-		_ = s.repo.UpdateSessionHeartbeat(ctx, userID, now, now.Add(8*time.Hour))
+		if err := s.repo.UpdateSessionHeartbeat(ctx, userID, now, now.Add(8*time.Hour)); err != nil {
+			s.reportWriteError("session_heartbeat", err)
+		} else {
+			s.reportWriteOK("session_heartbeat")
+		}
 	}()
 }
 
@@ -146,16 +180,24 @@ func (s *AnalyticsService) RecordSearch(
 		}
 		defer s.release()
 
-		_ = s.repo.CreateSearchEvent(ctx, domain.SearchEvent{
-			Query:        query,
-			Specialty:    specialty,
-			Municipality: municipality,
-			State:        state,
+		// Todo lo que viene de fuera (el texto que teclea el visitante, la cookie
+		// _sid que escribe el cliente) se recorta al ancho de su columna: si no,
+		// una búsqueda de 400 caracteres tumba el INSERT con 22001 y la métrica se
+		// pierde sin dejar rastro.
+		if err := s.repo.CreateSearchEvent(ctx, domain.SearchEvent{
+			Query:        clamp(query, analyticsMaxFilter),
+			Specialty:    clamp(specialty, analyticsMaxFilter),
+			Municipality: clamp(municipality, analyticsMaxFilter),
+			State:        clamp(state, analyticsMaxFilter),
 			ResultsCount: resultsCount,
 			UserID:       userID,
-			SessionID:    sessionID,
-			IP:           s.fingerprintIP(ip),
-		})
+			SessionID:    clamp(sessionID, analyticsMaxSessionID),
+			IPHash:       s.FingerprintIP(ip),
+		}); err != nil {
+			s.reportWriteError("create_search_event", err)
+		} else {
+			s.reportWriteOK("create_search_event")
+		}
 	}()
 }
 
@@ -169,12 +211,16 @@ func (s *AnalyticsService) RecordProfileView(psiID uuid.UUID, viewerID *uuid.UUI
 		}
 		defer s.release()
 
-		_ = s.repo.CreateProfileView(ctx, domain.ProfileView{
+		if err := s.repo.CreateProfileView(ctx, domain.ProfileView{
 			PsiID:     psiID,
 			ViewerID:  viewerID,
-			SessionID: sessionID,
-			IP:        s.fingerprintIP(ip),
-		})
+			SessionID: clamp(sessionID, analyticsMaxSessionID),
+			IPHash:    s.FingerprintIP(ip),
+		}); err != nil {
+			s.reportWriteError("create_profile_view", err)
+		} else {
+			s.reportWriteOK("create_profile_view")
+		}
 	}()
 }
 
@@ -191,9 +237,13 @@ func (s *AnalyticsService) RecordPageView(view domain.PageView) {
 		}
 		defer s.release()
 
-		view.IP = s.fingerprintIP(view.IP)
+		view.IPHash = s.FingerprintIP(view.IPHash)
 		view.Referer = refererOrigin(view.Referer)
-		_ = s.repo.CreatePageView(ctx, view)
+		if err := s.repo.CreatePageView(ctx, clampPageView(view)); err != nil {
+			s.reportWriteError("create_page_view", err)
+		} else {
+			s.reportWriteOK("create_page_view")
+		}
 	}()
 }
 
@@ -210,14 +260,26 @@ func (s *AnalyticsService) TrackPageView(ctx context.Context, view domain.PageVi
 	}
 	defer s.release()
 
-	view.IP = s.fingerprintIP(view.IP)
+	view.IPHash = s.FingerprintIP(view.IPHash)
 	view.Referer = refererOrigin(view.Referer)
+	view = clampPageView(view)
 
-	count, _ := s.repo.CountRecentPageViews(ctx, view.SessionID, time.Now().Add(-analyticsVisitWindow))
+	count, err := s.repo.CountRecentPageViews(ctx, view.SessionID, time.Now().Add(-analyticsVisitWindow))
+	if err != nil {
+		// No aborta la visita: solo se pierde la deduplicación, y el conteo se
+		// infla un poco. Se reporta porque un error aquí significa que la tabla no
+		// responde, y eso solo se ve si se escribe.
+		s.reportWriteError("count_recent_page_views", err)
+	}
 	if count > 0 {
 		return // Ya registrado en esta ventana
 	}
-	_ = s.repo.CreatePageView(ctx, view)
+
+	if err := s.repo.CreatePageView(ctx, view); err != nil {
+		s.reportWriteError("create_page_view", err)
+	} else {
+		s.reportWriteOK("create_page_view")
+	}
 }
 
 // CountRecentPageViews cuenta las visitas recientes de una sesión (debouncing).
@@ -240,13 +302,24 @@ func (s *AnalyticsService) GetDashboardStats(ctx context.Context) (*DashboardSta
 // PurgeOldData asegura que el crecimiento de la base de datos sea sostenible.
 func (s *AnalyticsService) PurgeOldData(ctx context.Context, olderThanDays int) {
 	cutoff := time.Now().AddDate(0, 0, -olderThanDays)
-	_ = s.repo.DeletePageViewsOlderThan(ctx, cutoff)
-	_ = s.repo.DeleteSearchEventsOlderThan(ctx, cutoff)
-	_ = s.repo.DeleteProfileViewsOlderThan(ctx, cutoff)
+	// La purga es lo que hace verdadera la promesa de los Términos de conservar
+	// la telemetría 90 días (ver gotcha 18 de api/AGENTS.md): si falla, hay que
+	// enterarse, porque las IP —o su huella— seguirían acumulándose.
+	if err := s.repo.DeletePageViewsOlderThan(ctx, cutoff); err != nil {
+		s.reportWriteError("purge_page_views", err)
+	}
+	if err := s.repo.DeleteSearchEventsOlderThan(ctx, cutoff); err != nil {
+		s.reportWriteError("purge_search_events", err)
+	}
+	if err := s.repo.DeleteProfileViewsOlderThan(ctx, cutoff); err != nil {
+		s.reportWriteError("purge_profile_views", err)
+	}
 	// LoginEvent se conserva siempre (es auditoría)
 }
 
 // CleanExpiredSessions es un recolector de basura para la tabla de sesiones.
 func (s *AnalyticsService) CleanExpiredSessions(ctx context.Context) {
-	_ = s.repo.DeleteExpiredSessions(ctx, time.Now())
+	if err := s.repo.DeleteExpiredSessions(ctx, time.Now()); err != nil {
+		s.reportWriteError("delete_expired_sessions", err)
+	}
 }

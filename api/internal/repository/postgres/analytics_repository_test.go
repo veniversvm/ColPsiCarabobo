@@ -2,13 +2,16 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/domain"
+	"github.com/veniversvm/ColPsiCarabobo/api/internal/service"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -181,7 +184,7 @@ func TestAnalyticsRepo_ComprehensiveSuite(t *testing.T) {
 			Path:      "/directorio",
 			Method:    "GET",
 			SessionID: sessionID,
-			IP:        "127.0.0.1",
+			IPHash:    "127.0.0.1",
 			CreatedAt: now,
 		})
 		require.NoError(t, err)
@@ -190,7 +193,7 @@ func TestAnalyticsRepo_ComprehensiveSuite(t *testing.T) {
 			Path:      "/perfil/123",
 			Method:    "GET",
 			SessionID: sessionID,
-			IP:        "127.0.0.1",
+			IPHash:    "127.0.0.1",
 			CreatedAt: now,
 		})
 		require.NoError(t, err)
@@ -216,7 +219,7 @@ func TestAnalyticsRepo_ComprehensiveSuite(t *testing.T) {
 			State:        "Carabobo",
 			ResultsCount: 5,
 			SessionID:    "sess_xyz",
-			IP:           "127.0.0.1",
+			IPHash:       "127.0.0.1",
 		}
 
 		err := r.CreateSearchEvent(context.Background(), event)
@@ -236,7 +239,7 @@ func TestAnalyticsRepo_ComprehensiveSuite(t *testing.T) {
 		event := domain.ProfileView{
 			PsiID:     psiID,
 			SessionID: "sess_pv",
-			IP:        "10.0.0.1",
+			IPHash:    "10.0.0.1",
 		}
 
 		err := r.CreateProfileView(context.Background(), event)
@@ -284,7 +287,7 @@ func TestAnalyticsRepo_ComprehensiveSuite(t *testing.T) {
 		tx.Create(&domain.LoginEvent{ID: uuid.New(), UserID: uuid.New(), Username: "u2", Role: "psi", CreatedAt: now})
 
 		// Seed page views
-		tx.Create(&domain.PageView{Path: "/home", Method: "GET", SessionID: "s1", IP: "127.0.0.1", CreatedAt: now})
+		tx.Create(&domain.PageView{Path: "/home", Method: "GET", SessionID: "s1", IPHash: "127.0.0.1", CreatedAt: now})
 
 		// Seed search events
 		tx.Create(&domain.SearchEvent{Query: "test", Specialty: "1", Municipality: "Valencia", ResultsCount: 3, SessionID: "s1", CreatedAt: now})
@@ -357,5 +360,196 @@ func TestAnalyticsRepo_ComprehensiveSuite(t *testing.T) {
 		var proCount int64
 		tx.Model(&domain.ProfileView{}).Count(&proCount)
 		require.Equal(t, int64(1), proCount)
+	})
+}
+
+// TestAnalyticsRepo_ColumnasAguantanLoQueMandaElServicio es el contrato entre el
+// servicio y el esquema.
+//
+// El 22001 que tumbó la telemetría entera no lo produjo un dato raro: lo produjo el
+// dato routineño. El servicio convirtió la IP en una huella SHA-256 (64 hex) y la
+// columna se quedó en varchar(45), el largo de una IPv6, así que TODOS los inserts
+// de las tres tablas de visitantes dejaron de funcionar. Aquí el punto es que el
+// valor que el servicio manda hoy entre en la columna: es el mismo control, pero
+// con la base real en vez de un mock, que es donde este tipo de desajuste se
+// esconden (los tests de servicio usan mocks, por eso no lo detectaron).
+//
+// OJO el ancho de esta base lo construye AutoMigrate desde el tag del struct, no
+// desde migrations/: este test fija el contrato con la base, y el contrato con el
+// archivo de migración lo fija TestAnalyticsRepo_AnchosCoherentesConLaMigracion.
+func TestAnalyticsRepo_ColumnasAguantanLoQueMandaElServicio(t *testing.T) {
+	db := setupAnalyticsTestDB(t)
+
+	// Una huella real del servicio: 64 hex, ni uno más ni uno menos.
+	const huella = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+	// Un _sid de cookie _sid real: UUIDv7, 36 caracteres.
+	const sid = "0192f8a1-2b3c-7d4e-8f90-a1b2c3d4e5f6"
+	const origen = "https://colegio-psicologos-carabobo.com"
+
+	t.Run("PageView entra completo", func(t *testing.T) {
+		r := NewAnalyticsRepository(db)
+		require.NoError(t, r.CreatePageView(context.Background(), domain.PageView{
+			Path:      "/directorio",
+			Method:    "GET",
+			SessionID: sid,
+			IPHash:    huella,
+			Referer:   origen,
+			CreatedAt: time.Now(),
+		}))
+	})
+
+	t.Run("SearchEvent entra completo", func(t *testing.T) {
+		r := NewAnalyticsRepository(db)
+		require.NoError(t, r.CreateSearchEvent(context.Background(), domain.SearchEvent{
+			Query:        "depresión",
+			Specialty:    "psicología clínica",
+			Municipality: "Valencia",
+			State:        "Carabobo",
+			ResultsCount: 12,
+			SessionID:    sid,
+			IPHash:       huella,
+			CreatedAt:    time.Now(),
+		}))
+	})
+
+	t.Run("ProfileView entra completo", func(t *testing.T) {
+		r := NewAnalyticsRepository(db)
+		require.NoError(t, r.CreateProfileView(context.Background(), domain.ProfileView{
+			PsiID:     uuid.New(),
+			SessionID: sid,
+			IPHash:    huella,
+			CreatedAt: time.Now(),
+		}))
+	})
+
+	t.Run("LoginEvent conserva la IP en claro y entra en varchar(45)", func(t *testing.T) {
+		// La excepción declarada: esta tabla es bitácora de seguridad y guarda la
+		// dirección, no la huella. Si algún día la hashean, el §10.3 de los
+		// Términos deja de ser cierto y este test avisa.
+		r := NewAnalyticsRepository(db)
+		require.NoError(t, r.CreateLoginEvent(context.Background(), domain.LoginEvent{
+			ID:        uuid.New(),
+			UserID:    uuid.New(),
+			Username:  "admin1",
+			Role:      "admin",
+			IP:        "2001:db8::1", // IPv6 completa: el peor caso de los 45
+			UserAgent: "Mozilla/5.0",
+			CreatedAt: time.Now(),
+		}))
+	})
+
+	t.Run("la huella se guarda completa, no truncada", func(t *testing.T) {
+		// El síntoma del bug era un 22001, pero el riesgo espejo es peor: que la
+		// columna "acepte" la huella y la recorte. Se comprueba que leyéndola
+		// vuelve entera, porque los 64 hex son lo que permite contar visitantes
+		// distintos.
+		var guardada string
+		require.NoError(t, db.Raw("SELECT ip_hash FROM page_views WHERE ip_hash = ?", huella).Scan(&guardada).Error)
+		require.Equal(t, huella, guardada)
+		require.Len(t, guardada, 64)
+	})
+}
+
+// TestAnalyticsRepo_AnchosCoherentesConLaMigracion ata la base de pruebas al
+// archivo de migración. AutoMigrate construye los anchos desde los tags del struct,
+// así que un tag correcto con una migración que no existe (o al revés) pasaría este
+// suite entero y llegaría a producción como el 22001 del 30-sep.
+func TestAnalyticsRepo_AnchosCoherentesConLaMigracion(t *testing.T) {
+	db := setupAnalyticsTestDB(t)
+
+	esperados := []struct {
+		tabla   string
+		columna string
+		ancho   int
+		porque  string
+	}{
+		{"page_views", "ip_hash", 64, "hex de SHA-256 completo (20261001100000)"},
+		{"search_events", "ip_hash", 64, "hex de SHA-256 completo (20261001100000)"},
+		{"profile_views", "ip_hash", 64, "hex de SHA-256 completo (20261001100000)"},
+		{"login_events", "ip", 45, "IP en claro, bitácora de seguridad"},
+		{"active_sessions", "ip", 45, "IP en claro, bitácora de seguridad"},
+		{"page_views", "path", 512, "URI de la petición"},
+		{"page_views", "referer", 512, "origen reducido, no la URL completa"},
+		{"page_views", "method", 10, "método HTTP"},
+		{"search_events", "query", 255, "texto que teclea el visitante"},
+		{"search_events", "session_id", 64, "cookie _sid"},
+	}
+
+	for _, e := range esperados {
+		var ancho int
+		err := db.Raw(
+			"SELECT character_maximum_length FROM information_schema.columns WHERE table_name = ? AND column_name = ?",
+			e.tabla, e.columna,
+		).Scan(&ancho).Error
+		require.NoError(t, err, "columna %s.%s", e.tabla, e.columna)
+		require.Equal(t, e.ancho, ancho, "%s.%s debería ser varchar(%d): %s", e.tabla, e.columna, e.ancho, e.porque)
+	}
+}
+
+// TestAnalyticsRepo_HashSQLDelBackfillEquivaleAFingerprint fija la fórmula del
+// backfill documentado en 20261001100000_analytics_ip_hash.sql: si el SQL y Go no
+// producen el mismo hex, las filas históricas quedan con huellas que no
+// corresponden a nada y un visitante de antes y después del corte cuenta como dos.
+//
+// Se ejecuta la EXPRESIÓN LITERAL de la migración, no una con placeholders, a
+// propósito: la primera versión de ese SQL usaba
+// `sha256('<sal>' || '|' || ip)` y fallaba con
+// `42883 function sha256(text) does not exist` (la concatenación de literales
+// resuelve a text, y sha256() solo existe para bytea). Con parámetros el error es
+// el mismo, así que un test con placeholders tampoco lo habría delatado — lo
+// delata tener la expresión escrita como el operador la va a ejecutar.
+//
+// El filtro `~ '[.:]'` (IPv4 tiene punto, IPv6 dos puntos) es lo que hace el
+// UPDATE idempotente; se comprueba con casos reales y con el caso límite de una
+// huella ya hasheada, que NO debe volver a pasar por el hash.
+func TestAnalyticsRepo_HashSQLDelBackfillEquivaleAFingerprint(t *testing.T) {
+	db := setupAnalyticsTestDB(t)
+
+	svc := service.NewAnalyticsService(nil)
+	// resolveIPSalt cae a la constante por defecto cuando ANALYTICS_IP_SALT no
+	// está; el test usa esa misma sal explícita. Si algún día el test corre con
+	// la variable definida, el servicio usaría OTRA sal y esta comparación
+	// mentiría, así que se aborta en vez de dar un verde falso.
+	if os.Getenv("ANALYTICS_IP_SALT") != "" {
+		t.Skip("ANALYTICS_IP_SALT está definida: este test verifica la fórmula, no la sal del entorno")
+	}
+	const sal = "colpsi-analytics-ipsalt-v1"
+
+	ips := []string{
+		"190.52.130.45",
+		"127.0.0.1",
+		"2001:db8::1",
+		"::1",
+		"172.17.0.1",
+	}
+
+	t.Run("el SQL produce el mismo hex que el servicio", func(t *testing.T) {
+		for _, ip := range ips {
+			var desdeSQL string
+			sql := fmt.Sprintf(
+				"SELECT encode(sha256(convert_to('%s' || '|' || '%s', 'UTF8')), 'hex')",
+				strings.ReplaceAll(sal, "'", "''"), strings.ReplaceAll(ip, "'", "''"),
+			)
+			require.NoError(t, db.Raw(sql).Scan(&desdeSQL).Error)
+			require.Equal(t, svc.FingerprintIP(ip), desdeSQL, "divergen para la IP %q", ip)
+			require.Len(t, desdeSQL, 64)
+		}
+	})
+
+	t.Run("el filtro selecciona IPs en claro y NO huellas", func(t *testing.T) {
+		for _, ip := range ips {
+			var coincide bool
+			require.NoError(t, db.Raw("SELECT ? ~ '[.:]'", ip).Scan(&coincide).Error)
+			require.True(t, coincide, "una IP en claro debe entrar al backfill: %q", ip)
+		}
+
+		// La huella ya hasheada no tiene punto ni dos puntos: una segunda pasada
+		// del backfill no debe volver a hashearla.
+		for _, ip := range ips {
+			huella := svc.FingerprintIP(ip)
+			var coincide bool
+			require.NoError(t, db.Raw("SELECT ? ~ '[.:]'", huella).Scan(&coincide).Error)
+			require.False(t, coincide, "una huella no debe volver a pasar por el hash: %q", huella)
+		}
 	})
 }

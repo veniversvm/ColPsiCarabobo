@@ -357,6 +357,59 @@ swag init -g cmd/api/main.go -o docs/   # regenerar Swagger
       `biblioteca/config/absdatabase.sqlite` (se pierden las cuentas de ABS, que
       recrea el worker de sync, y el progreso de lectura; **no** los PDFs de
       `biblioteca/books/`).
+22. **La huella de la IP no cabía en `varchar(45)`: la telemetría estaba muerta y
+    nadie la notó** — el fix de privacidad (gotcha 18) sustituyó la IP en claro
+    por `hex(sha256(sal|ip))`, que son **64** caracteres, en las columnas `ip` de
+    `page_views`, `search_events` y `profile_views`. Esas columnas eran
+    `character varying(45)` (el largo máximo de una IPv6) y nadie las amplió, así
+    que **todos** los inserts de las tres tablas murieron con
+    `22001 value too long for type character varying(45)` y las tres tablas
+    dejaron de crecer durante un día: visitas, búsquedas, fichas consultadas y
+    visitantes únicos congelados en el panel.
+    - **Por qué no se notó**: las escrituras de telemetría son fire-and-forget y su
+      error se descartaba con `_ =`. El único rastro era una línea de GORM por
+      evento. Ahora cada error de escritura pasa por
+      `reportWriteError` (`analytics_ingest.go`), con throttling (primera línea
+      completa, luego 1/minuto con el total de omitidas) y una línea de
+      "volvió a escribir" al recuperarse. **No vuelvas a `_ =` en un write
+      fire-and-forget**: discardable para la petición no es lo mismo que invisible.
+    - **La lección de fondo — el contenido de una columna es un contrato con el
+      código, no una constante de negocio**: al cambiar QUÉ se guarda hay que
+      revisar el ancho en la misma jugada, y si la columna se renombra hay que
+      actualizar a la vez el `gorm:"column:..."` del struct, el `AutoMigrate` y la
+      migración. Aquí las tres piezas quedaron en contextos distintos: el struct sí
+      se editó, la migración no existía.
+    - OJO la base de pruebas (`TEST_DB_DSN`, `make test-repo`) construye los
+      anchos con `AutoMigrate` desde los tags, **no** desde `migrations/`: un tag
+      correcto sin migración pasa ese suite entero y solo falla en producción
+      (aquí pasó). Por eso el contrato real lo fijan
+      `TestAnalyticsRepo_ColumnasAguantanLoQueMandaElServicio` y
+      `TestAnalyticsRepo_AnchosCoherentesConLaMigracion` (este lee
+      `information_schema.columns`).
+    - `FingerprintIP` es **pública a propósito**: la misma fórmula tiene que
+      producir el histórico del backfill en SQL y lo que escribe el servicio, y
+      `TestAnalyticsRepo_HashSQLDelBackfillEquivaleAFingerprint` compara ambas con
+      la expresión **literal** de la migración
+      (`encode(sha256(convert_to('<sal>' || '|' || ip,'UTF8')),'hex')`). El
+      `convert_to(..., 'UTF8')` **no es opcional**: `sha256()` solo existe para
+      `bytea` y `sal || '|' || ip` resuelve a `text`, así que sin él el backfill
+      muere con `42883 function sha256(text) does not exist` (lo pasó de verdad al
+      escribirlo: por eso el test ejecuta la expresión literal de la migración y
+      no una con placeholders). Si cambias el algoritmo, ese test falla y hay que
+      rehacer el histórico.
+    - ⚠️ **Backfill del histórico, una vez por base, fuera de la migración**: las
+      filas anteriores al fix guardan la IP **en claro**, y el §10.1 de los
+      Términos promete que no se guarda. El SQL está documentado al final de
+      `20261001100000_analytics_ip_hash.sql`; sustituye `<sal>` por
+      `ANALYTICS_IP_SALT` del entorno (o por `analyticsDefaultIPSalt` si no está
+      definida) y **usa la misma sal que la API**, o el visitante de antes y de
+      después del corte contará como dos personas distintas. El filtro
+      `ip_hash ~ '[.:]'` es lo que lo hace idempotente (IPv4 tiene punto, IPv6 dos
+      puntos, un hex de 64 no tiene ninguno).
+    - `login_events`, `active_sessions` y `psi_terms_acceptance` **siguen con la IP
+      en claro y varchar(45) a propósito**: bitácora de seguridad de cuentas con
+      sesión (§10.3) y prueba de aceptación jurídica. No las "corrijas" por
+      uniformidad: hashear la IP de una aceptación falsifica el registro.
 
 ## TestKnownFlaky: TestGetAccess_ConcurrentSameUser
 
