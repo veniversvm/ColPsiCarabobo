@@ -98,7 +98,7 @@ export default function DirectoryPage() {
     try {
       const params  = searchParams();
       const nextPage = page() + 1;
-      const url = `/psi/directory?q=${encodeURIComponent(params.q)}&specialty=${params.area}&location=${encodeURIComponent(params.loc)}&limit=${LIMIT}&page=${nextPage}`;
+      const url = `/psi/directory?q=${encodeURIComponent(params.q)}&specialty=${encodeURIComponent(params.area)}&location=${encodeURIComponent(params.loc)}&limit=${LIMIT}&page=${nextPage}`;
       
       const res = await apiGet<DirectoryResponse>(url);
       

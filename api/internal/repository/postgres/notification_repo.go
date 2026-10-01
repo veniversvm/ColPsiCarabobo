@@ -229,9 +229,13 @@ func (r *notificationRepo) ResolveRecipients(ctx context.Context, params domain.
 	if params.Genre != "" {
 		query = query.Where("genre = ?", params.Genre)
 	}
+	// Área de desempeño: specialtyAreaFilterSQL (definido en psi_repository.go) es la
+	// MISMA expresión que usa la tarjeta del directorio. Aquí el bug era peor: el
+	// admin elegía "Clínica" para una notificación masiva y el lote salía a los 2
+	// agremiados con la FK puesta en vez de a los 21 que están en Clínica.
 	if params.SpecialtyID != nil {
-		query = query.Where(
-			"(primary_specialty_id = ? OR secondary_specialty_id = ?)",
+		query = applySpecialtyJoins(query).Where(
+			specialtyAreaFilterSQL,
 			*params.SpecialtyID, *params.SpecialtyID,
 		)
 	}
@@ -240,7 +244,9 @@ func (r *notificationRepo) ResolveRecipients(ctx context.Context, params domain.
 	}
 
 	var ids []uuid.UUID
-	err := query.Pluck("id", &ids).Error
+	// `id` cualificado: con los JOIN del área, psi_specialty_models también tiene
+	// `id` y un Pluck sin calificar daría 42702.
+	err := query.Pluck("psi_users.id", &ids).Error
 	return ids, err
 }
 
