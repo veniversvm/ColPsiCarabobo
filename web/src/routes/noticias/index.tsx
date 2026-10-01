@@ -122,17 +122,17 @@ export default function PublicNoticiasPage() {
     <main class="min-h-screen bg-colpsi-bg">
 
       {/* ── CABECERA ───────────────────────────────────────────────────────── */}
-      <header class="text-white py-20 px-6 relative isolate overflow-hidden">
+      <header class="text-white py-20 px-6 relative isolate bg-colpsi-blue overflow-hidden">
         <ArcoHeroImage />
         <div class="max-w-5xl mx-auto relative">
-          <p class="text-xs font-black uppercase tracking-[0.3em] text-blue-300 mb-3">
+          <p class="text-xs font-black uppercase tracking-[0.3em] text-blue-100 mb-3 text-shadow-hero">
             Colegio de Psicólogos de Carabobo
           </p>
-          <h1 class="text-4xl md:text-5xl font-black leading-none uppercase tracking-tight mb-4">
+          <h1 class="text-4xl md:text-5xl font-black leading-none uppercase tracking-tight mb-4 text-shadow-hero">
             Noticias &<br />
             <span class="text-colpsi-yellow">Comunicados</span>
           </h1>
-          <p class="text-blue-200 text-sm max-w-md leading-relaxed">
+          <p class="text-blue-100 text-sm max-w-md leading-relaxed text-shadow-hero">
             Información institucional, convocatorias y novedades para la comunidad psicológica de Venezuela.
           </p>
         </div>

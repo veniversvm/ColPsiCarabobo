@@ -176,6 +176,27 @@ deno task build      # igual que npm run build (lo usa el dockerfile)
     deshabilitadas en los bordes); el cálculo de `scrollLeft/scrollWidth` es
     cliente-solo (`onMount`), jamás en SSR.
 
+15. **Los heroes con foto (`ArcoHeroImage`) llevan velo, y no es opcional** — las
+    6 franjas públicas (`/explorar`, `/nosotros`, `/inscripcion`, `/noticias`,
+    `/documentos/`, `/directorio`) ponen los WebP del arco detrás del texto. El
+    cielo de esas fotos es brillante de punta a punta (p90 180-210, p95 200-222,
+    máx 254 en gris 0-255), así que **el texto blanco encima da 2.3:1 y no se
+    lee**. Ya se intentó quitar el velo y pasó. No lo quites, no lo pongas plano y
+    no lo subas a 0.8: el velo es `bg-velo-hero` (degradado vertical, pico 0.66
+    en la banda central, abierto a 0.40/0.38 en los bordes) más `text-shadow-hero`
+    en los textos. El único ajuste se hace en esas dos utilidades de `app.css`.
+    - **Mide la zona del texto, no la imagen entera**: el error que costó una
+      vuelta fue promediar todo el WebP (41% gris, «holgado») cuando la banda
+      central es mucho más clara. Usa percentiles (`magick … -colorspace Gray` y
+      `p90/p95`), no la media global.
+    - **Persigue el percentil alto, no el máximo**: el 254 sale en todas las
+      franjas de los dos WebP, y optimizar contra él obliga a un fondo casi
+      sólido. La sombra cubre los picos sueltos.
+    - `bg-colpsi-blue` en el contenedor es la red de seguridad si el WebP no
+      carga, y el `isolate` es obligatorio (sin stacking context las capas
+      `-z-10` quedan tapadas). Las 9 páginas de `/psi` **no** pasan por
+      `ArcoHeroImage`: ahí `bg-heraldic` es la clase del propio contenedor.
+
 ## Estructura
 
 ```

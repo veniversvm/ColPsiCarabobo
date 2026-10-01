@@ -40,24 +40,19 @@ export default function PublicPortal() {
 
       <main class="min-h-screen bg-colpsi-bg pb-20 font-sans">
         {/* Banner de Bienvenida a la Comunidad */}
-        <section class="pt-16 pb-32 px-6 text-center text-white relative isolate shadow-inner overflow-hidden">
+        <section class="pt-16 pb-32 px-6 text-center text-white relative isolate bg-colpsi-blue shadow-inner overflow-hidden">
           <ArcoHeroImage />
           <div class="max-w-4xl mx-auto space-y-5 relative z-10">
             <div class="inline-block px-5 py-1.5 bg-colpsi-yellow text-colpsi-blue rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-2 shadow-sm border border-colpsi-yellow/50">
               Servicio a la comunidad
             </div>
-               <h1 class="text-4xl md:text-5xl font-black text-white tracking-tight leading-tight">
+               <h1 class="text-4xl md:text-5xl font-black text-white tracking-tight leading-tight text-shadow-hero">
               Colegio de Psicólogos <br class="hidden sm:block" />
               <span class="text-colpsi-yellow italic">del Estado Carabobo</span>
             </h1>
-            <p class="text-blue-200 text-lg max-w-2xl mx-auto font-medium leading-relaxed">
+            <p class="text-blue-100 text-lg max-w-2xl mx-auto font-medium leading-relaxed text-shadow-hero">
               Estamos aquí para orientarle y conectarle con profesionales certificados y solventes en su región.
             </p>
-          </div>
-          
-          {/* Isotipo Ψ sutil al fondo */}
-          <div class="absolute left-1/2 -translate-x-1/2 bottom-[-40px] opacity-10 text-[12rem] font-black select-none pointer-events-none">
-            Ψ
           </div>
         </section>
 
