@@ -148,7 +148,7 @@ func (s *PsiService) CreatePsiByAdmin(ctx context.Context, admin *domain.UserAdm
 	// 9. Notificación de bienvenida — no bloqueante, fallo silencioso intencional
 	// Si el SMTP falla, la creación del registro no hace Rollback.
 	mailData := map[string]interface{}{
-		"Name":     psi.Username,
+		"Name":     psi.FirstName,
 		"Email":    psi.Email,
 		"Password": req.Password,
 	}

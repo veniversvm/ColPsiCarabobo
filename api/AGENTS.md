@@ -502,6 +502,62 @@ swag init -g cmd/api/main.go -o docs/   # regenerar Swagger
       que se muestra. Ojo al escribir fixtures de `PsiUserModel`: `bio_text_id` y
       `audio_book_shell_id` son FK/UNIQUE y sin valor rompen el INSERT (23503 /
       23505) — ver gotcha 19.
+25. **En las plantillas, una variable que hace dos trabajos es un dato falso
+    esperando — y el login psi acepta correo O usuario** — `welcome_psi.html`
+    usaba `{{.Name}}` para el saludo («Bienvenido(a), X!») **y** para la
+    credencial («Usuario: X»), mientras los **4 call sites** de `welcome_psi` le
+    pasaban 4 valores distintos: `inscription_service.go:801` → `req.Nombres`
+    (nombres, no username), `psi_service_import.go:244` y
+    `psi_service_xlsx.go:294` → `psi.FirstName` (**solo el primer nombre**) y
+    `psi_user_admin_service.go:151` → `psi.Username` (el único correcto, pero
+    hacía que el saludo dijera «Bienvenido(a), juanperez!»). Al Colegio le
+    mandaba «Usuario: Juan Pérez» a un agremiado recién aprobado, que no
+    podía usar para entrar. Misma clase de bug que el gotcha 24: **el valor que
+    se muestra y el que significa algo son dos nociones que se separan sin que
+    nada falle**.
+    - **Regla**: si una variable aparece en dos sitios de la plantilla con
+      significados distintos, son **dos variables** (`Name` para el saludo,
+      `Username` para la credencial), no una. Y nada de "quitar el campo por
+      redundante" sin comprobar **qué valor** llegaba: aquí quitarlo fue
+      correcto porque el valor era falso, no porque sobrara.
+    - **Por qué no se pierde información al borrar «Usuario:»**: el login es
+      `GetByIdentifier` → `username = ? OR email = ?` (`psi_repository.go:155`)
+      y el correo es la línea siguiente del propio correo. El formulario de
+      login dice «Usuario o correo electrónico» (`web/src/routes/login.tsx:120`).
+      Antes de borrar un campo de credenciales, confirma que lo que queda
+      alcanza para autenticarse.
+    - ⚠️ **Quitar un `{{.X}}` NO puede romper el envío, y esto es por diseño**:
+      `SendEmail` (`mail_service.go:259`) **solo encola** en un canal
+      (fire-and-forget); el render ocurre en el worker, `executeSend`
+      (`mail_service.go:308`), con `template.ParseFS(templates.FS, …)` +
+      `tmpl.Execute(…, augmentTemplateData(job.Data))` en **opciones por
+      defecto** — **sin `missingkey=error`**. Consecuencias: una clave de sobra
+      en el `map` la ignora en silencio, y una clave que falte imprime
+      `<no value>` en vez de fallar. Por eso quitar una línea de la plantilla
+      **no** requiere tocar ningún `mailData`. Corolario: **nunca confíes en
+      `<no value>` como error** — es la señal de que se te olvidó una clave, y
+      llega al buzón sin que nada se queje. Al verificar un cambio de
+      plantilla, renderiza y **busca `<no value>` explícitamente**.
+    - ⚠️ **`welcome_admin.html` tiene la misma línea y NO es un bug**: ahí
+      `Name` sí es el username real (`admin_service.go:359` →
+      `newAdmin.Username`). Antes de "arreglar" una plantilla, mira **de dónde
+      sale el valor** en cada call site; el mismo texto puede ser correcto en
+      una plantilla y falso en otra.
+    - Ojo al **corregir el saludo**: quitar la línea de la credencial convierte
+      `Name` en saludo *y nada más*, así que el call site que pasaba
+      `psi.Username` pasó a `psi.FirstName` en el mismo commit. Si borras una
+      segunda aparición de una variable, **revisa si la primera queda con el
+      valor correcto**.
+    - `TestTemplates_RenderConDatosDeEjemplo` (`templates_test.go`) exige que
+      el nombre y el correo aparezcan en el HTML renderizado: sigue verde sin
+      tocarlo porque ambos sobreviven (saludo y línea del Correo). Es la red que
+      confirma que un render no se vació por accidente.
+    - ⚠️ `templates.FS` va con `//go:embed *.html` y el servicio `api` del
+      compose se construye desde el contexto **sin bind-mount de fuentes**: el
+      HTML queda **horneado en el binario**. Un cambio de plantilla exige
+      `docker compose build api && docker compose up -d api`; contra el
+      contenedor viejo el correo sigue saliendo como antes (y no hay ningún
+      error que lo delate).
 
 ## TestKnownFlaky: TestGetAccess_ConcurrentSameUser
 
