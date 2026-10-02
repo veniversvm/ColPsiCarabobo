@@ -244,7 +244,7 @@ func TestAnalyticsService_RecordSearch(t *testing.T) {
 		svc := NewAnalyticsService(repo)
 
 		userID := uuid.Must(uuid.NewV7())
-		svc.RecordSearch("psicología", "clinica", "Valencia", "Carabobo", 10, &userID, "session123", "192.168.1.1")
+		svc.RecordSearch("psicología", "clinica", "Valencia", "Carabobo", 10, &userID, "session123", "192.168.1.1", testBrowserUA)
 		time.Sleep(50 * time.Millisecond)
 
 		require.True(t, called)
@@ -267,7 +267,7 @@ func TestAnalyticsService_RecordSearch(t *testing.T) {
 		}
 		svc := NewAnalyticsService(repo)
 
-		svc.RecordSearch("test", "", "", "", 0, nil, "sess", "127.0.0.1")
+		svc.RecordSearch("test", "", "", "", 0, nil, "sess", "127.0.0.1", testBrowserUA)
 		time.Sleep(50 * time.Millisecond)
 
 		require.Nil(t, capturedEvent.UserID, "UserID debe ser nil para anonimos")
@@ -290,7 +290,7 @@ func TestAnalyticsService_RecordProfileView(t *testing.T) {
 
 		psiID := uuid.Must(uuid.NewV7())
 		viewerID := uuid.Must(uuid.NewV7())
-		svc.RecordProfileView(psiID, &viewerID, "sess1", "10.0.0.1")
+		svc.RecordProfileView(psiID, &viewerID, "sess1", "10.0.0.1", testBrowserUA)
 		time.Sleep(50 * time.Millisecond)
 
 		require.True(t, called)
@@ -516,9 +516,9 @@ func TestAnalyticsService_ConcurrentRecordCalls(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			svc.RecordLogin(uuid.Must(uuid.NewV7()), "u", "psi", "127.0.0.1", "a")
-			svc.RecordSearch("q", "", "", "", 0, nil, "s", "127.0.0.1")
+			svc.RecordSearch("q", "", "", "", 0, nil, "s", "127.0.0.1", testBrowserUA)
 			svc.RecordPageView(domain.PageView{Path: "/", Method: "GET"})
-			svc.RecordProfileView(uuid.Must(uuid.NewV7()), nil, "s", "127.0.0.1")
+			svc.RecordProfileView(uuid.Must(uuid.NewV7()), nil, "s", "127.0.0.1", testBrowserUA)
 		}()
 	}
 	wg.Wait()

@@ -9,6 +9,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"mime/multipart"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -235,25 +236,80 @@ func (h *PsiHandler) SearchDirectory(c *fiber.Ctx) error {
 	}
 
 	// ── Analytics: registrar búsqueda ────────────────────────────────────────
-	// Se ejecuta DESPUÉS de obtener los resultados para incluir el conteo real
-	var viewerID *uuid.UUID
-	if uid, ok := c.Locals("userID").(uuid.UUID); ok {
-		viewerID = &uid
+	// Se ejecuta DESPUÉS de obtener los resultados para incluir el conteo real.
+	//
+	// Tres cosas se decidEN aquí y NO dentro de RecordSearch, porque dependen de
+	// lo que el visitante pidió y no de quién lo pidió:
+	//
+	//  1. No es una búsqueda si nadie buscó nada. Este endpoint también sirve el
+	//     listado inicial del directorio (el onMount del frontend entra con
+	//     q/area/loc vacíos), y eso no es una búsqueda: contarlo inflaba el
+	//     contador con una visita que ya se cuenta como página vista.
+	//  2. No es una búsqueda nueva si es paginación. El scroll infinito del
+	//     directorio (loadMore) vuelve a llamar a este mismo endpoint con
+	//     page=2,3,4… Un visitante que recorre cinco páginas generaba cinco
+	//     "búsquedas" por una sola búsqueda lógica.
+	//  3. specialty va como "" y no como "0". El ranking de áreas consulta
+	//     WHERE specialty != '' y luego hace join contra psi_specialty_models
+	//     por id, así que el "0" de fmt.Sprintf("%d", 0) pasaba el filtro y
+	//     caía en un bucket NULL: todas las búsquedas sin filtro de área
+	//     contaban como área desconocida.
+	if esBusquedaReal(filter) {
+		var viewerID *uuid.UUID
+		if uid, ok := c.Locals("userID").(uuid.UUID); ok {
+			viewerID = &uid
+		}
+
+		// El total vive en el fiber.Map que arma GetPublicDirectory.
+		resultsCount := 0
+		if m, ok := result.(fiber.Map); ok {
+			if total, ok := m["total"].(int64); ok {
+				resultsCount = int(total)
+			}
+		}
+
+		specialtyStr := ""
+		if filter.SpecialtyID != 0 {
+			specialtyStr = fmt.Sprintf("%d", filter.SpecialtyID)
+		}
+
+		h.analytics.RecordSearch(
+			filter.SearchTerm,      // "q" en la query string
+			specialtyStr,           // SpecialtyID, o "" si no se filtró por área
+			filter.Location,        // "location" en la query string
+			"",                     // no tienes state separado en el DTO
+			resultsCount,           // total real de resultados
+			viewerID,
+			c.Cookies("_sid"),
+			c.IP(),
+			c.Get("User-Agent"), // RecordSearch descarta el evento si es bot
+		)
 	}
-	specialtyStr := fmt.Sprintf("%d", filter.SpecialtyID)
-	h.analytics.RecordSearch(
-		filter.SearchTerm, // "q" en la query string
-		specialtyStr,      // SpecialtyID como string
-		filter.Location,   // "location" en la query string
-		"",                // no tienes state separado en el DTO
-		0,                 // result es interface{}, no accesible sin type assertion
-		viewerID,
-		c.Cookies("_sid"),
-		c.IP(),
-	)
 	// ─────────────────────────────────────────────────────────────────────────
 
 	return c.JSON(result)
+}
+
+// esBusquedaReal distingue "el visitante buscó algo" de "el visitante abrió el
+// listado" y de "el visitante pidió la página siguiente".
+//
+// Se lee del filtro ya SANITIZADO (SanitizeDirectoryFilter garantiza Page >= 1 y
+// Gender allowlisted a ""/M/F), que es el mismo con el que se ejecutó la
+// consulta. Aun así vuelve a comprobar los textos con TrimSpace en vez de
+// confiar en que otro archivo ya los limpió: cleanSearchString no deja un
+// espacio suelto, pero una decisión sobre una métrica que depende de que el
+// llamador se portó bien es exactamente la clase de acoplamiento que produjo
+// este bug. Aquí la función es correcta por sí sola.
+func esBusquedaReal(f request_structs.PsiDirectoryFilterDTO) bool {
+	if f.Page > 1 {
+		return false // paginación por scroll infinito, no una búsqueda nueva
+	}
+	return strings.TrimSpace(f.SearchTerm) != "" ||
+		f.SpecialtyID != 0 ||
+		strings.TrimSpace(f.Location) != "" ||
+		f.Gender != "" ||
+		f.Solvent != nil ||
+		f.Active != nil
 }
 
 // GetPublicProfile godoc
@@ -286,6 +342,7 @@ func (h *PsiHandler) GetPublicProfile(c *fiber.Ctx) error {
 		viewerID,
 		c.Cookies("_sid"),
 		c.IP(),
+		c.Get("User-Agent"), // RecordProfileView descarta el evento si es bot
 	)
 	// ─────────────────────────────────────────────────────────────────────────
 

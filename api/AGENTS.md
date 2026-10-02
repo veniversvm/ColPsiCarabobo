@@ -559,6 +559,87 @@ swag init -g cmd/api/main.go -o docs/   # regenerar Swagger
       contenedor viejo el correo sigue saliendo como antes (y no hay ningún
       error que lo delate).
 
+26. **Un contador de telemetría se filtra donde se ESCRIBE, no donde se lee — y
+    «lo que pidió el visitante» se decide en el handler, no en el servicio** —
+    el panel llegaba a mostrar 564 búsquedas contra 14 visitas el mismo día, y
+    las dos cifras no eran comparables. Motivo: `AnalyticsMiddleware` aplica
+    cinco filtros (GET, blocklist, 2xx, `isBotUA`, exclusión de staff) más un
+    dedup de 30 min, pero **`RecordSearch` y `RecordProfileView` se invocan desde
+    los handlers**, fuera del middleware, y no heredaban **ninguno**. Eran
+    peticiones crudas frente a visitas deduplicadas.
+    - **La firma delata el problema**: los métodos que el middleware provee no
+      sobreviven a que se invoquen saltándose el middleware, y una garantía
+      que depende de *un camino concreto de llamada* se pierde en cuanto alguien
+      añade el segundo. Por eso `IsBotUA` **bajó al paquete `service`** (el
+      `middleware` importa `service`, no al revés) y `RecordSearch`/
+      `RecordProfileView` **reciben el User-Agent y descartan el evento antes de
+      crear la goroutine**. Es el mismo argumento del gotcha 18 (la huella de la
+      IP): *la garantía va dentro del método para que todo llamador futuro la
+      herede*. Si añades un contador nuevo, **no copies el patrón del handler**.
+    - ⚠️ **`c.Locals("admin")` solo existe donde hay middleware de auth.** La
+      «Exclusión de Staff» del `AnalyticsMiddleware` (paso 3) es **código muerto
+      en casi todo el sitio público**: la llenan `ProtectedAdmin`,
+      `ProtectedAdmin404` y `OptionalHybridAuth`, y de las rutas públicas solo
+      `/posts` lleva `OptionalHybridAuth` (`post_router.go:31`).
+      `/psi/directory`, `/specialties` y `/psi/:id` se registran **sin** ningún
+      middleware, así que `admin` llega siempre vacío y **el staff cuenta como
+      visitante**. No se arregló a propósito: exigiría `OptionalHybridAuth` en
+      esas rutas (un JWT validado en cada visita pública, roza la privacidad de
+      la ficha) y el ruido de máquina era el 95% del problema. **Antes de
+      prometer "métricas limpias de staff", comprueba que la ruta lleva auth.**
+    - **«Qué es una búsqueda» es una decisión del handler, no del servicio**,
+      porque depende de lo que se pidió, no de quién lo pidió. `esBusquedaReal`
+      (`psi_handler.go`) devuelve falso si `page > 1` (**el scroll infinito** de
+      `loadMore` repite el endpoint con `page=2,3…`: un visitante que recorre
+      5 páginas-screen era 5 búsquedas de una sola búsqueda lógica) y si no hay
+      ningún filtro activo (la **carga inicial** del directorio entra con
+      `q/area/loc` vacíos y no es una búsqueda). Ojo: la caché de 60 s **no**
+      deduplicaba la paginación, porque el filtro completo va en la clave de
+      caché y cada página es un key distinto.
+    - ⚠️ **`specialty` se mandaba como `"0"` y no como `""`**, porque
+      `fmt.Sprintf("%d", 0)` sobre un `SpecialtyID` sin filtro da `"0"`. El
+      ranking consulta `WHERE specialty != ''` y luego hace join contra
+      `psi_specialty_models` por id, así que **`"0"` pasaba el filtro** y caía en
+      un bucket **NULL**: todas las búsquedas sin área contaminaban el ranking de
+      áreas como «área desconocida». Es el mismo tipo de bug que el gotcha 24: el
+      valor que se **muestra** y el que se **filtra** como dos nociones
+      paralelas. Cuando el "vacío" de un número sea `0`, **manda `""`**, no `"0"`.
+    - **`results_count` era un campo muerto**: siempre `0`, con el comentario
+      *«result es interface{}, no accesible sin type assertion»*. Se resuelve
+      con `result.(fiber.Map)["total"].(int64)` — `GetPublicDirectory` devuelve
+      un `fiber.Map` con `total` como **`int64`** (`SearchDirectory` lo firma
+      así). Si un día cambia ese tipo, el type assertion falla en silencio y el
+      campo vuelve a 0 sin error: es el mismo modo de fallo de una clave de
+      plantilla faltante.
+    - ⚠️ **El acierto de caché se come el evento**: `SearchDirectory` hace
+      `return c.Send(raw)` en un acierto **antes** del bloque de analytics, así
+      que una búsqueda idéntica repetida dentro de los 60 s del TTL tampoco se
+      cuenta. Es una deduplicación **accidental, no diseñada** — no la cuentes
+      como garantía: a los 61 s se cuenta igual. Y **por eso la caché no
+      salvaba la paginación**: distinto `page`, distinto key.
+    - **Cómo reconocer a una máquina sin columna `user_agent`**: `session_id`
+      vacío. La cookie `_sid` la pone el middleware en la primera visita de un
+      navegador y dura 30 días; un script que no acepta cookies nunca la tiene.
+      Un `latido de 60 s exactos` con el mismo `ip_hash` y `q` vacío es un
+      monitor, no una persona.
+    - Tests: `TestAnalyticsService_BotsNoEscriben` y `TestIsBotUA`
+      (`analytics_botfilter_test.go`, el que era del middleware) más
+      `TestEsBusquedaReal` y `TestEsBusquedaReal_ConElFiltroYaSanitizado`
+      (`psi_handler_search_test.go`). Los tres **comprobados en rojo**
+      desactivando la guarda de `IsBotUA`. Ojo: `TestEsBusquedaReal` encontró un
+      agujero en el propio fix —`"   "` no es `""`— y la respuesta fue
+      `TrimSpace` en la función en vez de confiar en que `cleanSearchString` ya
+      limpió: **una decisión sobre una métrica no debe depender de que otro
+      archivo se portó bien**.
+    - ⚠️ **El histórico no se limpia**: los eventos previos al fix siguen en las
+      tablas y los que tienen `specialty='0'` siguen contaminando el ranking de
+      áreas hasta que salga por la retención de 90 días (`ANALYTICS_RETENTION_DAYS`,
+      gotcha 18). Es una decisión consciente, no un olvido: los contadores se van
+      corrigiendo solos hacia abajo.
+    - ⚠️ Sin migración, pero el filtro va **dentro del binario** → `docker compose
+      build api && docker compose up -d api`. Contra el contenedor viejo el
+      latido de 60 s **sigue corriendo sin dar ningún error**.
+
 ## TestKnownFlaky: TestGetAccess_ConcurrentSameUser
 
 `internal/service/audiobookshelf_service_test.go` falla de forma intermitente

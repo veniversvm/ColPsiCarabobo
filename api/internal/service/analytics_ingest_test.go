@@ -88,7 +88,7 @@ func TestAnalyticsService_RecortaLoQueVieneDelCliente(t *testing.T) {
 		svc.RecordSearch(
 			strings.Repeat("q", enorme), strings.Repeat("s", enorme),
 			strings.Repeat("m", enorme), strings.Repeat("e", enorme),
-			0, nil, strings.Repeat("s", enorme), "190.52.130.45",
+			0, nil, strings.Repeat("s", enorme), "190.52.130.45", testBrowserUA,
 		)
 		require.Eventually(t, func() bool { return guardada.Query != "" }, time.Second, 10*time.Millisecond)
 
@@ -115,7 +115,7 @@ func TestAnalyticsService_RecortaLoQueVieneDelCliente(t *testing.T) {
 		}
 		svc := NewAnalyticsService(repo)
 
-		svc.RecordProfileView(uuid.Must(uuid.NewV7()), nil, strings.Repeat("s", enorme), "190.52.130.45")
+		svc.RecordProfileView(uuid.Must(uuid.NewV7()), nil, strings.Repeat("s", enorme), "190.52.130.45", testBrowserUA)
 		require.Eventually(t, func() bool { return guardada.SessionID != "" }, time.Second, 10*time.Millisecond)
 
 		assert.Len(t, guardada.SessionID, analyticsMaxSessionID)
