@@ -121,10 +121,28 @@ func SetupPsiRoutes(router fiber.Router, psiRepo domain.PsiUserRepository, admin
 	// =========================================================================
 	// ZONA 3: PÚBLICO
 	// =========================================================================
+	//
+	// ⚠️ El middleware va POR RUTA, no en la declaración del grupo. Se comprobó
+	// empíricamente que `meGroup` (/psi/me, con ProtectedPsiUser, registrado ~40
+	// líneas ANTES que este grupo) NO se filtra a /psi/directory — los prefijos
+	// se aíslan y no se apila nada, ver TestPublicasPsi_SiguenAbiertasSinToken.
+	// O sea que router.Group("/psi", authMid.OptionalHybridAuth()) TAMBIÉN
+	// funcionaría y no hay ninguna trampa aquí. Aun así queda por ruta porque el
+	// registro explícito obliga a que cada ruta nueva se pregunte si alimenta la
+	// telemetría; con el middleware en el grupo se hereda en silencio y el olvido
+	// no deja rastro, que es justo cómo el gotcha 26 llegó a ser código muerto.
+	// Es además el patrón que ya usa /posts (post_router.go:31).
+	//
+	// Para qué está: estas GET alimentan la telemetría (page views, búsquedas y
+	// fichas) y sin un middleware de auth c.Locals("admin") llega vacío, así que
+	// el staff —que recorre el directorio para verificar fichas— contaría como
+	// visitante. OptionalHybridAuth no bloquea —sin cabecera Authorization solo
+	// lee la cabecera y sigue— y cortocircuita sin tocar la base, así que el
+	// anónimo no paga ni una consulta.
 	psiGroup := router.Group("/psi")
 
 	// No necesita token de admin porque es para el sitemap público
-	psiGroup.Get("/public/sitemap-data", h.GetSitemapData)
+	psiGroup.Get("/public/sitemap-data", authMid.OptionalHybridAuth(), h.GetSitemapData)
 
 	// Login con rate limiting — 15 intentos por IP cada 5 minutos
 	psiGroup.Post("/login", middleware.NoStore(), middleware.AuthRateLimiter(), h.Login)
@@ -134,6 +152,6 @@ func SetupPsiRoutes(router fiber.Router, psiRepo domain.PsiUserRepository, admin
 	psiGroup.Post("/forgot-password", middleware.NoStore(), middleware.AuthRateLimiter(), h.RequestPasswordReset)
 	psiGroup.Post("/reset-password", middleware.NoStore(), middleware.AuthRateLimiter(), h.ResetPassword)
 
-	psiGroup.Get("/directory", h.SearchDirectory)
-	psiGroup.Get("/:id", h.GetPublicProfile)
+	psiGroup.Get("/directory", authMid.OptionalHybridAuth(), h.SearchDirectory)
+	psiGroup.Get("/:id", authMid.OptionalHybridAuth(), h.GetPublicProfile)
 }

@@ -35,17 +35,23 @@ func SetupSpecialtyRoutes(router fiber.Router, psiRepo domain.PsiUserRepository,
 	// =========================================================================
 	// Estas rutas son accesibles por visitantes o pacientes. El orden de registro
 	// aquí es crítico para evitar colisiones de ruteo.
+	//
+	// OptionalHybridAuth va POR RUTA (no en la declaración del grupo) para que la
+	// telemetría pueda excluir al staff: sin un middleware de auth c.Locals("admin")
+	// llega vacío y el staff cuenta como visitante (gotcha 26). No bloquea y
+	// cortocircuita sin cabecera Authorization, así que el anónimo paga cero.
+	// Si añades aquí una GET que escriba telemetría, repite el patrón.
 	specialties := router.Group("/specialties")
 
 	// Precedencia Estática: Registramos /count ANTES que /:id para evitar que
 	// la palabra "count" sea interpretada erróneamente como un identificador.
-	specialties.Get("/count", h.CountSpecialties)
+	specialties.Get("/count", authMid.OptionalHybridAuth(), h.CountSpecialties)
 
 	// Listado público filtrado (Solo registros activos).
-	specialties.Get("/", h.GetSpecialties)
+	specialties.Get("/", authMid.OptionalHybridAuth(), h.GetSpecialties)
 
 	// Precedencia Dinámica con Restricción: Usamos el constraint <int> para que
 	// Fiber solo coincida con esta ruta si el parámetro es numérico.
 	// Esto protege contra colisiones accidentales y mejora el rendimiento.
-	specialties.Get("/:id<int>", h.GetSpecialtyByID)
+	specialties.Get("/:id<int>", authMid.OptionalHybridAuth(), h.GetSpecialtyByID)
 }

@@ -217,6 +217,20 @@ func (m *AuthMiddleware) OptionalHybridAuth() fiber.Handler {
 
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
+		// La fila que hay que leer para obtener la key de firma es la MISMA que
+		// después hay que inyectar en el PASO 3: mismo uid, misma petición. Se
+		// memoiza para no hacer dos SELECT idénticos — este middleware ahora
+		// corre en las rutas públicas GET (para que la telemetría pueda excluir
+		// al staff) y el coste se nota. El anónimo nunca llega aquí: cortocircuita
+		// en la cabecera de arriba sin tocar la base.
+		//
+		// Reutilizar la fila ya verificada además es MÁS consistente que releerla:
+		// si la segunda lectura fallara, la identidad NO se inyectaría pese a que
+		// la firma se comprobó bien, y el staff contaría como visitante sin que
+		// nada fallara.
+		var memoAdmin *domain.UserAdmin
+		var memoPsi *domain.PsiUserModel
+
 		// PASO 1: Parse + Verificar firma (sin side effects).
 		// El keyFunc retorna la clave HMAC pero NO inyecta en c.Locals().
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
@@ -243,12 +257,14 @@ func (m *AuthMiddleware) OptionalHybridAuth() fiber.Handler {
 				if err != nil {
 					return nil, fmt.Errorf("admin no encontrado: %w", err)
 				}
+				memoAdmin = admin
 				return []byte(admin.Key), nil
 			}
 			psi, err := m.psiRepo.GetByID(c.UserContext(), uid)
 			if err != nil {
 				return nil, fmt.Errorf("psi no encontrado: %w", err)
 			}
+			memoPsi = psi
 			return []byte(psi.Key), nil
 		})
 
@@ -257,26 +273,17 @@ func (m *AuthMiddleware) OptionalHybridAuth() fiber.Handler {
 			return c.Next() // token inválido → proceder como anónimo
 		}
 
-		// PASO 3: Ahora SÍ inyectar identidad (el token ya pasó verificación de firma).
-		claims, ok := token.Claims.(jwt.MapClaims)
-		if !ok {
-			return c.Next()
-		}
-		role, _ := claims["role"].(string)
-		userID, _ := claims["user_id"].(string)
-		uid, err := uuid.Parse(userID)
-		if err != nil {
-			return c.Next()
-		}
-
-		if role == "admin" {
-			if admin, err := m.adminRepo.GetByID(c.UserContext(), uid); err == nil {
-				c.Locals("admin", admin)
-			}
-		} else {
-			if psi, err := m.psiRepo.GetByID(c.UserContext(), uid); err == nil {
-				c.Locals("psi_user", psi)
-			}
+		// PASO 3: Ahora SÍ inyectar identidad (el token ya pasó verificación de
+		// firma). Se decide por el memo y no por releer el claim "role": el memo
+		// es lo que verificó la firma, así que no puede contradecirla, mientras
+		// que releer el claim es una segunda noción de "quién es" que deriva sola.
+		// Si el token es válido, la keyFunc devolvió una key, así que exactamente
+		// uno de los dos memos quedó poblado.
+		switch {
+		case memoAdmin != nil:
+			c.Locals("admin", memoAdmin)
+		case memoPsi != nil:
+			c.Locals("psi_user", memoPsi)
 		}
 
 		return c.Next()

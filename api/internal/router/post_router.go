@@ -29,7 +29,9 @@ func SetupPostRoutes(router fiber.Router, adminRepo domain.UserAdminRepository, 
 	posts := router.Group("/posts")
 
 	posts.Get("/", authMid.OptionalHybridAuth(), h.ListPosts)
-	posts.Get("/public/sitemap-posts", h.GetSiteMapHandler)
+	// El sitemap no lo lee una persona, pero se registra en la telemetría: sin el
+	// middleware el staff lo contaría como visita (mismo motivo que arriba).
+	posts.Get("/public/sitemap-posts", authMid.OptionalHybridAuth(), h.GetSiteMapHandler)
 	posts.Get("/:id", authMid.OptionalHybridAuth(), h.GetPost)
 
 	// =========================================================================

@@ -17,6 +17,28 @@ import (
 	"github.com/veniversvm/ColPsiCarabobo/api/internal/service"
 )
 
+// EsStaff indica si la petición viene de un miembro del staff autenticado.
+//
+// El panel de analítica mide PÚBLICO. El staff (el que administra el Colegio, no
+// el que lo visita) recorre el directorio, busca nombres y abre fichas para
+// verificar datos: si se contara, "Búsquedas" y "Visitas" volverían a significar
+// dos cosas distintas, que es justo lo que el gotcha 26 arregló.
+//
+// Vive aquí, y no duplicado en cada escritor de telemetría, porque hay TRES:
+// el page view (AnalyticsMiddleware) y los dos que invocan los handlers fuera
+// del middleware (RecordSearch en SearchDirectory, RecordProfileView en
+// GetPublicProfile). Tres copias de la misma pregunta derivan.
+//
+// ⚠️ Depende de que la ruta lleve un middleware de auth que rellene
+// c.Locals("admin") —ProtectedAdmin, ProtectedAdmin404 u OptionalHybridAuth—.
+// Las rutas públicas GET que alimenta la telemetría lo llevan por ruta (no en la
+// declaración del grupo: ver gotcha 16); si registras una nueva, pon el
+// middleware por ruta o el staff volverá a contarse sin que nada falle.
+func EsStaff(c *fiber.Ctx) bool {
+	admin, ok := c.Locals("admin").(*domain.UserAdmin)
+	return ok && admin != nil
+}
+
 // analyticsCtxTimeout acota la vida de la goroutine analítica por request.
 // Si la BD está degradada, la goroutine muere sola en vez de colgarse esperando
 // una conexión del pool.
@@ -70,13 +92,10 @@ func AnalyticsMiddleware(analytics *service.AnalyticsService) fiber.Handler {
 		}
 
 		// 3. Exclusión de Staff (Métricas Limpias)
-		// OJO: esta exclusión solo tiene efecto en las rutas que pasan por un
-		// middleware de autenticación (ProtectedAdmin/ProtectedAdmin404/
-		// OptionalHybridAuth), porque es el único sitio donde alguien rellena
-		// c.Locals("admin"). Hoy, de todo el sitio público, solo /posts lleva
-		// OptionalHybridAuth: en /specialties, /psi/directory y /psi/:id el
-		// Locals llega vacío y el staff cuenta como visitante. Ver gotcha 26.
-		if admin, ok := c.Locals("admin").(*domain.UserAdmin); ok && admin != nil {
+		// El predicado vive en EsStaff porque lo comparten los TRES escritores
+		// de telemetría: este, y los dos que se invocan desde los handlers
+		// (SearchDirectory y GetPublicProfile).
+		if EsStaff(c) {
 			return err
 		}
 

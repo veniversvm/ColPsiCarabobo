@@ -254,7 +254,11 @@ func (h *PsiHandler) SearchDirectory(c *fiber.Ctx) error {
 	//     por id, así que el "0" de fmt.Sprintf("%d", 0) pasaba el filtro y
 	//     caía en un bucket NULL: todas las búsquedas sin filtro de área
 	//     contaban como área desconocida.
-	if esBusquedaReal(filter) {
+	//
+	// El staff no se cuenta: su navegación es verificación interna, no público.
+	// Comparte predicado con el page view del AnalyticsMiddleware (EsStaff) para
+	// que "quién es staff" sea una sola noción y no tres que derivan.
+	if !middleware.EsStaff(c) && esBusquedaReal(filter) {
 		var viewerID *uuid.UUID
 		if uid, ok := c.Locals("userID").(uuid.UUID); ok {
 			viewerID = &uid
@@ -274,11 +278,11 @@ func (h *PsiHandler) SearchDirectory(c *fiber.Ctx) error {
 		}
 
 		h.analytics.RecordSearch(
-			filter.SearchTerm,      // "q" en la query string
-			specialtyStr,           // SpecialtyID, o "" si no se filtró por área
-			filter.Location,        // "location" en la query string
-			"",                     // no tienes state separado en el DTO
-			resultsCount,           // total real de resultados
+			filter.SearchTerm, // "q" en la query string
+			specialtyStr,      // SpecialtyID, o "" si no se filtró por área
+			filter.Location,   // "location" en la query string
+			"",                // no tienes state separado en el DTO
+			resultsCount,      // total real de resultados
 			viewerID,
 			c.Cookies("_sid"),
 			c.IP(),
@@ -333,17 +337,20 @@ func (h *PsiHandler) GetPublicProfile(c *fiber.Ctx) error {
 	}
 
 	// ── Analytics: registrar visita al perfil ────────────────────────────────
-	var viewerID *uuid.UUID
-	if uid, ok := c.Locals("userID").(uuid.UUID); ok {
-		viewerID = &uid
+	// Mismo criterio que en SearchDirectory: el staff no es público (gotcha 26).
+	if !middleware.EsStaff(c) {
+		var viewerID *uuid.UUID
+		if uid, ok := c.Locals("userID").(uuid.UUID); ok {
+			viewerID = &uid
+		}
+		h.analytics.RecordProfileView(
+			psi_id, // uuid.UUID del psicólogo visto (ajusta al campo de tu DTO)
+			viewerID,
+			c.Cookies("_sid"),
+			c.IP(),
+			c.Get("User-Agent"), // RecordProfileView descarta el evento si es bot
+		)
 	}
-	h.analytics.RecordProfileView(
-		psi_id, // uuid.UUID del psicólogo visto (ajusta al campo de tu DTO)
-		viewerID,
-		c.Cookies("_sid"),
-		c.IP(),
-		c.Get("User-Agent"), // RecordProfileView descarta el evento si es bot
-	)
 	// ─────────────────────────────────────────────────────────────────────────
 
 	return c.JSON(profile)

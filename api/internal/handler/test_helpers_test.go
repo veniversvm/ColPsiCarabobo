@@ -420,6 +420,8 @@ func (m *mockMailService) SendEmail(to, subject, templateName string, data inter
 type mockAnalyticsRepo struct {
 	domain.AnalyticsRepository
 	GetDashboardStatsFunc func(ctx context.Context) (*domain.DashboardStats, error)
+	CreateSearchEventFunc func(ctx context.Context, event domain.SearchEvent) error
+	CreateProfileViewFunc func(ctx context.Context, view domain.ProfileView) error
 }
 
 func (m *mockAnalyticsRepo) CreateLoginEvent(context.Context, domain.LoginEvent) error { return nil }
@@ -430,9 +432,19 @@ func (m *mockAnalyticsRepo) DeleteActiveSession(context.Context, uuid.UUID) erro
 func (m *mockAnalyticsRepo) UpdateSessionHeartbeat(context.Context, uuid.UUID, time.Time, time.Time) error {
 	return nil
 }
-func (m *mockAnalyticsRepo) CreateSearchEvent(context.Context, domain.SearchEvent) error { return nil }
-func (m *mockAnalyticsRepo) CreateProfileView(context.Context, domain.ProfileView) error { return nil }
-func (m *mockAnalyticsRepo) CreatePageView(context.Context, domain.PageView) error       { return nil }
+func (m *mockAnalyticsRepo) CreateSearchEvent(ctx context.Context, event domain.SearchEvent) error {
+	if m.CreateSearchEventFunc != nil {
+		return m.CreateSearchEventFunc(ctx, event)
+	}
+	return nil
+}
+func (m *mockAnalyticsRepo) CreateProfileView(ctx context.Context, view domain.ProfileView) error {
+	if m.CreateProfileViewFunc != nil {
+		return m.CreateProfileViewFunc(ctx, view)
+	}
+	return nil
+}
+func (m *mockAnalyticsRepo) CreatePageView(context.Context, domain.PageView) error { return nil }
 func (m *mockAnalyticsRepo) CountRecentPageViews(context.Context, string, time.Time) (int64, error) {
 	return 0, nil
 }
