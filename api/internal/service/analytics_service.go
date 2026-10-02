@@ -166,12 +166,22 @@ func (s *AnalyticsService) HeartbeatSession(userID uuid.UUID) {
 }
 
 // RecordSearch almacena los metadatos de una búsqueda realizada en el directorio.
+//
+// El filtro de bots va AQUÍ, y no en el punto de llamada, por la misma razón que
+// la huella de la IP (ver analytics_privacy.go): quien llama podría olvidarse. El
+// que llama es el handler SearchDirectory, que no pasa por AnalyticsMiddleware, y
+// por eso este evento era el único sin filtrar. Se descarta ANTES de la
+// goroutine: si el evento no se va a guardar, tampoco tiene que costar un
+// semáforo ni una conexión.
 func (s *AnalyticsService) RecordSearch(
 	query, specialty, municipality, state string,
 	resultsCount int,
 	userID *uuid.UUID,
-	sessionID, ip string,
+	sessionID, ip, userAgent string,
 ) {
+	if IsBotUA(userAgent) {
+		return
+	}
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), analyticsWriteTimeout)
 		defer cancel()
@@ -202,7 +212,12 @@ func (s *AnalyticsService) RecordSearch(
 }
 
 // RecordProfileView rastrea la popularidad individual de los profesionales.
-func (s *AnalyticsService) RecordProfileView(psiID uuid.UUID, viewerID *uuid.UUID, sessionID, ip string) {
+// Comparte el filtro de bots de RecordSearch y por el mismo motivo: se invoca
+// desde GetPublicProfile, fuera del AnalyticsMiddleware.
+func (s *AnalyticsService) RecordProfileView(psiID uuid.UUID, viewerID *uuid.UUID, sessionID, ip, userAgent string) {
+	if IsBotUA(userAgent) {
+		return
+	}
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), analyticsWriteTimeout)
 		defer cancel()

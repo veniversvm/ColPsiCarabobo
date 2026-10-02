@@ -46,33 +46,6 @@ func shouldSkip(path string) bool {
 	return false
 }
 
-// botUserAgents son substrings de User-Agent de crawlers/scripts conocidos.
-// Se usan SOLO para excluir su ruido de las métricas; no bloquean la respuesta
-// HTTP (Googlebot y compañía deben seguir indexando el sitio).
-var botUserAgents = []string{
-	"googlebot", "bingbot", "duckduckbot", "yandex", "baiduspider",
-	"slurp", "msnbot", "semrushbot", "ahrefsbot", "mj12bot", "applebot",
-	"twitterbot", "facebookexternalhit", "linkedinbot", "pinterest",
-	"telegrambot", "whatsapp", "discordbot", "uptimerobot", "pingdom",
-	"archive.org_bot", "gptbot", "ccbot", "bytespider", "perplexitybot",
-	"claudebot", "petalbot", "dotbot", "curl", "wget", "python-requests",
-}
-
-// isBotUA detecta si un User-Agent pertenece a un bot/crawler/script.
-// Un UA vacío o ausente también se considera sospechoso (scripts sin cabecera).
-func isBotUA(userAgent string) bool {
-	ua := strings.ToLower(strings.TrimSpace(userAgent))
-	if ua == "" {
-		return true
-	}
-	for _, b := range botUserAgents {
-		if strings.Contains(ua, b) {
-			return true
-		}
-	}
-	return false
-}
-
 // AnalyticsMiddleware rastrea la actividad de los usuarios de forma no intrusiva.
 //
 // Diseño de Rendimiento:
@@ -92,11 +65,17 @@ func AnalyticsMiddleware(analytics *service.AnalyticsService) fiber.Handler {
 		if c.Response().StatusCode() < 200 || c.Response().StatusCode() >= 300 {
 			return err
 		}
-		if isBotUA(c.Get("User-Agent")) {
+		if service.IsBotUA(c.Get("User-Agent")) {
 			return err
 		}
 
 		// 3. Exclusión de Staff (Métricas Limpias)
+		// OJO: esta exclusión solo tiene efecto en las rutas que pasan por un
+		// middleware de autenticación (ProtectedAdmin/ProtectedAdmin404/
+		// OptionalHybridAuth), porque es el único sitio donde alguien rellena
+		// c.Locals("admin"). Hoy, de todo el sitio público, solo /posts lleva
+		// OptionalHybridAuth: en /specialties, /psi/directory y /psi/:id el
+		// Locals llega vacío y el staff cuenta como visitante. Ver gotcha 26.
 		if admin, ok := c.Locals("admin").(*domain.UserAdmin); ok && admin != nil {
 			return err
 		}

@@ -132,7 +132,7 @@ func TestRecordSearchHasheaIP(t *testing.T) {
 	}
 	svc := NewAnalyticsService(repo)
 
-	svc.RecordSearch("depresion", "", "valencia", "", 0, nil, "sess-1", "190.52.130.45")
+	svc.RecordSearch("depresion", "", "valencia", "", 0, nil, "sess-1", "190.52.130.45", testBrowserUA)
 	<-listo
 
 	assert.NotContains(t, guardada.IPHash, "190.52")

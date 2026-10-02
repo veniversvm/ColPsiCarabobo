@@ -22,6 +22,7 @@
 package service
 
 import (
+	"strings"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -46,6 +47,42 @@ const (
 // recortada en silencio sería una huella incorrecta— sino para que el test que
 // comprueba el contrato cite el número desde un solo sitio.
 const analyticsMaxIPHash = 64
+
+// botUserAgents son substrings de User-Agent de crawlers/scripts conocidos.
+// Se usan SOLO para excluir su ruido de las métricas; no bloquean la respuesta
+// HTTP (Googlebot y compañía deben seguir indexando el sitio).
+var botUserAgents = []string{
+	"googlebot", "bingbot", "duckduckbot", "yandex", "baiduspider",
+	"slurp", "msnbot", "semrushbot", "ahrefsbot", "mj12bot", "applebot",
+	"twitterbot", "facebookexternalhit", "linkedinbot", "pinterest",
+	"telegrambot", "whatsapp", "discordbot", "uptimerobot", "pingdom",
+	"archive.org_bot", "gptbot", "ccbot", "bytespider", "perplexitybot",
+	"claudebot", "petalbot", "dotbot", "curl", "wget", "python-requests",
+}
+
+// IsBotUA indica si un User-Agent corresponde a un bot/crawler/script. Un UA
+// vacío o ausente también se considera sospechoso (scripts sin cabecera).
+//
+// Vive AQUÍ y no en el middleware a propósito, igual que el saneamiento de la
+// IP: las garantías van en los métodos del servicio para que todo llamador
+// futuro las herede. RecordSearch y RecordProfileView se invocan desde handlers,
+// NO pasan por AnalyticsMiddleware, y por eso durante un tiempo el filtro de
+// bots solo alcanzaba a las páginas vistas —las búsquedas salían 40× más altas
+// que las visitas, alimentadas por un monitor que pegaba cada 60 s al
+// directorio. El middleware sigue llamándola: es una función pura y las dos
+// capas que la usan obtienen el mismo veredicto.
+func IsBotUA(userAgent string) bool {
+	ua := strings.ToLower(strings.TrimSpace(userAgent))
+	if ua == "" {
+		return true
+	}
+	for _, b := range botUserAgents {
+		if strings.Contains(ua, b) {
+			return true
+		}
+	}
+	return false
+}
 
 // analyticsErrorLogInterval es la ventana mínima entre dos líneas del mismo
 // error de escritura. El primero sale completo; los siguientes, uno por minuto con
