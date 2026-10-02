@@ -221,19 +221,33 @@ swag init -g cmd/api/main.go -o docs/   # regenerar Swagger
     `/admin/validate`; un binario viejo o un cliente que los llame recibe 404.
 
 16. **QUIRK de Fiber v2: un 2º `Group()` (o una ruta directa) sobre un prefijo
-    ya usado hereda el middleware del PRIMER grupo** — reproducido con
-    v2.52.11: tras `admin := router.Group("/admin", NoStore,
-    ProtectedAdmin404)`, cualquier registro posterior bajo `/admin` (otro
-    `Group("/admin", ProtectedAdmin)` o `router.Get("/admin/me", ...)` directo
-    sobre el grupo padre) queda apilado con el stack del primer grupo y NUNCA
-    ejecuta su propio middleware. Ejemplo real: el grupo `adminValidate`
-    (401 explícito) fue **código muerto desde el 05-sep** — `/admin/me` y
-    `/admin/validate` respondieron 404 enmascarado a pesar de registrar
-    `ProtectedAdmin` (confirmado incluso con build `--no-cache` y con una
-    reproducción mínima). La única forma limpia de mezclar 401/404 bajo un
-    mismo dominio: **prefijos distintos** (por eso `/session/*`). Si una
-    versión nueva de Fiber cambia esto, validalo con un mini-app de dos grupos
-    sobre el mismo prefijo antes de volver a anidarlos.
+    YA USADO hereda el middleware del PRIMER grupo — pero solo si el prefijo
+    COINCIDE, no si lo contiene** — reproducido con v2.52.11: tras `admin :=
+    router.Group("/admin", NoStore, ProtectedAdmin404)`, cualquier registro
+    posterior bajo `/admin` (otro `Group("/admin", ProtectedAdmin)` o
+    `router.Get("/admin/me", ...)` directo sobre el grupo padre) queda apilado
+    con el stack del primer grupo y NUNCA ejecuta su propio middleware.
+    Ejemplo real: el grupo `adminValidate` (401 explícito) fue **código muerto
+    desde el 05-sep** — `/admin/me` y `/admin/validate` respondieron 404
+    enmascarado a pesar de registrar `ProtectedAdmin` (confirmado incluso con
+    build `--no-cache` y con una reproducción mínima). La única forma limpia de
+    mezclar 401/404 bajo un mismo dominio: **prefijos distintos** (por eso
+    `/session/*`). Si una versión nueva de Fiber cambia esto, validalo con un
+    mini-app de dos grupos sobre el mismo prefijo antes de volver a anidarlos.
+    - ⚠️ **Lo que el quirk NO hace (medido, no supuesto)**: si un grupo se registra
+      sobre un prefijo que es **contenido** por otro ya usado —`meGroup` =
+      `/psi/me` con `ProtectedPsiUser` ANTES que `psiGroup` = `/psi`—, su
+      middleware **NO** se filtra a las rutas del prefijo padre. Los prefijos se
+      aíslan: `/psi/directory` corrió `[G:/psi]` y nada más, sin el
+      `ProtectedPsiUser` de `/psi/me`. Se comprobó con una sonda que registraba
+      el stack de middlewares por ruta, porque la documentación acumulada llegó a
+      insinuar lo contrario y casi motivó un "no pongas el middleware en el grupo"
+      que **no era cierto** (`router.Group("/psi", authMid.OptionalHybridAuth())`
+      habría funcionado igual). El patrón por ruta de `psi_router.go` se mantiene
+      por legibilidad y para que una ruta nueva no **herede** la resolución de
+      identidad en silencio, no como rodeo. El caso que sí apila es el prefijo
+      **idéntico** (dos `Group("/psi", …)`) o un registro **directo** bajo un
+      prefijo ya usado (`app.Get("/psi/directory", …)` tras `Group("/psi", …)`).
 
 17. **Limitador global 60 req/min por IP** (`cmd/api/main.go:294`,
     `app.Use(limiter.New(...))` sin `Next` original) — aplica a TODOS los
@@ -576,17 +590,57 @@ swag init -g cmd/api/main.go -o docs/   # regenerar Swagger
       crear la goroutine**. Es el mismo argumento del gotcha 18 (la huella de la
       IP): *la garantía va dentro del método para que todo llamador futuro la
       herede*. Si añades un contador nuevo, **no copies el patrón del handler**.
-    - ⚠️ **`c.Locals("admin")` solo existe donde hay middleware de auth.** La
-      «Exclusión de Staff» del `AnalyticsMiddleware` (paso 3) es **código muerto
-      en casi todo el sitio público**: la llenan `ProtectedAdmin`,
+    - ✅ **La exclusión de staff ya está arreglada (2.ª vuelta)** — el mismo
+      argumento de «la garantía va dentro del método» aplicado al segundo de los
+      dos caminos que faltaban. Antes el staff **contaba como visitante** en todo
+      el sitio público: `c.Locals("admin")` solo lo llenan `ProtectedAdmin`,
       `ProtectedAdmin404` y `OptionalHybridAuth`, y de las rutas públicas solo
-      `/posts` lleva `OptionalHybridAuth` (`post_router.go:31`).
-      `/psi/directory`, `/specialties` y `/psi/:id` se registran **sin** ningún
-      middleware, así que `admin` llega siempre vacío y **el staff cuenta como
-      visitante**. No se arregló a propósito: exigiría `OptionalHybridAuth` en
-      esas rutas (un JWT validado en cada visita pública, roza la privacidad de
-      la ficha) y el ruido de máquina era el 95% del problema. **Antes de
-      prometer "métricas limpias de staff", comprueba que la ruta lleva auth.**
+      `/posts` lo llevaba (`post_router.go:31`). `AnalyticsMiddleware` (paso 3)
+      y los handlers usaban la **misma noción de "quién es staff" en tres
+      sitios distintos**, y sin el middleware `admin` llega vacío en las demás.
+      - **Un solo predicado, exportado**: `middleware.EsStaff(c)`
+        (`middleware/analytics.go`) es la única definición de «esto es staff», y
+        lo consultan **los 3 escritores de telemetría** — el paso 3 del
+        `AnalyticsMiddleware` (que ahora **delega** en él) y las guardas
+        `!middleware.EsStaff(c)` de `SearchDirectory` y `GetPublicProfile`
+        (`psi_handler.go`). Si añades un cuarto escritor, usa `EsStaff`: copiar
+        la comprobación es exactamente cómo se separaron las tres.
+      - **«Solo staff», no «logueado»**: `EsStaff` mira el **`admin` resuelto**,
+        no cualquier `Locals`. Un **agremiado** (`psi_user`) en el portal sigue
+        contándose cuando navega el sitio público, que es lo correcto (no es
+        tráfico del Colegio). PASO 3 decide **por el memo**, no releyendo el
+        claim `role`: releer el claim sería **una segunda noción de "quién es"**,
+        justo la que había que eliminar, así que el re-parse de claims/uid que
+        quedaba en el código se **borró** (era muerto).
+      - **Coste cero para el anónimo**: las 7 GETs públicas llevan ahora
+        `authMid.OptionalHybridAuth()` **por ruta** (`psi_router.go`,
+        `specialty_router.go`, `post_router.go`), y ese middleware
+        **cortocircuita sin cabecera `Authorization`** y nunca bloquea (todo
+        fallo cae a `c.Next()`). Medido en el log de SQL: petición anónima =
+        **0** `SELECT ... FROM user_admins`, petición de staff = **1**.
+      - ⚠️ **`OptionalHybridAuth` se memoizó al hacerlo público**: antes leía
+        `GetByID` **dos veces** por request (una en la `keyFunc`, otra en el
+        PASO 3); con las rutas públicas encima eso son 2 queries en cada visita
+        de cada visitante, así que ahora la fila se lee **una sola vez**
+        (`memoAdmin`/`memoPsi`) y ambos pasos comparten el resultado. Sin la
+        memoización, ponerlo en las rutas públicas multiplicaba por 2 una query
+        que antes solo corría en el panel.
+      - ⚠️ **El patrón por ruta es por legibilidad, NO por el quirk de gotcha
+        16** (que aplica a prefijos **idénticos**, no a prefijos contenido en
+        otro: `Group("/psi", OptionalHybridAuth())` habría funcionado igual). Se
+        mantiene por ruta para que una ruta nueva no **herede** la resolución de
+        identidad en silencio.
+      - Tests: `TestSearchDirectory_ElStaffNoGeneraTelemetria`,
+        `TestGetPublicProfile_ElStaffNoGeneraTelemetria` (handler),
+        `TestPsiHandler_StaffDetectadoPorElMiddleware` (prueba que el middleware
+        además **inyecta** `c.Locals("admin")`, para que no pase trivialmente),
+        `TestAnalyticsMiddleware_ElStaffNoRegistraPageView`,
+        `TestOptionalHybridAuth_LeeLaFilaUnaSolaVez` y
+        `TestPublicasPsi_SiguenAbiertasSinToken` (invariante «lo público sigue
+        abierto» + `/psi/me` bloqueada). Los de handler y la memoización
+        **comprobados en rojo** sin el fix; el del middleware pasó ya y queda
+        como candado de regresión (verificado que **falla** al desactivar la
+        guarda).
     - **«Qué es una búsqueda» es una decisión del handler, no del servicio**,
       porque depende de lo que se pidió, no de quién lo pidió. `esBusquedaReal`
       (`psi_handler.go`) devuelve falso si `page > 1` (**el scroll infinito** de
