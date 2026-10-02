@@ -47,7 +47,7 @@ const _SECCIONES: TerminosSeccion[] = [
           "Su contraseña debe tener al menos 8 caracteres, sin espacios, con mayúscula, minúscula, número y símbolo.",
           "La sesión dura **24 horas**. **Cada inicio de sesión invalida los anteriores**: si entra desde otro dispositivo, la sesión del primero deja de funcionar. Cerrar sesión cierra todas las sesiones abiertas. Cambiar la contraseña también reinicia la sesión.",
           "Para **guardar cambios en su perfil** el portal le pedirá su contraseña actual, como confirmación de que es usted.",
-          "El enlace de recuperación de contraseña vence en **1 hora** y solo se puede usar una vez.",
+          "El enlace de restauración de contraseña vence en **1 hora** y dicho enlace solo se puede usar una vez. Se pueden solicitar nuevos enlaces para restaurar su contraseña.",
           "El acceso al portal está sujeto a **límites de intentos** de inicio de sesión por seguridad.",
         ],
       },
@@ -156,7 +156,7 @@ const _SECCIONES: TerminosSeccion[] = [
       {
         tipo: "parrafo",
         texto:
-          "El Colegio registra de forma **agregada** cuántas veces se visualizan los perfiles y cuántas búsquedas se realizan en el directorio. El Colegio **no le muestra estadísticas individuales sobre su propia ficha**: los datos se consulter en conjunto y no se atribuyen a un agremiado en particular.",
+          "El Colegio registra de forma **agregada** cuántas veces se visualizan los perfiles y cuántas búsquedas se realizan en el directorio. El Colegio **no le muestra estadísticas individuales sobre su propia ficha**: los datos se consultan en conjunto y no se atribuyen a un agremiado en particular.",
       },
     ],
   },
