@@ -43,9 +43,6 @@ export default function DocumentosIndex() {
       <main class="min-h-screen bg-colpsi-bg pb-24 font-sans">
         <header class="py-20 px-6 border-b border-blue-900 shadow-inner relative isolate bg-colpsi-blue overflow-hidden">
           <ArcoHeroImage />
-          <div class="absolute left-1/2 top-[-60px] -translate-x-1/2 text-[14rem] opacity-10 font-black select-none pointer-events-none">
-            ⚖️
-          </div>
           <div class="max-w-4xl mx-auto text-center relative z-10">
             <div class="inline-block px-5 py-2 bg-colpsi-navy/75 text-colpsi-yellow rounded-full text-[10px] font-black tracking-[0.2em] uppercase mb-6 border border-colpsi-yellow/30 text-shadow-hero">
               Transparencia institucional
