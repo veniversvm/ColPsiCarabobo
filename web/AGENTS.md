@@ -197,6 +197,42 @@ deno task build      # igual que npm run build (lo usa el dockerfile)
       `-z-10` quedan tapadas). Las 9 páginas de `/psi` **no** pasan por
       `ArcoHeroImage`: ahí `bg-heraldic` es la clase del propio contenedor.
 
+16. **Un overlay dentro de un hero con foto se pierde, y `z-index` no lo
+    salva: va en `Portal`** — `isolate` (gotcha 15) y `overflow-hidden` (para
+    recortar la imagen) son **ambos obligatorios** en el `<section>` de los
+    heroes, y los dos **atrapan cualquier panel `absolute` con `z-30`**: el
+    `isolate` lo deja en un stacking context con `z-index: auto`, así que no
+    compite con el hermano `relative z-20` de las tarjetas; y el
+    `overflow-hidden` lo recorta. `DropdownSelect` renderiza su panel con
+    `<Portal mount={document.body}>` + `position: fixed` y la geometría sacada
+    del botón (`getBoundingClientRect()`), medido al abrir y recalculado en
+    `scroll`/`resize`. Cuatro detalles que no son opcionales:
+    - **No subas el `z-index` del hero** como arreglo: es una línea y arregla
+      el síntoma, pero el contenedor de tarjetas de `/directorio` usa `-mt-10`
+      para solaparse, así que el hero tapa 40px de la fila mientras el
+      desplegable está abierto (medido: `elementFromPoint` en la franja
+      solapada devolvía el velo del hero, no la tarjeta).
+    - **`handleClickOutside` tiene que mirar el ref del panel**, no solo el del
+      raíz: portaled a `body` el panel queda fuera del raíz, así que el
+      `mousedown` cerraría el panel antes de que la opción reciba su `click` y
+      **no se seleccionaría nada**. Es el fallo que aparece si se porta el
+      panel y se deja el handler como estaba.
+    - **`scroll` con `capture: true`**: los contenedores scrolleables internos
+      no propagan `scroll` a `window`.
+    - **`z-[10000]`**: portaled a `body` compite con toda la página; el navbar
+      es `z-50` y el overlay más alto del proyecto `z-[9999]`. La regla es
+      "el overlay siempre encima", no "el overlay encima del navbar".
+    - El `Portal` va con guard `if (!isServer)` (`isServer` de `solid-js/web`).
+
+17. **Los ⚖️ que quedan NO son todos marcas de agua de banner** — se quitaron
+    los dos del hero (`documentos/index.tsx` y `doc/DocumentLayout.tsx`, que se
+    ve en cada documento: `text-[14rem]`/`text-[12rem]`, `opacity-10`, se leían
+    como una mancha sobre la foto del arco). Los de `nosotros.tsx` (marca dentro
+    de una tarjeta, `opacity-5`), `inscripcion.tsx` (icono de paso) y
+    `explorar.tsx` (`icon` de `NavCard`) son **iconos de contenido** y se
+    quedan. Si agregas un overlay decorativo al hero, el texto va en
+    `relative z-10` (por el `isolate` del hero, igual que gotcha 15).
+
 ## Estructura
 
 ```

@@ -62,9 +62,6 @@ export default function DocumentLayout(props: { doc: DocModulo }) {
 
       <main class="min-h-screen bg-colpsi-bg pb-24 font-sans">
         <header class="bg-colpsi-blue py-16 px-6 border-b border-blue-900 shadow-inner relative overflow-hidden">
-          <div class="absolute left-1/2 top-[-60px] -translate-x-1/2 text-[12rem] opacity-10 font-black select-none pointer-events-none">
-            ⚖️
-          </div>
           <div class="max-w-4xl mx-auto text-center relative z-10">
             <div class="inline-flex items-center gap-2 px-5 py-2 bg-blue-800/50 text-colpsi-yellow rounded-full text-[10px] font-black tracking-[0.2em] uppercase mb-5 border border-colpsi-yellow/30">
               {doc.categoria}
